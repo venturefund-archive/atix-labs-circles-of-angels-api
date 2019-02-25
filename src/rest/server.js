@@ -24,7 +24,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
 
     //Load routes
     fastify.register(require("./routes/userRoutes"));
-    fastify.register(require("./routes/generalRoutes").default);
+    fastify.register(require("./routes/generalRoutes"));
     fastify.register(require("./routes/transferRoutes"));
 
     await fastify.listen(serverConfigs);
