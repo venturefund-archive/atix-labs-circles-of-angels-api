@@ -1,0 +1,32 @@
+{
+  "name": "circle-of-angels-backend",
+  "version": "1.0.0",
+  "description": "Api-rest for circle of angels",
+  "main": "main.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node index"
+  },
+  "author": "Atix Labs S.R.L",
+  "license": "ISC",
+  "dependencies": {
+    "bunyan": "1.8.12",
+    "fast-water": "1.0.2",
+    "fastify": "1.14.1",
+    "fastify-swagger": "1.2.0",
+    "sails-postgresql": "1.0.2"
+  },
+  "devDependencies": {
+    "chai": "4.2.0",
+    "eslint": "5.14.1",
+    "eslint-config-airbnb": "17.1.0",
+    "eslint-config-prettier": "4.0.0",
+    "eslint-plugin-import": "2.16.0",
+    "eslint-plugin-jsx-a11y": "6.2.1",
+    "eslint-plugin-prettier": "3.0.1",
+    "eslint-plugin-promise": "4.0.1",
+    "eslint-plugin-react": "7.12.4",
+    "jest": "24.1.0",
+    "prettier": "1.16.4"
+  }
+}
