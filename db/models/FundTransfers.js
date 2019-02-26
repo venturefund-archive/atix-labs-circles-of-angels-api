@@ -1,10 +1,20 @@
+/**
+ *   _Represents a **bank transfer**_
+
+  - `transferId`: id of bank transaction
+  - `senderId`: id of sender user
+  - `destinationAccount`: bank account where was send the money
+  - `projectId`: id of the project to which it is related
+  - `amount`: amount of transfered money
+  - `currency`: related currency of the bank transaction
+ */
 module.exports = {
   identity: "fund_transfer",
   primaryKey: "transferId",
   attributes: {
     transferId: { type: "string", required: true },
-    senderId: { type: "string", required: true },
-    receiverId: { type: "string", required: true },
+    senderId: { type: "number", required: true },
+    destinationAccount: { type: "string", required: true },
     amount: { type: "number", required: true },
     currency: { type: "string", required: true },
     projectId: { type: "number", required: true },
@@ -20,15 +30,15 @@ module.exports = {
   createOrUpdateTransfer: async function({
     transferId,
     senderId,
-    receiverId,
+    destinationAccount,
     projectId,
     amount,
-    currency
+    currency,
   }) {
     this.findOrCreate(transferId, {
       transferId,
       senderId,
-      receiverId,
+      destinationAccount,
       projectId,
       amount,
       currency

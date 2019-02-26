@@ -8,28 +8,27 @@ const TransferDao = () => {
       currency,
       senderId,
       projectId,
-      receiverId
+      destinationAccount
     }) {
-      let transfer = await this.transferModel.findTransferById(transferId);
+      const transfer = await this.transferModel.findTransferById(transferId);
       if (!transfer)
-        await this.transferModel.create({
-          transferId: request.body.transferId,
+        return this.transferModel.create({
+          transferId: transferId,
           amount: amount,
           currency: currency,
           senderId: senderId,
           projectId: projectId,
-          receiverId: receiverId
+          destinationAccount: destinationAccount
         });
       else
-        await this.transferModel.update(
-          { transferId: transferId },
-          {
-            transferId: request.body.transferId,
-            amount: amount,
-            currency: currency,
-            projectId: projectId
-          }
-        );
+        return this.transferModel.update(transferId, {
+          transferId: transferId,
+          amount: amount,
+          currency: currency,
+          projectId: projectId,
+          state: 0,
+          destinationAccount: destinationAccount
+        });
     },
 
     updateTransferState: async function({ transferId, state }) {
@@ -37,7 +36,5 @@ const TransferDao = () => {
     }
   };
 };
-
-
 
 module.exports = TransferDao;
