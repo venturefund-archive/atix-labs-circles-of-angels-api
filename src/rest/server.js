@@ -1,7 +1,4 @@
 // Require the framework and instantiate it
-/**
- * @typo initialize
- */
 const swaggerConfigs = require("../../config/configs").swagger;
 
 /**

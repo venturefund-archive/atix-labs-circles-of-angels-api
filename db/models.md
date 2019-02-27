@@ -26,7 +26,7 @@ _Representa a un usuario de Circles Of Angels, este puede ser : Social entrepren
   #####  Atributos:
   - `transferId`: id unico de la transferencia bancaria realizada
   - `senderId`: id del usuario que envia
-  - `destinationAccount`: cuenta donde fue enviádo el dinero
+  - `destinationAccount`: id del usuario que recibe
   - `projectId`: el id del proyecto al cual pertenece esta transferencia bancaria
   - `amount`: cantidad de dinero transferida
   - `currency`: moneda en la cual se realizó la transferencia
