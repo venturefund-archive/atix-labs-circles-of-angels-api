@@ -27,7 +27,9 @@ const TransferDao = () => {
             transferId: transferId,
             amount: amount,
             currency: currency,
-            projectId: projectId
+            projectId: projectId,
+            state: 0,
+            destinationAccount: destinationAccount
           }
         );
     },
