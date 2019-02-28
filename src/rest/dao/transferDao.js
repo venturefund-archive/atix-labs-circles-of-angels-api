@@ -10,19 +10,29 @@ const TransferDao = () => {
       projectId,
       destinationAccount
     }) {
-      let transfer = await this.transferModel.findTransferById(transferId);
-      if (!transfer)
+      let transfer = await this.transferModel.findTransferByUserAndProject({
+        senderId,
+        projectId
+      });
+      if (!transfer) {
+        const maxIdTransfer = await this.transferModel.find({
+          where: {},
+          select: ["id"],
+          limit: 1,
+          sort: "id DESC"
+        });
         await this.transferModel.create({
           transferId: transferId,
           amount: amount,
           currency: currency,
           senderId: senderId,
           projectId: projectId,
-          destinationAccount: destinationAccount
+          destinationAccount: destinationAccount,
+          id: Number(maxIdTransfer[0].id) + 1
         });
-      else
+      } else
         await this.transferModel.update(
-          { transferId: transferId },
+          { senderId: senderId, projectId: projectId },
           {
             transferId: transferId,
             amount: amount,
@@ -38,19 +48,17 @@ const TransferDao = () => {
       return this.transferModel.updateTransferState({ transferId, state });
     },
 
-    getTransferById: async function({transferId}) {
+    getTransferById: async function({ transferId }) {
       return this.transferModel.findTransferById(transferId);
     },
-    getTransferStatusById: async function({transferId}) {
+    getTransferStatusById: async function({ transferId }) {
       const transfer = await this.transferModel.findTransferById(transferId);
-      return this.transferStatusModel.findOne({status: transfer.state});
+      return this.transferStatusModel.findOne({ status: transfer.state });
     },
-    getTransferList: function({projectId}) {
-      return this.transferModel.find({projectId: projectId});
+    getTransferList: function({ projectId }) {
+      return this.transferModel.find({ projectId: projectId });
     }
   };
 };
-
-
 
 module.exports = TransferDao;

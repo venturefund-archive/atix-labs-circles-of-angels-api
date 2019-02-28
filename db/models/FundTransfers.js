@@ -1,6 +1,6 @@
 module.exports = {
   identity: "fund_transfer",
-  primaryKey: "transferId",
+  primaryKey: "id",
   attributes: {
     transferId: { type: "string", required: true },
     senderId: { type: "string", required: true },
@@ -11,12 +11,12 @@ module.exports = {
     state: { type: "number", defaultsTo: 0 },
     createdAt: { type: "string", autoCreatedAt: true },
     updatedAt: { type: "string", autoUpdatedAt: true },
-    id: { type: "number", autoMigrations: { autoIncrement: true } }
+    id: { type: "number", autoMigrations: { autoIncrement: true }}
   },
-  findTransferById: async function(transferId) {
-    console.log(transferId)
-    return this.findOne(transferId);
-  },
+  // findTransferById: async function(transferId) {
+  //   console.log(transferId)
+  //   return this.findOne(transferId);
+  // },
   createOrUpdateTransfer: async function({
     transferId,
     senderId,
@@ -31,7 +31,8 @@ module.exports = {
       destinationAccount,
       projectId,
       amount,
-      currency
+      currency,
+      id: this.count()
     });
   },
   updateTransferState: async function({
@@ -39,5 +40,8 @@ module.exports = {
     state
   }) {
     return this.update({transferId: transferId}).set({state: state});
+  },
+  findTransferByUserAndProject: async function({senderId, projectId}) {
+    return this.findOne({senderId: senderId, projectId: projectId});
   }
 };
