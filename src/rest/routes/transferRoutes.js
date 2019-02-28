@@ -1,3 +1,5 @@
+transferRoutes.js
+
 const basePath = "/transfer";
 routes = async (fastify, options) => {
 
@@ -38,7 +40,7 @@ routes = async (fastify, options) => {
       reply.send({sucess: "Transfer information upload sucessfuly!"})
     }
   ),
-  
+
   fastify.post(
     `${basePath}/updateState`,
     {
@@ -68,7 +70,36 @@ routes = async (fastify, options) => {
       if (!verification) reply.send({error: "Error when trying upload transfer state"});
       reply.send({sucess: "Transfer information upload sucessfuly!"})
     }
-  );
+  ),
+
+  fastify.get(
+    `${basePath}/:transferId/getState`,
+    {
+      schema: {
+        params: {
+          transferId: { type: "string" }
+        }
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            response: { type: "object" }
+          }
+        }
+      }
+    }
+  ,
+  async (request, reply) => {
+    const transferDao = require("../dao/transferDao")();
+    fastify.log.info(`[Transfer Routes] :: Getting state of transaction with id ${request.params.transferId}`);
+    const transfer = await transferDao.getTransferById({transferId: request.params.transferId});
+    if (!transfer) reply.send({error: `Can not find transfer with id: ${request.params.transferId}`});
+    reply.send({
+      transferId: transfer.transferId,
+      state: transfer.state
+    })
+  })
 
 };
 

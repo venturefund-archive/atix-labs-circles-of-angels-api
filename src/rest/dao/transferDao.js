@@ -1,3 +1,4 @@
+
 const TransferDao = () => {
   return {
     transferModel: require("../server").fastify.models.fund_transfer,
@@ -34,6 +35,10 @@ const TransferDao = () => {
 
     updateTransferState: async function({ transferId, state }) {
       return this.transferModel.updateTransferState({ transferId, state });
+    },
+
+    getTransferById: async function({transferId}) {
+      return this.transferModel.findTransferById(transferId);
     }
   };
 };
