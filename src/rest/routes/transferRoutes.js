@@ -105,7 +105,18 @@ routes = async (fastify, options) => {
           state: transfer.state
         });
       }
-    );
+    }
+  ,
+  async (request, reply) => {
+    const transferDao = require("../dao/transferDao")();
+    fastify.log.info(`[Transfer Routes] :: Getting state of transaction with id ${request.params.transferId}`);
+    const status = await transferDao.getTransferStatusById({transferId: request.params.transferId});
+    reply.send({
+      transferId: request.params.transferId,
+      state: status
+    })
+  })
+
 };
 
 module.exports = routes;
