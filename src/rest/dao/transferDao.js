@@ -1,7 +1,7 @@
 const TransferDao = () => {
   return {
     transferModel: require("../server").fastify.models.fund_transfer,
-
+    transferStatusModel: require("../server").fastify.models.transfer_status,
     sendTransferToVerification: async function({
       transferId,
       amount,
