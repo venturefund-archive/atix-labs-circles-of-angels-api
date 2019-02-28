@@ -1,5 +1,4 @@
 // Require the framework and instantiate it
-
 const swaggerConfigs = require("../../config/configs").swagger;
 
 /**
@@ -35,4 +34,3 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     process.exit(1);
   }
 };
-

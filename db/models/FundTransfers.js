@@ -4,7 +4,7 @@ module.exports = {
   attributes: {
     transferId: { type: "string", required: true },
     senderId: { type: "string", required: true },
-    receiverId: { type: "string", required: true },
+    destinationAccount: { type: "string", required: true },
     amount: { type: "number", required: true },
     currency: { type: "string", required: true },
     projectId: { type: "number", required: true },
@@ -20,7 +20,7 @@ module.exports = {
   createOrUpdateTransfer: async function({
     transferId,
     senderId,
-    receiverId,
+    destinationAccount,
     projectId,
     amount,
     currency
@@ -28,7 +28,7 @@ module.exports = {
     this.findOrCreate(transferId, {
       transferId,
       senderId,
-      receiverId,
+      destinationAccount,
       projectId,
       amount,
       currency

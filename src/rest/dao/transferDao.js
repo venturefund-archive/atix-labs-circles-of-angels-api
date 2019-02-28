@@ -1,4 +1,3 @@
-
 const TransferDao = () => {
   return {
     transferModel: require("../server").fastify.models.fund_transfer,
@@ -9,26 +8,28 @@ const TransferDao = () => {
       currency,
       senderId,
       projectId,
-      receiverId
+      destinationAccount
     }) {
       let transfer = await this.transferModel.findTransferById(transferId);
       if (!transfer)
         await this.transferModel.create({
-          transferId: request.body.transferId,
+          transferId: transferId,
           amount: amount,
           currency: currency,
           senderId: senderId,
           projectId: projectId,
-          receiverId: receiverId
+          destinationAccount: destinationAccount
         });
       else
         await this.transferModel.update(
           { transferId: transferId },
           {
-            transferId: request.body.transferId,
+            transferId: transferId,
             amount: amount,
             currency: currency,
-            projectId: projectId
+            projectId: projectId,
+            state: 0,
+            destinationAccount: destinationAccount
           }
         );
     },
