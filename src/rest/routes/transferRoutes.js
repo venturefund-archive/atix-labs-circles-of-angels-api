@@ -88,22 +88,12 @@ routes = async (fastify, options) => {
       },
       async (request, reply) => {
         const transferDao = require("../dao/transferDao")();
-        fastify.log.info(
-          `[Transfer Routes] :: Getting state of transaction with id ${
-            request.params.transferId
-          }`
-        );
-        const transfer = await transferDao.getTransferById({
-          transferId: request.params.transferId
-        });
-        if (!transfer)
-          reply.send({
-            error: `Can not find transfer with id: ${request.params.transferId}`
-          });
+        fastify.log.info(`[Transfer Routes] :: Getting state of transaction with id ${request.params.transferId}`);
+        const status = await transferDao.getTransferStatusById({transferId: request.params.transferId});
         reply.send({
-          transferId: transfer.transferId,
-          state: transfer.state
-        });
+          transferId: request.params.transferId,
+          state: status
+        })
       },
 
       async (request, reply) => {
