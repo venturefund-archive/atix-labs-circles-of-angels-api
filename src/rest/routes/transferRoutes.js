@@ -1,6 +1,5 @@
 const basePath = "/transfer";
 routes = async (fastify, options) => {
-
   fastify.post(
     `${basePath}/:transferId/sendToVerification`,
     {
@@ -10,7 +9,8 @@ routes = async (fastify, options) => {
           amount: { type: "float" },
           currency: { type: "string" },
           senderId: { type: "string" },
-          projectId: { type: "integer" }
+          projectId: { type: "integer" },
+          destinationAccount: { type: "string" }
         }
       },
       response: {
@@ -31,59 +31,79 @@ routes = async (fastify, options) => {
         currency: request.body.currency,
         senderId: request.body.senderId,
         projectId: request.body.projectId,
-        destinationAccount: 2
+        destinationAccount: request.body.destinationAccount
       });
-      if (!verification) reply.send({error: "Error when trying upload transfer information"});
-      reply.send({sucess: "Transfer information upload sucessfuly!"})
+      if (!verification)
+        reply.send({ error: "Error when trying upload transfer information" });
+      reply.send({ sucess: "Transfer information upload sucessfuly!" });
     }
   ),
-
-  fastify.post(
-    `${basePath}/updateState`,
-    {
-      schema: {
-        type: "application/json",
-        body: {
-          transferId: { type: "string" },
-          state: { type: "integer" },
-        }
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            response: { type: "object" }
+    fastify.post(
+      `${basePath}/updateState`,
+      {
+        schema: {
+          type: "application/json",
+          body: {
+            transferId: { type: "string" },
+            state: { type: "integer" }
+          }
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              response: { type: "object" }
+            }
           }
         }
+      },
+      async (request, reply) => {
+        const transferDao = require("../dao/transferDao")();
+        fastify.log.info("[Transfer Routes] :: Update transfer state");
+        const verification = await transferDao.updateTransferState({
+          transferId: request.body.transferId,
+          state: request.body.state
+        });
+        if (!verification)
+          reply.send({ error: "Error when trying upload transfer state" });
+        reply.send({ sucess: "Transfer information upload sucessfuly!" });
       }
-    },
-    async (request, reply) => {
-      const transferDao = require("../dao/transferDao")();
-      fastify.log.info("[Transfer Routes] :: Update transfer state");
-      const verification = await transferDao.updateTransferState({
-        transferId: request.body.transferId,
-        state: request.body.state,
-      });
-      if (!verification) reply.send({error: "Error when trying upload transfer state"});
-      reply.send({sucess: "Transfer information upload sucessfuly!"})
-    }
-  ),
-
-  fastify.get(
-    `${basePath}/:transferId/getState`,
-    {
-      schema: {
-        params: {
-          transferId: { type: "string" }
-        }
-      },
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            response: { type: "object" }
+    ),
+    fastify.get(
+      `${basePath}/:transferId/getState`,
+      {
+        schema: {
+          params: {
+            transferId: { type: "string" }
+          }
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              response: { type: "object" }
+            }
           }
         }
+      },
+      async (request, reply) => {
+        const transferDao = require("../dao/transferDao")();
+        fastify.log.info(
+          `[Transfer Routes] :: Getting state of transaction with id ${
+            request.params.transferId
+          }`
+        );
+        const transfer = await transferDao.getTransferById({
+          transferId: request.params.transferId
+        });
+        if (!transfer)
+          reply.send({
+            error: `Can not find transfer with id: ${request.params.transferId}`
+          });
+        reply.send({
+          transferId: transfer.transferId,
+          state: transfer.state
+        });
       }
     }
   ,
