@@ -104,8 +104,7 @@ routes = async (fastify, options) => {
           transferId: transfer.transferId,
           state: transfer.state
         });
-      }
-    }
+      }    
   ,
   async (request, reply) => {
     const transferDao = require("../dao/transferDao")();
