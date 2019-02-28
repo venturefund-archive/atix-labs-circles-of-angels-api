@@ -40,6 +40,13 @@ const TransferDao = () => {
 
     getTransferById: async function({transferId}) {
       return this.transferModel.findTransferById(transferId);
+    },
+    getTransferStatusById: async function({transferId}) {
+      const transfer = await this.transferModel.findTransferById(transferId);
+      return this.transferStatusModel.findOne({status: transfer.state});
+    },
+    getTransferList: function({projectId}) {
+      return this.transferModel.find({projectId: projectId});
     }
   };
 };

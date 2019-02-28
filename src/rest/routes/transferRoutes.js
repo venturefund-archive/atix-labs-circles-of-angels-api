@@ -104,6 +104,52 @@ routes = async (fastify, options) => {
           transferId: transfer.transferId,
           state: transfer.state
         });
+      },
+
+      async (request, reply) => {
+        const transferDao = require("../dao/transferDao")();
+        fastify.log.info(
+          `[Transfer Routes] :: Getting state of transaction with id ${
+            request.params.transferId
+          }`
+        );
+        const status = await transferDao.getTransferStatusById({
+          transferId: request.params.transferId
+        });
+        reply.send({
+          transferId: request.params.transferId,
+          state: status
+        });
+      }
+    ),
+    fastify.get(
+      `${basePath}/:projectId/getTransfers`,
+      {
+        schema: {
+          params: {
+            projectId: { type: "integer" }
+          }
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              response: { type: "object" }
+            }
+          }
+        }
+      },
+      async (request, reply) => {
+        const transferDao = require("../dao/transferDao")();
+        fastify.log.info(
+          `[Transfer Routes] :: Getting transactions of project ${
+            request.params.projectId
+          }`
+        );
+        const transferList = await transferDao.getTransferList({
+          projectId: request.params.projectId
+        });
+        reply.send(transferList);
       }
     );
 };
