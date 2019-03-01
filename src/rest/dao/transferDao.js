@@ -22,7 +22,7 @@ const TransferDao = () => {
           sort: "id DESC"
         });
         const newId = maxIdTransfer[0] ? Number(maxIdTransfer[0].id) + 1 : 1;
-        await this.transferModel.create({
+        return this.transferModel.create({
           transferId: transferId,
           amount: amount,
           currency: currency,
@@ -32,7 +32,7 @@ const TransferDao = () => {
           id: newId
         });
       } else
-        await this.transferModel.update(
+        return this.transferModel.update(
           { senderId: senderId, projectId: projectId },
           {
             transferId: transferId,
@@ -54,7 +54,7 @@ const TransferDao = () => {
     },
     getTransferStatusByUserAndProject: async function({ senderId, projectId }) {
       const transfer = await this.transferModel.findTransferByUserAndProject({senderId, projectId});
-      return this.transferStatusModel.findOne({ status: transfer.state });
+      return transfer ? this.transferStatusModel.findOne({ status: transfer.state }) : null;
     },
     getTransferList: function({ projectId }) {
       return this.transferModel.find({ projectId: projectId });
