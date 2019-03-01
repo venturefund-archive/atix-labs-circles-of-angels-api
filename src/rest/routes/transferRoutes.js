@@ -33,6 +33,7 @@ routes = async (fastify, options) => {
         projectId: request.body.projectId,
         destinationAccount: request.body.destinationAccount
       });
+      console.log("xxxxxxxx",verification)
       if (!verification)
         reply.send({ error: "Error when trying upload transfer information" });
       reply.send({ sucess: "Transfer information upload sucessfuly!" });
@@ -98,9 +99,9 @@ routes = async (fastify, options) => {
           senderId: request.params.senderId,
           projectId: request.params.projectId
         });
-        reply.send({
+        status ? reply.send({
           state: status
-        });
+        }) : reply.code(400).send("No transfer recipt found");
       },
 
       async (request, reply) => {
