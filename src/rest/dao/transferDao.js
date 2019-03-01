@@ -21,6 +21,7 @@ const TransferDao = () => {
           limit: 1,
           sort: "id DESC"
         });
+        const newId = maxIdTransfer[0] ? Number(maxIdTransfer[0].id) + 1 : 1;
         await this.transferModel.create({
           transferId: transferId,
           amount: amount,
@@ -28,7 +29,7 @@ const TransferDao = () => {
           senderId: senderId,
           projectId: projectId,
           destinationAccount: destinationAccount,
-          id: Number(maxIdTransfer[0].id) + 1
+          id: newId
         });
       } else
         await this.transferModel.update(
