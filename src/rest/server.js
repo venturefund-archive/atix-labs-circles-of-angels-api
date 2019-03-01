@@ -1,5 +1,5 @@
-// Require the framework and instantiate it
-const swaggerConfigs = require("../../config/configs").swagger;
+const configs = require("../../config/configs");
+const swaggerConfigs = configs.swagger;
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -11,6 +11,8 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
   try {
     
     fastify = require("fastify")({ logger: logger });
+    fastify.use(require('cors')());
+
     
     //Init DB
     try {
