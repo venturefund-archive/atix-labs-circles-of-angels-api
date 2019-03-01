@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "bunyan": "1.8.12",
+    "cors": "2.8.5",
     "fast-water": "1.0.2",
     "fastify": "1.14.1",
     "fastify-swagger": "1.2.0",
