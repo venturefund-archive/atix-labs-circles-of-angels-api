@@ -70,11 +70,12 @@ routes = async (fastify, options) => {
       }
     ),
     fastify.get(
-      `${basePath}/:transferId/getState`,
+      `${basePath}/:senderId/:projectId/getState`,
       {
         schema: {
           params: {
-            transferId: { type: "string" }
+            senderId: { type: "integer" },
+            projectId: { type: "integer" }
           }
         },
         response: {
@@ -88,12 +89,18 @@ routes = async (fastify, options) => {
       },
       async (request, reply) => {
         const transferDao = require("../dao/transferDao")();
-        fastify.log.info(`[Transfer Routes] :: Getting state of transaction with id ${request.params.transferId}`);
-        const status = await transferDao.getTransferStatusById({transferId: request.params.transferId});
+        fastify.log.info(
+          `[Transfer Routes] :: Getting state of user ${
+            request.params.senderId
+          } in project ${request.params.projectId}`
+        );
+        const status = await transferDao.getTransferStatusByUserAndProject({
+          senderId: request.params.senderId,
+          projectId: request.params.projectId
+        });
         reply.send({
-          transferId: request.params.transferId,
           state: status
-        })
+        });
       },
 
       async (request, reply) => {

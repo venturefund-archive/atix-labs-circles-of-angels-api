@@ -11,7 +11,7 @@ module.exports = {
     state: { type: "number", defaultsTo: 0 },
     createdAt: { type: "string", autoCreatedAt: true },
     updatedAt: { type: "string", autoUpdatedAt: true },
-    id: { type: "number", autoMigrations: { autoIncrement: true }}
+    id: { type: "number", autoMigrations: { autoIncrement: true } }
   },
   // findTransferById: async function(transferId) {
   //   console.log(transferId)
@@ -35,13 +35,13 @@ module.exports = {
       id: this.count()
     });
   },
-  updateTransferState: async function({
-    transferId,
-    state
-  }) {
-    return this.update({transferId: transferId}).set({state: state});
+  updateTransferState: async function({ transferId, state }) {
+    return this.update({ transferId: transferId }).set({ state: state });
   },
-  findTransferByUserAndProject: async function({senderId, projectId}) {
-    return this.findOne({senderId: senderId, projectId: projectId});
+  findTransferByUserAndProject: async function({ senderId, projectId }) {
+    const transfer = await this.findOne({
+      and: [{ senderId: senderId }, { projectId: projectId }]
+    });
+    return transfer;
   }
 };
