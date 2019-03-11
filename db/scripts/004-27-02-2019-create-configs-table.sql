@@ -1,5 +1,5 @@
 CREATE TABLE public.configs (
-	id int8 NOT NULL,
+	id SERIAL PRIMARY KEY,
 	"key" varchar NOT NULL,
 	"value" varchar NOT NULL,
 	createdAt date NULL,
