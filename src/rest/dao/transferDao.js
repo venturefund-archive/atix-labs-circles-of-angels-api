@@ -15,21 +15,13 @@ const TransferDao = () => {
         projectId
       });
       if (!transfer) {
-        const maxIdTransfer = await this.transferModel.find({
-          where: {},
-          select: ["id"],
-          limit: 1,
-          sort: "id DESC"
-        });
-        const newId = maxIdTransfer[0] ? Number(maxIdTransfer[0].id) + 1 : 1;
         return this.transferModel.create({
           transferId: transferId,
           amount: amount,
           currency: currency,
           senderId: senderId,
           projectId: projectId,
-          destinationAccount: destinationAccount,
-          id: newId
+          destinationAccount: destinationAccount
         });
       } else
         return this.transferModel.update(
