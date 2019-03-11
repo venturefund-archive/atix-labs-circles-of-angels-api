@@ -1,5 +1,5 @@
 CREATE TABLE public.fund_transfer (
-	id int8 NOT NULL,
+	id SERIAL PRIMARY KEY,
 	transferId varchar NOT NULL,
 	senderId varchar NOT NULL,
 	destinationAccount varchar NOT NULL,
