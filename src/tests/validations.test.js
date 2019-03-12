@@ -4,6 +4,7 @@ describe("Project validations tests", () => {
   const projectValidation = require("../rest/services/validations/projectValidation");
   let mockProjectDto;
   let projectDao;
+
   beforeEach(() => {
     
     projectDao = require("../rest/dao/projectDao");
@@ -12,7 +13,7 @@ describe("Project validations tests", () => {
       mission: "a mission",
       problemAddressed: "a problem",
       location: "here",
-      timeframe: "15/12//2018",
+      timeframe: "11/12/2018",
       row: 5
     };
     projectDao.availableName = jest.fn(name => {
@@ -21,28 +22,15 @@ describe("Project validations tests", () => {
   });
 
   test("a project with empty fields must add an error for each empty fields", () => {
-    mockProjectDto = {
-      projectName: "  ",
-      mission: "  ",
-      problemAddressed: "a problem",
-      location: "here",
-      timeframe: "1/1/1998",
-      row: 5
-    };
+    mockProjectDto.projectName = " ";
+    mockProjectDto.mission = " ";
     projectValidation(mockProjectDto);
     expect.arrayContaining(mockProjectDto.errors);
     expect(mockProjectDto.errors.length).toBe(2);
   });
 
   test("project timeframe with incorrect date format must add an error", () => {
-    mockProjectDto = {
-      projectName: "a name",
-      mission: "a mission",
-      problemAddressed: "a problem",
-      location: "here",
-      timeframe: "15/12//20?8",
-      row: 5
-    };
+    mockProjectDto.timeframe = " 11/12/20?8";
     projectValidation(mockProjectDto);
     expect.arrayContaining(mockProjectDto.errors);
     expect(mockProjectDto.errors.length).toBe(1);
