@@ -1,38 +1,25 @@
-const {
-  projectValidation
-} = require("../rest/services/validations/projectValidation");
-
-let mockProjectDto = {
-  projectName: "a name",
-  mission: "a mission",
-  problemAddressed: "a problem",
-  location: "here",
-  timeframe: "15/12//2018",
-  row: 5
-};
-let mockProjectDao = {
-  availableName: jest.fn(name => {
-    return true;
-  })
-};
-
-afterEach(() => {
-  mockProjectDto = {
-    projectName: "a name",
-    mission: "a mission",
-    problemAddressed: "a problem",
-    location: "here",
-    timeframe: "15/12//2018",
-    row: 5
-  };
-  mockProjectDao = {
-    availableName: jest.fn(name => {
-      return true;
-    })
-  };
-});
+jest.mock("../rest/dao/projectDao");
 
 describe("Project validations tests", () => {
+  const projectValidation = require("../rest/services/validations/projectValidation");
+  let mockProjectDto;
+  let projectDao;
+  beforeEach(() => {
+    
+    projectDao = require("../rest/dao/projectDao");
+    mockProjectDto = {
+      projectName: "a name",
+      mission: "a mission",
+      problemAddressed: "a problem",
+      location: "here",
+      timeframe: "15/12//2018",
+      row: 5
+    };
+    projectDao.availableName = jest.fn(name => {
+      return true;
+    });
+  });
+
   test("a project with empty fields must add an error for each empty fields", () => {
     mockProjectDto = {
       projectName: "  ",
@@ -42,7 +29,7 @@ describe("Project validations tests", () => {
       timeframe: "1/1/1998",
       row: 5
     };
-    projectValidation(mockProjectDto, mockProjectDao);
+    projectValidation(mockProjectDto);
     expect.arrayContaining(mockProjectDto.errors);
     expect(mockProjectDto.errors.length).toBe(2);
   });
@@ -56,20 +43,18 @@ describe("Project validations tests", () => {
       timeframe: "15/12//20?8",
       row: 5
     };
-    projectValidation(mockProjectDto, mockProjectDao);
+    projectValidation(mockProjectDto);
     expect.arrayContaining(mockProjectDto.errors);
     expect(mockProjectDto.errors.length).toBe(1);
   });
 
   test("project name with existent name must add an error", () => {
-    mockProjectDao = {
-      availableName: jest.fn(name => {
-        throw "Project name already in use";
-      })
-    };
+    projectDao.availableName = jest.fn(name => {
+      throw "Project name already in use";
+    });
 
-    projectValidation(mockProjectDto, mockProjectDao);
+    projectValidation(mockProjectDto);
 
-    expect(mockProjectDao.availableName.mock.calls.length).toBe(1);
+    expect(projectDao.availableName.mock.calls.length).toBe(1);
   });
 });
