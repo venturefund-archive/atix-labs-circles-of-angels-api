@@ -1,0 +1,23 @@
+exports.fieldEmptyValidation = (dto, field) => {
+  //Check if field is not empty
+  if (!/\S/.test(dto[field])) {
+    const error = `The field ${field} cant be empty`;
+    addError(dto, error);
+  }
+};
+
+exports.dateFormatValidation = (dto, field) => {
+  const timeframe = new Date(dto[field]);
+  if (!timeframe.getDate()) {
+    const error = `The field ${field} has incorrect format`;
+    addError(dto, error);
+  }
+};
+
+const addError = (dto, error) => {
+  const message = `Row ${dto.row} - ${error}`;
+  if (!Array.isArray(dto.errors)) dto.errors = [];
+  dto.errors.push(message);
+};
+
+exports.addError = addError;
