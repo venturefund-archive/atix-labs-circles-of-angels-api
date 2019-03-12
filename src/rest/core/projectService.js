@@ -8,23 +8,30 @@ const projectService = () => {
       const milestoneService = require('../core/milestoneService')();
 
       try {
+        fastify.log.info(
+          '[Project Service] :: Saving Project excel to:',
+          `${filePath}/${projectXls.name}`
+        );
+
         await projectXls.mv(`${filePath}/${projectXls.name}`);
         const project = await this.readProject(
           `${filePath}/${projectXls.name}`
         );
 
-        project.ownerId = 1;
+        project.ownerId = 1; // <-- TODO: Replace this line for the actual user id
         project.status = 0;
+
+        fastify.log.info(
+          '[Project Service] :: Saving Project photo to:',
+          `${filePath}/${projectPhoto.name}`
+        );
 
         await projectPhoto.mv(`${filePath}/${projectPhoto.name}`);
         project.photo = `${filePath}/${projectPhoto.name}`;
 
         const savedProject = await projectDao.saveProject(project);
 
-        fastify.log.info(
-          '[Project Service] :: Project Created: ',
-          savedProject
-        );
+        fastify.log.info('[Project Service] :: Project created:', savedProject);
 
         await milestoneService.createMilestones(
           projectMilestones,
@@ -33,7 +40,8 @@ const projectService = () => {
 
         return savedProject;
       } catch (err) {
-        throw err;
+        fastify.log.error('[Project Service] :: Error creating Project:', err);
+        throw Error('Error creating Project from file');
       }
     },
 
@@ -43,14 +51,16 @@ const projectService = () => {
       let workbook = null;
 
       try {
+        fastify.log.info('[Project Service] :: Reading Project excel:', file);
         workbook = XLSX.readFile(file);
       } catch (err) {
-        throw err;
+        fastify.log.error('[Project Service] Error reading excel ::', err);
+        throw Error('Error reading excel file');
       }
 
       if (workbook == null) {
         fastify.log.error(
-          '[Project Service] :: Error reading project excel file'
+          '[Project Service] :: Error reading Project excel file'
         );
         throw Error('Error reading excel file');
       }
@@ -68,6 +78,10 @@ const projectService = () => {
         timeframe: projectJSON.Timeframe
       };
 
+      fastify.log.info(
+        '[Project Service] :: Project data retrieved from file:',
+        project
+      );
       return project;
     }
   };

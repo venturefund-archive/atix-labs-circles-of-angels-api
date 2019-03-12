@@ -3,46 +3,90 @@ const fastify = require('fastify')({ logger: true });
 
 const milestoneService = () => {
   return {
+    /**
+     * Receives an excel file, saves it and creates the Milestones
+     * associated to the Project passed by parameter.
+     *
+     * Returns an array with all the Milestones created.
+     * @param {*} projectMilestones
+     * @param {number} projectId
+     */
     async createMilestones(projectMilestones, projectId) {
       const milestoneDao = require('../dao/milestoneDao')();
       const activityService = require('../core/activityService')();
 
-      await projectMilestones.mv(`${filePath}/${projectMilestones.name}`);
-      const milestones = await this.readMilestones(
-        `${filePath}/${projectMilestones.name}`
-      );
+      try {
+        fastify.log.info(
+          '[Milestone Service] :: Saving Milestone excel to:',
+          `${filePath}/${projectMilestones.name}`
+        );
 
-      const savedMilestones = [];
-      Object.values(milestones).forEach(async milestone => {
-        if (!this.isEmpty(milestone)) {
-          const activityList = milestone.activityList.slice(0);
-          const savedMilestone = await milestoneDao.saveMilestone(
-            milestone,
-            projectId
-          );
-          fastify.log.info(
-            '[Milestone Service] :: Milestone Created: ',
-            savedMilestone
-          );
-          savedMilestones.push(savedMilestone);
-          await activityService.createActivities(
-            activityList,
-            savedMilestone.id
-          );
-        }
-      });
+        await projectMilestones.mv(`${filePath}/${projectMilestones.name}`);
+        const milestones = await this.readMilestones(
+          `${filePath}/${projectMilestones.name}`
+        );
 
-      return savedMilestones;
+        fastify.log.info(
+          '[Milestone Service] :: Creating Milestones for Project ID:',
+          projectId
+        );
+
+        const savedMilestones = [];
+        Object.values(milestones).forEach(async milestone => {
+          if (!this.isEmpty(milestone)) {
+            const activityList = milestone.activityList.slice(0);
+            const savedMilestone = await milestoneDao.saveMilestone(
+              milestone,
+              projectId
+            );
+            fastify.log.info(
+              '[Milestone Service] :: Milestone created:',
+              savedMilestone
+            );
+            savedMilestones.push(savedMilestone);
+            await activityService.createActivities(
+              activityList,
+              savedMilestone.id
+            );
+          }
+        });
+
+        return savedMilestones;
+      } catch (err) {
+        fastify.log.error(
+          '[Milestone Service] :: Error creating Milestones:',
+          err
+        );
+        throw Error('Error creating Milestone from file');
+      }
     },
 
+    /**
+     * Reads the excel file with the Milestones and Activities' information.
+     *
+     * Returns an array with all the information retrieved.
+     * @param {string} file: path
+     */
     async readMilestones(file) {
       const XLSX = require('xlsx');
 
       let workbook = null;
       try {
+        fastify.log.info(
+          '[Milestone Service] :: Reading Milestone excel:',
+          file
+        );
         workbook = XLSX.readFile(file);
       } catch (err) {
-        throw err;
+        fastify.log.error('[Milestone Service] ::', err);
+        throw Error('Error reading excel file');
+      }
+
+      if (workbook == null) {
+        fastify.log.error(
+          '[Milestone Service] :: Error reading Milestone excel file'
+        );
+        throw Error('Error reading excel file');
       }
 
       const sheetNameList = workbook.SheetNames;
@@ -131,6 +175,11 @@ const milestoneService = () => {
           milestone.activityList.push(activity);
         }
       });
+
+      fastify.log.info(
+        '[Milestone Service] :: Milestones data retrieved from file:',
+        milestones
+      );
 
       return milestones;
     },
