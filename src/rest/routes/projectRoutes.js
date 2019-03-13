@@ -3,7 +3,7 @@ const projectService = require('../core/projectService')();
 
 const basePath = '/project';
 
-const routes = async (fastify, options) => {
+const routes = async fastify => {
   fastify.register(fileUpload);
 
   fastify.post(

@@ -17,9 +17,5 @@ module.exports = {
       via: 'project'
     },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
-  },
-
-  async createProject(project) {
-    return this.create(project);
   }
 };

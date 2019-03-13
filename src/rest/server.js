@@ -10,7 +10,7 @@ const swaggerConfigs = configs.swagger;
  */
 module.exports.start = async ({ db, logger, serverConfigs }) => {
   try {
-    fastify = require("fastify")({ logger: logger });
+    const fastify = require("fastify")({ logger: logger });
     fastify.use(require('cors')());
 
     // Init DB

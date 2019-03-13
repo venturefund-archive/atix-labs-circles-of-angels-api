@@ -1,4 +1,4 @@
-const { assert, expect } = require('chai');
+const { assert } = require('chai');
 const projectRoutes = require('../rest/routes/projectRoutes');
 
 describe('Testing projectRoutes', () => {

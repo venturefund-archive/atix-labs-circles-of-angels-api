@@ -1,9 +1,11 @@
 const { assert } = require('chai');
-const { isEmpty, createActivities } = require('../rest/core/activityService')();
+const activityService = require('../rest/core/activityService')();
+const promisesUtil = require('../rest/util/promises');
 
-describe('Testing activityService createActivities', () => {
+describe.skip('Testing activityService createActivities', () => {
   it('should create activities and associate them to a milestone', async () => {
-    jest.mock('../rest/dao/activityDao');
+    activityService.activityDao = jest.mock('../rest/dao/activityDao');
+
     const mockActivities = [
       {
         tasks: 'Task A1',
@@ -24,13 +26,34 @@ describe('Testing activityService createActivities', () => {
         category: 'Category A2',
         keyPersonnel: 'Key Personnel A2',
         budget: 'Budget A2'
+      },
+      {
+        tasks: 'Task A3',
+        impact: '',
+        impactCriterion: '',
+        signsOfSuccess: '',
+        signsOfSuccessCriterion: '',
+        category: '',
+        keyPersonnel: '',
+        budget: ''
       }
     ];
 
+    promisesUtil.forEachPromise = jest.fn((items, fn, context) =>
+      items.reduce(
+        (promise, item) => promise.then(() => fn(item, context)),
+        Promise.resolve()
+      )
+    );
+
     const milestoneId = 2;
-    const activities = await createActivities(mockActivities, milestoneId);
-    console.log(activities);
-    //assert.deepEqual(milestones, mockMilestones);
+    const activities = await activityService.createActivities(
+      mockActivities,
+      milestoneId
+    );
+
+    const compareActivities = mockActivities.slice(0, 2);
+    assert.deepEqual(activities, compareActivities);
   });
 });
 
@@ -47,7 +70,7 @@ describe('Testing activityService isEmpty', () => {
       budget: ''
     };
 
-    await assert.equal(isEmpty(mockActivity), false);
+    await assert.equal(activityService.isEmpty(mockActivity), false);
   });
 
   it('should return true if activity does not have any fields with data', async () => {
@@ -62,6 +85,6 @@ describe('Testing activityService isEmpty', () => {
       budget: ''
     };
 
-    await assert.equal(isEmpty(mockActivity), true);
+    await assert.equal(activityService.isEmpty(mockActivity), true);
   });
 });
