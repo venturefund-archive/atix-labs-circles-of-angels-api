@@ -3,15 +3,21 @@ const configs = require('../../../config/configs');
 const projectService = ({ fastify, projectDao }) => ({
   /**
    *
-   * Saves the project excel file and the project image.
+   * Saves the project excel file and the project images.
    * Reads the project excel file and creates a project with its information.
    *
    * Returns the created project.
    * @param {*} projectXls project excel file
-   * @param {*} projectPhoto project's image file
+   * @param {*} projectCoverPhoto project's image file
+   * @param {*} projectCardPhoto project's image file
    * @param {*} projectMilestones project's milestones and activities excel file
    */
-  async createProject(projectXls, projectPhoto, projectMilestones) {
+  async createProject(
+    projectXls,
+    projectCoverPhoto,
+    projectCardPhoto,
+    projectMilestones
+  ) {
     const milestoneService = require('../core/milestoneService')();
     const { filePath } = configs.fileServer;
 
