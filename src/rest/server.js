@@ -1,4 +1,5 @@
 const configs = require("../../config/configs");
+
 const swaggerConfigs = configs.swagger;
 
 /**
@@ -9,28 +10,27 @@ const swaggerConfigs = configs.swagger;
  */
 module.exports.start = async ({ db, logger, serverConfigs }) => {
   try {
-    
-    fastify = require("fastify")({ logger: logger });
+    const fastify = require("fastify")({ logger: logger });
     fastify.use(require('cors')());
 
-    
-    //Init DB
+    // Init DB
     try {
-      await db.register(fastify);  // fastify.models works after run fastify.listen(...,...)
+      await db.register(fastify); // fastify.models works after run fastify.listen(...,...)
     } catch (e) {
       fastify.log.error("Cant connect to DB");
     }
-    //Load Swagger
+
+    // Load Swagger
     fastify.register(require("fastify-swagger"), swaggerConfigs);
 
-    //Load routes
+    // Load routes
     fastify.register(require("./routes/userRoutes"));
     fastify.register(require("./routes/generalRoutes"));
     fastify.register(require("./routes/transferRoutes"));
+    fastify.register(require('./routes/projectRoutes'));
 
     await fastify.listen(serverConfigs);
-    
-    module.exports.fastify = fastify
+    module.exports.fastify = fastify;
   } catch (err) {
     console.error(err);
     process.exit(1);

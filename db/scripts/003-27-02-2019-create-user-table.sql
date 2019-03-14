@@ -1,5 +1,5 @@
 CREATE TABLE public.user (
-	id int8 NOT NULL,
+	id SERIAL PRIMARY KEY,
 	username varchar NOT NULL,
 	email varchar NOT NULL,
 	pwd varchar NOT NULL,
