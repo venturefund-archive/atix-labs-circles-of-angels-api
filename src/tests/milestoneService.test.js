@@ -1,5 +1,9 @@
 const { assert } = require('chai');
-const milestoneService = require('../rest/core/milestoneService')();
+// const {
+//   readMilestones,
+//   isEmpty,
+//   createMilestones
+// } = require('../rest/core/milestoneService')();
 
 describe.skip('Testing milestoneService createMilestones', () => {
   const fs = require('fs');

@@ -1,8 +1,7 @@
-const fastify = require('fastify')({ logger: true });
 const { forEachPromise } = require('../util/promises');
 const configs = require('../../../config/configs');
 
-const milestoneService = () => ({
+const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
   /**
    * Receives an excel file, saves it and creates the Milestones
    * associated to the Project passed by parameter.
@@ -12,8 +11,6 @@ const milestoneService = () => ({
    * @param {number} projectId
    */
   async createMilestones(projectMilestones, projectId) {
-    const milestoneDao = require('../dao/milestoneDao')();
-    const activityService = require('../core/activityService')();
     const { filePath } = configs.fileServer;
 
     try {

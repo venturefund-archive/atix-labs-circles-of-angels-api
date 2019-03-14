@@ -1,5 +1,4 @@
 {
-  "parser": "babel-eslint",
   "extends": [ "airbnb", "plugin:prettier/recommended"],
   "env": {
     "browser": true,
@@ -23,11 +22,6 @@
     "promise/catch-or-return": "error",
     "promise/no-native": "off",
     "react/jsx-no-bind": "off",
-    "react/jsx-filename-extension": ["error", { "extensions": [".js", ".jsx"] }],
-    "react/jsx-closing-bracket-location": "warn",
-    "react/jsx-one-expression-per-line": "off",
-    "react/prefer-stateless-function": "warn",
-    "react/no-unused-prop-types": "error",
     "react/prop-types": "warn",
     "react/sort-comp": "error",
     "jsx-a11y/label-has-associated-control": "off",
@@ -41,6 +35,7 @@
     "no-mixed-operators": "off",
     "prefer-template": "warn",
     "no-unused-vars": "warn",
+    "no-unused-expressions": "off",
     "no-trailing-spaces": "warn",
     "padded-blocks": "warn",
     "no-undef": "warn",

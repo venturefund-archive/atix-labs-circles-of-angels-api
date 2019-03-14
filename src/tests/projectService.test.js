@@ -1,5 +1,6 @@
 const { assert } = require('chai');
-const projectService = require('../rest/core/projectService')();
+const fastify = { log: console.log };
+//const { createProject, readProject } = require('../rest/core/projectService')();
 
 describe.skip('Testing projectService createProject', () => {
   const fs = require('fs');
@@ -84,5 +85,39 @@ describe.skip('Testing projectService readProject', () => {
     await expect(projectService.readProject('')).rejects.toEqual(
       Error('Error reading excel file')
     );
+  });
+});
+
+describe('Testing projectService getProjectList', () => {
+  let projectDao;
+  let projectService;
+  beforeAll(() => {
+    projectDao = {
+      async getProjectList() {
+        return [
+          {
+            projectName: 'name',
+            mission: 'mision',
+            problemAddressed: 'problem',
+            ownerId: 1,
+            location: 'location',
+            timeframe: '10/10/2019',
+            photo: 'wdfwefdwefw.jpg',
+            status: 1,
+            createdAt: '2019-03-13T03:00:00.000Z',
+            updatedAt: '2019-03-13T03:00:00.000Z',
+            id: 1
+          }
+        ];
+      }
+    };
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao
+    });
+  });
+  it('should return all active projects', async () => {
+    const projects = await projectService.getProjectList();
+    expect(projects.length).toBe(1);
   });
 });

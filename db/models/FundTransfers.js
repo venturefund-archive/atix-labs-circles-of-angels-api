@@ -1,3 +1,13 @@
+/**
+ * @description Represents a bank transfer register  
+ * 
+ * @attribute transferId: Bank transfer recipt
+ * @attribute senderId: id del usuario que envia
+ * @attribute destinationAccount: id del usuario que recibe
+ * @attribute projectId: el id del proyecto al cual pertenece esta transferencia bancaria
+ * @attribute amount: cantidad de dinero transferida
+ * @attribute currency: moneda en la cual se realizó la transferencia
+ */
 module.exports = {
   identity: "fund_transfer",
   primaryKey: "id",
@@ -17,24 +27,6 @@ module.exports = {
   //   console.log(transferId)
   //   return this.findOne(transferId);
   // },
-  createOrUpdateTransfer: async function({
-    transferId,
-    senderId,
-    destinationAccount,
-    projectId,
-    amount,
-    currency
-  }) {
-    this.findOrCreate(transferId, {
-      transferId,
-      senderId,
-      destinationAccount,
-      projectId,
-      amount,
-      currency,
-      id: this.count()
-    });
-  },
   updateTransferState: async function({ transferId, state }) {
     return this.update({ transferId: transferId }).set({ state: state });
   },

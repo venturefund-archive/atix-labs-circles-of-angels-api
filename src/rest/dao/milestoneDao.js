@@ -1,9 +1,7 @@
-const MilestoneDao = () => ({
-  milestoneModel: require('../server').fastify.models.milestone,
-
-  async saveMilestone(milestone, projectId) {
+const MilestoneDao = ({ milestoneModel }) => ({
+  async saveMilestone({ milestone, projectId }) {
     milestone.project = projectId;
-    const createdMilestone = await this.milestoneModel.create(milestone);
+    const createdMilestone = await milestoneModel.create(milestone);
     return createdMilestone;
   }
 });

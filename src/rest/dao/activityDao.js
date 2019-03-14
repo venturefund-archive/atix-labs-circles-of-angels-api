@@ -1,9 +1,7 @@
-const ActivityDao = () => ({
-  activityModel: require('../server').fastify.models.activity,
-
+const ActivityDao = ({ activityModel }) => ({
   async saveActivity(activity, milestoneId) {
     activity.milestone = milestoneId;
-    const createdActivity = await this.activityModel.create(activity);
+    const createdActivity = await activityModel.create(activity);
     return createdActivity;
   }
 });

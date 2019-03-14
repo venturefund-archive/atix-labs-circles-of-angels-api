@@ -1,7 +1,6 @@
-const fastify = require('fastify')({ logger: true });
 const configs = require('../../../config/configs');
 
-const projectService = () => ({
+const projectService = ({ fastify, projectDao }) => ({
   /**
    *
    * Saves the project excel file and the project image.
@@ -12,13 +11,7 @@ const projectService = () => ({
    * @param {*} projectPhoto project's image file
    * @param {*} projectMilestones project's milestones and activities excel file
    */
-  async createProject(
-    projectXls,
-    projectCoverPhoto,
-    projectCardPhoto,
-    projectMilestones
-  ) {
-    const projectDao = require('../dao/projectDao')();
+  async createProject(projectXls, projectPhoto, projectMilestones) {
     const milestoneService = require('../core/milestoneService')();
     const { filePath } = configs.fileServer;
 
@@ -114,6 +107,13 @@ const projectService = () => ({
       project
     );
     return project;
+  },
+
+  /**
+   * Returns a list of active projects
+   */
+  async getProjectList() {
+    return projectDao.getProjectList();
   }
 });
 
