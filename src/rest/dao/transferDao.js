@@ -1,8 +1,6 @@
-const TransferDao = () => {
+const TransferDao = ({ transferModel, transferStatusModel }) => {
   return {
-    transferModel: require("../server").fastify.models.fund_transfer,
-    transferStatusModel: require("../server").fastify.models.transfer_status,
-    sendTransferToVerification: async function({
+    async createOrUpdateTransfer({
       transferId,
       amount,
       currency,
@@ -10,46 +8,51 @@ const TransferDao = () => {
       projectId,
       destinationAccount
     }) {
-      let transfer = await this.transferModel.findTransferByUserAndProject({
+      let transfer = await transferModel.findTransferByUserAndProject({
         senderId,
         projectId
       });
       if (!transfer) {
-        return this.transferModel.create({
-          transferId: transferId,
-          amount: amount,
-          currency: currency,
-          senderId: senderId,
-          projectId: projectId,
-          destinationAccount: destinationAccount
+        return transferModel.create({
+          transferId,
+          amount,
+          currency,
+          senderId,
+          projectId,
+          destinationAccount
         });
-      } else
-        return this.transferModel.update(
-          { senderId: senderId, projectId: projectId },
-          {
-            transferId: transferId,
-            amount: amount,
-            currency: currency,
-            projectId: projectId,
-            state: 0,
-            destinationAccount: destinationAccount
-          }
-        );
+      }
+      return transferModel.update(
+        { senderId, projectId },
+        {
+          transferId,
+          amount,
+          currency,
+          projectId,
+          state: 0,
+          destinationAccount
+        }
+      );
     },
 
-    updateTransferState: async function({ transferId, state }) {
-      return this.transferModel.updateTransferState({ transferId, state });
+    async updateTransferState({ transferId, state }) {
+      return transferModel.updateTransferState({ transferId, state });
     },
 
-    getTransferById: async function({ transferId }) {
-      return this.transferModel.findTransferById(transferId);
+    async getTransferById({ transferId }) {
+      return transferModel.findTransferById(transferId);
     },
-    getTransferStatusByUserAndProject: async function({ senderId, projectId }) {
-      const transfer = await this.transferModel.findTransferByUserAndProject({senderId, projectId});
-      return transfer ? this.transferStatusModel.findOne({ status: transfer.state }) : null;
+    async getTransferStatusByUserAndProject({ senderId, projectId }) {
+      const transfer = await transferModel.findTransferByUserAndProject({
+        senderId,
+        projectId
+      });
+      return transfer
+        ? transferStatusModel.findOne({ status: transfer.state })
+        : null;
     },
-    getTransferList: function({ projectId }) {
-      return this.transferModel.find({ projectId: projectId });
+    async getTransferByProjectId({ projectId }) {
+      return transferModel.find({ projectId });
     }
   };
 };
