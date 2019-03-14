@@ -113,7 +113,11 @@ const projectService = ({ fastify, projectDao }) => ({
    * Returns a list of active projects
    */
   async getProjectList() {
-    return projectDao.getProjectList();
+    return projectDao.getProjecListWithStatusFrom({ status: -1 });
+  },
+
+  async getActiveProjectList() {
+    return projectDao.getProjecListWithStatusFrom({ status: 1 });
   }
 });
 
