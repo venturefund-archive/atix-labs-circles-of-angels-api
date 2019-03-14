@@ -22,6 +22,10 @@ exports.database = {
   }
 };
 
+exports.fileServer = {
+  filePath: '/home/atixlabs/files/server'
+}
+
 exports.swagger = {
   routePrefix: "/documentation",
   exposeRoute: true,

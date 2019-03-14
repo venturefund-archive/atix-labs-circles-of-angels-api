@@ -1,10 +1,9 @@
-const UserDao = () => {
+const UserDao = ({ userModel }) => {
   return {
-   userModel : require("../server").fastify.models.user,
-   getUserById: async function({id}){
-    return this.userModel.findById(id);
-  }
-};
+    async getUserById({ id }) {
+      return userModel.findById(id);
+    }
+  };
 };
 
 module.exports = UserDao;
