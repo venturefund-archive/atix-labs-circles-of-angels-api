@@ -12,7 +12,12 @@ const projectService = () => ({
    * @param {*} projectPhoto project's image file
    * @param {*} projectMilestones project's milestones and activities excel file
    */
-  async createProject(projectXls, projectPhoto, projectMilestones) {
+  async createProject(
+    projectXls,
+    projectCoverPhoto,
+    projectCardPhoto,
+    projectMilestones
+  ) {
     const projectDao = require('../dao/projectDao')();
     const milestoneService = require('../core/milestoneService')();
     const { filePath } = configs.fileServer;
@@ -31,13 +36,21 @@ const projectService = () => ({
       project.status = 0;
 
       fastify.log.info(
-        '[Project Service] :: Saving Project photo to:',
-        `${configs.fileServer.filePath}/${projectPhoto.name}`
+        '[Project Service] :: Saving Project cover photo to:',
+        `${configs.fileServer.filePath}/${projectCoverPhoto.name}`
       );
 
-      // saves the project image
-      await projectPhoto.mv(`${filePath}/${projectPhoto.name}`);
-      project.photo = `${filePath}/${projectPhoto.name}`;
+      // saves the project pictures
+      await projectCoverPhoto.mv(`${filePath}/${projectCoverPhoto.name}`);
+      project.coverPhoto = `${filePath}/${projectCoverPhoto.name}`;
+
+      fastify.log.info(
+        '[Project Service] :: Saving Project card photo to:',
+        `${configs.fileServer.filePath}/${projectCardPhoto.name}`
+      );
+
+      await projectCardPhoto.mv(`${filePath}/${projectCardPhoto.name}`);
+      project.cardPhoto = `${filePath}/${projectCardPhoto.name}`;
 
       const savedProject = await projectDao.saveProject(project);
 

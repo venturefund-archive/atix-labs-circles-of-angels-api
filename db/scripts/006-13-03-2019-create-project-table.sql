@@ -6,7 +6,8 @@ CREATE TABLE public.project (
 	"problemAddressed" text not null,
 	"location" text NOT null,
 	"timeframe" text not null,
-	"photo" text not null,
+	"coverPhoto" text not null,
+	"cardPhoto" text not null,
 	"status" int2 not null,
 	"createdAt" date,
 	"updatedAt" date

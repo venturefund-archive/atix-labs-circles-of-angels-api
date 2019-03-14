@@ -30,12 +30,18 @@ const routes = async fastify => {
         req
       );
 
-      const { projectXls, projectPhoto, projectMilestones } = req.raw.files;
+      const {
+        projectXls,
+        projectCoverPhoto,
+        projectCardPhoto,
+        projectMilestones
+      } = req.raw.files;
 
       try {
         await projectService.createProject(
           projectXls,
-          projectPhoto,
+          projectCoverPhoto,
+          projectCardPhoto,
           projectMilestones
         );
       } catch (error) {
