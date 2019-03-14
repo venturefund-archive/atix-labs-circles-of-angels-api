@@ -1,10 +1,10 @@
 const fileUpload = require('fastify-file-upload');
-const projectService = require('../core/projectService')();
 
 const basePath = '/project';
 
 const routes = async fastify => {
   fastify.register(fileUpload);
+  const projectService = require('../core/projectService')();
 
   fastify.post(
     `${basePath}/upload`,
@@ -25,6 +25,11 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      fastify.log.info(
+        '[Project Routes] :: POST request at /project/upload:',
+        req
+      );
+
       const { projectXls, projectPhoto, projectMilestones } = req.raw.files;
 
       try {

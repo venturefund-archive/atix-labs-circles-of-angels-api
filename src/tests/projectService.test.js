@@ -1,5 +1,5 @@
 const { assert } = require('chai');
-const { createProject, readProject } = require('../rest/core/projectService')();
+const projectService = require('../rest/core/projectService')();
 
 describe.skip('Testing projectService createProject', () => {
   const fs = require('fs');
@@ -18,13 +18,17 @@ describe.skip('Testing projectService createProject', () => {
       status: 0
     };
 
-    const dataXls = await readFile(
-      require('path').join(__dirname, './mockFiles/projectXls.xlsx')
+    const pathProjectXls = require('path').join(
+      __dirname,
+      './mockFiles/projectXls.xlsx'
+    );
+    const pathMilestonesXls = require('path').join(
+      __dirname,
+      './mockFiles/projectMilestones.xlsx'
     );
 
-    const dataMilestones = await readFile(
-      require('path').join(__dirname, './mockFiles/projectMilestones.xlsx')
-    );
+    const dataXls = await readFile(pathProjectXls);
+    const dataMilestones = await readFile(pathMilestonesXls);
 
     const mockProjectXls = {
       name: 'projectXls.xlsx',
@@ -33,26 +37,32 @@ describe.skip('Testing projectService createProject', () => {
     };
 
     const mockProjectPhoto = {
-      name: 'projectPhoto.xlsx',
+      name: 'projectPhoto.png',
       data: dataXls,
       mv: jest.fn()
     };
 
     const mockProjectMilestones = {
-      name: 'projectPhoto.xlsx',
+      name: 'projectMilestones.xlsx',
       data: dataMilestones,
       mv: jest.fn()
     };
 
-    const project = createProject(
+    const p = await projectService.readProject(pathProjectXls);
+
+    projectService.readProject = jest.fn(() => p);
+
+    const project = await projectService.createProject(
       mockProjectXls,
       mockProjectPhoto,
       mockProjectMilestones
     );
+
+    await assert.deepEqual(project, mockProject);
   });
 });
 
-describe('Testing projectService readProject', () => {
+describe.skip('Testing projectService readProject', () => {
   it('should return a project object from an excel file', async () => {
     const mockProject = {
       projectName: 'Project Name',
@@ -66,12 +76,12 @@ describe('Testing projectService readProject', () => {
       __dirname,
       './mockFiles/projectXls.xlsx'
     );
-    const project = await readProject(mockXls);
+    const project = await projectService.readProject(mockXls);
     assert.deepEqual(project, mockProject);
   });
 
   it('should throw an error when file not found', async () => {
-    await expect(readProject('')).rejects.toEqual(
+    await expect(projectService.readProject('')).rejects.toEqual(
       Error('Error reading excel file')
     );
   });

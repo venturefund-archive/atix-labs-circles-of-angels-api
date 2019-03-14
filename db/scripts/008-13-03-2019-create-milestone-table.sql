@@ -1,5 +1,5 @@
 create table public.milestone (
-	id SERIAL primary key not NULL,
+	id SERIAL primary key,
 	"projectId" int4,
 	"quarter" text,
 	tasks text,

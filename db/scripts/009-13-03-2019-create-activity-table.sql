@@ -1,5 +1,5 @@
 create table public.activity (
-	id SERIAL primary key not NULL,
+	id SERIAL primary key,
 	"milestoneId" int4,
 	tasks text,
 	impact text,

@@ -86,7 +86,10 @@ const milestoneService = () => ({
       fastify.log.info('[Milestone Service] :: Reading Milestone excel:', file);
       workbook = XLSX.readFile(file);
     } catch (err) {
-      fastify.log.error('[Milestone Service] ::', err);
+      fastify.log.error(
+        '[Milestone Service] :: Error reading excel file:',
+        err
+      );
       throw Error('Error reading excel file');
     }
 

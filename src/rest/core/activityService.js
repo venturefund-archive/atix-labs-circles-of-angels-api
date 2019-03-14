@@ -1,4 +1,5 @@
 const fastify = require('fastify')({ logger: true });
+const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 
 const activityService = () => ({
@@ -23,7 +24,7 @@ const activityService = () => ({
     const createActivity = (activity, context) =>
       new Promise(resolve => {
         process.nextTick(async () => {
-          if (!this.isEmpty(activity)) {
+          if (!values(activity).every(isEmpty)) {
             const savedActivity = await activityDao.saveActivity(
               activity,
               milestoneId
@@ -40,16 +41,6 @@ const activityService = () => ({
 
     await forEachPromise(activities, createActivity, savedActivities);
     return savedActivities;
-  },
-
-  isEmpty(activity) {
-    let empty = true;
-    Object.values(activity).forEach(v => {
-      if (v !== '') {
-        empty = false;
-      }
-    });
-    return empty;
   }
 });
 

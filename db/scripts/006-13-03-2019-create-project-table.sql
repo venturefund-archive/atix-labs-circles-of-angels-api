@@ -1,5 +1,5 @@
 CREATE TABLE public.project (
-	"id" SERIAL NOT null primary key,
+	"id" SERIAL primary key,
 	"projectName" varchar(50) NOT NULL,
 	"ownerId" int4 NOT NULL,
 	"mission" text NOT NULL,
