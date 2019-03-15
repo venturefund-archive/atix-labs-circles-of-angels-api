@@ -36,9 +36,7 @@ const activityService = ({ fastify, activityDao }) => ({
         });
       });
 
-    await Promise.all(
-      forEachPromise(activities, createActivity, savedActivities)
-    );
+    forEachPromise(activities, createActivity, savedActivities);
     return savedActivities;
   }
 });
