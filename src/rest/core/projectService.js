@@ -1,8 +1,7 @@
 const configs = require('../../../config/configs');
 
-const projectService = ({ fastify, projectDao }) => ({
+const projectService = ({ fastify, projectDao, milestoneService }) => ({
   /**
-   *
    * Saves the project excel file and the project images.
    * Reads the project excel file and creates a project with its information.
    *
@@ -18,7 +17,6 @@ const projectService = ({ fastify, projectDao }) => ({
     projectCardPhoto,
     projectMilestones
   ) {
-    const milestoneService = require('../core/milestoneService')();
     const { filePath } = configs.fileServer;
 
     try {

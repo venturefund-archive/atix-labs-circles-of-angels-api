@@ -4,13 +4,27 @@ const basePath = '/project';
 
 const routes = async fastify => {
   fastify.register(fileUpload);
+
+  const activityDao = require('../dao/activityDao')(fastify.models.activity);
+  const activityService = require('../core/activityService')({
+    fastify,
+    activityDao
+  });
+  const milestoneDao = require('../dao/milestoneDao')(fastify.models.milestone);
+  const milestoneService = require('../core/milestoneService')({
+    fastify,
+    milestoneDao,
+    activityService
+  });
   const projectDao = require('../dao/projectDao')({
     projectModel: fastify.models.project
   });
   const projectService = require('../core/projectService')({
     fastify,
-    projectDao
+    projectDao,
+    milestoneService
   });
+
   fastify.post(
     `${basePath}/upload`,
     {
@@ -74,12 +88,12 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
-      fastify.log.info(`[Project Routes] :: Getting projects`);
+      fastify.log.info('[Project Routes] :: Getting projects');
       try {
         const projects = await projectService.getProjectList();
         reply.send(projects);
       } catch (error) {
-        fastify.log.error(error)
+        fastify.log.error(error);
         reply.status(500).send({ error: 'Error getting projects' });
       }
     }

@@ -1,9 +1,9 @@
-const MilestoneDao = ({ milestoneModel }) => ({
-  async saveMilestone({ milestone, projectId }) {
-    milestone.project = projectId;
-    const createdMilestone = await milestoneModel.create(milestone);
-    return createdMilestone;
-  }
-});
+const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
+  const toSave = Object.assign({}, milestone, { project: projectId });
+  const createdMilestone = await milestoneModel.create(toSave);
+  return createdMilestone;
+};
 
-module.exports = MilestoneDao;
+module.exports = milestoneModel => ({
+  saveMilestone: saveMilestone(milestoneModel)
+});

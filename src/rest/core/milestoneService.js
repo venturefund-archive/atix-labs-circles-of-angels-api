@@ -38,10 +38,10 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
           process.nextTick(async () => {
             if (!this.isEmpty(milestone)) {
               const activityList = milestone.activityList.slice(0);
-              const savedMilestone = await milestoneDao.saveMilestone(
+              const savedMilestone = await milestoneDao.saveMilestone({
                 milestone,
                 projectId
-              );
+              });
               fastify.log.info(
                 '[Milestone Service] :: Milestone created:',
                 savedMilestone
@@ -195,9 +195,9 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
 
   isEmpty(milestone) {
     let empty = true;
-    Object.entries(milestone).forEach(e => {
-      if (e[0] !== 'activityList' && e[0] !== 'quarter') {
-        if (e[1] !== '') {
+    Object.entries(milestone).forEach(entry => {
+      if (entry[0] !== 'activityList' && entry[0] !== 'quarter') {
+        if (entry[1] !== '') {
           empty = false;
         }
       }

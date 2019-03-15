@@ -1,3 +1,4 @@
+const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 
 const activityService = ({ fastify, activityDao }) => ({
@@ -9,7 +10,6 @@ const activityService = ({ fastify, activityDao }) => ({
    * @param {number} milestoneId
    */
   async createActivities(activities, milestoneId) {
-
     fastify.log.info(
       '[Activity Service] :: Creating Activities for Milestone ID:',
       milestoneId
@@ -22,10 +22,10 @@ const activityService = ({ fastify, activityDao }) => ({
       new Promise(resolve => {
         process.nextTick(async () => {
           if (!values(activity).every(isEmpty)) {
-            const savedActivity = await activityDao.saveActivity(
+            const savedActivity = await activityDao.saveActivity({
               activity,
               milestoneId
-            );
+            });
             fastify.log.info(
               '[Activity Service] :: Activity created:',
               savedActivity
@@ -36,7 +36,9 @@ const activityService = ({ fastify, activityDao }) => ({
         });
       });
 
-    await forEachPromise(activities, createActivity, savedActivities);
+    await Promise.all(
+      forEachPromise(activities, createActivity, savedActivities)
+    );
     return savedActivities;
   }
 });
