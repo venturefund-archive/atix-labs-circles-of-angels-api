@@ -60,13 +60,13 @@ const routes = async fastify => {
       const { project } = req.raw.body;
 
       try {
-        await projectService.createProject({
+        await projectService.createProject(
           project,
           projectProposal,
           projectCoverPhoto,
           projectCardPhoto,
           projectMilestones
-        });
+        );
       } catch (error) {
         fastify.log.error(
           '[Project Routes] :: Error creating project: ',

@@ -17,13 +17,13 @@ const projectService = ({ fastify, projectDao, milestoneService }) => ({
    * @param {*} projectCardPhoto project's card photo
    * @param {*} projectMilestones file with the project's milestones' information
    */
-  async createProject({
+  async createProject(
     project,
     projectProposal,
     projectCoverPhoto,
     projectCardPhoto,
     projectMilestones
-  }) {
+  ) {
     try {
       const newProject = Object.assign({}, JSON.parse(project));
       // TODO: project validations
