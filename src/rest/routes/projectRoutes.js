@@ -4,12 +4,28 @@ const basePath = '/project';
 
 const routes = async fastify => {
   fastify.register(fileUpload);
+  const activityDao = require('../dao/activityDao')({
+    activityModel: fastify.models.activity
+  });
+  const activityService = require('../core/activityService')({
+    fastify,
+    activityDao
+  });
+  const milestoneDao = require('../dao/milestoneDao')({
+    milestoneModel: fastify.models.project
+  });
+  const milestoneService = require('../core/milestoneService')({
+    fastify,
+    milestoneDao,
+    activityService
+  });
   const projectDao = require('../dao/projectDao')({
     projectModel: fastify.models.project
   });
   const projectService = require('../core/projectService')({
     fastify,
-    projectDao
+    projectDao,
+    milestoneService
   });
   fastify.post(
     `${basePath}/upload`,
