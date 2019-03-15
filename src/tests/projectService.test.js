@@ -1,12 +1,35 @@
 const { assert } = require('chai');
-const fastify = { log: console.log };
-//const { createProject, readProject } = require('../rest/core/projectService')();
 
-describe.skip('Testing projectService createProject', () => {
+const fastify = { log: { info: console.log, error: console.log } };
+
+describe('Testing projectService createProject', () => {
   const fs = require('fs');
   const { promisify } = require('util');
   const readFile = promisify(fs.readFile);
-  jest.mock('../rest/dao/projectDao');
+
+  let projectDao;
+  let projectService;
+  let milestoneService;
+
+  beforeAll(() => {
+    projectDao = {
+      async saveProject(project) {
+        return project;
+      }
+    };
+
+    milestoneService = {
+      async createMilestones() {
+        return null;
+      }
+    };
+
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao,
+      milestoneService
+    });
+  });
 
   it('should create and return a new project from an excel file', async () => {
     const mockProject = {
@@ -16,7 +39,9 @@ describe.skip('Testing projectService createProject', () => {
       location: 'Location',
       timeframe: 'Project Timeframe',
       ownerId: 1,
-      status: 0
+      status: 0,
+      coverPhoto: '/home/atixlabs/files/server/projectCoverPhoto.png',
+      cardPhoto: '/home/atixlabs/files/server/projectCardPhoto.png'
     };
 
     const pathProjectXls = require('path').join(
@@ -37,8 +62,14 @@ describe.skip('Testing projectService createProject', () => {
       mv: jest.fn()
     };
 
-    const mockProjectPhoto = {
-      name: 'projectPhoto.png',
+    const mockProjectCoverPhoto = {
+      name: 'projectCoverPhoto.png',
+      data: dataXls,
+      mv: jest.fn()
+    };
+
+    const mockProjectCardPhoto = {
+      name: 'projectCardPhoto.png',
       data: dataXls,
       mv: jest.fn()
     };
@@ -55,7 +86,8 @@ describe.skip('Testing projectService createProject', () => {
 
     const project = await projectService.createProject(
       mockProjectXls,
-      mockProjectPhoto,
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
       mockProjectMilestones
     );
 
@@ -63,7 +95,23 @@ describe.skip('Testing projectService createProject', () => {
   });
 });
 
-describe.skip('Testing projectService readProject', () => {
+describe('Testing projectService readProject', () => {
+  let projectDao;
+  let projectService;
+  let milestoneService;
+
+  beforeAll(() => {
+    projectDao = {};
+
+    milestoneService = {};
+
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao,
+      milestoneService
+    });
+  });
+
   it('should return a project object from an excel file', async () => {
     const mockProject = {
       projectName: 'Project Name',
