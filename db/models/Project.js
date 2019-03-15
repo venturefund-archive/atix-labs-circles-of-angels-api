@@ -11,6 +11,9 @@ module.exports = {
     coverPhoto: { type: 'string', required: true },
     cardPhoto: { type: 'string', required: true },
     status: { type: 'number', defaultsTo: 0 },
+    goalAmount: { type: 'number', required: true },
+    faqLink: { type: 'string', required: true },
+    pitchProposal: { type: 'string', required: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     milestones: {
