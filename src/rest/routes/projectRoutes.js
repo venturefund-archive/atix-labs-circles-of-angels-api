@@ -101,6 +101,36 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/:projectId/getProject`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      fastify.log.info(
+        `[Project Routes] :: Getting project with id ${projectId}`
+      );
+
+      const project = await projectService.getProjectWithId({
+        projectId
+      });
+      reply.send(project);
+    }
+  );
 };
 
 module.exports = routes;

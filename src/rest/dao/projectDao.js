@@ -6,6 +6,10 @@ const ProjectDao = ({ projectModel }) => ({
   async getProjecListWithStatusFrom({ status }) {
     const projects = projectModel.find({ where: { status: { '>=': status } } });
     return projects;
+  },
+  async getProjectById({ projectId }) {
+    const project = projectModel.findOne({ id: projectId });
+    return project;
   }
 });
 

@@ -159,3 +159,37 @@ describe('Testing projectService getProjectList', () => {
     expect(projects.length).toBe(2);
   });
 });
+
+describe('Testing projectService get one project', () => {
+  let projectDao;
+  let projectService;
+  beforeAll(() => {
+    projectDao = {
+      async getProjectById({ projectId }) {
+        switch (projectId) {
+          case 1:
+            return {
+              id: 1,
+              projectName: 'name',
+              status: '1'
+            };
+          default:
+            return null;
+        }
+      }
+    };
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao
+    });
+  });
+  it('should return a one project if exists', async () => {
+    const project = await projectService.getProjectWithId({ projectId: 1 });
+    expect(project.id).toBe(1);
+  });
+
+  it('should return nothing if project doesnt exists', async () => {
+    const project = await projectService.getProjectWithId({ projectId: 2 });
+    expect(project).toBe(null);
+  });
+});
