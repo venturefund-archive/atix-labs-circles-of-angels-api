@@ -10,6 +10,10 @@ const ProjectDao = ({ projectModel }) => ({
   async getProjectById({ projectId }) {
     const project = projectModel.findOne({ id: projectId });
     return project;
+  },
+  async updateProjectStatus({ projectId, status }) {
+    const response = projectModel.updateOne({ id: projectId }).set({ status });
+    return response;
   }
 });
 
