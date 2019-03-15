@@ -1,7 +1,6 @@
 const fileUpload = require('fastify-file-upload');
 
 const basePath = '/project';
-
 const routes = async fastify => {
   fastify.register(fileUpload);
 
@@ -25,6 +24,62 @@ const routes = async fastify => {
     milestoneService
   });
 
+  fastify.post(
+    `${basePath}/create`,
+    {
+      schema: {
+        type: 'multipart/form-data',
+        raw: {
+          files: { type: 'object' },
+          body: { type: 'object' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
+      fastify.log.info(
+        '[Project Routes] :: POST request at /project/upload:',
+        req.raw.body,
+        req.raw.files
+      );
+
+      const {
+        projectProposal,
+        projectCoverPhoto,
+        projectCardPhoto,
+        projectMilestones
+      } = req.raw.files;
+
+      const { project } = req.raw.body;
+
+      try {
+        await projectService.createProject({
+          project,
+          projectProposal,
+          projectCoverPhoto,
+          projectCardPhoto,
+          projectMilestones
+        });
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error creating project: ',
+          error
+        );
+        reply.status(500).send({ error: 'Error creating project' });
+      }
+
+      reply.send({ sucess: 'Project created successfully!' });
+    }
+  );
+
+  // ** NOT USED **
   fastify.post(
     `${basePath}/upload`,
     {
@@ -57,7 +112,7 @@ const routes = async fastify => {
       } = req.raw.files;
 
       try {
-        await projectService.createProject(
+        await projectService.createProjectWithFile(
           projectXls,
           projectCoverPhoto,
           projectCardPhoto,
