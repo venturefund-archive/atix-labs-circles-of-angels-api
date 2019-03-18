@@ -16,7 +16,7 @@
     "fastify": "1.14.1",
     "fastify-file-upload": "1.0.0",
     "fastify-swagger": "1.2.0",
-    "lodash": "4.17.11",
+    "lodash": "^4.17.11",
     "sails-postgresql": "1.0.2",
     "xlsx": "0.14.1"
   },

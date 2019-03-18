@@ -155,7 +155,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
-      fastify.log.info('[Transfer Routes] :: Send transfer to verification');
+      fastify.log.info('[Project Routes] :: update status project');
       const { projectId } = request.params;
       const { status } = request.body;
       try {
@@ -167,6 +167,36 @@ const routes = async fastify => {
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send({ error: 'Error updateing project status' });
+      }
+    }
+  );
+
+  fastify.post(
+    `${basePath}/:projectId/deleteProject`,
+    {
+      schema: {
+        type: 'application/json'
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Project Routes] :: deleteing project');
+      const { projectId } = request.params;
+      try {
+        const response = await projectService.deleteProject({
+          projectId
+        });
+        reply.status(200).send(response);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error deleteing project' });
       }
     }
   );

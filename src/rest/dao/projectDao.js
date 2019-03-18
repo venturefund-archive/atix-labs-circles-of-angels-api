@@ -14,6 +14,10 @@ const ProjectDao = ({ projectModel }) => ({
   async updateProjectStatus({ projectId, status }) {
     const response = projectModel.updateOne({ id: projectId }).set({ status });
     return response;
+  },
+  async deleteProject({ projectId }) {
+    const deletedProject = projectModel.destroy({ id: projectId }).fetch();
+    return deletedProject;
   }
 });
 

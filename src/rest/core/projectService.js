@@ -133,6 +133,11 @@ const projectService = ({
     if (existsStatus) {
       return projectDao.updateProjectStatus({ projectId, status });
     }
+  },
+
+  async deleteProject({ projectId }) {
+    const projectDeleted = await projectDao.deleteProject({ projectId });
+    return projectDeleted;
   }
 });
 
