@@ -1,29 +1,38 @@
-const basePath = "/user";
-
+const basePath = '/user';
 
 routes = async (fastify, options) => {
+  const userDao = require('../dao/userDao')({
+    userModel: fastify.models.user
+  });
+  const userService = require('../core/userService')({
+    fastify,
+    userDao
+  });
+
   fastify.get(
     `${basePath}/:id`,
     {
       schema: {
         params: {
-          id: { type: "integer" }
+          id: { type: 'integer' }
         }
       },
       response: {
         200: {
-          type: "object",
+          type: 'object',
           properties: {
-            response: { type: "object" }
+            response: { type: 'object' }
           }
         }
       }
     },
     async (request, reply) => {
-      const userDao = require('../dao/userDao')();
-      fastify.log.info("[User Routes] :: Getting user info")
-      const user = await userDao.getUserById({id : request.params.id});
-      if (!user) reply.send({error: `Can not find user with id: ${request.params.id}`});
+      fastify.log.info('[User Routes] :: Getting user info');
+      const user = await userService.getUserById({ id: request.params.id });
+      if (!user)
+        reply.send({
+          error: `Can not find user with id: ${request.params.id}`
+        });
 
       reply.send({
         name: user.username,
@@ -31,7 +40,7 @@ routes = async (fastify, options) => {
         userid: user.userid
       });
     }
-  )
+  );
 };
 
 module.exports = routes;
