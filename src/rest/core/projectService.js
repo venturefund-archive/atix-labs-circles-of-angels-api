@@ -138,6 +138,13 @@ const projectService = ({
   async deleteProject({ projectId }) {
     const projectDeleted = await projectDao.deleteProject({ projectId });
     return projectDeleted;
+  },
+
+  async getProjectMilestones({ projectId }) {
+    const projectMilestones = await projectDao.getProjectMilestones({
+      projectId
+    });
+    return projectMilestones;
   }
 });
 

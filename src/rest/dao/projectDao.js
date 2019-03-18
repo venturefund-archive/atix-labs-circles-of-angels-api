@@ -18,6 +18,12 @@ const ProjectDao = ({ projectModel }) => ({
   async deleteProject({ projectId }) {
     const deletedProject = projectModel.destroy({ id: projectId }).fetch();
     return deletedProject;
+  },
+  async getProjectMilestones({ projectId }) {
+    const projectMilestones = await projectModel
+      .findOne({ id: projectId })
+      .populate('milestones');
+    return projectMilestones ? projectMilestones.milestones : [];
   }
 });
 
