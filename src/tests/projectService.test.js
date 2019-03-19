@@ -1,4 +1,8 @@
-const fastify = { log: { info: console.log, error: console.log } };
+const { assert } = require('chai');
+const _ = require('lodash');
+
+const fastify = { log: console.log };
+//const { createProject, readProject } = require('../rest/core/projectService')();
 
 describe('Testing projectService createProject', () => {
   const fs = require('fs');
@@ -243,4 +247,59 @@ describe('Testing projectService get one project', () => {
     const project = await projectService.getProjectWithId({ projectId: 2 });
     expect(project).toBe(null);
   });
+});
+
+describe('Testing projectService delete one project', () => {
+  let projectDao;
+  let projectService;
+  let projectModel;
+  let mockProject = {
+    projectName: 'name',
+    mission: 'mision',
+    problemAddressed: 'problem',
+    ownerId: 1,
+    location: 'location',
+    timeframe: '10/10/2019',
+    photo: 'wdfwefdwefw.jpg',
+    status: 1,
+    createdAt: '2019-03-13T03:00:00.000Z',
+    updatedAt: '2019-03-13T03:00:00.000Z',
+    id: 1
+  };
+  beforeEach(() => {
+    projectModel = {
+      projects: [mockProject],
+      destroy({ id }) {
+        const project = _.find(this.projects, element => {
+          return element.id === id;
+        });
+        _.remove(this.projects, element => {
+          return element.id === id;
+        });
+        return {
+          fetch: () => {
+            return project;
+          }
+        };
+      }
+    };
+    projectDao = require('../rest/dao/projectDao')({ projectModel });
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao
+    });
+  });
+
+  it('Delete existing project must return it and delete from database', async () => {
+    let deletedProject = await projectService.deleteProject({ projectId: 1 });
+    expect(deletedProject).toBe(mockProject);
+
+    deletedProject = await projectService.deleteProject({ projectId: 1 });
+    expect(deletedProject).toBeUndefined();
+  });
+
+  it('Delete non-existent project must return undefined', async () => {
+    deletedProject = await projectService.deleteProject({ projectId: -1 });
+    expect(deletedProject).toBeUndefined();
+  })
 });
