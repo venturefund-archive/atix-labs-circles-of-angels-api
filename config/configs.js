@@ -42,10 +42,9 @@ exports.swagger = {
   }
 };
 
-const bunyan = require('bunyan')
-  , bformat = require('bunyan-format')  
-  , formatOut = bformat({ outputMode: 'short' })
-  ;
+const bunyan = require('bunyan');
+const bformat = require('bunyan-format');
+const formatOut = bformat({ outputMode: 'short' });
 
 exports.logger = bunyan.createLogger({
   name: "circles-of-angels-api",

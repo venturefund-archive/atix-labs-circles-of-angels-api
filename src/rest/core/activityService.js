@@ -1,3 +1,4 @@
+const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 
 const activityService = ({ fastify, activityDao }) => ({
@@ -9,7 +10,6 @@ const activityService = ({ fastify, activityDao }) => ({
    * @param {number} milestoneId
    */
   async createActivities(activities, milestoneId) {
-
     fastify.log.info(
       '[Activity Service] :: Creating Activities for Milestone ID:',
       milestoneId
