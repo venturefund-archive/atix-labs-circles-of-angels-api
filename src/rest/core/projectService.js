@@ -124,8 +124,6 @@ const projectService = ({ fastify, projectDao, milestoneService }) => ({
     projectCardPhoto,
     projectMilestones
   ) {
-    // const { filePath } = configs.fileServer;
-
     try {
       fastify.log.info(
         '[Project Service] :: Saving Project excel to:',
