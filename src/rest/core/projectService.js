@@ -10,7 +10,6 @@ const projectService = ({
   milestoneService,
   projectStatusDao
 }) => ({
-
   /**
    * Uploads the project's images and files to the server.
    * Creates a new project with the information provided.
@@ -251,7 +250,13 @@ const projectService = ({
   async deleteProject({ projectId }) {
     const projectDeleted = await projectDao.deleteProject({ projectId });
     return projectDeleted;
+  },
 
+  async getProjectMilestones({ projectId }) {
+    const projectMilestones = await projectDao.getProjectMilestones({
+      projectId
+    });
+    return projectMilestones;
   }
 });
 

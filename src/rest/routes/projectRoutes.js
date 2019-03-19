@@ -23,6 +23,9 @@ const routes = async fastify => {
   const projectStatusDao = require('../dao/projectStatusDao')({
     projectStatusModel: fastify.models.project_status
   });
+  const projectStatusDao = require('../dao/projectStatusDao')({
+    projectStatusModel: fastify.models.project_status
+  });
   const projectService = require('../core/projectService')({
     fastify,
     projectDao,
@@ -211,7 +214,6 @@ const routes = async fastify => {
     },
     async (request, reply) => {
       fastify.log.info('[Project Routes] :: update status project');
-
       const { projectId } = request.params;
       const { status } = request.body;
       try {
@@ -231,6 +233,9 @@ const routes = async fastify => {
     `${basePath}/:projectId/deleteProject`,
     {
       schema: {
+        params: {
+          projectId: { type: 'integer' }
+        },
         type: 'application/json'
       },
       response: {
@@ -253,6 +258,41 @@ const routes = async fastify => {
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send({ error: 'Error deleteing project' });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:projectId/getMilestones`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      fastify.log.info(
+        `[Project Routes] :: Getting project milestones of project ${projectId}`
+      );
+
+      try {
+        const milestones = await projectService.getProjectMilestones({
+          projectId
+        });
+        reply.status(200).send(milestones);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error getting milestones' });
       }
     }
   );
