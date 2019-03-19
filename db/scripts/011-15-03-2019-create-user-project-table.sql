@@ -1,4 +1,3 @@
-
 CREATE TABLE public.user_project (
 	"id" SERIAL primary key,
 	"status" int2 not null,

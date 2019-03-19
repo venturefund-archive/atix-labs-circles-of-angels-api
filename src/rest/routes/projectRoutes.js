@@ -20,10 +20,14 @@ const routes = async fastify => {
     projectModel: fastify.models.project,
     userDao
   });
+  const projectStatusDao = require('../dao/projectStatusDao')({
+    projectStatusModel: fastify.models.project_status
+  });
   const projectService = require('../core/projectService')({
     fastify,
     projectDao,
-    milestoneService
+    milestoneService,
+    projectStatusDao
   });
 
   fastify.post(
@@ -184,6 +188,41 @@ const routes = async fastify => {
         projectId
       });
       reply.send(project);
+    }
+  );
+
+  fastify.post(
+    `${basePath}/:projectId/updateStatus`,
+    {
+      schema: {
+        type: 'application/json',
+        body: {
+          status: { type: 'int' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Transfer Routes] :: Send transfer to verification');
+      const { projectId } = request.params;
+      const { status } = request.body;
+      try {
+        const response = await projectService.updateProjectStatus({
+          projectId,
+          status
+        });
+        reply.status(200).send(Boolean(response));
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error updateing project status' });
+      }
     }
   );
 };
