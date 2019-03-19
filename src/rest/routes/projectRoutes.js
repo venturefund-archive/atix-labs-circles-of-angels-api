@@ -235,7 +235,8 @@ const routes = async fastify => {
       schema: {
         params: {
           projectId: { type: 'integer' }
-        }
+        },
+        type: 'application/json'
       },
       response: {
         200: {
