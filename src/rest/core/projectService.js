@@ -4,7 +4,13 @@ const configs = require('../../../config/configs');
 
 const { filePath } = configs.fileServer;
 
-const projectService = ({ fastify, projectDao, milestoneService }) => ({
+const projectService = ({
+  fastify,
+  projectDao,
+  milestoneService,
+  projectStatusDao
+}) => ({
+
   /**
    * Uploads the project's images and files to the server.
    * Creates a new project with the information provided.
@@ -233,6 +239,13 @@ const projectService = ({ fastify, projectDao, milestoneService }) => ({
 
   async getProjectWithId({ projectId }) {
     return projectDao.getProjectById({ projectId });
+  },
+
+  async updateProjectStatus({ projectId, status }) {
+    const existsStatus = await projectStatusDao.existStatus({ status });
+    if (existsStatus) {
+      return projectDao.updateProjectStatus({ projectId, status });
+    }
   }
 });
 
