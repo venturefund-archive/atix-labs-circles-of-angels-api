@@ -12,7 +12,10 @@ describe('Testing milestoneService createMilestones', () => {
   beforeAll(() => {
     milestoneDao = {
       async saveMilestone({ milestone, projectId }) {
-        const toSave = Object.assign({}, milestone, { project: projectId });
+        const toSave = {
+          ...milestone,
+          project: projectId
+        };
         delete toSave.activityList;
         return toSave;
       }

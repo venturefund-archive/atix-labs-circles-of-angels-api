@@ -1,5 +1,8 @@
 const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
-  const toSave = Object.assign({}, milestone, { project: projectId });
+  const toSave = {
+    ...milestone,
+    project: projectId
+  };
   const createdMilestone = await milestoneModel.create(toSave);
   return createdMilestone;
 };
