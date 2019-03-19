@@ -1,11 +1,25 @@
-const { assert } = require('chai');
-// const activityService = require('../rest/core/activityService')();
-// const promisesUtil = require('../rest/util/promises');
+const fastify = { log: { info: console.log, error: console.log } };
 
-describe.skip('Testing activityService createActivities', () => {
+describe('Testing activityService createActivities', () => {
+  let activityDao;
+  let activityService;
+  beforeAll(() => {
+    activityDao = {
+      async saveActivity({ activity, milestoneId }) {
+        const toSave = {
+          ...activity,
+          milestone: milestoneId
+        };
+        return toSave;
+      }
+    };
+    activityService = require('../rest/core/activityService')({
+      fastify,
+      activityDao
+    });
+  });
+
   it('should create activities and associate them to a milestone', async () => {
-    activityService.activityDao = jest.mock('../rest/dao/activityDao');
-
     const mockActivities = [
       {
         tasks: 'Task A1',
@@ -28,7 +42,7 @@ describe.skip('Testing activityService createActivities', () => {
         budget: 'Budget A2'
       },
       {
-        tasks: 'Task A3',
+        tasks: '',
         impact: '',
         impactCriterion: '',
         signsOfSuccess: '',
@@ -39,12 +53,30 @@ describe.skip('Testing activityService createActivities', () => {
       }
     ];
 
-    promisesUtil.forEachPromise = jest.fn((items, fn, context) =>
-      items.reduce(
-        (promise, item) => promise.then(() => fn(item, context)),
-        Promise.resolve()
-      )
-    );
+    const compareActivities = [
+      {
+        tasks: 'Task A1',
+        impact: '',
+        impactCriterion: '',
+        signsOfSuccess: '',
+        signsOfSuccessCriterion: '',
+        category: 'Category A1',
+        keyPersonnel: 'Key Personnel A1',
+        budget: '',
+        milestone: 2
+      },
+      {
+        tasks: 'Task A2',
+        impact: 'Impact A2',
+        impactCriterion: 'Impact Criterion A2',
+        signsOfSuccess: 'Success A2',
+        signsOfSuccessCriterion: 'Success Criterion A2',
+        category: 'Category A2',
+        keyPersonnel: 'Key Personnel A2',
+        budget: 'Budget A2',
+        milestone: 2
+      }
+    ];
 
     const milestoneId = 2;
     const activities = await activityService.createActivities(
@@ -52,39 +84,6 @@ describe.skip('Testing activityService createActivities', () => {
       milestoneId
     );
 
-    const compareActivities = mockActivities.slice(0, 2);
-    assert.deepEqual(activities, compareActivities);
-  });
-});
-
-describe.skip('Testing activityService isEmpty', () => {
-  it('should return false if activity has at least 1 field with data', async () => {
-    const mockActivity = {
-      tasks: 'Task A1',
-      impact: '',
-      impactCriterion: '',
-      signsOfSuccess: '',
-      signsOfSuccessCriterion: '',
-      category: '',
-      keyPersonnel: '',
-      budget: ''
-    };
-
-    await assert.equal(activityService.isEmpty(mockActivity), false);
-  });
-
-  it('should return true if activity does not have any fields with data', async () => {
-    const mockActivity = {
-      tasks: '',
-      impact: '',
-      impactCriterion: '',
-      signsOfSuccess: '',
-      signsOfSuccessCriterion: '',
-      category: '',
-      keyPersonnel: '',
-      budget: ''
-    };
-
-    await assert.equal(activityService.isEmpty(mockActivity), true);
+    expect(activities).toEqual(compareActivities);
   });
 });

@@ -1,7 +1,7 @@
 const UserDao = ({ userModel }) => {
   return {
     async getUserById({ id }) {
-      return userModel.findById(id);
+      return (await userModel.find({ id }).limit(1))[0];
     }
   };
 };

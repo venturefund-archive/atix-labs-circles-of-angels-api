@@ -1,15 +1,38 @@
-const { assert } = require('chai');
-// const {
-//   readMilestones,
-//   isEmpty,
-//   createMilestones
-// } = require('../rest/core/milestoneService')();
+const fastify = { log: { info: console.log, error: console.log } };
 
-describe.skip('Testing milestoneService createMilestones', () => {
+describe('Testing milestoneService createMilestones', () => {
   const fs = require('fs');
   const { promisify } = require('util');
   const readFile = promisify(fs.readFile);
-  jest.mock('../rest/dao/milestoneDao');
+
+  let milestoneDao;
+  let activityService;
+  let milestoneService;
+
+  beforeAll(() => {
+    milestoneDao = {
+      async saveMilestone({ milestone, projectId }) {
+        const toSave = {
+          ...milestone,
+          project: projectId
+        };
+        delete toSave.activityList;
+        return toSave;
+      }
+    };
+
+    activityService = {
+      async createActivities() {
+        return null;
+      }
+    };
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao,
+      activityService
+    });
+  });
 
   it('should return an array of created milestones associated to a project', async () => {
     const mockMilestones = [
@@ -23,28 +46,7 @@ describe.skip('Testing milestoneService createMilestones', () => {
         category: 'Category M1',
         keyPersonnel: 'Key Personnel M1',
         budget: 'Budget M1',
-        activities: [
-          {
-            tasks: 'Task A1',
-            impact: '',
-            impactCriterion: '',
-            signsOfSuccess: '',
-            signsOfSuccessCriterion: '',
-            category: 'Category A1',
-            keyPersonnel: 'Key Personnel A1',
-            budget: ''
-          },
-          {
-            tasks: 'Task A2',
-            impact: 'Impact A2',
-            impactCriterion: 'Impact Criterion A2',
-            signsOfSuccess: 'Success A2',
-            signsOfSuccessCriterion: 'Success Criterion A2',
-            category: 'Category A2',
-            keyPersonnel: 'Key Personnel A2',
-            budget: 'Budget A2'
-          }
-        ]
+        project: 2
       },
       {
         quarter: 'Quarter 1',
@@ -56,7 +58,7 @@ describe.skip('Testing milestoneService createMilestones', () => {
         category: 'Category M2',
         keyPersonnel: 'Key Personnel M2',
         budget: '',
-        activities: []
+        project: 2
       }
     ];
 
@@ -83,11 +85,26 @@ describe.skip('Testing milestoneService createMilestones', () => {
       projectId
     );
 
-    await assert.deepEqual(milestones, mockMilestones);
+    await expect(milestones).toEqual(mockMilestones);
   });
 });
 
-describe.skip('Testing milestoneService readMilestone', () => {
+describe('Testing milestoneService readMilestone', () => {
+  let milestoneDao;
+  let activityService;
+  let milestoneService;
+
+  beforeAll(() => {
+    milestoneDao = {};
+    activityService = {};
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao,
+      activityService
+    });
+  });
+
   it('should return an array of milestones from an excel file', async () => {
     const mockMilestones = [
       {
@@ -155,7 +172,7 @@ describe.skip('Testing milestoneService readMilestone', () => {
     );
     const milestones = await milestoneService.readMilestones(mockXls);
 
-    assert.deepEqual(milestones, mockMilestones);
+    await expect(milestones).toEqual(mockMilestones);
   });
 
   it('should throw an error when file not found', async () => {
@@ -165,7 +182,22 @@ describe.skip('Testing milestoneService readMilestone', () => {
   });
 });
 
-describe.skip('Testing milestoneService isEmpty', () => {
+describe('Testing milestoneService isEmpty', () => {
+  let milestoneDao;
+  let activityService;
+  let milestoneService;
+
+  beforeAll(() => {
+    milestoneDao = {};
+    activityService = {};
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao,
+      activityService
+    });
+  });
+
   it('should return false if milestone has at least 1 field with data', async () => {
     const mockMilestone = {
       quarter: 'Quarter 1',
@@ -180,7 +212,8 @@ describe.skip('Testing milestoneService isEmpty', () => {
       activityList: []
     };
 
-    await assert.equal(milestoneService.isEmpty(mockMilestone), false);
+    await expect(milestoneService.isEmpty(mockMilestone)).toBe(false);
+    // await assert.equal(milestoneService.isEmpty(mockMilestone), false);
   });
 
   it('should return true if milestone does not have any fields with data', async () => {
@@ -196,7 +229,6 @@ describe.skip('Testing milestoneService isEmpty', () => {
       budget: '',
       activityList: []
     };
-
-    await assert.equal(milestoneService.isEmpty(mockMilestone), true);
+    await expect(milestoneService.isEmpty(mockMilestone)).toBe(true);
   });
 });
