@@ -3,8 +3,8 @@ const ProjectDao = ({ projectModel }) => ({
     const createdProject = await projectModel.create(project);
     return createdProject;
   },
-  async getProjectList() {
-    const projects = projectModel.find({ where: { status: { '>': 0 } } });
+  async getProjecListWithStatusFrom({ status }) {
+    const projects = projectModel.find({ where: { status: { '>=': status } } });
     return projects;
   }
 });

@@ -1,6 +1,6 @@
 const configs = require('../../../config/configs');
 
-const projectService = ({ fastify, projectDao }) => ({
+const projectService = ({ fastify, projectDao, milestoneService }) => ({
   /**
    *
    * Saves the project excel file and the project images.
@@ -119,7 +119,11 @@ const projectService = ({ fastify, projectDao }) => ({
    * Returns a list of active projects
    */
   async getProjectList() {
-    return projectDao.getProjectList();
+    return projectDao.getProjecListWithStatusFrom({ status: -1 });
+  },
+
+  async getActiveProjectList() {
+    return projectDao.getProjecListWithStatusFrom({ status: 1 });
   }
 });
 
