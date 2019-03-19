@@ -2,12 +2,15 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 const configs = require('../../../config/configs');
 
+const { filePath } = configs.fileServer;
+
 const projectService = ({
   fastify,
   projectDao,
   milestoneService,
   projectStatusDao
 }) => ({
+
   /**
    * Uploads the project's images and files to the server.
    * Creates a new project with the information provided.
@@ -248,6 +251,7 @@ const projectService = ({
   async deleteProject({ projectId }) {
     const projectDeleted = await projectDao.deleteProject({ projectId });
     return projectDeleted;
+
   }
 });
 

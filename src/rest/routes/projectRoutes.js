@@ -211,6 +211,7 @@ const routes = async fastify => {
     },
     async (request, reply) => {
       fastify.log.info('[Project Routes] :: update status project');
+
       const { projectId } = request.params;
       const { status } = request.body;
       try {

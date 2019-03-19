@@ -6,14 +6,12 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     return createdProject;
   },
   async getProjecListWithStatusFrom({ status }) {
-    let projects = await projectModel.find({
-      where: { status: { '>=': status } }
-    });
-    for (var i in projects) {
-      const aux = await this.addUserInfoOnProject({ project: projects[i] });
-      projects[i] = aux;
-    }
+    const projects = projectModel.find({ where: { status: { '>=': status } } });
     return projects;
+  },
+  async updateProjectStatus({ projectId, status }) {
+    const response = projectModel.updateOne({ id: projectId }).set({ status });
+    return response;
   },
   async getProjectById({ projectId }) {
     const project = await projectModel.findOne({ id: projectId });
