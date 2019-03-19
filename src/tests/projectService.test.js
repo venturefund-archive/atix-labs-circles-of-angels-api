@@ -71,7 +71,7 @@ describe('Testing projectService createProject', () => {
 
     const mockProjectCardPhoto = {
       name: 'projectCardPhoto.png',
-      data: dataXls
+      mv: jest.fn()
     };
 
     const mockProjectProposal = {
