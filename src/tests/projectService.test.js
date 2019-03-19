@@ -1,45 +1,81 @@
-const { assert } = require('chai');
-const fastify = { log: console.log };
-//const { createProject, readProject } = require('../rest/core/projectService')();
+const fastify = { log: { info: console.log, error: console.log } };
 
-describe.skip('Testing projectService createProject', () => {
+describe('Testing projectService createProject', () => {
   const fs = require('fs');
   const { promisify } = require('util');
   const readFile = promisify(fs.readFile);
-  jest.mock('../rest/dao/projectDao');
 
-  it('should create and return a new project from an excel file', async () => {
-    const mockProject = {
+  let projectDao;
+  let projectService;
+  let milestoneService;
+
+  beforeAll(() => {
+    projectDao = {
+      async saveProject(project) {
+        const toSave = Object.assign({}, project, { id: 1 });
+        return toSave;
+      }
+    };
+
+    milestoneService = {
+      async createMilestones() {
+        return null;
+      }
+    };
+
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao,
+      milestoneService
+    });
+  });
+
+  it('should create and return a new project from a JSON object', async () => {
+    const mockProject = JSON.stringify({
       projectName: 'Project Name',
       mission: 'Project Mission',
       problemAddressed: 'Problem',
       location: 'Location',
       timeframe: 'Project Timeframe',
+      goalAmount: 9000,
+      faqLink: 'http://www.google.com/'
+    });
+
+    const savedProject = {
+      projectName: 'Project Name',
+      mission: 'Project Mission',
+      problemAddressed: 'Problem',
+      location: 'Location',
+      timeframe: 'Project Timeframe',
+      goalAmount: 9000,
+      faqLink: 'http://www.google.com/',
       ownerId: 1,
-      status: 0
+      status: 0,
+      coverPhoto: 'coverPhoto.png',
+      cardPhoto: 'cardPhoto.png',
+      pitchProposal: 'pitchProposal.pdf',
+      id: 1
     };
 
-    const pathProjectXls = require('path').join(
-      __dirname,
-      './mockFiles/projectXls.xlsx'
-    );
     const pathMilestonesXls = require('path').join(
       __dirname,
       './mockFiles/projectMilestones.xlsx'
     );
 
-    const dataXls = await readFile(pathProjectXls);
     const dataMilestones = await readFile(pathMilestonesXls);
 
-    const mockProjectXls = {
-      name: 'projectXls.xlsx',
-      data: dataXls,
+    const mockProjectCoverPhoto = {
+      name: 'projectCoverPhoto.png',
       mv: jest.fn()
     };
 
-    const mockProjectPhoto = {
-      name: 'projectPhoto.png',
-      data: dataXls,
+    const mockProjectCardPhoto = {
+      name: 'projectCardPhoto.png',
+      mv: jest.fn()
+    };
+
+    const mockProjectProposal = {
+      name: 'projectProposal.pdf',
       mv: jest.fn()
     };
 
@@ -49,21 +85,36 @@ describe.skip('Testing projectService createProject', () => {
       mv: jest.fn()
     };
 
-    const p = await projectService.readProject(pathProjectXls);
-
-    projectService.readProject = jest.fn(() => p);
-
     const project = await projectService.createProject(
-      mockProjectXls,
-      mockProjectPhoto,
+      mockProject,
+      mockProjectProposal,
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
       mockProjectMilestones
     );
 
-    await assert.deepEqual(project, mockProject);
+    await expect(project).toEqual(savedProject);
   });
 });
 
+// method out of use
 describe.skip('Testing projectService readProject', () => {
+  let projectDao;
+  let projectService;
+  let milestoneService;
+
+  beforeAll(() => {
+    projectDao = {};
+
+    milestoneService = {};
+
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao,
+      milestoneService
+    });
+  });
+
   it('should return a project object from an excel file', async () => {
     const mockProject = {
       projectName: 'Project Name',
@@ -78,7 +129,7 @@ describe.skip('Testing projectService readProject', () => {
       './mockFiles/projectXls.xlsx'
     );
     const project = await projectService.readProject(mockXls);
-    assert.deepEqual(project, mockProject);
+    expect(project).toEqual(mockProject);
   });
 
   it('should throw an error when file not found', async () => {

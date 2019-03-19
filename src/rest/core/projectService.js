@@ -1,18 +1,130 @@
+const mkdirp = require('mkdirp');
+const path = require('path');
 const configs = require('../../../config/configs');
+
+const { filePath } = configs.fileServer;
 
 const projectService = ({ fastify, projectDao, milestoneService }) => ({
   /**
+   * Uploads the project's images and files to the server.
+   * Creates a new project with the information provided.
    *
-   * Saves the project excel file and the project image.
+   * Returns the created project.
+   *
+   * @param {*} project JSON object with the project information
+   * @param {*} projectProposal project's pitch proposal file
+   * @param {*} projectCoverPhoto project's cover photo
+   * @param {*} projectCardPhoto project's card photo
+   * @param {*} projectMilestones file with the project's milestones' information
+   */
+  async createProject(
+    project,
+    projectProposal,
+    projectCoverPhoto,
+    projectCardPhoto,
+    projectMilestones
+  ) {
+    try {
+      const newProject = Object.assign({}, JSON.parse(project));
+      // TODO: project validations
+      newProject.ownerId = 1; // <-- TODO: Replace this line with the actual user id (owner) when the login is implemented
+      newProject.status = 0;
+
+      newProject.coverPhoto = `coverPhoto${path.extname(
+        projectCoverPhoto.name
+      )}`;
+      newProject.cardPhoto = `cardPhoto${path.extname(projectCardPhoto.name)}`;
+      newProject.pitchProposal = `pitchProposal${path.extname(
+        projectProposal.name
+      )}`;
+
+      fastify.log.info('[Project Service] :: Saving project:', newProject);
+
+      const savedProject = await projectDao.saveProject(newProject);
+      fastify.log.info('[Project Service] :: Project created:', savedProject);
+
+      // creates the directory where this project's files will be saved if not exists
+      mkdirp(`${configs.fileServer.filePath}/projects/${savedProject.id}`);
+
+      // saves the project's pictures and proposal
+      fastify.log.info(
+        '[Project Service] :: Saving Project cover photo to:',
+        `${configs.fileServer.filePath}/projects/${
+          savedProject.id
+        }/coverPhoto${path.extname(projectCoverPhoto.name)}`
+      );
+      await projectCoverPhoto.mv(
+        `${configs.fileServer.filePath}/projects/${
+          savedProject.id
+        }/coverPhoto${path.extname(projectCoverPhoto.name)}`
+      );
+
+      fastify.log.info(
+        '[Project Service] :: Saving Project card photo to:',
+        `${configs.fileServer.filePath}/projects/${
+          savedProject.id
+        }/cardPhoto${path.extname(projectCardPhoto.name)}`
+      );
+      await projectCardPhoto.mv(
+        `${configs.fileServer.filePath}/projects/${
+          savedProject.id
+        }/cardPhoto${path.extname(projectCardPhoto.name)}`
+      );
+
+      fastify.log.info(
+        '[Project Service] :: Saving pitch proposal to:',
+        `${configs.fileServer.filePath}/projects/${
+          savedProject.id
+        }/projectProposal${path.extname(projectProposal.name)}`
+      );
+      await projectProposal.mv(
+        `${configs.fileServer.filePath}/projects/${
+          savedProject.id
+        }/pitchProposal${path.extname(projectProposal.name)}`
+      );
+
+      fastify.log.info(
+        '[Project Service] :: All files saved to:',
+        `${configs.fileServer.filePath}/projects/${savedProject.id}`
+      );
+
+      fastify.log.info(
+        '[Project Service] :: Creating Milestones for Project ID:',
+        savedProject.id
+      );
+
+      await milestoneService.createMilestones(
+        projectMilestones,
+        savedProject.id
+      );
+
+      return savedProject;
+    } catch (err) {
+      fastify.log.error('[Project Service] :: Error creating Project:', err);
+      throw Error('Error creating Project');
+    }
+  },
+
+  /**
+   * **Not used**
+   *
+   * Saves the project excel file and the project images.
    * Reads the project excel file and creates a project with its information.
    *
    * Returns the created project.
+   *
    * @param {*} projectXls project excel file
-   * @param {*} projectPhoto project's image file
+   * @param {*} projectCoverPhoto project's image file
+   * @param {*} projectCardPhoto project's image file
    * @param {*} projectMilestones project's milestones and activities excel file
    */
-  async createProject(projectXls, projectPhoto, projectMilestones) {
-    const { filePath } = configs.fileServer;
+  async createProjectWithFile(
+    projectXls,
+    projectCoverPhoto,
+    projectCardPhoto,
+    projectMilestones
+  ) {
+    // const { filePath } = configs.fileServer;
 
     try {
       fastify.log.info(
@@ -24,7 +136,7 @@ const projectService = ({ fastify, projectDao, milestoneService }) => ({
       await projectXls.mv(`${filePath}/${projectXls.name}`);
       const project = await this.readProject(`${filePath}/${projectXls.name}`);
 
-      project.ownerId = 1; // <-- TODO: Replace this line for the actual user id (owner) when the login is implemented
+      project.ownerId = 1; // <-- TODO: Replace this line with the actual user id (owner) when the login is implemented
       project.status = 0;
 
       fastify.log.info(
@@ -61,6 +173,8 @@ const projectService = ({ fastify, projectDao, milestoneService }) => ({
   },
 
   /**
+   * **Not used**
+   *
    * Reads the excel file with the Project's information.
    *
    * Returns an object with the information retrieved.
