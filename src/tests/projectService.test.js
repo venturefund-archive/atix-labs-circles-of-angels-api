@@ -1,5 +1,3 @@
-const { assert } = require('chai');
-
 const fastify = { log: { info: console.log, error: console.log } };
 
 describe('Testing projectService createProject', () => {
@@ -14,7 +12,8 @@ describe('Testing projectService createProject', () => {
   beforeAll(() => {
     projectDao = {
       async saveProject(project) {
-        return project;
+        const toSave = Object.assign({}, project, { id: 1 });
+        return toSave;
       }
     };
 
@@ -31,46 +30,52 @@ describe('Testing projectService createProject', () => {
     });
   });
 
-  it('should create and return a new project from an excel file', async () => {
-    const mockProject = {
+  it('should create and return a new project from a JSON object', async () => {
+    const mockProject = JSON.stringify({
       projectName: 'Project Name',
       mission: 'Project Mission',
       problemAddressed: 'Problem',
       location: 'Location',
       timeframe: 'Project Timeframe',
+      goalAmount: 9000,
+      faqLink: 'http://www.google.com/'
+    });
+
+    const savedProject = {
+      projectName: 'Project Name',
+      mission: 'Project Mission',
+      problemAddressed: 'Problem',
+      location: 'Location',
+      timeframe: 'Project Timeframe',
+      goalAmount: 9000,
+      faqLink: 'http://www.google.com/',
       ownerId: 1,
       status: 0,
-      coverPhoto: '/home/atixlabs/files/server/projectCoverPhoto.png',
-      cardPhoto: '/home/atixlabs/files/server/projectCardPhoto.png'
+      coverPhoto: 'coverPhoto.png',
+      cardPhoto: 'cardPhoto.png',
+      pitchProposal: 'pitchProposal.pdf',
+      id: 1
     };
 
-    const pathProjectXls = require('path').join(
-      __dirname,
-      './mockFiles/projectXls.xlsx'
-    );
     const pathMilestonesXls = require('path').join(
       __dirname,
       './mockFiles/projectMilestones.xlsx'
     );
 
-    const dataXls = await readFile(pathProjectXls);
     const dataMilestones = await readFile(pathMilestonesXls);
-
-    const mockProjectXls = {
-      name: 'projectXls.xlsx',
-      data: dataXls,
-      mv: jest.fn()
-    };
 
     const mockProjectCoverPhoto = {
       name: 'projectCoverPhoto.png',
-      data: dataXls,
       mv: jest.fn()
     };
 
     const mockProjectCardPhoto = {
       name: 'projectCardPhoto.png',
-      data: dataXls,
+      data: dataXls
+    };
+
+    const mockProjectProposal = {
+      name: 'projectProposal.pdf',
       mv: jest.fn()
     };
 
@@ -80,22 +85,20 @@ describe('Testing projectService createProject', () => {
       mv: jest.fn()
     };
 
-    const p = await projectService.readProject(pathProjectXls);
-
-    projectService.readProject = jest.fn(() => p);
-
     const project = await projectService.createProject(
-      mockProjectXls,
+      mockProject,
+      mockProjectProposal,
       mockProjectCoverPhoto,
       mockProjectCardPhoto,
       mockProjectMilestones
     );
 
-    await assert.deepEqual(project, mockProject);
+    await expect(project).toEqual(savedProject);
   });
 });
 
-describe('Testing projectService readProject', () => {
+// method out of use
+describe.skip('Testing projectService readProject', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -126,7 +129,7 @@ describe('Testing projectService readProject', () => {
       './mockFiles/projectXls.xlsx'
     );
     const project = await projectService.readProject(mockXls);
-    assert.deepEqual(project, mockProject);
+    expect(project).toEqual(mockProject);
   });
 
   it('should throw an error when file not found', async () => {
@@ -141,22 +144,56 @@ describe('Testing projectService getProjectList', () => {
   let projectService;
   beforeAll(() => {
     projectDao = {
-      async getProjectList() {
-        return [
-          {
-            projectName: 'name',
-            mission: 'mision',
-            problemAddressed: 'problem',
-            ownerId: 1,
-            location: 'location',
-            timeframe: '10/10/2019',
-            photo: 'wdfwefdwefw.jpg',
-            status: 1,
-            createdAt: '2019-03-13T03:00:00.000Z',
-            updatedAt: '2019-03-13T03:00:00.000Z',
-            id: 1
-          }
-        ];
+      async getProjecListWithStatusFrom({ status }) {
+        switch (status) {
+          case -1:
+            return [
+              {
+                projectName: 'name',
+                mission: 'mision',
+                problemAddressed: 'problem',
+                ownerId: 1,
+                location: 'location',
+                timeframe: '10/10/2019',
+                photo: 'wdfwefdwefw.jpg',
+                status: 1,
+                createdAt: '2019-03-13T03:00:00.000Z',
+                updatedAt: '2019-03-13T03:00:00.000Z',
+                id: 1
+              },
+              {
+                projectName: 'name',
+                mission: 'mision',
+                problemAddressed: 'problem',
+                ownerId: 1,
+                location: 'location',
+                timeframe: '10/10/2019',
+                photo: 'wdfwefdwefw.jpg',
+                status: 0,
+                createdAt: '2019-03-13T03:00:00.000Z',
+                updatedAt: '2019-03-13T03:00:00.000Z',
+                id: 1
+              }
+            ];
+          case 1:
+            return [
+              {
+                projectName: 'name',
+                mission: 'mision',
+                problemAddressed: 'problem',
+                ownerId: 1,
+                location: 'location',
+                timeframe: '10/10/2019',
+                photo: 'wdfwefdwefw.jpg',
+                status: 1,
+                createdAt: '2019-03-13T03:00:00.000Z',
+                updatedAt: '2019-03-13T03:00:00.000Z',
+                id: 1
+              }
+            ];
+          default:
+            return [];
+        }
       }
     };
     projectService = require('../rest/core/projectService')({
@@ -165,7 +202,45 @@ describe('Testing projectService getProjectList', () => {
     });
   });
   it('should return all active projects', async () => {
-    const projects = await projectService.getProjectList();
+    const projects = await projectService.getActiveProjectList();
     expect(projects.length).toBe(1);
+  });
+  it('should return all  projects', async () => {
+    const projects = await projectService.getProjectList();
+    expect(projects.length).toBe(2);
+  });
+});
+
+describe('Testing projectService get one project', () => {
+  let projectDao;
+  let projectService;
+  beforeAll(() => {
+    projectDao = {
+      async getProjectById({ projectId }) {
+        switch (projectId) {
+          case 1:
+            return {
+              id: 1,
+              projectName: 'name',
+              status: '1'
+            };
+          default:
+            return null;
+        }
+      }
+    };
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao
+    });
+  });
+  it('should return a one project if exists', async () => {
+    const project = await projectService.getProjectWithId({ projectId: 1 });
+    expect(project.id).toBe(1);
+  });
+
+  it('should return nothing if project doesnt exists', async () => {
+    const project = await projectService.getProjectWithId({ projectId: 2 });
+    expect(project).toBe(null);
   });
 });

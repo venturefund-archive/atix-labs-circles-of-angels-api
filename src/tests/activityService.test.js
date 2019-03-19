@@ -6,7 +6,10 @@ describe('Testing activityService createActivities', () => {
   beforeAll(() => {
     activityDao = {
       async saveActivity({ activity, milestoneId }) {
-        const toSave = Object.assign({}, activity, { milestone: milestoneId });
+        const toSave = {
+          ...activity,
+          milestone: milestoneId
+        };
         return toSave;
       }
     };

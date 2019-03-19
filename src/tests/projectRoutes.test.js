@@ -18,8 +18,6 @@ describe.skip('Testing projectRoutes', () => {
       data: fd
     });
 
-    console.log(res.body);
-
     expect(res.statusCode).toBe(200);
   });
 });

@@ -196,10 +196,12 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
   isEmpty(milestone) {
     let empty = true;
     Object.entries(milestone).forEach(entry => {
-      if (entry[0] !== 'activityList' && entry[0] !== 'quarter') {
-        if (entry[1] !== '') {
-          empty = false;
-        }
+      if (
+        entry[0] !== 'activityList' &&
+        entry[0] !== 'quarter' &&
+        entry[1] !== ''
+      ) {
+        empty = false;
       }
     });
     return empty;
