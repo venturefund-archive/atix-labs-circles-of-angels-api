@@ -46,3 +46,37 @@ describe("Project validations tests", () => {
     expect(projectDao.availableName.mock.calls.length).toBe(1);
   });
 });
+
+describe("Milestone dto validations tests", () => {
+  const milestoneValidation = require('../rest/services/validations/milestoneValidation');
+  let mockMilestoneDto;
+  beforeEach(() => {
+    mockMilestoneDto = {
+      quarter: "Quarter 1",
+      tasks: "A tasks",
+      impact: "Impact",
+      impactCriterion: "Criterion",
+      signsOfSuccess: "Signs of Success",
+      signsOfSuccessCriterion: "Signs of Success Criterion",
+      category: "Category",
+      keyPersonnel: "224412",
+      budget: "a budget",
+      row: 10
+    };
+  });
+
+  test("Quarter out of range must add an error", () => {
+    mockMilestoneDto.quarter = "Quarter 5";
+    milestoneValidation(mockMilestoneDto);
+    expect.arrayContaining(mockMilestoneDto.errors);
+    expect(mockMilestoneDto.errors.length).toBe(1);
+  });
+
+  test("a mileston with empty fields must add an error for each empty fields", () => {
+    mockMilestoneDto.impact = " ";
+    mockMilestoneDto.tasks = " ";
+    milestoneValidation(mockMilestoneDto);
+    expect.arrayContaining(mockMilestoneDto.errors);
+    expect(mockMilestoneDto.errors.length).toBe(2);
+  });
+});
