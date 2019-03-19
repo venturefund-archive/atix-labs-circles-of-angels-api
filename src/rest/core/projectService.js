@@ -120,6 +120,60 @@ const projectService = ({ fastify, projectDao }) => ({
    */
   async getProjectList() {
     return projectDao.getProjectList();
+  },
+
+  /**
+   * Uploads the project's agreement file to the server
+   *
+   * @param {*} projectAgreement project's agreement file
+   * @param {*} projectId project ID
+   */
+  async uploadAgreement(projectAgreement, projectId) {
+    try {
+      // check if project exists in database
+      const project = await projectDao.getProjectById(projectId);
+
+      if (!project || project == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: `Project ID ${projectId} not found`, status: 404 };
+      }
+
+      // creates the directory where this project's agreement will be saved if not exists
+      // (it should've been created during the project creation though)
+      mkdirp(`${configs.fileServer.filePath}/projects/${projectId}`);
+
+      const filename = `agreement${path.extname(projectAgreement.name)}`;
+
+      // saves the project's agreement
+      fastify.log.info(
+        '[Project Service] :: Saving Project agreement to:',
+        `${configs.fileServer.filePath}/projects/${projectId}/${filename}`
+      );
+      await projectAgreement.mv(
+        `${configs.fileServer.filePath}/projects/${projectId}/${filename}`
+      );
+
+      // update database
+      const updatedProject = await projectDao.updateProjectAgreement({
+        projectAgreement: filename,
+        projectId: project.id
+      });
+
+      fastify.log.info(
+        '[Project Service] :: Project successfully updated:',
+        updatedProject
+      );
+
+      return updatedProject;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error uploading agreement:',
+        error
+      );
+      throw Error('Error uploading agreement');
+    }
   }
 });
 
