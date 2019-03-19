@@ -79,7 +79,7 @@ const routes = async fastify => {
         const projects = await projectService.getProjectList();
         reply.send(projects);
       } catch (error) {
-        fastify.log.error(error)
+        fastify.log.error(error);
         reply.status(500).send({ error: 'Error getting projects' });
       }
     }
@@ -135,6 +135,54 @@ const routes = async fastify => {
           error
         );
         reply.status(500).send({ error: 'Error uploading agreement' });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:projectId/downloadAgreement`,
+    {
+      schema: {
+        type: 'multipart/form-data',
+        params: {
+          projectId: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/octet-stream',
+          properties: {
+            response: { type: 'application/octet-stream' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Project Routes] :: Downloading agreement file');
+      try {
+        const res = await projectService.downloadAgreement(
+          request.params.projectId
+        );
+
+        if (res && res.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error getting agreement:',
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Project agreement downloaded:',
+            res
+          );
+          reply.send(res);
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error getting agreement:',
+          error
+        );
+        reply.status(500).send({ error: 'Error getting agreement' });
       }
     }
   );

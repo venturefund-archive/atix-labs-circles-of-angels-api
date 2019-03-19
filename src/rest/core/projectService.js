@@ -1,3 +1,7 @@
+const { isEmpty } = require('lodash');
+const path = require('path');
+const mime = require('mime');
+const fs = require('fs');
 const configs = require('../../../config/configs');
 
 const projectService = ({ fastify, projectDao }) => ({
@@ -126,7 +130,7 @@ const projectService = ({ fastify, projectDao }) => ({
    * Uploads the project's agreement file to the server
    *
    * @param {*} projectAgreement project's agreement file
-   * @param {*} projectId project ID
+   * @param {number} projectId project ID
    */
   async uploadAgreement(projectAgreement, projectId) {
     try {
@@ -137,7 +141,7 @@ const projectService = ({ fastify, projectDao }) => ({
         fastify.log.error(
           `[Project Service] :: Project ID ${projectId} not found`
         );
-        return { error: `Project ID ${projectId} not found`, status: 404 };
+        return { error: 'ERROR: Project not found', status: 404 };
       }
 
       // creates the directory where this project's agreement will be saved if not exists
@@ -173,6 +177,63 @@ const projectService = ({ fastify, projectDao }) => ({
         error
       );
       throw Error('Error uploading agreement');
+    }
+  },
+
+  /**
+   * Downloads the project's agreement. Returns a File Stream.
+   *
+   * @param {number} projectId project ID
+   */
+  async downloadAgreement(projectId) {
+    try {
+      // check if project exists in database
+      const project = await projectDao.getProjectById(projectId);
+
+      if (!project || project == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
+      }
+
+      if (
+        !project.projectAgreement ||
+        project.projectAgreement == null ||
+        isEmpty(project.projectAgreement)
+      ) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} doesn't have an agreement uploaded`
+        );
+        return {
+          // eslint-disable-next-line prettier/prettier
+          error: 'ERROR: Project doesn\'t have an agreement uploaded',
+          status: 409
+        };
+      }
+
+      const filepath = `${configs.fileServer.filePath}/projects/${project.id}/${
+        project.projectAgreement
+      }`;
+
+      // read file and return stream
+      const filestream = fs.createReadStream(filepath);
+
+      filestream.on('error', error => {
+        fastify.log.error(
+          `[Project Service] :: Agreement file not found for Project ID ${projectId}:`,
+          error
+        );
+        return {
+          error: 'ERROR: Agreement file not found',
+          status: 404
+        };
+      });
+
+      return filestream;
+    } catch (error) {
+      fastify.log.error('[Project Service] :: Error getting agreement:', error);
+      throw Error('Error getting agreement');
     }
   }
 });
