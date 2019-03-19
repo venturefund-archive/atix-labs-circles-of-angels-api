@@ -16,7 +16,8 @@ const routes = async fastify => {
     activityService
   });
   const projectDao = require('../dao/projectDao')({
-    projectModel: fastify.models.project
+    projectModel: fastify.models.project,
+    userDao
   });
   const projectService = require('../core/projectService')({
     fastify,
@@ -145,12 +146,43 @@ const routes = async fastify => {
     async (request, reply) => {
       fastify.log.info('[Project Routes] :: Getting projects');
       try {
+        //When User role verification implemented -> if Backoffice admin, get all projects, else get active projects
         const projects = await projectService.getProjectList();
         reply.send(projects);
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send({ error: 'Error getting projects' });
       }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:projectId/getProject`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      fastify.log.info(
+        `[Project Routes] :: Getting project with id ${projectId}`
+      );
+
+      const project = await projectService.getProjectWithId({
+        projectId
+      });
+      reply.send(project);
     }
   );
 };

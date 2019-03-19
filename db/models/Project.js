@@ -5,7 +5,6 @@ module.exports = {
     projectName: { type: 'string', required: true },
     mission: { type: 'string', required: true },
     problemAddressed: { type: 'string', required: true },
-    ownerId: { type: 'number', required: true },
     location: { type: 'string', required: true },
     timeframe: { type: 'string', required: true },
     pitchProposal: { type: 'string', required: true },

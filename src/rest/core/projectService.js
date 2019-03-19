@@ -124,8 +124,6 @@ const projectService = ({ fastify, projectDao, milestoneService }) => ({
     projectCardPhoto,
     projectMilestones
   ) {
-    // const { filePath } = configs.fileServer;
-
     try {
       fastify.log.info(
         '[Project Service] :: Saving Project excel to:',
@@ -222,11 +220,19 @@ const projectService = ({ fastify, projectDao, milestoneService }) => ({
     return project;
   },
 
-  /**
-   * Returns a list of active projects
-   */
   async getProjectList() {
-    return projectDao.getProjectList();
+    return projectDao.getProjecListWithStatusFrom({ status: -1 });
+  },
+
+  /**
+   * Returns a list of active projects, with status == 1
+   */
+  async getActiveProjectList() {
+    return projectDao.getProjecListWithStatusFrom({ status: 1 });
+  },
+
+  async getProjectWithId({ projectId }) {
+    return projectDao.getProjectById({ projectId });
   }
 });
 

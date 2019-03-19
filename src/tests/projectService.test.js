@@ -144,22 +144,56 @@ describe('Testing projectService getProjectList', () => {
   let projectService;
   beforeAll(() => {
     projectDao = {
-      async getProjectList() {
-        return [
-          {
-            projectName: 'name',
-            mission: 'mision',
-            problemAddressed: 'problem',
-            ownerId: 1,
-            location: 'location',
-            timeframe: '10/10/2019',
-            photo: 'wdfwefdwefw.jpg',
-            status: 1,
-            createdAt: '2019-03-13T03:00:00.000Z',
-            updatedAt: '2019-03-13T03:00:00.000Z',
-            id: 1
-          }
-        ];
+      async getProjecListWithStatusFrom({ status }) {
+        switch (status) {
+          case -1:
+            return [
+              {
+                projectName: 'name',
+                mission: 'mision',
+                problemAddressed: 'problem',
+                ownerId: 1,
+                location: 'location',
+                timeframe: '10/10/2019',
+                photo: 'wdfwefdwefw.jpg',
+                status: 1,
+                createdAt: '2019-03-13T03:00:00.000Z',
+                updatedAt: '2019-03-13T03:00:00.000Z',
+                id: 1
+              },
+              {
+                projectName: 'name',
+                mission: 'mision',
+                problemAddressed: 'problem',
+                ownerId: 1,
+                location: 'location',
+                timeframe: '10/10/2019',
+                photo: 'wdfwefdwefw.jpg',
+                status: 0,
+                createdAt: '2019-03-13T03:00:00.000Z',
+                updatedAt: '2019-03-13T03:00:00.000Z',
+                id: 1
+              }
+            ];
+          case 1:
+            return [
+              {
+                projectName: 'name',
+                mission: 'mision',
+                problemAddressed: 'problem',
+                ownerId: 1,
+                location: 'location',
+                timeframe: '10/10/2019',
+                photo: 'wdfwefdwefw.jpg',
+                status: 1,
+                createdAt: '2019-03-13T03:00:00.000Z',
+                updatedAt: '2019-03-13T03:00:00.000Z',
+                id: 1
+              }
+            ];
+          default:
+            return [];
+        }
       }
     };
     projectService = require('../rest/core/projectService')({
@@ -168,7 +202,45 @@ describe('Testing projectService getProjectList', () => {
     });
   });
   it('should return all active projects', async () => {
-    const projects = await projectService.getProjectList();
+    const projects = await projectService.getActiveProjectList();
     expect(projects.length).toBe(1);
+  });
+  it('should return all  projects', async () => {
+    const projects = await projectService.getProjectList();
+    expect(projects.length).toBe(2);
+  });
+});
+
+describe('Testing projectService get one project', () => {
+  let projectDao;
+  let projectService;
+  beforeAll(() => {
+    projectDao = {
+      async getProjectById({ projectId }) {
+        switch (projectId) {
+          case 1:
+            return {
+              id: 1,
+              projectName: 'name',
+              status: '1'
+            };
+          default:
+            return null;
+        }
+      }
+    };
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao
+    });
+  });
+  it('should return a one project if exists', async () => {
+    const project = await projectService.getProjectWithId({ projectId: 1 });
+    expect(project.id).toBe(1);
+  });
+
+  it('should return nothing if project doesnt exists', async () => {
+    const project = await projectService.getProjectWithId({ projectId: 2 });
+    expect(project).toBe(null);
   });
 });
