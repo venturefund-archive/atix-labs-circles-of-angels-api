@@ -19,8 +19,10 @@ const routes = async fastify => {
     milestoneDao,
     activityService
   });
+  const userDao = require('../dao/userDao')({ userModel: fastify.models.user });
   const projectDao = require('../dao/projectDao')({
-    projectModel: fastify.models.project
+    projectModel: fastify.models.project,
+    userDao
   });
   const projectService = require('../core/projectService')({
     fastify,
