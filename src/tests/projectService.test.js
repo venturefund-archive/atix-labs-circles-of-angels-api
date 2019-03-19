@@ -1,8 +1,7 @@
 const { assert } = require('chai');
 const _ = require('lodash');
 
-const fastify = { log: console.log };
-//const { createProject, readProject } = require('../rest/core/projectService')();
+const fastify = { log: { info: console.log, error: console.log } };
 
 describe('Testing projectService createProject', () => {
   const fs = require('fs');
@@ -301,5 +300,62 @@ describe('Testing projectService delete one project', () => {
   it('Delete non-existent project must return undefined', async () => {
     deletedProject = await projectService.deleteProject({ projectId: -1 });
     expect(deletedProject).toBeUndefined();
-  })
+  });
+});
+
+describe('Testing projectService get milestones', () => {
+  let projectDao;
+  let projectService;
+  const mockMilestones = [
+    {
+      tasks: 'tasks',
+      impact: 'impact',
+      impactCriterion: 'criterion',
+      signsOfSuccess: 'success',
+      signsOfSuccessCriterion: 'successcriterion',
+      category: 'category',
+      keyPersonnel: 'key',
+      budget: 'budget',
+      quarter: '1',
+      id: 1,
+      project: 1
+    },
+    {
+      tasks: 'task2',
+      impact: 'omṕacet2',
+      impactCriterion: 'crit2',
+      signsOfSuccess: 'succ2',
+      signsOfSuccessCriterion: 'sicccrit2',
+      category: 'cat2',
+      keyPersonnel: 'key2',
+      budget: 'budget2',
+      quarter: '2',
+      id: 2,
+      project: 1
+    }
+  ];
+  beforeEach(() => {
+    projectDao = {
+      async getProjectMilestones({ projectId }) {
+        if (projectId === 1) return mockMilestones;
+        return [];
+      }
+    };
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao
+    });
+  });
+  it('Request milestones to existent project must return a list of milestones', async () => {
+    const milestones = await projectService.getProjectMilestones({
+      projectId: 1
+    });
+    expect(milestones).toBe(mockMilestones);
+  });
+  it('Request milestones to non-existent project or project without milestones must return empty list ', async () => {
+    const milestones = await projectService.getProjectMilestones({
+      projectId: -1
+    });
+    expect(milestones).toEqual([]);
+  });
 });
