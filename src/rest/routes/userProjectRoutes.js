@@ -41,6 +41,40 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/:projectId/getUsers`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { projectId } = request.params;
+
+      fastify.log.info(
+        '[User Project Routes] :: Getting User associated to Project ID:',
+        projectId
+      );
+      const userProjects = await userProjectService.getUsers(projectId);
+
+      if (userProjects.error) {
+        reply.status(userProjects.status).send(userProjects.error);
+      } else {
+        reply.send(userProjects);
+      }
+    }
+  );
 };
 
 module.exports = routes;

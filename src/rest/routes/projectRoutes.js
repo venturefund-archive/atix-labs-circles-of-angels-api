@@ -23,9 +23,6 @@ const routes = async fastify => {
   const projectStatusDao = require('../dao/projectStatusDao')({
     projectStatusModel: fastify.models.project_status
   });
-  const projectStatusDao = require('../dao/projectStatusDao')({
-    projectStatusModel: fastify.models.project_status
-  });
   const projectService = require('../core/projectService')({
     fastify,
     projectDao,

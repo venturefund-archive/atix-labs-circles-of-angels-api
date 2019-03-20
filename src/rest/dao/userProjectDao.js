@@ -14,7 +14,16 @@ const updateStatus = userProjectModel => async ({ userProject, newStatus }) => {
   return updatedUserProject;
 };
 
+const getUserProjects = userProjectModel => async projectId => {
+  const userProjects = await userProjectModel
+    .find({ project: projectId })
+    .populate('user');
+
+  return userProjects;
+};
+
 module.exports = userProjectModel => ({
   findUserProject: findUserProject(userProjectModel),
-  updateStatus: updateStatus(userProjectModel)
+  updateStatus: updateStatus(userProjectModel),
+  getUserProjects: getUserProjects(userProjectModel)
 });
