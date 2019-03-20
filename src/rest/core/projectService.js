@@ -35,13 +35,21 @@ const projectService = ({
       newProject.ownerId = 1; // <-- TODO: Replace this line with the actual user id (owner) when the login is implemented
       newProject.status = 0;
 
-      newProject.coverPhoto = `coverPhoto${path.extname(
-        projectCoverPhoto.name
-      )}`;
-      newProject.cardPhoto = `cardPhoto${path.extname(projectCardPhoto.name)}`;
-      newProject.pitchProposal = `pitchProposal${path.extname(
-        projectProposal.name
-      )}`;
+      const coverPhotoPath = `${configs.fileServer.filePath}/projects/${
+        newProject.projectName
+      }/coverPhoto${path.extname(projectCoverPhoto.name)}`;
+
+      const cardPhotoPath = `${configs.fileServer.filePath}/projects/${
+        newProject.projectName
+      }/cardPhoto${path.extname(projectCardPhoto.name)}`;
+
+      const pitchProposalPath = `${configs.fileServer.filePath}/projects/${
+        newProject.projectName
+      }/pitchProposal${path.extname(projectProposal.name)}`;
+
+      newProject.coverPhoto = coverPhotoPath;
+      newProject.cardPhoto = cardPhotoPath;
+      newProject.pitchProposal = pitchProposalPath;
 
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
@@ -50,49 +58,31 @@ const projectService = ({
 
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(
-        `${configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${configs.fileServer.filePath}/projects/${newProject.projectName}`
       );
 
       // saves the project's pictures and proposal
       fastify.log.info(
         '[Project Service] :: Saving Project cover photo to:',
-        `${configs.fileServer.filePath}/projects/${
-          savedProject.id
-        }/coverPhoto${path.extname(projectCoverPhoto.name)}`
+        coverPhotoPath
       );
-      await projectCoverPhoto.mv(
-        `${configs.fileServer.filePath}/projects/${
-          savedProject.id
-        }/coverPhoto${path.extname(projectCoverPhoto.name)}`
-      );
+      await projectCoverPhoto.mv(coverPhotoPath);
 
       fastify.log.info(
         '[Project Service] :: Saving Project card photo to:',
-        `${configs.fileServer.filePath}/projects/${
-          savedProject.id
-        }/cardPhoto${path.extname(projectCardPhoto.name)}`
+        cardPhotoPath
       );
-      await projectCardPhoto.mv(
-        `${configs.fileServer.filePath}/projects/${
-          savedProject.id
-        }/cardPhoto${path.extname(projectCardPhoto.name)}`
-      );
+      await projectCardPhoto.mv(cardPhotoPath);
 
       fastify.log.info(
         '[Project Service] :: Saving pitch proposal to:',
-        `${configs.fileServer.filePath}/projects/${
-          savedProject.id
-        }/projectProposal${path.extname(projectProposal.name)}`
+        pitchProposalPath
       );
-      await projectProposal.mv(
-        `${configs.fileServer.filePath}/projects/${
-          savedProject.id
-        }/pitchProposal${path.extname(projectProposal.name)}`
-      );
+      await projectProposal.mv(pitchProposalPath);
 
       fastify.log.info(
         '[Project Service] :: All files saved to:',
-        `${configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${configs.fileServer.filePath}/projects/${newProject.projectName}`
       );
 
       fastify.log.info(
