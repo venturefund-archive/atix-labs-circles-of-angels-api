@@ -1,6 +1,6 @@
 const basePath = '/user';
 
-routes = async (fastify, options) => {
+const routes = async (fastify, options) => {
   const userDao = require('../dao/userDao')({
     userModel: fastify.models.user
   });
@@ -37,7 +37,7 @@ routes = async (fastify, options) => {
       reply.send({
         name: user.username,
         email: user.email,
-        userid: user.userid
+        userid: user.id
       });
     }
   );

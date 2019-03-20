@@ -1,5 +1,5 @@
 const basePath = '/transfer';
-routes = async (fastify, options) => {
+const routes = async (fastify, options) => {
   const transferDao = require('../dao/transferDao')({
     transferModel: fastify.models.fund_transfer
   });
@@ -44,116 +44,119 @@ routes = async (fastify, options) => {
         reply.send({ error: 'Error when trying upload transfer information' });
       reply.send({ sucess: 'Transfer information upload sucessfuly!' });
     }
-  ),
-    fastify.post(
-      `${basePath}/updateState`,
-      {
-        schema: {
-          type: 'application/json',
-          body: {
-            transferId: { type: 'string' },
-            state: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              response: { type: 'object' }
-            }
-          }
-        }
-      },
-      async (request, reply) => {
-        fastify.log.info('[Transfer Routes] :: Update transfer state');
-        const verification = await transferService.updateTransferState({
-          transferId: request.body.transferId,
-          state: request.body.state
-        });
-        if (!verification)
-          reply.send({ error: 'Error when trying upload transfer state' });
-        reply.send({ sucess: 'Transfer information upload sucessfuly!' });
-      }
-    ),
-    fastify.get(
-      `${basePath}/:senderId/:projectId/getState`,
-      {
-        schema: {
-          params: {
-            senderId: { type: 'integer' },
-            projectId: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              response: { type: 'object' }
-            }
-          }
-        }
-      },
-      async (request, reply) => {
-        fastify.log.info(
-          `[Transfer Routes] :: Getting state of user ${
-            request.params.senderId
-          } in project ${request.params.projectId}`
-        );
-        const status = await transferService.getTransferStatusByUserAndProject({
-          senderId: request.params.senderId,
-          projectId: request.params.projectId
-        });
-        status
-          ? reply.send({
-              state: status
-            })
-          : reply.code(400).send('No transfer recipt found');
-      },
+  );
 
-      async (request, reply) => {
-        fastify.log.info(
-          `[Transfer Routes] :: Getting state of transaction with id ${
-            request.params.transferId
-          }`
-        );
-        const status = await transferService.getTransferStatusById({
-          transferId: request.params.transferId
-        });
-        reply.send({
-          transferId: request.params.transferId,
-          state: status
-        });
-      }
-    ),
-    fastify.get(
-      `${basePath}/:projectId/getTransfers`,
-      {
-        schema: {
-          params: {
-            projectId: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              response: { type: 'object' }
-            }
-          }
+  fastify.post(
+    `${basePath}/updateState`,
+    {
+      schema: {
+        type: 'application/json',
+        body: {
+          transferId: { type: 'string' },
+          state: { type: 'integer' }
         }
       },
-      async (request, reply) => {
-        fastify.log.info(
-          `[Transfer Routes] :: Getting transactions of project ${
-            request.params.projectId
-          }`
-        );
-        const transferList = await transferService.getTransferList({
-          projectId: request.params.projectId
-        });
-        reply.send(transferList);
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
       }
-    );
+    },
+    async (request, reply) => {
+      fastify.log.info('[Transfer Routes] :: Update transfer state');
+      const verification = await transferService.updateTransferState({
+        transferId: request.body.transferId,
+        state: request.body.state
+      });
+      if (!verification)
+        reply.send({ error: 'Error when trying upload transfer state' });
+      reply.send({ sucess: 'Transfer information upload sucessfuly!' });
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:senderId/:projectId/getState`,
+    {
+      schema: {
+        params: {
+          senderId: { type: 'integer' },
+          projectId: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info(
+        `[Transfer Routes] :: Getting state of user ${
+          request.params.senderId
+        } in project ${request.params.projectId}`
+      );
+      const status = await transferService.getTransferStatusByUserAndProject({
+        senderId: request.params.senderId,
+        projectId: request.params.projectId
+      });
+      status
+        ? reply.send({
+            state: status
+        })
+        : reply.code(400).send('No transfer recipt found');
+    },
+
+    async (request, reply) => {
+      fastify.log.info(
+        `[Transfer Routes] :: Getting state of transaction with id ${
+          request.params.transferId
+        }`
+      );
+      const status = await transferService.getTransferStatusById({
+        transferId: request.params.transferId
+      });
+      reply.send({
+        transferId: request.params.transferId,
+        state: status
+      });
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:projectId/getTransfers`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info(
+        `[Transfer Routes] :: Getting transactions of project ${
+          request.params.projectId
+        }`
+      );
+      const transferList = await transferService.getTransferList({
+        projectId: request.params.projectId
+      });
+      reply.send(transferList);
+    }
+  );
 };
 
 module.exports = routes;

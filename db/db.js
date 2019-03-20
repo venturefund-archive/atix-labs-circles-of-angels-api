@@ -1,5 +1,5 @@
-const fastWater = require("fast-water");
-const configs = require("../config/configs").database;
+const fastWater = require('fast-water');
+const configs = require('../config/configs').database;
 /**
  * Register the actual db to a fastify instance
  * @method register
