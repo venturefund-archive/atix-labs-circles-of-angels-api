@@ -37,7 +37,7 @@ const routes = async (fastify, options) => {
       reply.send({
         name: user.username,
         email: user.email,
-        userid: user.userid
+        userid: user.id
       });
     }
   );
