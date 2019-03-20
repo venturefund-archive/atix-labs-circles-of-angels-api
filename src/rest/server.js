@@ -28,6 +28,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     fastify.register(require('./routes/generalRoutes'));
     fastify.register(require('./routes/transferRoutes'));
     fastify.register(require('./routes/projectRoutes'));
+    fastify.register(require('./routes/userProjectRoutes'));
 
     await fastify.listen(serverConfigs);
     module.exports.fastify = fastify;
