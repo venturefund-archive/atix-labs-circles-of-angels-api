@@ -7,7 +7,8 @@ describe.skip('Testing projectRoutes', () => {
 
     const fd = new FormData();
     fd.append('projectXls', {});
-    fd.append('projectPhoto', {});
+    fd.append('projectCoverPhoto', {});
+    fd.append('projectCardPhoto', {});
     fd.append('projectMilestones', {});
 
     const res = await fastify.inject({
@@ -16,8 +17,6 @@ describe.skip('Testing projectRoutes', () => {
       headers: { 'Content-Type': 'multipart/form-data' },
       data: fd
     });
-
-    console.log(res.body);
 
     expect(res.statusCode).toBe(200);
   });

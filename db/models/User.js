@@ -1,6 +1,6 @@
 module.exports = {
-  identity: "user",
-  primaryKey: "id",
+  identity: 'user',
+  primaryKey: 'id',
   attributes: {
     username: { type: "string", required: true },
     email: { type: "string", required: true },
