@@ -1,4 +1,4 @@
-const mkdirp = require('mkdirp');
+const mkdirp = require('mkdirp-promise');
 const path = require('path');
 const configs = require('../../../config/configs');
 
@@ -49,7 +49,9 @@ const projectService = ({
       fastify.log.info('[Project Service] :: Project created:', savedProject);
 
       // creates the directory where this project's files will be saved if not exists
-      mkdirp(`${configs.fileServer.filePath}/projects/${savedProject.id}`);
+      await mkdirp(
+        `${configs.fileServer.filePath}/projects/${savedProject.id}`
+      );
 
       // saves the project's pictures and proposal
       fastify.log.info(

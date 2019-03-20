@@ -1,11 +1,11 @@
 module.exports = {
-  identity: "configs",
-  primaryKey: "key",
+  identity: 'configs',
+  primaryKey: 'key',
   attributes: {
-    key: { type: "string", required: true },
-    value: { type: "string", required: true }
+    key: { type: 'string', required: true },
+    value: { type: 'string', required: true }
   },
-  findByKey: async function({key}) {
+  async findByKey({ key }) {
     return this.findOne(key);
   }
 };

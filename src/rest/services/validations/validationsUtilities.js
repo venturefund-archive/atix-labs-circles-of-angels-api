@@ -5,7 +5,7 @@ const addError = (dto, error) => {
 };
 
 exports.fieldEmptyValidation = (dto, field) => {
-  //Check if field is not empty
+  // Check if field is not empty
   if (!/\S/.test(dto[field])) {
     const error = `The field ${field} cant be empty`;
     addError(dto, error);

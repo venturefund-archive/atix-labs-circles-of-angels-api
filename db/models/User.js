@@ -9,7 +9,7 @@ module.exports = {
     updatedAt: { type: "string", autoUpdatedAt: true, required: false },
     id: { type: "number", autoMigrations: { autoIncrement: true } }
   },
-  findById: async function(id) {
+  async findById(id) {
     return this.findOne(id);
   }
 };

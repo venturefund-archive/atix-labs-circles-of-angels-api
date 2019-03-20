@@ -1,6 +1,6 @@
 const basePath = '/general';
 
-routes = async (fastify, options) => {
+const routes = async (fastify, options) => {
   const configsDao = require('../dao/configsDao')({
     configsModel: fastify.models.configs
   });

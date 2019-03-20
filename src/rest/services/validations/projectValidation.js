@@ -1,19 +1,19 @@
-const projectDao = require("../../dao/projectDao");
+const projectDao = require('../../dao/projectDao');
 
 const {
   fieldEmptyValidation,
   dateFormatValidation,
   addError
-} = require("./validationsUtilities");
+} = require('./validationsUtilities');
 
-const projectValidation = (projectDto) => {
-  fieldEmptyValidation(projectDto, "projectName");
-  fieldEmptyValidation(projectDto, "mission");
-  fieldEmptyValidation(projectDto, "problemAddressed");
-  fieldEmptyValidation(projectDto, "location");
-  fieldEmptyValidation(projectDto, "timeframe");
+const projectValidation = projectDto => {
+  fieldEmptyValidation(projectDto, 'projectName');
+  fieldEmptyValidation(projectDto, 'mission');
+  fieldEmptyValidation(projectDto, 'problemAddressed');
+  fieldEmptyValidation(projectDto, 'location');
+  fieldEmptyValidation(projectDto, 'timeframe');
 
-  dateFormatValidation(projectDto, "timeframe");
+  dateFormatValidation(projectDto, 'timeframe');
   nameAvailabilityValidation(projectDto, projectDao);
 
   return projectDto;
