@@ -1,5 +1,5 @@
 module.exports = {
-  identity: 'userProject',
+  identity: 'user_project',
   primaryKey: 'id',
   attributes: {
     user: {
