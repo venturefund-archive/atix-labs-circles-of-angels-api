@@ -1,4 +1,4 @@
-const _ = require('lodash');
+const { forEachPromise } = require('../util/promises');
 
 const ProjectDao = ({ projectModel, userDao }) => ({
   async saveProject(project) {
@@ -6,7 +6,12 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     return createdProject;
   },
   async getProjecListWithStatusFrom({ status }) {
-    const projects = projectModel.find({ where: { status: { '>=': status } } });
+    const projects = await projectModel.find({
+      where: { status: { '>=': status } }
+    });
+    await forEachPromise(projects, project =>
+      this.addUserInfoOnProject(project)
+    );
     return projects;
   },
   async updateProjectStatus({ projectId, status }) {
@@ -15,10 +20,11 @@ const ProjectDao = ({ projectModel, userDao }) => ({
   },
   async getProjectById({ projectId }) {
     const project = await projectModel.findOne({ id: projectId });
-    return this.addUserInfoOnProject({ project });
+    return this.addUserInfoOnProject(project);
   },
-  async addUserInfoOnProject({ project }) {
+  async addUserInfoOnProject(project) {
     const user = await userDao.getUserById({ id: project.ownerId });
+    if (!user) return project;
     project.ownerName = user.username;
     project.ownerEmail = user.email;
     return project;
