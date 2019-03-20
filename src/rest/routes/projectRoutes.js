@@ -151,7 +151,8 @@ const routes = async fastify => {
     async (request, reply) => {
       fastify.log.info('[Project Routes] :: Getting projects');
       try {
-        //When User role verification implemented -> if Backoffice admin, get all projects, else get active projects
+        // When User role verification implemented ->
+        // if Backoffice admin, get all projects, else get active projects
         const projects = await projectService.getProjectList();
         reply.send(projects);
       } catch (error) {

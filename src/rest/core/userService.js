@@ -1,6 +1,6 @@
 const userService = ({ fastify, userDao }) => ({
-  async getUserById({id}) {
-    return userDao.getUserById({id});
+  async getUserById({ id }) {
+    return userDao.getUserById({ id });
   }
 });
 

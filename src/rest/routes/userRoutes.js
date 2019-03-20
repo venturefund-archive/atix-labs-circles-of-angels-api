@@ -1,6 +1,6 @@
 const basePath = '/user';
 
-routes = async (fastify, options) => {
+const routes = async (fastify, options) => {
   const userDao = require('../dao/userDao')({
     userModel: fastify.models.user
   });
