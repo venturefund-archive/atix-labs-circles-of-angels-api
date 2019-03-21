@@ -1,8 +1,6 @@
 const mkdirp = require('mkdirp-promise');
 const path = require('path');
 const { isEmpty } = require('lodash');
-const path = require('path');
-const mime = require('mime');
 const fs = require('fs');
 const configs = require('../../../config/configs');
 
@@ -253,6 +251,7 @@ const projectService = ({
       projectId
     });
     return projectMilestones;
+  },
 
   /**
    * Uploads the project's agreement file to the server
