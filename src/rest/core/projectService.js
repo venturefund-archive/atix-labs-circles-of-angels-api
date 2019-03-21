@@ -262,7 +262,7 @@ const projectService = ({
   async uploadAgreement(projectAgreement, projectId) {
     try {
       // check if project exists in database
-      const project = await projectDao.getProjectById(projectId);
+      const project = await projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
         fastify.log.error(
@@ -273,22 +273,30 @@ const projectService = ({
 
       // creates the directory where this project's agreement will be saved if not exists
       // (it should've been created during the project creation though)
-      mkdirp(`${configs.fileServer.filePath}/projects/${projectId}`);
+      mkdirp(`${configs.fileServer.filePath}/projects/${project.projectName}`);
 
       const filename = `agreement${path.extname(projectAgreement.name)}`;
 
       // saves the project's agreement
       fastify.log.info(
         '[Project Service] :: Saving Project agreement to:',
-        `${configs.fileServer.filePath}/projects/${projectId}/${filename}`
+        `${configs.fileServer.filePath}/projects/${
+          project.projectName
+        }/${filename}`
       );
       await projectAgreement.mv(
-        `${configs.fileServer.filePath}/projects/${projectId}/${filename}`
+        `${configs.fileServer.filePath}/projects/${
+          project.projectName
+        }/${filename}`
       );
 
       // update database
+      const projectAgreementPath = `${configs.fileServer.filePath}/projects/${
+        project.projectName
+      }/${filename}`;
+
       const updatedProject = await projectDao.updateProjectAgreement({
-        projectAgreement: filename,
+        projectAgreement: projectAgreementPath,
         projectId: project.id
       });
 
@@ -315,7 +323,7 @@ const projectService = ({
   async downloadAgreement(projectId) {
     try {
       // check if project exists in database
-      const project = await projectDao.getProjectById(projectId);
+      const project = await projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
         fastify.log.error(
@@ -339,9 +347,7 @@ const projectService = ({
         };
       }
 
-      const filepath = `${configs.fileServer.filePath}/projects/${project.id}/${
-        project.projectAgreement
-      }`;
+      const filepath = project.projectAgreement;
 
       // read file and return stream
       const filestream = fs.createReadStream(filepath);
