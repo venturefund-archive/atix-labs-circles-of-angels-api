@@ -13,6 +13,7 @@ module.exports = {
     cardPhoto: { type: 'string', required: true },
     goalAmount: { type: 'number', required: true },
     status: { type: 'number', defaultsTo: 0 },
+    ownerId: { type: 'number', required: true },
     projectAgreement: { type: 'string', required: false },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
