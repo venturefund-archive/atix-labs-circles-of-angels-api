@@ -1,5 +1,5 @@
 module.exports = {
-  identity: 'transfer_status',
+  identity: 'project_status',
   primaryKey: 'status',
   attributes: {
     status: { type: 'number', required: true },

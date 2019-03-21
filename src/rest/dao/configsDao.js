@@ -1,7 +1,7 @@
 const coaAccountKey = 'coa_bank_account';
 
 const ConfigsDao = ({ configsModel }) => ({
-  getCoaBankAccount: async function() {
+  async getCoaBankAccount() {
     return configsModel.findByKey({ key: coaAccountKey });
   }
 });
