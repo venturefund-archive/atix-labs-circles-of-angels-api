@@ -294,6 +294,41 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/:projectId/getMilestonesFile`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/octet-stream',
+          properties: {
+            response: { type: 'application/octet-stream' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      fastify.log.info(
+        `[Project Routes] :: Getting project milestones of project ${projectId}`
+      );
+
+      try {
+        const milestonesFilePath = await projectService.getProjectMilestonesPath(
+          projectId
+        );
+        reply.status(200).sendFile(milestonesFilePath);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error getting milestones file' });
+      }
+    }
+  );
 };
 
 module.exports = routes;

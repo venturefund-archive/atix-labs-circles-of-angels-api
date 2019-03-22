@@ -38,6 +38,12 @@ const ProjectDao = ({ projectModel, userDao }) => ({
       .findOne({ id: projectId })
       .populate('milestones');
     return projectMilestones ? projectMilestones.milestones : [];
+  },
+  async getProjectMilestonesFilePath(projectId) {
+    return projectModel.findOne({
+      where: { id: projectId },
+      select: ['milestonesFile']
+    });
   }
 });
 

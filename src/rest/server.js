@@ -22,6 +22,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
 
     // Load Swagger
     fastify.register(require('fastify-swagger'), swaggerConfigs);
+    fastify.register(require('fastify-static'), { root: '/' });
 
     // Load routes
     fastify.register(require('./routes/userRoutes'));
