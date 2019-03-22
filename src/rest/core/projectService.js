@@ -1,6 +1,7 @@
 const mkdirp = require('mkdirp-promise');
 const path = require('path');
 const configs = require('../../../config/configs');
+const { getBase64htmlFromPath } = require('../util/images');
 
 const { filePath } = configs.fileServer;
 
@@ -228,18 +229,28 @@ const projectService = ({
   },
 
   async getProjectList() {
-    return projectDao.getProjecListWithStatusFrom({ status: -1 });
+    const projects = await projectDao.getProjecListWithStatusFrom({
+      status: -1
+    });
+    projects.forEach(project => projectImagesToBase64(project));
+    return projects;
   },
 
   /**
    * Returns a list of active projects, with status == 1
    */
   async getActiveProjectList() {
-    return projectDao.getProjecListWithStatusFrom({ status: 1 });
+    const projects = await projectDao.getProjecListWithStatusFrom({
+      status: 1
+    });
+    projects.forEach(project => projectImagesToBase64(project));
+    return projects;
   },
 
   async getProjectWithId({ projectId }) {
-    return projectDao.getProjectById({ projectId });
+    const project = await projectDao.getProjectById({ projectId });
+    projectImagesToBase64(project);
+    return project;
   },
 
   async updateProjectStatus({ projectId, status }) {
@@ -269,4 +280,8 @@ const projectService = ({
   }
 });
 
+const projectImagesToBase64 = project => {
+  project.coverPhoto = getBase64htmlFromPath(project.coverPhoto);
+  project.cardPhoto = getBase64htmlFromPath(project.cardPhoto);
+};
 module.exports = projectService;
