@@ -230,7 +230,9 @@ const projectService = ({
    * Returns a list of active projects, with status == 1
    */
   async getActiveProjectList() {
-    const projects = projectDao.getProjecListWithStatusFrom({ status: 1 });
+    const projects = await projectDao.getProjecListWithStatusFrom({
+      status: 1
+    });
     projects.forEach(project => projectImagesToBase64(project));
     return projects;
   },
