@@ -2,7 +2,6 @@ const mkdirp = require('mkdirp-promise');
 const path = require('path');
 const configs = require('../../../config/configs');
 const { getBase64htmlFromPath } = require('../util/images');
-const { forEach } = require('lodash');
 
 const { filePath } = configs.fileServer;
 
@@ -223,7 +222,7 @@ const projectService = ({
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: -1
     });
-    forEach(projects, project => projectImagesToBase64(project));
+    projects.forEach(project => projectImagesToBase64(project));
     return projects;
   },
 
@@ -232,7 +231,7 @@ const projectService = ({
    */
   async getActiveProjectList() {
     const projects = projectDao.getProjecListWithStatusFrom({ status: 1 });
-    forEach(projects, project => projectImagesToBase64(project));
+    projects.forEach(project => projectImagesToBase64(project));
     return projects;
   },
 
