@@ -54,8 +54,8 @@ describe('Testing projectService createProject', () => {
       faqLink: 'http://www.google.com/',
       ownerId: 1,
       status: 0,
-      coverPhoto: 'coverPhoto.png',
-      cardPhoto: 'cardPhoto.png',
+      cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
+      coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
       pitchProposal: 'pitchProposal.pdf',
       id: 1
     };
@@ -124,7 +124,14 @@ describe.skip('Testing projectService readProject', () => {
       mission: 'Project Mission',
       problemAddressed: 'Problem',
       location: 'Location',
-      timeframe: 'Project Timeframe'
+      ownerId: 1,
+      timeframe: 'Project Timeframe',
+      cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
+      coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+      status: 1,
+      createdAt: '2019-03-13T03:00:00.000Z',
+      updatedAt: '2019-03-13T03:00:00.000Z',
+      id: 1
     };
 
     const mockXls = require('path').join(
@@ -158,7 +165,8 @@ describe('Testing projectService getProjectList', () => {
                 ownerId: 1,
                 location: 'location',
                 timeframe: '10/10/2019',
-                photo: 'wdfwefdwefw.jpg',
+                cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
+                coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
                 status: 1,
                 createdAt: '2019-03-13T03:00:00.000Z',
                 updatedAt: '2019-03-13T03:00:00.000Z',
@@ -171,7 +179,8 @@ describe('Testing projectService getProjectList', () => {
                 ownerId: 1,
                 location: 'location',
                 timeframe: '10/10/2019',
-                photo: 'wdfwefdwefw.jpg',
+                cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
+                coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
                 status: 0,
                 createdAt: '2019-03-13T03:00:00.000Z',
                 updatedAt: '2019-03-13T03:00:00.000Z',
@@ -187,7 +196,8 @@ describe('Testing projectService getProjectList', () => {
                 ownerId: 1,
                 location: 'location',
                 timeframe: '10/10/2019',
-                photo: 'wdfwefdwefw.jpg',
+                cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
+                coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
                 status: 1,
                 createdAt: '2019-03-13T03:00:00.000Z',
                 updatedAt: '2019-03-13T03:00:00.000Z',
@@ -223,9 +233,18 @@ describe('Testing projectService get one project', () => {
         switch (projectId) {
           case 1:
             return {
-              id: 1,
               projectName: 'name',
-              status: '1'
+              mission: 'mision',
+              problemAddressed: 'problem',
+              ownerId: 1,
+              location: 'location',
+              timeframe: '10/10/2019',
+              cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
+              coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+              status: 1,
+              createdAt: '2019-03-13T03:00:00.000Z',
+              updatedAt: '2019-03-13T03:00:00.000Z',
+              id: 1
             };
           default:
             return null;
@@ -259,7 +278,8 @@ describe('Testing projectService delete one project', () => {
     ownerId: 1,
     location: 'location',
     timeframe: '10/10/2019',
-    photo: 'wdfwefdwefw.jpg',
+    cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
+    coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
     status: 1,
     createdAt: '2019-03-13T03:00:00.000Z',
     updatedAt: '2019-03-13T03:00:00.000Z',
