@@ -296,6 +296,52 @@ const routes = async fastify => {
   );
 
   fastify.get(
+    `${basePath}/downloadMilestonesTemplate`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/octet-stream',
+          properties: {
+            response: { type: 'application/octet-stream' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info(
+        '[Project Routes] :: Downloading milestones template file'
+      );
+      try {
+        const res = await projectService.downloadMilestonesTemplate();
+
+        if (res && res.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error getting milestones template:',
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Milestones template downloaded:',
+            res
+          );
+          reply.send(res);
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error getting milestones template:',
+          error
+        );
+        reply.status(500).send({ error: 'Error getting milestones template' });
+      }
+    }
+  );
+  fastify.get(
     `${basePath}/:projectId/getMilestonesFile`,
     {
       schema: {
@@ -369,6 +415,7 @@ const routes = async fastify => {
           reply.status(res.status).send(res.error);
         } else {
           fastify.log.info(
+
             '[Project Routes] :: Project agreement uploaded:',
             res
           );
@@ -424,6 +471,7 @@ const routes = async fastify => {
         }
       } catch (error) {
         fastify.log.error(
+
           '[Project Routes] :: Error getting agreement:',
           error
         );
