@@ -44,6 +44,12 @@ const ProjectDao = ({ projectModel, userDao }) => ({
       .populate('milestones');
     return projectMilestones ? projectMilestones.milestones : [];
   },
+  async getProjectMilestonesFilePath(projectId) {
+    return projectModel.findOne({
+      where: { id: projectId },
+      select: ['milestonesFile']
+    });
+  },
   async updateProjectAgreement({ projectAgreement, projectId }) {
     const updated = projectModel
       .update({ id: projectId })

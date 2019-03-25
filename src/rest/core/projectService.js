@@ -49,9 +49,14 @@ const projectService = ({
         newProject.projectName
       }/pitchProposal${path.extname(projectProposal.name)}`;
 
+      const milestonesPath = `${configs.fileServer.filePath}/projects/${
+        newProject.projectName
+      }/milestones${path.extname(projectMilestones.name)}`;
+
       newProject.coverPhoto = coverPhotoPath;
       newProject.cardPhoto = cardPhotoPath;
       newProject.pitchProposal = pitchProposalPath;
+      newProject.milestonesFile = milestonesPath;
 
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
@@ -83,6 +88,14 @@ const projectService = ({
       await projectProposal.mv(pitchProposalPath);
 
       fastify.log.info(
+        '[Milestone Service] :: Saving Milestone excel to:',
+        milestonesPath
+      );
+
+      // saves the milestones excel file and reads it
+      await projectMilestones.mv(milestonesPath);
+
+      fastify.log.info(
         '[Project Service] :: All files saved to:',
         `${configs.fileServer.filePath}/projects/${newProject.projectName}`
       );
@@ -92,10 +105,7 @@ const projectService = ({
         savedProject.id
       );
 
-      await milestoneService.createMilestones(
-        projectMilestones,
-        savedProject.id
-      );
+      await milestoneService.createMilestones(milestonesPath, savedProject.id);
 
       return savedProject;
     } catch (err) {
@@ -253,6 +263,12 @@ const projectService = ({
     return projectMilestones;
   },
 
+  async getProjectMilestonesPath(projectId) {
+    const milestonesFilePath = await projectDao.getProjectMilestonesFilePath(
+      projectId
+    );
+    return milestonesFilePath.milestonesFile;
+  },
   /**
    * Uploads the project's agreement file to the server
    *
