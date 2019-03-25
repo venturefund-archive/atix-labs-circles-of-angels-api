@@ -7,23 +7,12 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
    * associated to the Project passed by parameter.
    *
    * Returns an array with all the Milestones created.
-   * @param {*} projectMilestones
+   * @param {*} milestonesPath
    * @param {number} projectId
    */
-  async createMilestones(projectMilestones, projectId) {
-    const { filePath } = configs.fileServer;
-
+  async createMilestones(milestonesPath, projectId) {
     try {
-      fastify.log.info(
-        '[Milestone Service] :: Saving Milestone excel to:',
-        `${filePath}/${projectMilestones.name}`
-      );
-
-      // saves the milestones excel file and reads it
-      await projectMilestones.mv(`${filePath}/${projectMilestones.name}`);
-      const milestones = await this.readMilestones(
-        `${filePath}/${projectMilestones.name}`
-      );
+      const milestones = await this.readMilestones(milestonesPath);
 
       fastify.log.info(
         '[Milestone Service] :: Creating Milestones for Project ID:',

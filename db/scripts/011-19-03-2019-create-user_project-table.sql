@@ -4,5 +4,5 @@ CREATE TABLE public.user_project (
 	"userId" int4 not null,
 	"projectId" int4 not null,
 	foreign key ("userId") references "user"(id),
-  	foreign key ("projectId") references project(id)
+  foreign key ("projectId") references project(id)
 );

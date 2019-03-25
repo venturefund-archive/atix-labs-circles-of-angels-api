@@ -1,5 +1,7 @@
 const mkdirp = require('mkdirp-promise');
 const path = require('path');
+const { isEmpty } = require('lodash');
+const fs = require('fs');
 const configs = require('../../../config/configs');
 
 const { filePath } = configs.fileServer;
@@ -47,9 +49,14 @@ const projectService = ({
         newProject.projectName
       }/pitchProposal${path.extname(projectProposal.name)}`;
 
+      const milestonesPath = `${configs.fileServer.filePath}/projects/${
+        newProject.projectName
+      }/milestones${path.extname(projectMilestones.name)}`;
+
       newProject.coverPhoto = coverPhotoPath;
       newProject.cardPhoto = cardPhotoPath;
       newProject.pitchProposal = pitchProposalPath;
+      newProject.milestonesFile = milestonesPath;
 
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
@@ -81,6 +88,14 @@ const projectService = ({
       await projectProposal.mv(pitchProposalPath);
 
       fastify.log.info(
+        '[Milestone Service] :: Saving Milestone excel to:',
+        milestonesPath
+      );
+
+      // saves the milestones excel file and reads it
+      await projectMilestones.mv(milestonesPath);
+
+      fastify.log.info(
         '[Project Service] :: All files saved to:',
         `${configs.fileServer.filePath}/projects/${newProject.projectName}`
       );
@@ -90,10 +105,7 @@ const projectService = ({
         savedProject.id
       );
 
-      await milestoneService.createMilestones(
-        projectMilestones,
-        savedProject.id
-      );
+      await milestoneService.createMilestones(milestonesPath, savedProject.id);
 
       return savedProject;
     } catch (err) {
@@ -249,6 +261,185 @@ const projectService = ({
       projectId
     });
     return projectMilestones;
+  },
+
+  async getProjectMilestonesPath(projectId) {
+    const milestonesFilePath = await projectDao.getProjectMilestonesFilePath(
+      projectId
+    );
+    return milestonesFilePath.milestonesFile;
+  },
+  /**
+   * Uploads the project's agreement file to the server
+   *
+   * @param {*} projectAgreement project's agreement file
+   * @param {number} projectId project ID
+   */
+  async uploadAgreement(projectAgreement, projectId) {
+    try {
+      // check if project exists in database
+      const project = await projectDao.getProjectById({ projectId });
+
+      if (!project || project == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
+      }
+
+      // creates the directory where this project's agreement will be saved if not exists
+      // (it should've been created during the project creation though)
+      mkdirp(`${configs.fileServer.filePath}/projects/${project.projectName}`);
+
+      const filename = `agreement${path.extname(projectAgreement.name)}`;
+
+      // saves the project's agreement
+      fastify.log.info(
+        '[Project Service] :: Saving Project agreement to:',
+        `${configs.fileServer.filePath}/projects/${
+          project.projectName
+        }/${filename}`
+      );
+      await projectAgreement.mv(
+        `${configs.fileServer.filePath}/projects/${
+          project.projectName
+        }/${filename}`
+      );
+
+      // update database
+      const projectAgreementPath = `${configs.fileServer.filePath}/projects/${
+        project.projectName
+      }/${filename}`;
+
+      const updatedProject = await projectDao.updateProjectAgreement({
+        projectAgreement: projectAgreementPath,
+        projectId: project.id
+      });
+
+      fastify.log.info(
+        '[Project Service] :: Project successfully updated:',
+        updatedProject
+      );
+
+      return updatedProject;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error uploading agreement:',
+        error
+      );
+      throw Error('Error uploading agreement');
+    }
+  },
+
+  /**
+   * Downloads the project's agreement. Returns a File Stream.
+   *
+   * @param {number} projectId project ID
+   */
+  async downloadAgreement(projectId) {
+    try {
+      // check if project exists in database
+      const project = await projectDao.getProjectById({ projectId });
+
+      if (!project || project == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
+      }
+
+      if (
+        !project.projectAgreement ||
+        project.projectAgreement == null ||
+        isEmpty(project.projectAgreement)
+      ) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} doesn't have an agreement uploaded`
+        );
+        return {
+          // eslint-disable-next-line prettier/prettier
+          error: 'ERROR: Project doesn\'t have an agreement uploaded',
+          status: 409
+        };
+      }
+
+      const filepath = project.projectAgreement;
+
+      // read file and return stream
+      const filestream = fs.createReadStream(filepath);
+
+      filestream.on('error', error => {
+        fastify.log.error(
+          `[Project Service] :: Agreement file not found for Project ID ${projectId}:`,
+          error
+        );
+        return {
+          error: 'ERROR: Agreement file not found',
+          status: 404
+        };
+      });
+
+      return filestream;
+    } catch (error) {
+      fastify.log.error('[Project Service] :: Error getting agreement:', error);
+      throw Error('Error getting agreement');
+    }
+  },
+   /**
+   * Downloads the project's pitch proposal. Returns a File Stream.
+   *
+   * @param {number} projectId project ID
+   */
+  async downloadProposal(projectId) {
+    try {
+      // check if project exists in database
+      const project = await projectDao.getProjectById({ projectId });
+
+      if (!project || project == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
+      }
+
+      if (
+        !project.pitchProposal ||
+        project.pitchProposal == null ||
+        isEmpty(project.pitchProposal)
+      ) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} doesn't have a pitch proposal uploaded`
+        );
+        return {
+          // eslint-disable-next-line prettier/prettier
+          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
+          status: 409
+        };
+      }
+      const filepath = project.pitchProposal;
+
+      // read file and return stream
+      const filestream = fs.createReadStream(filepath);
+
+      filestream.on('error', error => {
+        fastify.log.error(
+          `[Project Service] :: Pitch proposal file not found for Project ID ${projectId}:`,
+          error
+        );
+        return {
+          error: 'ERROR: Pitch proposal file not found',
+          status: 404
+        };
+      });
+
+      return filestream;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error getting pitch proposal:',
+        error
+      );
+      throw Error('Error getting pitch proposal');
+    }
   }
 });
 

@@ -294,6 +294,187 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/:projectId/getMilestonesFile`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/octet-stream',
+          properties: {
+            response: { type: 'application/octet-stream' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      fastify.log.info(
+        `[Project Routes] :: Getting project milestones of project ${projectId}`
+      );
+
+      try {
+        const milestonesFilePath = await projectService.getProjectMilestonesPath(
+          projectId
+        );
+        reply.status(200).sendFile(milestonesFilePath);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error getting milestones file' });
+      }
+    }
+  );
+
+  fastify.post(
+    `${basePath}/:projectId/uploadAgreement`,
+    {
+      schema: {
+        type: 'multipart/form-data',
+        params: {
+          projectId: { type: 'number' }
+        },
+        raw: {
+          files: { type: 'object' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Project Routes] :: Uploading agreement file');
+      try {
+        const { projectAgreement } = request.raw.files;
+
+        const res = await projectService.uploadAgreement(
+          projectAgreement,
+          request.params.projectId
+        );
+
+        if (res && res.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error uploading agreement:',
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Project agreement uploaded:',
+            res
+          );
+          reply.status(200).send('Project agreement successfully uploaded!');
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error uploading agreement:',
+          error
+        );
+        reply.status(500).send({ error: 'Error uploading agreement' });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:projectId/downloadAgreement`,
+    {
+      schema: {
+        type: 'multipart/form-data',
+        params: {
+          projectId: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/octet-stream',
+          properties: {
+            response: { type: 'application/octet-stream' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Project Routes] :: Downloading agreement file');
+      try {
+        const res = await projectService.downloadAgreement(
+          request.params.projectId
+        );
+
+        if (res && res.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error getting agreement:',
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Project agreement downloaded:',
+            res
+          );
+          reply.send(res);
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error getting agreement:',
+          error
+        );
+        reply.status(500).send({ error: 'Error getting agreement' });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:projectId/downloadProposal`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/octet-stream',
+          properties: {
+            response: { type: 'application/octet-stream' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Project Routes] :: Downloading proposal file');
+      try {
+        const res = await projectService.downloadProposal(
+          request.params.projectId
+        );
+
+        if (res && res.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error getting proposal:',
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Project proposal downloaded:',
+            res
+          );
+          reply.send(res);
+        }
+      } catch (error) {
+        fastify.log.error('[Project Routes] :: Error getting proposal:', error);
+        reply.status(500).send({ error: 'Error getting proposal' });
+      }
+    }
+  );
 };
 
 module.exports = routes;
