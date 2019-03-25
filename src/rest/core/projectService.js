@@ -368,6 +368,62 @@ const projectService = ({
       fastify.log.error('[Project Service] :: Error getting agreement:', error);
       throw Error('Error getting agreement');
     }
+  },
+   /**
+   * Downloads the project's pitch proposal. Returns a File Stream.
+   *
+   * @param {number} projectId project ID
+   */
+  async downloadProposal(projectId) {
+    try {
+      // check if project exists in database
+      const project = await projectDao.getProjectById({ projectId });
+
+      if (!project || project == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
+      }
+
+      if (
+        !project.pitchProposal ||
+        project.pitchProposal == null ||
+        isEmpty(project.pitchProposal)
+      ) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} doesn't have a pitch proposal uploaded`
+        );
+        return {
+          // eslint-disable-next-line prettier/prettier
+          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
+          status: 409
+        };
+      }
+      const filepath = project.pitchProposal;
+
+      // read file and return stream
+      const filestream = fs.createReadStream(filepath);
+
+      filestream.on('error', error => {
+        fastify.log.error(
+          `[Project Service] :: Pitch proposal file not found for Project ID ${projectId}:`,
+          error
+        );
+        return {
+          error: 'ERROR: Pitch proposal file not found',
+          status: 404
+        };
+      });
+
+      return filestream;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error getting pitch proposal:',
+        error
+      );
+      throw Error('Error getting pitch proposal');
+    }
   }
 });
 
