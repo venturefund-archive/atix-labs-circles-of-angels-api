@@ -66,13 +66,64 @@ const routes = async fastify => {
       const { project } = req.raw.body;
 
       try {
-        await projectService.createProject(
+        const response = await projectService.createProject(
           project,
           projectProposal,
           projectCoverPhoto,
           projectCardPhoto,
           projectMilestones
         );
+
+        if (response.milestones.errors) {
+          await projectService.deleteProject({
+            projectId: response.project.id
+          });
+          fastify.log.info(
+            '[Project Routes] :: Deleting project ID: ',
+            response.project.id
+          );
+          reply.status(409).send({ errors: response.milestones.errors });
+        } else {
+          reply.send({ sucess: 'Project created successfully!' });
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error creating project: ',
+          error
+        );
+        reply.status(500).send({ error: 'Error creating project' });
+      }
+    }
+  );
+
+  fastify.post(
+    `${basePath}/test`,
+    {
+      schema: {
+        type: 'multipart/form-data',
+        raw: {
+          files: { type: 'object' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
+      fastify.log.info(
+        '[Project Routes] :: POST request at /project/test:',
+        req.raw.files
+      );
+
+      const { projectMilestones } = req.raw.files;
+
+      try {
+        await milestoneService.testRead(projectMilestones);
       } catch (error) {
         fastify.log.error(
           '[Project Routes] :: Error creating project: ',

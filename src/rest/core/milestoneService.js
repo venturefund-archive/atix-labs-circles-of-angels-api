@@ -1,3 +1,4 @@
+const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 const configs = require('../../../config/configs');
 
@@ -12,8 +13,17 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
    */
   async createMilestones(milestonesPath, projectId) {
     try {
-      const milestones = await this.readMilestones(milestonesPath);
+      const response = await this.readMilestones(milestonesPath);
 
+      if (response.errors.length > 0) {
+        fastify.log.error(
+          '[Milestone Service] :: Found errors while reading the excel file:',
+          response.errors
+        );
+        return response;
+      }
+
+      const { milestones } = response;
       fastify.log.info(
         '[Milestone Service] :: Creating Milestones for Project ID:',
         projectId
@@ -25,7 +35,7 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
       const createMilestone = (milestone, context) =>
         new Promise(resolve => {
           process.nextTick(async () => {
-            if (!this.isEmpty(milestone)) {
+            if (!this.isMilestoneEmpty(milestone)) {
               const activityList = milestone.activityList.slice(0);
               const savedMilestone = await milestoneDao.saveMilestone({
                 milestone,
@@ -36,7 +46,6 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
                 savedMilestone
               );
               context.push(savedMilestone);
-
               // create the activities for this milestone
               await activityService.createActivities(
                 activityList,
@@ -58,6 +67,21 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     }
   },
 
+  async testRead(projectMilestones) {
+    await projectMilestones.mv(
+      `${configs.fileServer.filePath}/${projectMilestones.name}`
+    );
+    const response = await this.readMilestones(
+      `${configs.fileServer.filePath}/${projectMilestones.name}`
+    );
+
+    if (response.errors.length > 0) {
+      fastify.log.info(response.errors);
+    } else {
+      fastify.log.info(response.milestones);
+    }
+  },
+
   /**
    * Reads the excel file with the Milestones and Activities' information.
    *
@@ -66,6 +90,8 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
    */
   async readMilestones(file) {
     const XLSX = require('xlsx');
+    const response = {};
+    response.errors = [];
 
     let workbook = null;
     try {
@@ -97,17 +123,20 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
 
     const milestonesJSON = XLSX.utils.sheet_to_json(worksheet).slice(1);
 
-    const milestones = [];
+    response.milestones = [];
+    const { milestones } = response;
     let milestone = {};
     let quarter = '';
 
     // parse the JSON array with the milestones data
     Object.values(milestonesJSON).forEach(row => {
+      const rowNumber = row.__rowNum__ + 1;
       let activity = {};
 
       if ('Timeline' in row) {
         // found a quarter
         quarter = row.Timeline;
+        milestone = {};
       } else if (row.__EMPTY.includes('Milestone')) {
         // found a milestone
         milestone = {};
@@ -140,7 +169,36 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
 
         milestone.activityList = [];
 
-        milestones.push(milestone);
+        if (quarter !== '') {
+          let error = false;
+
+          if (!this.isMilestoneEmpty(milestone)) {
+            if (milestone.tasks === '') {
+              error = true;
+              response.errors.push({
+                rowNumber,
+                msg: 'Found a milestone without Tasks'
+              });
+            }
+            if (milestone.impact === '') {
+              error = true;
+              response.errors.push({
+                rowNumber,
+                msg:
+                  'Found a milestone without Expected Changes/ Social Impact Targets'
+              });
+            }
+          }
+
+          if (!error) {
+            milestones.push(milestone);
+          }
+        } else {
+          response.errors.push({
+            rowNumber,
+            msg: 'Found a milestone without an specified quarter'
+          });
+        }
       } else if (row.__EMPTY.includes('Activity')) {
         // found an activity
         activity = {};
@@ -170,7 +228,27 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
         activity.budget =
           row['Budget needed'] !== undefined ? row['Budget needed'] : '';
 
-        milestone.activityList.push(activity);
+        if (!values(activity).every(isEmpty)) {
+          const validActivity = this.verifyActivity(
+            activity,
+            response,
+            rowNumber
+          );
+          if (
+            !this.isMilestoneEmpty(milestone) &&
+            this.isMilestoneValid(milestone)
+          ) {
+            if (validActivity) {
+              milestone.activityList.push(activity);
+            }
+          } else {
+            response.errors.push({
+              rowNumber,
+              msg:
+                'Found an activity without an specified milestone or inside an invalid milestone'
+            });
+          }
+        }
       }
     });
 
@@ -179,10 +257,10 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
       milestones
     );
 
-    return milestones;
+    return response;
   },
 
-  isEmpty(milestone) {
+  isMilestoneEmpty(milestone) {
     let empty = true;
     Object.entries(milestone).forEach(entry => {
       if (
@@ -194,6 +272,91 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
       }
     });
     return empty;
+  },
+
+  isMilestoneValid(milestone) {
+    if (
+      !this.isMilestoneEmpty(milestone) &&
+      (milestone.quarter === '' ||
+        milestone.tasks === '' ||
+        milestone.impact === '')
+    ) {
+      return false;
+    }
+
+    return true;
+  },
+
+  verifyActivity(activity, response, rowNumber) {
+    let valid = true;
+
+    if (activity.tasks === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found an activity without Tasks'
+      });
+    }
+
+    if (activity.impact === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found an activity without Expected Changes/ Social Impact Targets'
+      });
+    }
+
+    if (activity.impactCriterion === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg:
+          'Found an activity without a Review Criterion for the Expected Changes'
+      });
+    }
+
+    if (activity.signsOfSuccess === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found an activity without Signs of Success'
+      });
+    }
+
+    if (activity.signsOfSuccessCriterion === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg:
+          'Found an activity without a Review Criterion for the Signs of Success'
+      });
+    }
+
+    if (activity.category === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found an activity without an Expenditure Category specified'
+      });
+    }
+
+    if (activity.keyPersonnel === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found an activity without the Key Personnel Responsible specified'
+      });
+    }
+
+    if (activity.budget === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found an activity without the Budget needed specified'
+      });
+    }
+
+    return valid;
   }
 });
 

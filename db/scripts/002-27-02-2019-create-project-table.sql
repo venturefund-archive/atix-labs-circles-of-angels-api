@@ -13,6 +13,7 @@ CREATE TABLE public.project (
     "faqLink" varchar not null,
     "pitchProposal" varchar(100) not null,
     "projectAgreement" varchar(100),
+    "milestonesFile" varchar(100),
     "createdAt" date,
     "updatedAt" date
 );
