@@ -20,6 +20,11 @@ const ProjectDao = ({ projectModel, userDao }) => ({
   },
   async getProjectById({ projectId }) {
     const project = await projectModel.findOne({ id: projectId });
+
+    // returns undefined if not found
+    if (!project || project == null) {
+      return project;
+    }
     return this.addUserInfoOnProject(project);
   },
   async addUserInfoOnProject(project) {
@@ -44,6 +49,12 @@ const ProjectDao = ({ projectModel, userDao }) => ({
       where: { id: projectId },
       select: ['milestonesFile']
     });
+  },
+  async updateProjectAgreement({ projectAgreement, projectId }) {
+    const updated = projectModel
+      .update({ id: projectId })
+      .set({ projectAgreement });
+    return updated;
   }
 });
 
