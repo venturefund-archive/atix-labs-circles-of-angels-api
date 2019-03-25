@@ -294,6 +294,50 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/:projectId/downloadProposal`,
+    {
+      schema: {
+        params: {
+          projectId: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/octet-stream',
+          properties: {
+            response: { type: 'application/octet-stream' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Project Routes] :: Downloading proposal file');
+      try {
+        const res = await projectService.downloadProposal(
+          request.params.projectId
+        );
+
+        if (res && res.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error getting proposal:',
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Project proposal downloaded:',
+            res
+          );
+          reply.send(res);
+        }
+      } catch (error) {
+        fastify.log.error('[Project Routes] :: Error getting proposal:', error);
+        reply.status(500).send({ error: 'Error getting proposal' });
+      }
+    }
+  );
 };
 
 module.exports = routes;
