@@ -263,6 +263,51 @@ const projectService = ({
     return projectMilestones;
   },
 
+  /**
+   * Downloads the Milestones template to be used in Project Creation
+   *
+   * @returns milestone template file stream
+   */
+  async downloadMilestonesTemplate() {
+    const filepath = `${configs.fileServer.filePath}/templates/milestones.xlsx`;
+
+    try {
+      if (fs.existsSync(filepath)) {
+        // read file and return stream
+        const filestream = fs.createReadStream(filepath);
+
+        filestream.on('error', error => {
+          fastify.log.error(
+            '[Project Service] :: Error reading milestones template file',
+            error
+          );
+          return {
+            error: 'ERROR: Error reading milestones template file',
+            status: 404
+          };
+        });
+
+        return filestream;
+      }
+
+      fastify.log.error(
+        `[Project Service] :: Milestones template file could not be found in ${filepath}`
+      );
+      return {
+        error: 'ERROR: Milestones template file could not be found',
+        status: 404
+      };
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error reading milestones template file',
+        error
+      );
+      return {
+        error: 'ERROR: Error reading milestones template file',
+        status: 404
+      };
+    }
+  },
   async getProjectMilestonesPath(projectId) {
     const milestonesFilePath = await projectDao.getProjectMilestonesFilePath(
       projectId
