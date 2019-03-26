@@ -23,7 +23,7 @@ exports.database = {
 };
 
 exports.fileServer = {
-  filePath: '/home/federico/files/server'
+  filePath: '/home/atixlabs/files/server'
 };
 
 exports.swagger = {
