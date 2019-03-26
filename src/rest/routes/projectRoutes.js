@@ -64,10 +64,12 @@ const routes = async fastify => {
         projectMilestones
       } = req.raw.files;
 
-      const { project } = req.raw.body;
+      const { project, ownerId } = req.raw.body;
+
+      const { projectName } = JSON.parse(project);
 
       addPathToFilesProperties(
-        project,
+        projectName,
         projectProposal,
         projectCoverPhoto,
         projectCardPhoto,
@@ -80,7 +82,8 @@ const routes = async fastify => {
           projectProposal,
           projectCoverPhoto,
           projectCardPhoto,
-          projectMilestones
+          projectMilestones,
+          ownerId
         );
 
         if (response.milestones.errors) {
@@ -435,7 +438,6 @@ const routes = async fastify => {
           reply.status(res.status).send(res.error);
         } else {
           fastify.log.info(
-
             '[Project Routes] :: Project agreement uploaded:',
             res
           );
@@ -491,7 +493,6 @@ const routes = async fastify => {
         }
       } catch (error) {
         fastify.log.error(
-
           '[Project Routes] :: Error getting agreement:',
           error
         );
