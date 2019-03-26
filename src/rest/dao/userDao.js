@@ -5,6 +5,10 @@ const UserDao = ({ userModel }) => ({
 
   async getUserByEmail(email) {
     return userModel.findOne({ email });
+  },
+
+  async createUser(user) {
+    return userModel.create(user);
   }
 });
 
