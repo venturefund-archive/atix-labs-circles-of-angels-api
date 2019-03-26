@@ -7,27 +7,30 @@ const TransferDao = ({ transferModel, transferStatusModel }) => ({
     projectId,
     destinationAccount
   }) {
-    const transfer = await transferModel.findTransferByUserAndProject({
-      senderId,
-      projectId
+    const transfer = await transferModel.findOne({
+      and: [
+        {
+          sender: senderId,
+          project: projectId
+        }
+      ]
     });
     if (!transfer) {
       return transferModel.create({
         transferId,
         amount,
         currency,
-        senderId,
-        projectId,
+        sender: senderId,
+        project: projectId,
         destinationAccount
       });
     }
     return transferModel.update(
-      { senderId, projectId },
+      { sender: senderId, project: projectId },
       {
         transferId,
         amount,
         currency,
-        projectId,
         state: 0,
         destinationAccount
       }
@@ -35,23 +38,30 @@ const TransferDao = ({ transferModel, transferStatusModel }) => ({
   },
 
   async updateTransferState({ transferId, state }) {
-    return transferModel.updateTransferState({ transferId, state });
+    return transferModel.update({ transferId }).set({ state });
   },
 
   async getTransferById({ transferId }) {
     return transferModel.findTransferById(transferId);
   },
+
   async getTransferStatusByUserAndProject({ senderId, projectId }) {
-    const transfer = await transferModel.findTransferByUserAndProject({
-      senderId,
-      projectId
+    const transfer = await transferModel.findOne({
+      and: [
+        {
+          sender: senderId,
+          project: projectId
+        }
+      ]
     });
+
     return transfer
       ? transferStatusModel.findOne({ status: transfer.state })
       : null;
   },
+
   async getTransferByProjectId({ projectId }) {
-    return transferModel.find({ projectId });
+    return transferModel.find({ project: projectId });
   }
 });
 

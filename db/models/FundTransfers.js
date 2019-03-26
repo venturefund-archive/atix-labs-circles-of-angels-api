@@ -13,11 +13,17 @@ module.exports = {
   primaryKey: 'id',
   attributes: {
     transferId: { type: 'string', required: true },
-    senderId: { type: 'string', required: true },
+    sender: {
+      columnName: 'senderId',
+      model: 'user'
+    },
     destinationAccount: { type: 'string', required: true },
     amount: { type: 'number', required: true },
     currency: { type: 'string', required: true },
-    projectId: { type: 'number', required: true },
+    project: {
+      columnName: 'projectId',
+      model: 'project'
+    },
     state: { type: 'number', defaultsTo: 0 },
     createdAt: { type: 'string', autoCreatedAt: true },
     updatedAt: { type: 'string', autoUpdatedAt: true },
@@ -27,13 +33,11 @@ module.exports = {
   //   console.log(transferId)
   //   return this.findOne(transferId);
   // },
-  async updateTransferState({ transferId, state }) {
-    return this.update({ transferId }).set({ state });
-  },
-  async findTransferByUserAndProject({ senderId, projectId }) {
-    const transfer = await this.findOne({
-      and: [{ senderId }, { projectId }]
-    });
-    return transfer;
-  }
+  // async updateTransferState({ transferId, state }) {
+  //   return this.update({ transferId }).set({ state });
+  // }
+  // async findTransferByUserAndProject({ sender, project }) {
+  //   const transfer = await this.findOne({
+  //     and: [{ sender }, { project }]
+  // }
 };
