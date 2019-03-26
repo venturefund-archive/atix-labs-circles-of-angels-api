@@ -29,6 +29,7 @@ const projectService = ({
   ) {
     try {
       const newProject = Object.assign({}, JSON.parse(project));
+      const response = {};
       // TODO: project validations
       newProject.ownerId = 1; // <-- TODO: Replace this line with the actual user id (owner) when the login is implemented
       newProject.status = 0;
@@ -90,9 +91,15 @@ const projectService = ({
         savedProject.id
       );
 
-      await milestoneService.createMilestones(milestonesPath, savedProject.id);
+      const milestones = await milestoneService.createMilestones(
+        milestonesPath,
+        savedProject.id
+      );
 
-      return savedProject;
+      response.project = savedProject;
+      response.milestones = milestones;
+
+      return response;
     } catch (err) {
       fastify.log.error('[Project Service] :: Error creating Project:', err);
       throw Error('Error creating Project');

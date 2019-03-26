@@ -75,13 +75,26 @@ const routes = async fastify => {
       );
 
       try {
-        await projectService.createProject(
+        const response = await projectService.createProject(
           project,
           projectProposal,
           projectCoverPhoto,
           projectCardPhoto,
           projectMilestones
         );
+
+        if (response.milestones.errors) {
+          await projectService.deleteProject({
+            projectId: response.project.id
+          });
+          fastify.log.info(
+            '[Project Routes] :: Deleting project ID: ',
+            response.project.id
+          );
+          reply.status(409).send({ errors: response.milestones.errors });
+        } else {
+          reply.send({ sucess: 'Project created successfully!' });
+        }
       } catch (error) {
         fastify.log.error(
           '[Project Routes] :: Error creating project: ',
@@ -89,8 +102,6 @@ const routes = async fastify => {
         );
         reply.status(500).send({ error: 'Error creating project' });
       }
-
-      reply.send({ sucess: 'Project created successfully!' });
     }
   );
 
