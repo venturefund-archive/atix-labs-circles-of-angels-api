@@ -10,6 +10,7 @@
   "author": "Atix Labs S.R.L",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "3.0.5",
     "bunyan": "1.8.12",
     "bunyan-format": "0.2.1",
     "cors": "2.8.5",
