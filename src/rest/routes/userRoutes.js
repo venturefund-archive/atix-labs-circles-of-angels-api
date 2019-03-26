@@ -77,6 +77,46 @@ const routes = async (fastify, options) => {
       }
     }
   );
+
+  fastify.post(
+    `${basePath}/register`,
+    {
+      schema: {
+        type: 'application/json',
+        body: {
+          username: { type: 'string' },
+          email: { type: 'string' },
+          pwd: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { email, pwd, username } = request.body;
+
+      fastify.log.info('[User Routes] :: Creating new user:', request.body);
+
+      const user = await userService.createUser(username, email, pwd);
+
+      if (user.error) {
+        fastify.log.error(
+          '[User Routes] :: Creation failed for user:',
+          request.body
+        );
+        reply.status(409).send(user.error);
+      } else {
+        fastify.log.info('[User Routes] :: Creation successful:', user);
+        reply.status(200).send(user);
+      }
+    }
+  );
 };
 
 module.exports = routes;
