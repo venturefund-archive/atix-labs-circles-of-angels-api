@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const configs = require('../../../config/configs');
 
-exports.getFileFromPath = path => {
-  const file = fs.createReadStream(path, 'utf8');
+exports.getFileFromPath = filepath => {
+  const file = fs.createReadStream(filepath, 'utf8');
   return file;
 };
 
