@@ -41,6 +41,31 @@ const userService = ({ fastify, userDao }) => ({
     }
 
     return { error: 'Login failed. Incorrect user or password.' };
+  },
+
+  /**
+   * Simple method to create an user with postman
+   *
+   * @param {string} username
+   * @param {string} email
+   * @param {string} pwd
+   * @returns new user | error
+   */
+  async createUser(username, email, pwd) {
+    const hashedPwd = await bcrypt.hash(pwd, 10);
+    try {
+      const user = {
+        username,
+        email,
+        pwd: hashedPwd
+      };
+
+      const savedUser = await userDao.createUser(user);
+
+      return savedUser;
+    } catch (error) {
+      return { error };
+    }
   }
 });
 
