@@ -41,6 +41,42 @@ const routes = async (fastify, options) => {
       });
     }
   );
+
+  fastify.post(
+    `${basePath}/login`,
+    {
+      schema: {
+        type: 'application/json',
+        body: {
+          email: { type: 'string' },
+          pwd: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { email, pwd } = request.body;
+
+      fastify.log.info('[User Routes] :: Trying to log in user:', email);
+
+      const user = await userService.login(email, pwd);
+
+      if (user.error) {
+        fastify.log.error('[User Routes] :: Log in failed for user:', email);
+        reply.status(401).send(user.error);
+      } else {
+        fastify.log.info('[User Routes] :: Log in successful for user:', email);
+        reply.status(200).send(user);
+      }
+    }
+  );
 };
 
 module.exports = routes;
