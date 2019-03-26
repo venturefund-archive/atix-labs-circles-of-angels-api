@@ -1,13 +1,13 @@
 create table public.activity (
-	id SERIAL primary key,
+	"id" SERIAL primary key,
 	"milestoneId" int4,
-	tasks text,
-	impact text,
+	"tasks" text,
+	"impact" text,
 	"impactCriterion" text,
 	"signsOfSuccess" text,
 	"signsOfSuccessCriterion" text,
-	category text,
+	"category" text,
 	"keyPersonnel" text,
-	budget text,
+	"budget" text,
 	FOREIGN KEY ("milestoneId") REFERENCES milestone(id) ON DELETE CASCADE
 );
