@@ -1,7 +1,8 @@
 const basePath = '/transfer';
 const routes = async (fastify, options) => {
   const transferDao = require('../dao/transferDao')({
-    transferModel: fastify.models.fund_transfer
+    transferModel: fastify.models.fund_transfer,
+    transferStatusModel: fastify.models.transfer_status
   });
   const transferService = require('../core/transferService')({
     fastify,
@@ -105,11 +106,14 @@ const routes = async (fastify, options) => {
         senderId: request.params.senderId,
         projectId: request.params.projectId
       });
-      status
-        ? reply.send({
-            state: status
-        })
-        : reply.code(400).send('No transfer recipt found');
+
+      if (status) {
+        reply.send({
+          state: status
+        });
+      } else {
+        reply.code(400).send('No transfer recipt found');
+      }
     },
 
     async (request, reply) => {
