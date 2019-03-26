@@ -56,7 +56,8 @@ describe('Testing projectService createProject', () => {
       status: 0,
       cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
       coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
-      pitchProposal: 'pitchProposal.pdf',
+      pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
+      milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
       id: 1
     };
 
@@ -69,21 +70,25 @@ describe('Testing projectService createProject', () => {
 
     const mockProjectCoverPhoto = {
       name: 'projectCoverPhoto.png',
+      path: `${__dirname}/mockFiles/projectCoverPhoto.png`,
       mv: jest.fn()
     };
 
     const mockProjectCardPhoto = {
       name: 'projectCardPhoto.png',
+      path: `${__dirname}/mockFiles/projectCardPhoto.png`,
       mv: jest.fn()
     };
 
     const mockProjectProposal = {
       name: 'projectProposal.pdf',
+      path: `${__dirname}/mockFiles/projectProposal.pdf`,
       mv: jest.fn()
     };
 
     const mockProjectMilestones = {
       name: 'projectMilestones.xlsx',
+      path: `${__dirname}/mockFiles/projectMilestones.xlsx`,
       data: dataMilestones,
       mv: jest.fn()
     };
@@ -128,6 +133,8 @@ describe.skip('Testing projectService readProject', () => {
       timeframe: 'Project Timeframe',
       cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
       coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+      pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
+      milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
       status: 1,
       createdAt: '2019-03-13T03:00:00.000Z',
       updatedAt: '2019-03-13T03:00:00.000Z',
@@ -167,6 +174,8 @@ describe('Testing projectService getProjectList', () => {
                 timeframe: '10/10/2019',
                 cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
                 coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+                pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
+                milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
                 status: 1,
                 createdAt: '2019-03-13T03:00:00.000Z',
                 updatedAt: '2019-03-13T03:00:00.000Z',
@@ -181,6 +190,8 @@ describe('Testing projectService getProjectList', () => {
                 timeframe: '10/10/2019',
                 cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
                 coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+                pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
+                milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
                 status: 0,
                 createdAt: '2019-03-13T03:00:00.000Z',
                 updatedAt: '2019-03-13T03:00:00.000Z',
@@ -198,6 +209,8 @@ describe('Testing projectService getProjectList', () => {
                 timeframe: '10/10/2019',
                 cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
                 coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+                pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
+                milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
                 status: 1,
                 createdAt: '2019-03-13T03:00:00.000Z',
                 updatedAt: '2019-03-13T03:00:00.000Z',
@@ -241,6 +254,8 @@ describe('Testing projectService get one project', () => {
               timeframe: '10/10/2019',
               cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
               coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+              pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
+              milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
               status: 1,
               createdAt: '2019-03-13T03:00:00.000Z',
               updatedAt: '2019-03-13T03:00:00.000Z',
@@ -280,6 +295,8 @@ describe('Testing projectService delete one project', () => {
     timeframe: '10/10/2019',
     cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
     coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+    pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
+    milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
     status: 1,
     createdAt: '2019-03-13T03:00:00.000Z',
     updatedAt: '2019-03-13T03:00:00.000Z',
