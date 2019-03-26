@@ -3,6 +3,7 @@ CREATE TABLE public.project (
     "projectName" varchar(50) NOT NULL,
     "ownerId" int4 NOT NULL,
     "mission" text NOT NULL,
+    "milestonesFile" text NOT NULL,
     "problemAddressed" text not null,
     "location" text NOT null,
     "timeframe" text not null,
