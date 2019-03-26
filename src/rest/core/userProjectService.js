@@ -75,6 +75,63 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
     );
 
     return userProjects;
+  },
+
+  async createUserProject(userId, projectId) {
+    fastify.log.info(
+      `[User Project Service] :: Creating User-Project relation: User ${userId} - Project ${projectId}`
+    );
+    // check if already exists
+    const userProject = await userProjectDao.findUserProject({
+      userId,
+      projectId
+    });
+
+    if (userProject) {
+      // relation already exists
+      fastify.log.info(
+        '[User Project Service] :: User-Project relation already exists:',
+        userProject
+      );
+      return userProject;
+    }
+
+    const newUserProject = {
+      status: 0,
+      user: userId,
+      project: projectId
+    };
+
+    try {
+      const savedUserProject = await userProjectDao.createUserProject(
+        newUserProject
+      );
+
+      if (!savedUserProject || savedUserProject == null) {
+        fastify.log.error(
+          '[User Project Service] :: There was an error creating the User-Project: ',
+          newUserProject
+        );
+
+        return {
+          error: 'There was an error creating the User-Project',
+          status: 409
+        };
+      }
+
+      fastify.log.info(
+        '[User Project Service] :: User-Project relation created succesfully: ',
+        savedUserProject
+      );
+
+      return savedUserProject;
+    } catch (error) {
+      fastify.log.error(
+        '[User Project Service] :: There was an error creating the User-Project: ',
+        newUserProject
+      );
+      throw Error('There was an error creating the User-Project');
+    }
   }
 });
 
