@@ -67,21 +67,6 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     }
   },
 
-  async testRead(projectMilestones) {
-    await projectMilestones.mv(
-      `${configs.fileServer.filePath}/${projectMilestones.name}`
-    );
-    const response = await this.readMilestones(
-      `${configs.fileServer.filePath}/${projectMilestones.name}`
-    );
-
-    if (response.errors.length > 0) {
-      fastify.log.info(response.errors);
-    } else {
-      fastify.log.info(response.milestones);
-    }
-  },
-
   /**
    * Reads the excel file with the Milestones and Activities' information.
    *

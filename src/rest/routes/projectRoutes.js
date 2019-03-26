@@ -96,46 +96,6 @@ const routes = async fastify => {
     }
   );
 
-  fastify.post(
-    `${basePath}/test`,
-    {
-      schema: {
-        type: 'multipart/form-data',
-        raw: {
-          files: { type: 'object' }
-        }
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
-          }
-        }
-      }
-    },
-    async (req, reply) => {
-      fastify.log.info(
-        '[Project Routes] :: POST request at /project/test:',
-        req.raw.files
-      );
-
-      const { projectMilestones } = req.raw.files;
-
-      try {
-        await milestoneService.testRead(projectMilestones);
-      } catch (error) {
-        fastify.log.error(
-          '[Project Routes] :: Error creating project: ',
-          error
-        );
-        reply.status(500).send({ error: 'Error creating project' });
-      }
-
-      reply.send({ sucess: 'Project created successfully!' });
-    }
-  );
-
   // ** NOT USED **
   fastify.post(
     `${basePath}/upload`,
