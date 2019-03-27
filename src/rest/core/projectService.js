@@ -4,6 +4,7 @@ const path = require('path');
 const { isEmpty } = require('lodash');
 const configs = require('../../../config/configs');
 const { getBase64htmlFromPath } = require('../util/images');
+const { forEachPromise } = require('../util/promises');
 
 const projectService = ({
   fastify,
@@ -151,7 +152,26 @@ const projectService = ({
     const projectMilestones = await projectDao.getProjectMilestones({
       projectId
     });
-    return projectMilestones;
+
+    const milestones = [];
+
+    await forEachPromise(
+      projectMilestones,
+      (milestone, context) =>
+        new Promise(resolve => {
+          process.nextTick(async () => {
+            const milestoneActivities = await milestoneService.getMilestoneActivities(
+              milestone
+            );
+
+            context.push(milestoneActivities);
+            resolve();
+          });
+        }),
+      milestones
+    );
+
+    return milestones;
   },
 
   /**
@@ -294,7 +314,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: "ERROR: Project doesn't have an agreement uploaded",
+          error: 'ERROR: Project doesn\'t have an agreement uploaded',
           status: 409
         };
       }
@@ -348,7 +368,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: "ERROR: Project doesn't have a pitch proposal uploaded",
+          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
           status: 409
         };
       }

@@ -67,6 +67,14 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     }
   },
 
+  async getMilestoneActivities(milestone) {
+    const milestoneActivities = milestoneDao.getMilestoneActivities(
+      milestone.id
+    );
+
+    return milestoneActivities;
+  },
+
   /**
    * Reads the excel file with the Milestones and Activities' information.
    *
