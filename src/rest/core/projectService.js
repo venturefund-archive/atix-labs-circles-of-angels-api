@@ -294,7 +294,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: 'ERROR: Project doesn\'t have an agreement uploaded',
+          error: "ERROR: Project doesn't have an agreement uploaded",
           status: 409
         };
       }
@@ -348,7 +348,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
+          error: "ERROR: Project doesn't have a pitch proposal uploaded",
           status: 409
         };
       }

@@ -186,6 +186,30 @@ const routes = async fastify => {
   );
 
   fastify.get(
+    `${basePath}/getActiveProjects`,
+    {
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Project Routes] :: Getting projects');
+      try {
+        const projects = await projectService.getActiveProjectList();
+        reply.send(projects);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error getting projects' });
+      }
+    }
+  );
+
+  fastify.get(
     `${basePath}/:projectId/getProject`,
     {
       schema: {
