@@ -164,7 +164,12 @@ const projectService = ({
               milestone
             );
 
-            context.push(milestoneActivities);
+            const milestoneWithType = {
+              ...milestoneActivities,
+              type: 'Milestone'
+            };
+
+            context.push(milestoneWithType);
             resolve();
           });
         }),
