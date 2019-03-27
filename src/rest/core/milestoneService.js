@@ -67,6 +67,39 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     }
   },
 
+  async getMilestoneActivities(milestone) {
+    const milestoneActivities = await milestoneDao.getMilestoneActivities(
+      milestone.id
+    );
+
+    const activities = [];
+
+    await forEachPromise(
+      milestoneActivities.activities,
+      (activity, context) =>
+        new Promise(resolve => {
+          process.nextTick(async () => {
+            const activityWithType = {
+              ...activity,
+              type: 'Activity',
+              quarter: milestone.quarter
+            };
+
+            context.push(activityWithType);
+            resolve();
+          });
+        }),
+      activities
+    );
+
+    const activitiesWithType = {
+      ...milestoneActivities,
+      activities
+    };
+
+    return activitiesWithType;
+  },
+
   /**
    * Reads the excel file with the Milestones and Activities' information.
    *

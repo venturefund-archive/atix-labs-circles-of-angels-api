@@ -7,6 +7,15 @@ const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
   return createdMilestone;
 };
 
+const getMilestoneActivities = milestoneModel => async milestoneId => {
+  const milestone = milestoneModel
+    .findOne({ id: milestoneId })
+    .populate('activities');
+
+  return milestone || [];
+};
+
 module.exports = milestoneModel => ({
-  saveMilestone: saveMilestone(milestoneModel)
+  saveMilestone: saveMilestone(milestoneModel),
+  getMilestoneActivities: getMilestoneActivities(milestoneModel)
 });
