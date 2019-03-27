@@ -10,7 +10,7 @@ CREATE TABLE public.project (
     "coverPhoto" text not null,
     "cardPhoto" text not null,
     "status" int2 not null,
-    "goalAmount" int8 not null,
+    "goalAmount" float4 not null,
     "faqLink" varchar not null,
     "pitchProposal" varchar(100) not null,
     "projectAgreement" varchar(100),
