@@ -1,6 +1,4 @@
-
 ### Base de datos
---------
 
 ##### PostgreSQL
 
@@ -21,3 +19,12 @@ instalacion:
 > crear shemas core y security, `CREATE SCHEMA schema_name AUTHORIZATION user_name;` 
 
 > modificar el path de busqueda por defecto, `SET search_path TO db_name;`
+
+----
+### Modelo
+
+
+##### [Documentacion del modelo](./db/models.md)
+
+----
+
