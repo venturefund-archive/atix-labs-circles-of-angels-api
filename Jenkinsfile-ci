@@ -47,7 +47,9 @@ pipeline {
 	            						}
         	  						"""
 	       	   					httpRequest acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: TO_POST, url: ('https://atixlabs.slack.com/services/hooks/incoming-webhook?token=' + SLACK_TOKEN)
-        					}
+        					} else {
+							echo "${env.GIT_BRANCH}"
+						}
 					}
       				}
 			}
