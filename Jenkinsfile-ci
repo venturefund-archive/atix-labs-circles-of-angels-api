@@ -37,7 +37,8 @@ pipeline {
 			post {
 				failure {
 					script {
-						if (env.GIT_BRANCH == 'develop') {
+						if (env.GIT_BRANCH == 'origin/develop') {
+
 	        	  				MSG = "ALERT!ALERT! Fix ${env.GIT_BRANCH}"
         						TO_POST = """
             							{
