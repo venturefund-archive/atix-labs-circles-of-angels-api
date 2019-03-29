@@ -1,7 +1,7 @@
 pipeline {
 	agent {
-		dockerfile {
-			filename 'sc/Dockerfile'
+		docker {
+			image 'node:8.12'
 			args '-u 0:0'
 		}
 	}
