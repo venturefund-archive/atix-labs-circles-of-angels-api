@@ -24,12 +24,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
 
-    // Load routes
-    fastify.register(require('./routes/userRoutes'));
-    fastify.register(require('./routes/generalRoutes'));
-    fastify.register(require('./routes/transferRoutes'));
-    fastify.register(require('./routes/projectRoutes'));
-    fastify.register(require('./routes/userProjectRoutes'));
+    loadRoutes(fastify);
 
     await fastify.listen(serverConfigs);
     module.exports.fastify = fastify;
@@ -37,4 +32,11 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     console.error(err);
     process.exit(1);
   }
+};
+
+const loadRoutes = fastify => {
+  const fs = require('fs');
+  const routesDir = `${__dirname}/routes`;
+  const routes = fs.readdirSync(routesDir);
+  routes.forEach(route => fastify.register(require(`${routesDir}/${route}`)));
 };
