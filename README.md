@@ -6,7 +6,7 @@ Circle of Angels is a platform that brings Social Entrepreneurs and Funders arou
 
 - PostgreSQL v10.6
 
-- Node.js v8.12.0
+- Node.js v10.15.3
 
 - Fastify v1.14.1
 
@@ -14,7 +14,7 @@ Circle of Angels is a platform that brings Social Entrepreneurs and Funders arou
 
 ## Prerequisites
 
-- Node v8.12.0
+- Node v10.15.3
 
 - Configured PostgreSQL database. See [Documentation.md](./Documentation.md)
 
