@@ -465,7 +465,9 @@ const routes = async fastify => {
             '[Project Routes] :: Project agreement uploaded:',
             res
           );
-          reply.status(200).send('Project agreement successfully uploaded!');
+          reply
+            .status(200)
+            .send({ success: 'Project agreement successfully uploaded!' });
         }
       } catch (error) {
         fastify.log.error(

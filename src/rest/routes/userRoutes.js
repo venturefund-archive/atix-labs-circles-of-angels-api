@@ -62,18 +62,27 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
-      const { email, pwd } = request.body;
+      try {
+        const { email, pwd } = request.body;
 
-      fastify.log.info('[User Routes] :: Trying to log in user:', email);
+        fastify.log.info('[User Routes] :: Trying to log in user:', email);
 
-      const user = await userService.login(email, pwd);
+        const user = await userService.login(email, pwd);
 
-      if (user.error) {
-        fastify.log.error('[User Routes] :: Log in failed for user:', email);
-        reply.status(401).send(user.error);
-      } else {
-        fastify.log.info('[User Routes] :: Log in successful for user:', email);
-        reply.status(200).send(user);
+        if (user.error) {
+          fastify.log.error('[User Routes] :: Log in failed for user:', email);
+          reply.status(401).send({ error: user.error });
+        } else {
+          fastify.log.info(
+            '[User Routes] :: Log in successful for user:',
+            email
+          );
+          reply.status(200).send(user);
+        }
+      } catch (err) {
+        reply
+          .status(500)
+          .send({ error: 'There was an unexpected error logging in' });
       }
     }
   );
