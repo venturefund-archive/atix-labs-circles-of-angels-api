@@ -5,10 +5,10 @@
 
 
 ### User:
-_Represent a user of Circles Of Angels, this can be: Social entrepreneur, Funder, Oracle, Backoffice Administrator_
+_Represents a user of Circles Of Angels, it can be: Social entrepreneur, Funder, Oracle, Backoffice Administrator_
   ##### Attributes:
   - `id`: user id in the business domain
-  - `name`: name with which the user will be shown
+  - `name`: user's name displayed
   - `email`: email with which the user is registered
   - `pwd`: password with which the user logs
   - `roles`: role / roles that the user has in the tool (this can be for example Funder and Oracle at the same time)  
@@ -19,7 +19,7 @@ _Represents a project of Circles Of Angels_
   ##### Attributes:
   - `id`: id of the project in the business domain
   - `projectName`: name with which the user will be shown
-  - `ownerId`: id of the user who is the creator
+  - `ownerId`: project creator user's id
   - `mission`: project mission
   - `problemAddressed`: problem addressed by the project
   - `location`: geographical location where the project will be developed
@@ -67,7 +67,7 @@ _Represents a milestone of a project in a given quearter_
   - `signsOfSuccessCriterion`: documentation or evidence that the activity was completed
   - `category`: category
   - `keyPersonnel`: member of the team responsible for each task to be performed
-  - `budget`: budget with which it is counted
+  - `budget`: project's budget in USD
 
 ----
 
