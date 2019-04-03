@@ -42,7 +42,9 @@ const routes = async (fastify, options) => {
         destinationAccount: request.body.destinationAccount
       });
       if (!verification)
-        reply.send({ error: 'Error when trying upload transfer information' });
+        reply
+          .status(409)
+          .send({ error: 'Error when trying upload transfer information' });
       reply.send({ sucess: 'Transfer information upload sucessfuly!' });
     }
   );
@@ -112,7 +114,7 @@ const routes = async (fastify, options) => {
           state: status
         });
       } else {
-        reply.code(400).send('No transfer recipt found');
+        reply.code(400).send({ error: 'No transfer receipt found' });
       }
     },
 

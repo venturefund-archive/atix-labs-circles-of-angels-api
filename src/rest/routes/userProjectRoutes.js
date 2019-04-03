@@ -35,7 +35,9 @@ const routes = async fastify => {
       });
 
       if (newUserProject.error) {
-        reply.status(newUserProject.status).send(newUserProject.error);
+        reply
+          .status(newUserProject.status)
+          .send({ error: newUserProject.error });
       } else {
         reply.send(newUserProject);
       }
