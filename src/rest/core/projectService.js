@@ -224,12 +224,19 @@ const projectService = ({
       };
     }
   },
+
   async getProjectMilestonesPath(projectId) {
     const milestonesFilePath = await projectDao.getProjectMilestonesFilePath(
       projectId
     );
+
+    if (!milestonesFilePath || milestonesFilePath == null) {
+      throw Error('Error getting milestones file');
+    }
+
     return milestonesFilePath.milestonesFile;
   },
+
   /**
    * Uploads the project's agreement file to the server
    *
