@@ -114,7 +114,7 @@ const routes = async (fastify, options) => {
           state: status
         });
       } else {
-        reply.code(400).send({ error: 'No transfer recipt found' });
+        reply.code(400).send({ error: 'No transfer receipt found' });
       }
     },
 
