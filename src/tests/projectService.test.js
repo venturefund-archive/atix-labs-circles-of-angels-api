@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const mkdirp = require('mkdirp-promise');
 const fs = require('fs');
 const { promisify } = require('util');
 const { addPathToFilesProperties } = require('../rest/util/files');
@@ -40,6 +41,8 @@ describe('Testing projectService createProject', () => {
       milestoneService,
       projectStatusDao
     });
+
+    jest.mock('mkdirp-promise');
   });
 
   it(
