@@ -1,5 +1,5 @@
 ## DB Models
-* All the schemes have a unique id in their table, and date of creation and update
+* All the schemas have a unique id in their table, and date of creation and update
 
 
 
