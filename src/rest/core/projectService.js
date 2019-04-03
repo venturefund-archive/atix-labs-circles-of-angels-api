@@ -424,13 +424,6 @@ const projectService = ({
       );
       throw Error('Error getting pitch proposal');
     }
-  },
-
-  getImageBase64(file) {
-    // check if file exists
-
-    // if exists do
-    return getBase64htmlFromPath(file);
   }
 });
 

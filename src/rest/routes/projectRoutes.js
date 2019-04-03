@@ -591,30 +591,6 @@ const routes = async fastify => {
       }
     }
   );
-
-  fastify.post(
-    `${basePath}/getImage`,
-    {
-      schema: {
-        type: 'application/json',
-        body: {
-          imagePath: { type: 'string' }
-        }
-      },
-      response: {
-        200: {
-          type: 'image/png',
-          properties: {
-            response: { type: 'image/png' }
-          }
-        }
-      }
-    },
-    async (request, reply) => {
-      const base64 = projectService.getImageBase64(request.body.imagePath);
-      reply.send(base64);
-    }
-  );
 };
 
 module.exports = routes;
