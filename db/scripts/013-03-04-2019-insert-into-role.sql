@@ -8,7 +8,7 @@ VALUES('Social Entrepreneur');
 
 INSERT INTO public."role"
 ("name")
-VALUES('Funder');
+VALUES('Impact Funder');
 
 INSERT INTO public."role"
 ("name")
