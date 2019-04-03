@@ -1,4 +1,4 @@
 CREATE TABLE public."role" (
-    "id" SERIAL primary key,
+    "id" int4 primary key,
     "name" varchar(50) NOT null
 );

@@ -1,15 +1,15 @@
 INSERT INTO public."role"
-("name")
-VALUES('BO Admin');
+(id, "name")
+VALUES(1, 'BO Admin');
 
 INSERT INTO public."role"
-("name")
-VALUES('Social Entrepreneur');
+(id, "name")
+VALUES(2, 'Social Entrepreneur');
 
 INSERT INTO public."role"
-("name")
-VALUES('Impact Funder');
+(id, "name")
+VALUES(3, 'Impact Funder');
 
 INSERT INTO public."role"
-("name")
-VALUES('Oracle');
+(id, "name")
+VALUES(4, 'Oracle');
