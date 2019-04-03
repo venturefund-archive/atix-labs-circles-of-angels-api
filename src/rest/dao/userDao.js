@@ -4,7 +4,7 @@ const UserDao = ({ userModel }) => ({
   },
 
   async getUserByEmail(email) {
-    return userModel.findOne({ email });
+    return userModel.findOne({ email }).populate('role');
   },
 
   async createUser(user) {
