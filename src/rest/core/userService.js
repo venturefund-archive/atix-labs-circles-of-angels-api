@@ -82,7 +82,7 @@ const userService = ({ fastify, userDao }) => ({
 
     if (!user || user == null) {
       fastify.log.error(
-        `[User Service] :: User ID not found ${userId} in database`
+        `[User Service] :: User ID ${userId} not found in database`
       );
       return { error: 'User not found' };
     }
