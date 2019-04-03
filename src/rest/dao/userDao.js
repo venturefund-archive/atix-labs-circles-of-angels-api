@@ -1,6 +1,6 @@
 const UserDao = ({ userModel }) => ({
-  async getUserById({ id }) {
-    return (await userModel.find({ id }).limit(1))[0];
+  async getUserById(id) {
+    return userModel.findOne({ id }).populate('role');
   },
 
   async getUserByEmail(email) {
