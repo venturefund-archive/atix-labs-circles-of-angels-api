@@ -415,7 +415,18 @@ const routes = async fastify => {
         const milestonesFilePath = await projectService.getProjectMilestonesPath(
           projectId
         );
-        reply.status(200).sendFile(milestonesFilePath);
+        if (
+          milestonesFilePath &&
+          milestonesFilePath !== '' &&
+          milestonesFilePath != null
+        ) {
+          reply.status(200).sendFile(milestonesFilePath);
+        } else {
+          reply
+            .status(500)
+            // eslint-disable-next-line prettier/prettier
+            .send({ error: 'This project doesn\'t have a milestones file' });
+        }
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send({ error: 'Error getting milestones file' });
@@ -465,7 +476,9 @@ const routes = async fastify => {
             '[Project Routes] :: Project agreement uploaded:',
             res
           );
-          reply.status(200).send('Project agreement successfully uploaded!');
+          reply
+            .status(200)
+            .send({ success: 'Project agreement successfully uploaded!' });
         }
       } catch (error) {
         fastify.log.error(
