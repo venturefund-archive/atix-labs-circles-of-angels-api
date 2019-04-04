@@ -591,6 +591,58 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.put(
+    `${basePath}/:id`,
+    {
+      schema: {
+        type: 'application/json',
+        params: {
+          id: { type: 'number' }
+        },
+        body: {
+          project: { type: 'object' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
+      fastify.log.info(
+        `[Project Routes] :: PUT request at /project/${req.params.id}:`,
+        req.body
+      );
+
+      const { project } = req.body;
+      const { id } = req.params;
+
+      try {
+        const response = await projectService.updateProject(project, id);
+
+        if (response.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error updating project: ',
+            response.error
+          );
+          reply.status(response.status).send(response.error);
+        } else {
+          reply.send({ success: 'Project updated successfully!' });
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error updating project: ',
+          error
+        );
+        reply.status(500).send({ error: 'Error updating project' });
+      }
+    }
+  );
 };
 
 module.exports = routes;

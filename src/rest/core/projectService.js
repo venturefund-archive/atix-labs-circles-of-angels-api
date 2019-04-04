@@ -111,6 +111,39 @@ const projectService = ({
     }
   },
 
+  /**
+   * Updates an existing project
+   *
+   * @param {object} project
+   * @param {number} id
+   * @returns updated project | error message
+   */
+  async updateProject(project, id) {
+    try {
+      fastify.log.info('[Project Service] :: Updating project:', project);
+
+      const savedProject = await projectDao.updateProject(project, id);
+
+      if (!savedProject || savedProject == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${id} does not exist`,
+          savedProject
+        );
+        return {
+          status: 404,
+          error: 'Project does not exist'
+        };
+      }
+
+      fastify.log.info('[Project Service] :: Project updated:', savedProject);
+
+      return savedProject;
+    } catch (error) {
+      fastify.log.error('[Project Service] :: Error updating Project:', error);
+      return { status: 500, error: 'Error updating Project' };
+    }
+  },
+
   async getProjectList() {
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: -1
