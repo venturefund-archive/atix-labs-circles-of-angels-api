@@ -38,6 +38,14 @@ const activityService = ({ fastify, activityDao }) => ({
 
     await forEachPromise(activities, createActivity, savedActivities);
     return savedActivities;
+  },
+
+  /**
+   * Delete an activity with id
+   * @param {number} activityId
+   */
+  deleteActivity(activityId) {
+    return activityDao.deleteActivity(activityId);
   }
 });
 

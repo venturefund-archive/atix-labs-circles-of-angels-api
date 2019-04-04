@@ -7,6 +7,12 @@ const saveActivity = activityModel => async ({ activity, milestoneId }) => {
   return createdActivity;
 };
 
+const deleteActivity = activityModel => async activityId => {
+  const deleted = activityModel.destroy(activityId).fetch();
+  return deleted;
+};
+
 module.exports = activityModel => ({
-  saveActivity: saveActivity(activityModel)
+  saveActivity: saveActivity(activityModel),
+  deleteActivity: deleteActivity(activityModel)
 });

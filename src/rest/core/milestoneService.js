@@ -1,6 +1,5 @@
 const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
-const configs = require('../../../config/configs');
 
 const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
   /**
@@ -375,6 +374,14 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     }
 
     return valid;
+  },
+
+  /**
+   * Permanent remove milestone
+   * @param milestoneId
+   */
+  deleteMilestone(milestoneId) {
+    return milestoneDao.deleteMilestone(milestoneId);
   }
 });
 

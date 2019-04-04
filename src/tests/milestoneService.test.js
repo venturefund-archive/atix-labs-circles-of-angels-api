@@ -232,3 +232,95 @@ describe('Testing milestoneService isEmpty', () => {
     await expect(milestoneService.isEmpty(mockMilestone)).toBe(true);
   });
 });
+
+describe('Testing milestonesService delete milestone', async () => {
+  let milestoneDao;
+  let activityService;
+  let milestoneService;
+  const mockMilestone = [
+    {
+      id: 1,
+      quarter: 'Quarter 1',
+      tasks: 'Task M1',
+      impact: 'Impact M1',
+      impactCriterion: 'Impact Criterion M1',
+      signsOfSuccess: 'Success M1',
+      signsOfSuccessCriterion: 'Success Criterion M1',
+      category: 'Category M1',
+      keyPersonnel: 'Key Personnel M1',
+      budget: 'Budget M1',
+      activityList: [
+        {
+          tasks: 'Task A1',
+          impact: '',
+          impactCriterion: '',
+          signsOfSuccess: '',
+          signsOfSuccessCriterion: '',
+          category: 'Category A1',
+          keyPersonnel: 'Key Personnel A1',
+          budget: ''
+        },
+        {
+          tasks: 'Task A2',
+          impact: 'Impact A2',
+          impactCriterion: 'Impact Criterion A2',
+          signsOfSuccess: 'Success A2',
+          signsOfSuccessCriterion: 'Success Criterion A2',
+          category: 'Category A2',
+          keyPersonnel: 'Key Personnel A2',
+          budget: 'Budget A2'
+        }
+      ]
+    },
+    {
+      quarter: 'Quarter 1',
+      tasks: 'Task M2',
+      impact: '',
+      impactCriterion: '',
+      signsOfSuccess: 'Success M2',
+      signsOfSuccessCriterion: 'Success Criterion M2',
+      category: 'Category M2',
+      keyPersonnel: 'Key Personnel M2',
+      budget: '',
+      activityList: []
+    },
+    {
+      quarter: 'Quarter 1',
+      tasks: '',
+      impact: '',
+      impactCriterion: '',
+      signsOfSuccess: '',
+      signsOfSuccessCriterion: '',
+      category: '',
+      keyPersonnel: '',
+      budget: '',
+      activityList: []
+    }
+  ];
+
+  beforeAll(() => {
+    milestoneDao = {
+      async deleteMilestone(milestoneId) {
+        if (milestoneId === 1) return mockMilestone;
+        return [];
+      }
+    };
+    activityService = {};
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao,
+      activityService
+    });
+  });
+
+  it('should return the deleted milestone', async () => {
+    const milestone = await milestoneService.deleteMilestone(1);
+    await expect(milestone).toBe(mockMilestone);
+  });
+
+  it('should return empty list when try delete a non-existent milestone', async () => {
+    const milestone = await milestoneService.deleteMilestone(2);
+    await expect(milestone).toEqual([]);
+  });
+});
