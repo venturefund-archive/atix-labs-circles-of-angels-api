@@ -826,31 +826,46 @@ describe('Testing projectService getProjectMilestonesPath', () => {
   });
 });
 
-describe.skip('Testing projectService uploadAgreement', () => {
+describe('Testing projectService uploadAgreement', () => {
   let projectDao;
   let projectService;
   let milestoneService;
   let projectStatusDao;
 
   const id = 1;
+  const name = 'Project';
+
+  const mockProjectAgreement = {
+    name: 'projectAgreement.pdf',
+    path: `${__dirname}/mockFiles/projectProposal.pdf`,
+    mv: jest.fn()
+  };
 
   beforeAll(() => {
     projectStatusDao = {};
     projectDao = {
       getProjectById: ({ projectId }) => {
-        if (id === projectId) {
-          return {
-            projectName: 'Project',
-            id
-          };
+        if (projectId === 0) {
+          return undefined;
         }
-        return undefined;
+
+        return {
+          projectName: name,
+          id: projectId
+        };
       },
 
-      updateProjectAgreement: ({ projectAgreement, projectId }) => ({
-        projectId,
-        projectAgreement
-      })
+      updateProjectAgreement: ({ projectAgreement, projectId }) => {
+        if (projectId === '') {
+          throw Error('Error updating project agreement');
+        }
+
+        return {
+          id: projectId,
+          projectName: name,
+          projectAgreement
+        };
+      }
     };
     milestoneService = {};
 
@@ -863,19 +878,202 @@ describe.skip('Testing projectService uploadAgreement', () => {
   });
 
   it('should return the updated project with the agreement file path', async () => {
-    const mockProjectAgreement = {
-      name: 'projectAgreement.pdf',
-      path: `${__dirname}/mockFiles/projectProposal.pdf`,
-      mv: jest.fn()
+    const expected = {
+      projectName: 'Project',
+      id: 1,
+      projectAgreement: `/home/atixlabs/files/server/projects/${name}/agreement.pdf`
     };
-
-    // should return /home/atixlabs/files/server/projects/Project/agreement.pdf
 
     const updatedProject = await projectService.uploadAgreement(
       mockProjectAgreement,
       id
     );
 
-    console.log(updatedProject);
+    return expect(updatedProject).toEqual(expected);
+  });
+
+  it('should return an error if the project does not exist', async () => {
+    const expected = { error: 'ERROR: Project not found', status: 404 };
+
+    const updatedProject = await projectService.uploadAgreement(
+      mockProjectAgreement,
+      0
+    );
+
+    return expect(updatedProject).toEqual(expected);
+  });
+
+  it('should return an error if the agreement could not be uploaded', async () => {
+    return expect(
+      projectService.uploadAgreement(mockProjectAgreement, '')
+    ).rejects.toEqual(Error('Error uploading agreement'));
+  });
+});
+
+describe('Testing projectService downloadAgreement', () => {
+  let projectDao;
+  let projectService;
+  let milestoneService;
+  let projectStatusDao;
+
+  const id = 1;
+
+  const filepath = require('path').join(
+    __dirname,
+    './mockFiles/projectProposal.pdf'
+  );
+
+  const mockReadStream = fs.createReadStream(filepath);
+
+  beforeAll(() => {
+    projectStatusDao = {};
+    projectDao = {
+      getProjectById: ({ projectId }) => {
+        if (projectId === 0) {
+          return undefined;
+        }
+
+        if (projectId === 999) {
+          return {
+            id: projectId
+          };
+        }
+
+        return {
+          projectAgreement: filepath,
+          id: projectId
+        };
+      }
+    };
+
+    milestoneService = {};
+
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao,
+      milestoneService,
+      projectStatusDao
+    });
+
+    fs.createReadStream = jest.fn();
+  });
+
+  it('should return a file ReadStream', async () => {
+    fs.createReadStream.mockReturnValueOnce(mockReadStream);
+
+    const response = await projectService.downloadAgreement(id);
+
+    return expect(response).toEqual(mockReadStream);
+  });
+
+  it('should throw an error if the file could not be read', async () => {
+    // fs.createReadStream = jest.fn() throws an error
+
+    return expect(projectService.downloadAgreement(id)).rejects.toEqual(
+      Error('Error getting agreement')
+    );
+  });
+
+  it('should return an error if the project does not exist', async () => {
+    const mockError = { error: 'ERROR: Project not found', status: 404 };
+    const response = await projectService.downloadAgreement(0);
+
+    return expect(response).toEqual(mockError);
+  });
+
+  it('should return an error if the project does not have an agreement', async () => {
+    const mockError = {
+      // eslint-disable-next-line prettier/prettier
+      error: 'ERROR: Project doesn\'t have an agreement uploaded',
+      status: 409
+    };
+
+    const response = await projectService.downloadAgreement(999);
+
+    return expect(response).toEqual(mockError);
+  });
+});
+
+describe('Testing projectService downloadProposal', () => {
+  let projectDao;
+  let projectService;
+  let milestoneService;
+  let projectStatusDao;
+
+  const id = 1;
+
+  const filepath = require('path').join(
+    __dirname,
+    './mockFiles/projectProposal.pdf'
+  );
+
+  const mockReadStream = fs.createReadStream(filepath);
+
+  beforeAll(() => {
+    projectStatusDao = {};
+    projectDao = {
+      getProjectById: ({ projectId }) => {
+        if (projectId === 0) {
+          return undefined;
+        }
+
+        if (projectId === 999) {
+          return {
+            id: projectId
+          };
+        }
+
+        return {
+          pitchProposal: filepath,
+          id: projectId
+        };
+      }
+    };
+
+    milestoneService = {};
+
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao,
+      milestoneService,
+      projectStatusDao
+    });
+
+    fs.createReadStream = jest.fn();
+  });
+
+  it('should return a file ReadStream', async () => {
+    fs.createReadStream.mockReturnValueOnce(mockReadStream);
+
+    const response = await projectService.downloadProposal(id);
+
+    return expect(response).toEqual(mockReadStream);
+  });
+
+  it('should throw an error if the file could not be read', async () => {
+    // fs.createReadStream = jest.fn() throws an error
+
+    return expect(projectService.downloadProposal(id)).rejects.toEqual(
+      Error('Error getting pitch proposal')
+    );
+  });
+
+  it('should return an error if the project does not exist', async () => {
+    const mockError = { error: 'ERROR: Project not found', status: 404 };
+    const response = await projectService.downloadProposal(0);
+
+    return expect(response).toEqual(mockError);
+  });
+
+  it('should return an error if the project does not have an proposal', async () => {
+    const mockError = {
+      // eslint-disable-next-line prettier/prettier
+      error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
+      status: 409
+    };
+
+    const response = await projectService.downloadProposal(999);
+
+    return expect(response).toEqual(mockError);
   });
 });
