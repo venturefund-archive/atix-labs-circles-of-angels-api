@@ -86,8 +86,6 @@ describe('Testing projectService createProject', () => {
 
       const dataMilestones = await readFile(pathMilestonesXls);
 
-      console.log(dataMilestones);
-
       const mockProjectCoverPhoto = {
         name: 'projectCoverPhoto.png',
         path: `${__dirname}/mockFiles/projectCoverPhoto.png`,
