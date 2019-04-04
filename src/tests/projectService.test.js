@@ -84,6 +84,8 @@ describe('Testing projectService createProject', () => {
         './mockFiles/projectMilestones.xlsx'
       );
 
+      console.log(pathMilestonesXls);
+
       const dataMilestones = await readFile(pathMilestonesXls);
 
       const mockProjectCoverPhoto = {
@@ -110,14 +112,6 @@ describe('Testing projectService createProject', () => {
         data: dataMilestones,
         mv: jest.fn()
       };
-
-      // addPathToFilesProperties(
-      //   projectName,
-      //   mockProjectCoverPhoto,
-      //   mockProjectCardPhoto,
-      //   mockProjectProposal,
-      //   mockProjectMilestones
-      // );
 
       const project = await projectService.createProject(
         mockProject,
