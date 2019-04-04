@@ -121,6 +121,7 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
    *
    * @param {object} milestone
    * @param {number} id
+   * @returns updated milestone | error message
    */
   async updateMilestone(milestone, id) {
     try {
