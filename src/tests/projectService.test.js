@@ -72,18 +72,10 @@ describe('Testing projectService createProject', () => {
         faqLink: 'http://www.google.com/',
         ownerId,
         status: 0,
-        cardPhoto: `${
-          configs.fileServer.filePath
-        }/projects/${projectName}/cardPhoto.png`,
-        coverPhoto: `${
-          configs.fileServer.filePath
-        }/projects/${projectName}/coverPhoto.png`,
-        pitchProposal: `${
-          configs.fileServer.filePath
-        }/projects/${projectName}/pitchProposal.pdf`,
-        milestonesFile: `${
-          configs.fileServer.filePath
-        }/projects/${projectName}/milestones.xlsx`,
+        cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
+        coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+        pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
+        milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
         id: 1
       };
 
@@ -119,13 +111,13 @@ describe('Testing projectService createProject', () => {
         mv: jest.fn()
       };
 
-      addPathToFilesProperties(
-        projectName,
-        mockProjectCoverPhoto,
-        mockProjectCardPhoto,
-        mockProjectProposal,
-        mockProjectMilestones
-      );
+      // addPathToFilesProperties(
+      //   projectName,
+      //   mockProjectCoverPhoto,
+      //   mockProjectCardPhoto,
+      //   mockProjectProposal,
+      //   mockProjectMilestones
+      // );
 
       const project = await projectService.createProject(
         mockProject,
