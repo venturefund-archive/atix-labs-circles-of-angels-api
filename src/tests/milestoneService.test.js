@@ -239,6 +239,7 @@ describe('Testing milestoneService createMilestone', () => {
   let milestoneService;
 
   const project = 12;
+  const newMilestoneId = 1;
 
   const mockMilestone = {
     quarter: 'Quarter 1',
@@ -249,7 +250,7 @@ describe('Testing milestoneService createMilestone', () => {
     signsOfSuccessCriterion: 'Success Criterion M1',
     category: 'Category M1',
     keyPersonnel: 'Key Personnel M1',
-    budget: 'Budget M1'
+    budget: 123
   };
 
   const incompleteMilestone = {
@@ -260,7 +261,7 @@ describe('Testing milestoneService createMilestone', () => {
     signsOfSuccessCriterion: 'Success Criterion M1',
     category: 'Category M1',
     keyPersonnel: 'Key Personnel M1',
-    budget: 'Budget M1'
+    budget: 123
   };
 
   beforeAll(() => {
@@ -271,7 +272,8 @@ describe('Testing milestoneService createMilestone', () => {
         }
         const toSave = {
           ...milestone,
-          project: projectId
+          project: projectId,
+          id: newMilestoneId
         };
         return toSave;
       }
@@ -287,7 +289,7 @@ describe('Testing milestoneService createMilestone', () => {
   });
 
   it('should return a new created milestone', async () => {
-    const expected = { ...mockMilestone, project };
+    const expected = { ...mockMilestone, project, id: newMilestoneId };
 
     const response = await milestoneService.createMilestone(
       mockMilestone,
@@ -347,7 +349,7 @@ describe('Testing milestoneService updateMilestone', () => {
     signsOfSuccessCriterion: 'Success Criterion M1',
     category: 'Category M1',
     keyPersonnel: 'Key Personnel M1',
-    budget: 'Budget M1',
+    budget: 123,
     id: milestoneId,
     project: 12
   };
@@ -360,7 +362,7 @@ describe('Testing milestoneService updateMilestone', () => {
     signsOfSuccessCriterion: 'Success Criterion M1',
     category: 'Category M1',
     keyPersonnel: 'Key Personnel M1',
-    budget: 'Budget M1',
+    budget: 123,
     id: milestoneId,
     project: 12
   };
