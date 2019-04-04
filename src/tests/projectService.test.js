@@ -396,3 +396,76 @@ describe('Testing projectService get milestones', () => {
     expect(milestones).toEqual([]);
   });
 });
+
+describe('Testing projectService updateProject', () => {
+  let projectDao;
+  let projectService;
+  let milestoneService;
+  let projectStatusDao;
+
+  const projectId = 15;
+
+  const mockProject = {
+    projectName: 'UDEW',
+    mission: 'UDEW Mission',
+    problemAddressed: 'UDEW Problem',
+    location: 'UDEW Location',
+    timeframe: '10 months',
+    goalAmount: 928,
+    faqLink: 'http://www.atixlabs.com/',
+    id: projectId,
+    ownerId: 1
+  };
+
+  beforeAll(() => {
+    projectStatusDao = {};
+
+    projectDao = {
+      async updateProject(project, id) {
+        if (id === '') {
+          throw Error('Error updating project');
+        }
+        if (id === 0) {
+          return undefined;
+        }
+        return project;
+      }
+    };
+
+    milestoneService = {};
+
+    projectService = require('../rest/core/projectService')({
+      fastify,
+      projectDao,
+      milestoneService,
+      projectStatusDao
+    });
+  });
+
+  it('should return the updated project', async () => {
+    const expected = mockProject;
+
+    const response = await projectService.updateProject(mockProject, projectId);
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project does not exist', async () => {
+    const expected = {
+      status: 404,
+      error: 'Project does not exist'
+    };
+
+    const response = await projectService.updateProject(mockProject, 0);
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project could not be updated', async () => {
+    const expected = { status: 500, error: 'Error updating Project' };
+
+    const response = await projectService.updateProject(mockProject, '');
+
+    return expect(response).toEqual(expected);
+  });
+});
