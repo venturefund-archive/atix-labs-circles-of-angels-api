@@ -1,4 +1,4 @@
-const saveActivity = activityModel => async ({ activity, milestoneId }) => {
+const saveActivity = activityModel => async (activity, milestoneId) => {
   const toSave = {
     ...activity,
     milestone: milestoneId
@@ -7,6 +7,20 @@ const saveActivity = activityModel => async ({ activity, milestoneId }) => {
   return createdActivity;
 };
 
+const updateActivity = activityModel => async (activity, activityId) => {
+  const toUpdate = { ...activity };
+
+  delete toUpdate.id;
+  delete toUpdate.milestone;
+
+  const savedActivity = await activityModel
+    .updateOne({ id: activityId })
+    .set({ ...toUpdate });
+
+  return savedActivity;
+};
+
 module.exports = activityModel => ({
-  saveActivity: saveActivity(activityModel)
+  saveActivity: saveActivity(activityModel),
+  updateActivity: updateActivity(activityModel)
 });

@@ -5,7 +5,7 @@ describe('Testing activityService createActivities', () => {
   let activityService;
   beforeAll(() => {
     activityDao = {
-      async saveActivity({ activity, milestoneId }) {
+      async saveActivity(activity, milestoneId) {
         const toSave = {
           ...activity,
           milestone: milestoneId
