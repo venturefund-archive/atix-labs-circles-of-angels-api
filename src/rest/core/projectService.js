@@ -362,6 +362,10 @@ const projectService = ({
       projectId
     );
 
+    if (!milestonesFilePath || milestonesFilePath == null) {
+      throw Error('Error getting milestones file');
+    }
+
     const response = {
       filename: path.basename(milestonesFilePath.milestonesFile),
       filepath: milestonesFilePath.milestonesFile
