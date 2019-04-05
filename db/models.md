@@ -1,112 +1,117 @@
 ## DB Models
-
-* Todos los esquemas tienen un id unico en su tabla, y fecha de creación y actualizacion
+* All the schemas have a unique id in their table, and date of creation and update
 
 
 
 
 ### User:
-_Representa a un usuario de Circles Of Angels, este puede ser : Social entrepreneur, Funder, Oracle, Backoffice Administrator_
-  #####  Atributos:
-  - `id`: id del usuario en el dominio del negocio
-  - `name`: nombre con el cual se mostrará el usuario
-  - `email`: email con el cual se registra el usuario
-  - `pwd`: password con el cual se loguea el usuario
-  - `roles`: rol/roles que tiene el usuario en la herramienta (este puede ser por ejemplo Funder y Oracle a la vez)  
+_Represents a user of Circles Of Angels, it can be: Social entrepreneur, Funder, Oracle, Backoffice Administrator_
+  ##### Attributes:
+  - `id`: user id in the business domain
+  - `name`: user's name displayed
+  - `email`: email with which the user is registered
+  - `pwd`: password with which the user logs
+  - `roles`: role / roles that the user has in the tool (this can be for example Funder and Oracle at the same time)  
 
 ----
 ### Project:
-  _Representa un proyecto de Circles Of Angels_
-  #####  Atributos:
-  - `id`: id del proyecto en el dominio de negocio
-  - `projectName`: nombre con el cual se mostrará el usuario
-  - `ownerId`: id del usurio quien es el creador
-  - `mission`: misión del proyecto
-  - `problemAddressed`: problema que aborda el proyecto
-  - `location`: lugar geografico donde va a desarrollarse el proyecto
-  - `timeframe`: duracion de tiempo del proyecto
-  - `coverPhoto`: imagen de portada del proyecto
-  - `cardPhoto`: icono del proyecto
-  - `status`: estado actual del proyecto
-  - `goalAmount`: cantidad de dinero necesaria del proyecto
-  - `faqLink`: vinculo a la pagina de preguntas frecuentes
-  - `pitchProposal`: propuesta inicial del proyecto
-  - `milestonesFile`: archivo de excel de milestones
-  - `projectAgreement`: archivo de consenso del proyecto
+_Represents a project of Circles Of Angels_
+  ##### Attributes:
+  - `id`: id of the project in the business domain
+  - `projectName`: name with which the user will be shown
+  - `ownerId`: project creator user's id
+  - `mission`: project mission
+  - `problemAddressed`: problem addressed by the project
+  - `location`: geographical location where the project will be developed
+  - `timeframe`: project time duration
+  - `coverPhoto`: project cover image
+  - `cardPhoto`: project icon
+  - `status`: current project status
+  - `goalAmount`: amount of money needed from the project
+  - `faqLink`: link to the FAQ page
+  - `pitchProposal`: initial proposal of the project
+  - `milestonesFile`: excel file of milestones
+  - `projectAgreement`: project consensus file
 
 ----
 
 ### Project Status:
-_Representa el estado de un proyecto en particular_
-  #### Atributos:
-  - `name`: nombre del estado
-  - `status`: representacion numerica del estado
+_Represents the status of a particular project_
+  ##### Attributes:
+  - `name`: name of the state
+  - `status`: numerical representation of the state
 
 ----
 
 
 ### User Project:
-_Representa una relacion entre un usuario y un proyecto_
-  #### Atributos:
-  - `status`: estado en el que está el usuario con respecto a un proyecto
-  - `userId`: id del usuario
-  - `projectId`: id del proyecto
+_Represents a relationship between a user and a project_
+  ##### Attributes:
+  - `status`: state in which the user is with respect to a project
+  - `userId`: user id
+  - `projectId`: project id
 
 
 ----
 
 ### Milestone:
-  - `id`: id del milestone
-  - `projectId`: id del proyecto al cual pertenece
-  - `quarter`: quarter al cual pertenece
-  - `tasks`: tareas a realizar en el milestone actual
-  - `impact`:  
-  - `impactCriterion`:
-  - `signsOfSuccess`:
-  - `signsOfSuccessCriterion`:
-  - `category`:
-  - `keyPersonnel`:
-  - `budget`:
+_Represents a milestone of a project in a given quearter_
+  ##### Attributes:
+  - `id`: milestone id
+  - `projectId`: id of the project to which it belongs
+  - `quarter`: quarter to which it belongs
+  - `tasks`: tasks to be performed in the current milestone
+  - `impact`: expected changes after the conclusion of the
+  - `impactCriterion`: documentation activity or evidence of the impact achieved
+  - `signsOfSuccess`: signs indicating that the activity was successful
+  - `signsOfSuccessCriterion`: documentation or evidence that the activity was completed
+  - `category`: category
+  - `keyPersonnel`: member of the team responsible for each task to be performed
+  - `budget`: project's budget in USD
 
 ----
 
 ### Activity:
+_Represents an activity of a certain milestone_
+  ##### Attributes:
   - `id`:
-  - `milestoneId`:
-  - `tasks`:
-  - `impact`:
-  - `impactCriterion`:
-  - `signsOfSuccess`:
-  - `signsOfSuccessCriterion`:
-  - `category`:
-  - `keyPersonnel`:
-  - `budget`:
+  - `milestoneId`: id of the milestone to which they belong
+  - `tasks`: tasks to be performed in the current milestone
+  - `impact`: expected changes after the conclusion of the
+  - `impactCriterion`: documentation activity or evidence of the impact achieved
+  - `signsOfSuccess`: signs indicating that the activity was successful
+  - `signsOfSuccessCriterion`: documentation or evidence that the activity was completed
+  - `category`: category
+  - `keyPersonnel`: member of the team responsible for each task to be performed
+  - `budget`: budget with which it is counted
 
 ----
 
 
 
 ### Fund Transfer:
-_Representa una transferencia **bancaria**, entre cuentas bancarias de **usuarios** de Circles of Angels_
-  #####  Atributos:
-  - `transferId`: id unico de la transferencia bancaria realizada
-  - `senderId`: id del usuario que envia
-  - `destinationAccount`: id del usuario que recibe
-  - `projectId`: el id del proyecto al cual pertenece esta transferencia bancaria
-  - `amount`: cantidad de dinero transferida
-  - `currency`: moneda en la cual se realizó la transferencia
+_Represents a **bank transfer**, between **users** bank accounts of Circles of Angels_
+  ##### Attributes:
+  - `transferId`: unique id of the bank transfer made
+  - `senderId`: id of the user who sends
+  - `destinationAccount`: id of the user who receives
+  - `projectId`: the project id to which this bank transfer belongs
+  - `amount`: amount of money transferred
+  - `currency`: currency in which the transfer was made
 
 ----
 
 ### Transfer Status:
-_Representa el estado actual de una transferencia bancaria_
-  - `name`: nombre del estado 
-  - `status`: representacion numerica del estado
+_Represents the current status of a bank transfer_
+  ##### Attributes:
+  - `name`: name of the state
+  - `status`: numerical representation of the state
 
 ----
 
 
 ### Configs:
-_Representa una configuracion general de la API_
-  - `key`: clave unica de una configuracion
-  - `value`: el valor de dicha configuracion
+_Represents a general configuration of the API_
+  ##### Attributes:
+  - `key`: unique key of a configuration
+  - `value`: the value of this configuration
