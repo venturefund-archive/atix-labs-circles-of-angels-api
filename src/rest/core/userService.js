@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
 
 const userService = ({ fastify, userDao }) => ({
-  async getUserById({ id }) {
-    return userDao.getUserById({ id });
+  async getUserById(id) {
+    return userDao.getUserById(id);
   },
 
   /**
@@ -27,7 +27,8 @@ const userService = ({ fastify, userDao }) => ({
         const authenticatedUser = {
           username: user.username,
           email: user.email,
-          id: user.id
+          id: user.id,
+          role: user.role
         };
 
         return authenticatedUser;
@@ -49,15 +50,17 @@ const userService = ({ fastify, userDao }) => ({
    * @param {string} username
    * @param {string} email
    * @param {string} pwd
+   * @param {number} roleId
    * @returns new user | error
    */
-  async createUser(username, email, pwd) {
+  async createUser(username, email, pwd, role) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
     try {
       const user = {
         username,
         email,
-        pwd: hashedPwd
+        pwd: hashedPwd,
+        role
       };
 
       const savedUser = await userDao.createUser(user);
@@ -66,6 +69,36 @@ const userService = ({ fastify, userDao }) => ({
     } catch (error) {
       return { error };
     }
+  },
+
+  /**
+   * Receives a User's id and returns their role
+   *
+   * @param {number} userId
+   * @returns user's role | error message
+   */
+  async getUserRole(userId) {
+    const user = await userDao.getUserById(userId);
+
+    if (!user || user == null) {
+      fastify.log.error(
+        `[User Service] :: User ID ${userId} not found in database`
+      );
+      return { error: 'User not found' };
+    }
+
+    if (user.role && user.role != null) {
+      fastify.log.info(
+        `[User Service] :: Found User ID ${user.id} with Role ${user.role.name}`
+      );
+      return user.role;
+    }
+
+    fastify.log.error(
+      `[User Service] :: User ID ${userId} doesn't have a role`
+    );
+    // eslint-disable-next-line prettier/prettier
+    return { error: 'User doesn\'t have a role' };
   }
 });
 
