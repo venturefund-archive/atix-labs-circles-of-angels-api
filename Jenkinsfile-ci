@@ -1,0 +1,69 @@
+pipeline {
+	agent {
+		docker {
+			image 'node:8.12'
+			args '-u 0:0'
+		}
+	}
+	environment {
+		SLACK_TOKEN = credentials('slack_token')
+	}
+
+	post {
+		failure {
+			updateGitlabCommitStatus name: 'Test', state: 'failed'
+		}
+		success {
+			updateGitlabCommitStatus name: 'Test', state: 'success'
+		}
+		cleanup {
+			sh 'rm -rf hitcoins/front/'
+			cleanWs()
+		}
+	}
+	stages {
+		stage("checkout") {
+			steps {
+				checkout scm
+					updateGitlabCommitStatus name: 'Test', state: 'pending'
+			}
+		}
+		stage("install packages") {
+			steps {
+				sh 'npm install'
+			}
+		}
+		stage("run test ") {
+			post {
+				failure {
+					script {
+						if (env.GIT_BRANCH == 'origin/develop') {
+
+	        	  				MSG = "ALERT!ALERT! Fix ${env.GIT_BRANCH}"
+        						TO_POST = """
+            							{
+             								"text": "${MSG}",
+              								"icon_emoji": ":gentlemanparrot:",
+						   		        "channel": "CFN40LX55"
+	            						}
+        	  						"""
+	       	   					httpRequest acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: TO_POST, url: ('https://atixlabs.slack.com/services/hooks/incoming-webhook?token=' + SLACK_TOKEN)
+        					} else {
+							echo "${env.GIT_BRANCH}"
+						}
+					}
+      				}
+			}
+
+			steps {
+                    		sh 'npm test'
+     	       		}
+       		}
+		stage("run eslint") {
+			steps {
+				sh 'npm run lint'
+			}
+		}
+	}
+}
+

@@ -4,6 +4,7 @@
   "description": "Api-rest for circle of angels",
   "main": "main.js",
   "scripts": {
+    "lint": "eslint src/**/*.js",
     "test": "jest",
     "start": "node index"
   },

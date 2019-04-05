@@ -377,7 +377,10 @@ const routes = async fastify => {
             '[Project Routes] :: Milestones template downloaded:',
             res
           );
-          reply.send(res);
+
+          reply.header('file', res.filename);
+          reply.header('Access-Control-Expose-Headers', 'file');
+          reply.send(res.filestream);
         }
       } catch (error) {
         fastify.log.error(
@@ -388,6 +391,7 @@ const routes = async fastify => {
       }
     }
   );
+
   fastify.get(
     `${basePath}/:projectId/getMilestonesFile`,
     {
@@ -412,10 +416,23 @@ const routes = async fastify => {
       );
 
       try {
-        const milestonesFilePath = await projectService.getProjectMilestonesPath(
+        const response = await projectService.getProjectMilestonesPath(
           projectId
         );
-        reply.status(200).sendFile(milestonesFilePath);
+        if (
+          response.filepath &&
+          response.filepath !== '' &&
+          response.filepath != null
+        ) {
+          reply.header('file', response.filename);
+          reply.header('Access-Control-Expose-Headers', 'file');
+          reply.status(200).sendFile(response.filepath);
+        } else {
+          reply
+            .status(500)
+            // eslint-disable-next-line prettier/prettier
+            .send({ error: 'This project doesn\'t have a milestones file' });
+        }
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send({ error: 'Error getting milestones file' });
@@ -465,7 +482,9 @@ const routes = async fastify => {
             '[Project Routes] :: Project agreement uploaded:',
             res
           );
-          reply.status(200).send('Project agreement successfully uploaded!');
+          reply
+            .status(200)
+            .send({ success: 'Project agreement successfully uploaded!' });
         }
       } catch (error) {
         fastify.log.error(
@@ -513,7 +532,9 @@ const routes = async fastify => {
             '[Project Routes] :: Project agreement downloaded:',
             res
           );
-          reply.send(res);
+          reply.header('file', res.filename);
+          reply.header('Access-Control-Expose-Headers', 'file');
+          reply.send(res.filestream);
         }
       } catch (error) {
         fastify.log.error(
@@ -560,7 +581,9 @@ const routes = async fastify => {
             '[Project Routes] :: Project proposal downloaded:',
             res
           );
-          reply.send(res);
+          reply.header('file', res.filename);
+          reply.header('Access-Control-Expose-Headers', 'file');
+          reply.send(res.filestream);
         }
       } catch (error) {
         fastify.log.error('[Project Routes] :: Error getting proposal:', error);

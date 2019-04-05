@@ -203,7 +203,12 @@ const projectService = ({
           };
         });
 
-        return filestream;
+        const response = {
+          filename: path.basename(filepath),
+          filestream
+        };
+
+        return response;
       }
 
       fastify.log.error(
@@ -230,11 +235,12 @@ const projectService = ({
       projectId
     );
 
-    if (!milestonesFilePath || milestonesFilePath == null) {
-      throw Error('Error getting milestones file');
-    }
+    const response = {
+      filename: path.basename(milestonesFilePath.milestonesFile),
+      filepath: milestonesFilePath.milestonesFile
+    };
 
-    return milestonesFilePath.milestonesFile;
+    return response;
   },
 
   /**
@@ -347,7 +353,12 @@ const projectService = ({
         };
       });
 
-      return filestream;
+      const response = {
+        filename: path.basename(filepath),
+        filestream
+      };
+
+      return response;
     } catch (error) {
       fastify.log.error('[Project Service] :: Error getting agreement:', error);
       throw Error('Error getting agreement');
@@ -400,7 +411,12 @@ const projectService = ({
         };
       });
 
-      return filestream;
+      const response = {
+        filename: path.basename(filepath),
+        filestream
+      };
+
+      return response;
     } catch (error) {
       fastify.log.error(
         '[Project Service] :: Error getting pitch proposal:',
