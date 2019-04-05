@@ -1,7 +1,7 @@
 const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 
-const activityService = ({ fastify, activityDao }) => ({
+const activityService = ({ fastify, activityDao, oracleActivityDao }) => ({
   /**
    * Creates new Activities and associates them to the Milestone passed by parameter.
    *
@@ -46,6 +46,15 @@ const activityService = ({ fastify, activityDao }) => ({
    */
   deleteActivity(activityId) {
     return activityDao.deleteActivity(activityId);
+  },
+
+  /**
+   * Create a oracle reference between a user and activity
+   * @param {number} userId
+   * @param {number} activityId
+   */
+  assignOracleToActivity(userId, activityId) {
+    return oracleActivityDao.assignOracleToActivity(userId, activityId);
   }
 });
 
