@@ -1,6 +1,6 @@
 const fastify = { log: { info: console.log, error: console.log } };
 
-describe('Testing userProjectService signAgreement', () => {
+describe.skip('Testing userProjectService signAgreement', () => {
   let userProjectDao;
   let userProjectService;
 
