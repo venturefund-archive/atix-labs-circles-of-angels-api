@@ -67,6 +67,12 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     }
   },
 
+  /**
+   * Receives a milestone to populate with its activities
+   *
+   * @param {*} milestone milestone to populate with activities
+   * @returns milestone with activities
+   */
   async getMilestoneActivities(milestone) {
     const milestoneActivities = await milestoneDao.getMilestoneActivities(
       milestone.id
