@@ -9,9 +9,15 @@ module.exports = {
     timeframe: { type: 'string', required: true },
     pitchProposal: { type: 'string', required: false },
     faqLink: { type: 'string', required: true },
-    coverPhoto: { type: 'string', required: false },
+    coverPhoto: {
+      columnName: 'coverPhoto',
+      model: 'photo'
+    },
     milestonesFile: { type: 'string', required: false },
-    cardPhoto: { type: 'string', required: false },
+    cardPhoto: {
+      columnName: 'cardPhoto',
+      model: 'photo'
+    },
     goalAmount: { type: 'number', required: true },
     status: { type: 'number', defaultsTo: 0 },
     ownerId: { type: 'number', required: true },
