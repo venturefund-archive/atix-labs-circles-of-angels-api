@@ -76,6 +76,13 @@ const ProjectDao = ({ projectModel, userDao }) => ({
       .set({ ...toUpdate });
 
     return savedProject;
+  },
+
+  async getProjectPhotos(projectId) {
+    return projectModel.findOne({
+      where: { id: projectId },
+      select: ['coverPhoto', 'cardPhoto']
+    });
   }
 });
 
