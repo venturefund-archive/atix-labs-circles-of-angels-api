@@ -20,16 +20,18 @@ describe('Testing activityService createActivities', () => {
   });
 
   it('should create activities and associate them to a milestone', async () => {
+    const milestoneId = 2;
+
     const mockActivities = [
       {
         tasks: 'Task A1',
-        impact: '',
-        impactCriterion: '',
-        signsOfSuccess: '',
-        signsOfSuccessCriterion: '',
+        impact: 'Impact A1',
+        impactCriterion: 'Impact Criterion A1',
+        signsOfSuccess: 'Success A1',
+        signsOfSuccessCriterion: 'Success Criterion A1',
         category: 'Category A1',
         keyPersonnel: 'Key Personnel A1',
-        budget: ''
+        budget: 'Budget A1'
       },
       {
         tasks: 'Task A2',
@@ -56,14 +58,14 @@ describe('Testing activityService createActivities', () => {
     const compareActivities = [
       {
         tasks: 'Task A1',
-        impact: '',
-        impactCriterion: '',
-        signsOfSuccess: '',
-        signsOfSuccessCriterion: '',
+        impact: 'Impact A1',
+        impactCriterion: 'Impact Criterion A1',
+        signsOfSuccess: 'Success A1',
+        signsOfSuccessCriterion: 'Success Criterion A1',
         category: 'Category A1',
         keyPersonnel: 'Key Personnel A1',
-        budget: '',
-        milestone: 2
+        budget: 'Budget A1',
+        milestone: milestoneId
       },
       {
         tasks: 'Task A2',
@@ -74,11 +76,10 @@ describe('Testing activityService createActivities', () => {
         category: 'Category A2',
         keyPersonnel: 'Key Personnel A2',
         budget: 'Budget A2',
-        milestone: 2
+        milestone: milestoneId
       }
     ];
 
-    const milestoneId = 2;
     const activities = await activityService.createActivities(
       mockActivities,
       milestoneId
