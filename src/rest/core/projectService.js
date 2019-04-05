@@ -245,7 +245,6 @@ const projectService = ({
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: -1
     });
-    projects.forEach(project => projectImagesToBase64(project));
     return projects;
   },
 
@@ -256,13 +255,11 @@ const projectService = ({
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: 1
     });
-    projects.forEach(project => projectImagesToBase64(project));
     return projects;
   },
 
   async getProjectWithId({ projectId }) {
     const project = await projectDao.getProjectById({ projectId });
-    projectImagesToBase64(project);
     return project;
   },
 
@@ -554,9 +551,4 @@ const projectService = ({
   }
 });
 
-const projectImagesToBase64 = project => {
-  if (!project) return;
-  project.coverPhoto = getBase64htmlFromPath(project.coverPhoto);
-  project.cardPhoto = getBase64htmlFromPath(project.cardPhoto);
-};
 module.exports = projectService;
