@@ -7,39 +7,47 @@ exports.getFileFromPath = filepath => {
   return file;
 };
 
-const getCoverPhotoPath = (projectName, photoName) => {
+const getCoverPhotoPath = (projectId, photoName) => {
   return `${
     configs.fileServer.filePath
-  }/projects/${projectName}/coverPhoto${path.extname(photoName)}`;
+  }/projects/${projectId}/coverPhoto${path.extname(photoName)}`;
 };
 
-const getCardPhotoPath = (projectName, photoName) => {
+const getCardPhotoPath = (projectId, photoName) => {
   return `${
     configs.fileServer.filePath
-  }/projects/${projectName}/cardPhoto${path.extname(photoName)}`;
+  }/projects/${projectId}/cardPhoto${path.extname(photoName)}`;
 };
 
-const getPitchProposalPath = (projectName, proposalName) => {
+const getPitchProposalPath = (projectId, proposalName) => {
   return `${
     configs.fileServer.filePath
-  }/projects/${projectName}/pitchProposal${path.extname(proposalName)}`;
+  }/projects/${projectId}/pitchProposal${path.extname(proposalName)}`;
 };
 
-const getMilestonesPath = (projectName, milestoneName) => {
+const getMilestonesPath = (projectId, milestoneName) => {
   return `${
     configs.fileServer.filePath
-  }/projects/${projectName}/milestones${path.extname(milestoneName)}`;
+  }/projects/${projectId}/milestones${path.extname(milestoneName)}`;
 };
 
-exports.addPathToFilesProperties = (
-  projectName,
+exports.addPathToFilesProperties = ({
+  projectId,
   coverPhoto,
   cardPhoto,
   pitchProposal,
   milestones
-) => {
-  coverPhoto.path = getCoverPhotoPath(projectName, coverPhoto.name);
-  cardPhoto.path = getCardPhotoPath(projectName, cardPhoto.name);
-  pitchProposal.path = getPitchProposalPath(projectName, pitchProposal.name);
-  milestones.path = getMilestonesPath(projectName, milestones.name);
+}) => {
+  if (coverPhoto) {
+    coverPhoto.path = getCoverPhotoPath(projectId, coverPhoto.name);
+  }
+  if (cardPhoto) {
+    cardPhoto.path = getCardPhotoPath(projectId, cardPhoto.name);
+  }
+  if (pitchProposal) {
+    pitchProposal.path = getPitchProposalPath(projectId, pitchProposal.name);
+  }
+  if (milestones) {
+    milestones.path = getMilestonesPath(projectId, milestones.name);
+  }
 };
