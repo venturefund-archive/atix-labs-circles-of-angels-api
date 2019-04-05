@@ -10,7 +10,6 @@ module.exports = {
       columnName: 'activityId',
       model: 'activity'
     },
-    status: { type: 'number', required: true },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
 };

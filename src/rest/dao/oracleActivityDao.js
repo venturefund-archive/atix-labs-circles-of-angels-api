@@ -7,8 +7,7 @@ const assignOracleToActivity = oracleActivityModel => async (
 ) => {
   const assign = oracleActivityModel.create({
     user: userId,
-    activity: activityId,
-    status: 0
+    activity: activityId
   });
   return assign;
 };
