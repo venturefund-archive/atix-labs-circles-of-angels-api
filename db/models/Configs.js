@@ -1,3 +1,8 @@
+/**
+ *@description Represents a general configuration of the API
+ *@attribute `key`: unique key of a configuration
+ *@attribute `value`: the value of that configuration
+ */
 module.exports = {
   identity: 'configs',
   primaryKey: 'key',
