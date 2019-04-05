@@ -4,6 +4,55 @@ const configs = require('../../../config/configs');
 
 const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
   /**
+   * Creates a Milestone for an existing Project.
+   *
+   * @param {object} milestone
+   * @param {number} projectId
+   * @returns new milestone | error message
+   */
+  async createMilestone(milestone, projectId) {
+    try {
+      fastify.log.info(
+        `[Milestone Service] :: Creating a new Milestone for Project ID ${projectId}: `,
+        milestone
+      );
+      // TODO: should verify project existence and status <- inject projectDao <- inject userDao
+
+      if (
+        !this.isMilestoneEmpty(milestone) &&
+        this.isMilestoneValid(milestone)
+      ) {
+        const savedMilestone = await milestoneDao.saveMilestone({
+          milestone,
+          projectId
+        });
+
+        fastify.log.info(
+          '[Milestone Service] :: Milestone created:',
+          savedMilestone
+        );
+
+        return savedMilestone;
+      }
+
+      fastify.log.error(
+        '[Milestone Service] :: Milestone not valid',
+        milestone
+      );
+      return {
+        status: 409,
+        error: 'Milestone is missing mandatory fields'
+      };
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error creating Milestone:',
+        error
+      );
+      return { status: 500, error: 'Error creating Milestone' };
+    }
+  },
+
+  /**
    * Receives an excel file, saves it and creates the Milestones
    * associated to the Project passed by parameter.
    *
@@ -68,9 +117,65 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
   },
 
   /**
-   * Receives a milestone to populate with its activities
+   * Updates a Milestone
    *
-   * @param {*} milestone milestone to populate with activities
+   * @param {object} milestone
+   * @param {number} id
+   * @returns updated milestone | error message
+   */
+  async updateMilestone(milestone, id) {
+    try {
+      fastify.log.info('[Milestone Service] :: Updating milestone:', milestone);
+
+      if (
+        !this.isMilestoneEmpty(milestone) &&
+        this.isMilestoneValid(milestone)
+      ) {
+        const savedMilestone = await milestoneDao.updateMilestone(
+          milestone,
+          id
+        );
+
+        if (!savedMilestone || savedMilestone == null) {
+          fastify.log.error(
+            `[Milestone Service] :: Milestone ID ${id} does not exist`,
+            savedMilestone
+          );
+          return {
+            status: 404,
+            error: 'Milestone does not exist'
+          };
+        }
+
+        fastify.log.info(
+          '[Milestone Service] :: Milestone updated:',
+          savedMilestone
+        );
+
+        return savedMilestone;
+      }
+
+      fastify.log.error(
+        '[Milestone Service] :: Milestone not valid',
+        milestone
+      );
+      return {
+        status: 409,
+        error: 'Milestone is missing mandatory fields'
+      };
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error updating Milestone:',
+        error
+      );
+      return { status: 500, error: 'Error updating Milestone' };
+    }
+  },
+
+  /**
+   * Receives a Milestone and populates them with its Activities
+   *
+   * @param {object} milestone
    * @returns milestone with activities
    */
   async getMilestoneActivities(milestone) {
@@ -301,8 +406,11 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
   isMilestoneValid(milestone) {
     if (
       !this.isMilestoneEmpty(milestone) &&
-      (milestone.quarter === '' ||
+      (!milestone.quarter ||
+        milestone.quarter === '' ||
+        !milestone.tasks ||
         milestone.tasks === '' ||
+        !milestone.impact ||
         milestone.impact === '')
     ) {
       return false;
