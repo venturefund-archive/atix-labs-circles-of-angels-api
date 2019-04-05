@@ -32,7 +32,7 @@ const ProjectDao = ({ projectModel, userDao }) => ({
   },
 
   async addUserInfoOnProject(project) {
-    const user = await userDao.getUserById({ id: project.ownerId });
+    const user = await userDao.getUserById(project.ownerId);
     if (!user) return project;
     project.ownerName = user.username;
     project.ownerEmail = user.email;
