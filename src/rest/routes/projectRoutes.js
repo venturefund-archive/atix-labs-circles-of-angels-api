@@ -585,12 +585,13 @@ const routes = async fastify => {
     `${basePath}/:id`,
     {
       schema: {
-        type: 'application/json',
+        type: 'multipart/form-data',
         params: {
           id: { type: 'number' }
         },
-        body: {
-          project: { type: 'object' }
+        raw: {
+          files: { type: 'object' },
+          body: { type: 'object' }
         }
       },
       response: {
@@ -605,14 +606,26 @@ const routes = async fastify => {
     async (req, reply) => {
       fastify.log.info(
         `[Project Routes] :: PUT request at /project/${req.params.id}:`,
-        req.body
+        req.raw.body,
+        req.raw.files
       );
 
-      const { project } = req.body;
+      const {
+        projectProposal,
+        projectCoverPhoto,
+        projectCardPhoto
+      } = req.raw.files;
+      const { project } = req.raw.body;
       const { id } = req.params;
 
       try {
-        const response = await projectService.updateProject(project, id);
+        const response = await projectService.updateProject(
+          project,
+          projectProposal,
+          projectCoverPhoto,
+          projectCardPhoto,
+          id
+        );
 
         if (response.error) {
           fastify.log.error(

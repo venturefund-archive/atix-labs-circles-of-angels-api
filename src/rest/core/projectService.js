@@ -45,13 +45,13 @@ const projectService = ({
       const savedProject = await projectDao.saveProject(newProject);
       fastify.log.info('[Project Service] :: Project created:', savedProject);
 
-      addPathToFilesProperties(
-        savedProject.id,
-        projectProposal,
-        projectCoverPhoto,
-        projectCardPhoto,
-        projectMilestones
-      );
+      addPathToFilesProperties({
+        projectId: savedProject.id,
+        coverPhoto: projectCoverPhoto,
+        cardPhoto: projectCardPhoto,
+        pitchProposal: projectProposal,
+        milestones: projectMilestones
+      });
 
       const coverPhotoPath = projectCoverPhoto.path;
       const cardPhotoPath = projectCardPhoto.path;
@@ -143,11 +143,55 @@ const projectService = ({
     id
   ) {
     try {
-      fastify.log.info('[Project Service] :: Updating project:', project);
+      const newProject = Object.assign({}, JSON.parse(project));
+      fastify.log.info('[Project Service] :: Updating project:', newProject);
 
-      // save files
+      // create files' path
+      addPathToFilesProperties({
+        projectId: id,
+        coverPhoto: projectCoverPhoto,
+        cardPhoto: projectCardPhoto,
+        pitchProposal: projectProposal
+      });
 
-      const savedProject = await projectDao.updateProject(project, id);
+      const coverPhotoPath = projectCoverPhoto.path;
+      const cardPhotoPath = projectCardPhoto.path;
+      const pitchProposalPath = projectProposal.path;
+
+      newProject.coverPhoto = coverPhotoPath;
+      newProject.cardPhoto = cardPhotoPath;
+      newProject.pitchProposal = pitchProposalPath;
+
+      // creates the directory where this project's files will be saved if not exists
+      await mkdirp(`${configs.fileServer.filePath}/projects/${id}`);
+
+      // saves the project's pictures and proposal
+      fastify.log.info(
+        '[Project Service] :: Saving Project cover photo to:',
+        coverPhotoPath
+      );
+      await projectCoverPhoto.mv(coverPhotoPath);
+
+      fastify.log.info(
+        '[Project Service] :: Saving Project card photo to:',
+        cardPhotoPath
+      );
+      await projectCardPhoto.mv(cardPhotoPath);
+
+      fastify.log.info(
+        '[Project Service] :: Saving pitch proposal to:',
+        pitchProposalPath
+      );
+      await projectProposal.mv(pitchProposalPath);
+
+      fastify.log.info(
+        '[Project Service] :: All files saved to:',
+        `${configs.fileServer.filePath}/projects/${id}`
+      );
+
+      fastify.log.info('[Project Service] :: Updating project:', newProject);
+      const savedProject = await projectDao.updateProject(newProject, id);
+      fastify.log.info('[Project Service] :: Project Updated:', savedProject);
 
       if (!savedProject || savedProject == null) {
         fastify.log.error(
@@ -418,6 +462,7 @@ const projectService = ({
       throw Error('Error getting agreement');
     }
   },
+
   /**
    * Downloads the project's pitch proposal. Returns a File Stream.
    *

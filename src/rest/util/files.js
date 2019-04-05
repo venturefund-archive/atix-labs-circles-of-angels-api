@@ -31,15 +31,23 @@ const getMilestonesPath = (projectId, milestoneName) => {
   }/projects/${projectId}/milestones${path.extname(milestoneName)}`;
 };
 
-exports.addPathToFilesProperties = (
+exports.addPathToFilesProperties = ({
   projectId,
   coverPhoto,
   cardPhoto,
   pitchProposal,
   milestones
-) => {
-  coverPhoto.path = getCoverPhotoPath(projectId, coverPhoto.name);
-  cardPhoto.path = getCardPhotoPath(projectId, cardPhoto.name);
-  pitchProposal.path = getPitchProposalPath(projectId, pitchProposal.name);
-  milestones.path = getMilestonesPath(projectId, milestones.name);
+}) => {
+  if (coverPhoto) {
+    coverPhoto.path = getCoverPhotoPath(projectId, coverPhoto.name);
+  }
+  if (cardPhoto) {
+    cardPhoto.path = getCardPhotoPath(projectId, cardPhoto.name);
+  }
+  if (pitchProposal) {
+    pitchProposal.path = getPitchProposalPath(projectId, pitchProposal.name);
+  }
+  if (milestones) {
+    milestones.path = getMilestonesPath(projectId, milestones.name);
+  }
 };
