@@ -7,39 +7,39 @@ exports.getFileFromPath = filepath => {
   return file;
 };
 
-const getCoverPhotoPath = (projectName, photoName) => {
+const getCoverPhotoPath = (projectId, photoName) => {
   return `${
     configs.fileServer.filePath
-  }/projects/${projectName}/coverPhoto${path.extname(photoName)}`;
+  }/projects/${projectId}/coverPhoto${path.extname(photoName)}`;
 };
 
-const getCardPhotoPath = (projectName, photoName) => {
+const getCardPhotoPath = (projectId, photoName) => {
   return `${
     configs.fileServer.filePath
-  }/projects/${projectName}/cardPhoto${path.extname(photoName)}`;
+  }/projects/${projectId}/cardPhoto${path.extname(photoName)}`;
 };
 
-const getPitchProposalPath = (projectName, proposalName) => {
+const getPitchProposalPath = (projectId, proposalName) => {
   return `${
     configs.fileServer.filePath
-  }/projects/${projectName}/pitchProposal${path.extname(proposalName)}`;
+  }/projects/${projectId}/pitchProposal${path.extname(proposalName)}`;
 };
 
-const getMilestonesPath = (projectName, milestoneName) => {
+const getMilestonesPath = (projectId, milestoneName) => {
   return `${
     configs.fileServer.filePath
-  }/projects/${projectName}/milestones${path.extname(milestoneName)}`;
+  }/projects/${projectId}/milestones${path.extname(milestoneName)}`;
 };
 
 exports.addPathToFilesProperties = (
-  projectName,
+  projectId,
   coverPhoto,
   cardPhoto,
   pitchProposal,
   milestones
 ) => {
-  coverPhoto.path = getCoverPhotoPath(projectName, coverPhoto.name);
-  cardPhoto.path = getCardPhotoPath(projectName, cardPhoto.name);
-  pitchProposal.path = getPitchProposalPath(projectName, pitchProposal.name);
-  milestones.path = getMilestonesPath(projectName, milestones.name);
+  coverPhoto.path = getCoverPhotoPath(projectId, coverPhoto.name);
+  cardPhoto.path = getCardPhotoPath(projectId, cardPhoto.name);
+  pitchProposal.path = getPitchProposalPath(projectId, pitchProposal.name);
+  milestones.path = getMilestonesPath(projectId, milestones.name);
 };

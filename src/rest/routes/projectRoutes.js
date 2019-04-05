@@ -1,5 +1,4 @@
 const fileUpload = require('fastify-file-upload');
-const { addPathToFilesProperties } = require('../util/files');
 
 const basePath = '/project';
 const routes = async fastify => {
@@ -65,16 +64,6 @@ const routes = async fastify => {
       } = req.raw.files;
 
       const { project, ownerId } = req.raw.body;
-
-      const { projectName } = JSON.parse(project);
-
-      addPathToFilesProperties(
-        projectName,
-        projectProposal,
-        projectCoverPhoto,
-        projectCardPhoto,
-        projectMilestones
-      );
 
       try {
         const response = await projectService.createProject(

@@ -5,6 +5,7 @@ const { isEmpty } = require('lodash');
 const configs = require('../../../config/configs');
 const { getBase64htmlFromPath } = require('../util/images');
 const { forEachPromise } = require('../util/promises');
+const { addPathToFilesProperties } = require('../util/files');
 
 const projectService = ({
   fastify,
@@ -39,24 +40,32 @@ const projectService = ({
       newProject.ownerId = ownerId;
       newProject.status = 0;
 
-      const coverPhotoPath = projectCoverPhoto.path;
-      const cardPhotoPath = projectCardPhoto.path;
-      const pitchProposalPath = projectProposal.path;
-      const milestonesPath = projectMilestones.path;
-
-      newProject.coverPhoto = coverPhotoPath;
-      newProject.cardPhoto = cardPhotoPath;
-      newProject.pitchProposal = pitchProposalPath;
-      newProject.milestonesFile = milestonesPath;
-
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
       const savedProject = await projectDao.saveProject(newProject);
       fastify.log.info('[Project Service] :: Project created:', savedProject);
 
+      addPathToFilesProperties(
+        savedProject.id,
+        projectProposal,
+        projectCoverPhoto,
+        projectCardPhoto,
+        projectMilestones
+      );
+
+      const coverPhotoPath = projectCoverPhoto.path;
+      const cardPhotoPath = projectCardPhoto.path;
+      const pitchProposalPath = projectProposal.path;
+      const milestonesPath = projectMilestones.path;
+
+      savedProject.coverPhoto = coverPhotoPath;
+      savedProject.cardPhoto = cardPhotoPath;
+      savedProject.pitchProposal = pitchProposalPath;
+      savedProject.milestonesFile = milestonesPath;
+
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(
-        `${configs.fileServer.filePath}/projects/${newProject.projectName}`
+        `${configs.fileServer.filePath}/projects/${savedProject.id}`
       );
 
       // saves the project's pictures and proposal
@@ -88,20 +97,28 @@ const projectService = ({
 
       fastify.log.info(
         '[Project Service] :: All files saved to:',
-        `${configs.fileServer.filePath}/projects/${newProject.projectName}`
+        `${configs.fileServer.filePath}/projects/${savedProject.id}`
       );
+
+      // updates project to include its files' path
+      fastify.log.info('[Project Service] :: Updating project:', savedProject);
+      const updatedProject = await projectDao.updateProject(
+        savedProject,
+        savedProject.id
+      );
+      fastify.log.info('[Project Service] :: Project Updated:', updatedProject);
 
       fastify.log.info(
         '[Project Service] :: Creating Milestones for Project ID:',
-        savedProject.id
+        updatedProject.id
       );
 
       const milestones = await milestoneService.createMilestones(
         milestonesPath,
-        savedProject.id
+        updatedProject.id
       );
 
-      response.project = savedProject;
+      response.project = updatedProject;
       response.milestones = milestones;
 
       return response;
@@ -118,9 +135,17 @@ const projectService = ({
    * @param {number} id
    * @returns updated project | error message
    */
-  async updateProject(project, id) {
+  async updateProject(
+    project,
+    projectProposal,
+    projectCoverPhoto,
+    projectCardPhoto,
+    id
+  ) {
     try {
       fastify.log.info('[Project Service] :: Updating project:', project);
+
+      // save files
 
       const savedProject = await projectDao.updateProject(project, id);
 
@@ -296,26 +321,22 @@ const projectService = ({
 
       // creates the directory where this project's agreement will be saved if not exists
       // (it should've been created during the project creation though)
-      mkdirp(`${configs.fileServer.filePath}/projects/${project.projectName}`);
+      mkdirp(`${configs.fileServer.filePath}/projects/${project.id}`);
 
       const filename = `agreement${path.extname(projectAgreement.name)}`;
 
       // saves the project's agreement
       fastify.log.info(
         '[Project Service] :: Saving Project agreement to:',
-        `${configs.fileServer.filePath}/projects/${
-          project.projectName
-        }/${filename}`
+        `${configs.fileServer.filePath}/projects/${project.id}/${filename}`
       );
       await projectAgreement.mv(
-        `${configs.fileServer.filePath}/projects/${
-          project.projectName
-        }/${filename}`
+        `${configs.fileServer.filePath}/projects/${project.id}/${filename}`
       );
 
       // update database
       const projectAgreementPath = `${configs.fileServer.filePath}/projects/${
-        project.projectName
+        project.id
       }/${filename}`;
 
       const updatedProject = await projectDao.updateProjectAgreement({
