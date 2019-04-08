@@ -86,6 +86,10 @@ const photoService = ({ fastify, photoDao }) => ({
         fastify.log.error(
           `[Photo Service] :: Photo ID ${photoId} not found in database:`
         );
+        return {
+          error: 'Photo could not be found',
+          status: 404
+        };
       }
 
       fastify.log.info('[Photo Service] :: Photo updated:', updatedPhoto);
