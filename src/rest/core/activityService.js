@@ -83,7 +83,7 @@ const activityService = ({ fastify, activityDao, oracleActivityDao }) => ({
     return savedActivities;
   },
 
-  /**
+  /*
    * Updates an Activity
    *
    * @param {object} activity
