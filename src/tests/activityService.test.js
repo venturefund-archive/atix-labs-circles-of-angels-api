@@ -256,3 +256,43 @@ describe('Testing activityService updateActivity', () => {
     return expect(response).toEqual(expected);
   });
 });
+
+describe('Testing activityService delete activity', async () => {
+  let activityDao;
+  let activityService;
+  const mockActivity = {
+    id: 1,
+    tasks: 'Task A1',
+    impact: '',
+    impactCriterion: '',
+    signsOfSuccess: '',
+    signsOfSuccessCriterion: '',
+    category: 'Category A1',
+    keyPersonnel: 'Key Personnel A1',
+    budget: ''
+  };
+
+  beforeAll(() => {
+    activityService = {};
+    activityDao = {
+      async deleteActivity(activityId) {
+        if (activityId === 1) return mockActivity;
+        return [];
+      }
+    };
+    activityService = require('../rest/core/activityService')({
+      fastify,
+      activityDao
+    });
+  });
+
+  it('should return the deleted activity', async () => {
+    const activity = await activityService.deleteActivity(1);
+    await expect(activity).toBe(mockActivity);
+  });
+
+  it('should return empty list when try delete a non-existent activity', async () => {
+    const activity = await activityService.deleteActivity(2);
+    await expect(activity).toEqual([]);
+  });
+});
