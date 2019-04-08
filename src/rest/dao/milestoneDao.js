@@ -28,8 +28,14 @@ const getMilestoneActivities = milestoneModel => async milestoneId => {
   return milestone || [];
 };
 
+const deleteMilestone = milestoneModel => async milestoneId => {
+  const deleted = milestoneModel.destroy(milestoneId).fetch();
+  return deleted;
+};
+
 module.exports = milestoneModel => ({
   saveMilestone: saveMilestone(milestoneModel),
-  updateMilestone: updateMilestone(milestoneModel),
-  getMilestoneActivities: getMilestoneActivities(milestoneModel)
+  getMilestoneActivities: getMilestoneActivities(milestoneModel),
+  deleteMilestone: deleteMilestone(milestoneModel),
+  updateMilestone: updateMilestone(milestoneModel)
 });
