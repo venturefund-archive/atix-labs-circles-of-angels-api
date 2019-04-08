@@ -1,3 +1,16 @@
+/**
+ *@description Representa un activity de un determinado milestone
+ *@attribute `id`: id of the activty
+ *@attribute `milestoneId`: id of the milestone to which they belong
+ *@attribute `tasks`: tasks to be performed in the current milestone
+ *@attribute `impact`: expected changes after the end of the
+ *@attribute `impactCriterion`: documentation activity or evidence of the impact achieved
+ *@attribute `signsOfSuccess`: signs indicating that the activity was successful
+ *@attribute `signsOfSuccessCriterion`: documentation or evidence that the activity was completed
+ *@attribute `category`: category
+ *@attribute `keyPersonnel`: member of the team responsible for each task to be performed
+ *@attribute `budget`: budget with which it is counted
+ */
 module.exports = {
   identity: 'activity',
   primaryKey: 'id',
