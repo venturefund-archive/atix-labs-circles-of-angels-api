@@ -826,6 +826,19 @@ describe('Testing milestonesService delete milestone', async () => {
     {
       quarter: 'Quarter 1',
       tasks: '',
+      impact: 'Impact M1',
+      impactCriterion: '',
+      signsOfSuccess: '',
+      signsOfSuccessCriterion: '',
+      category: '',
+      keyPersonnel: '',
+      budget: '',
+      activityList: []
+    };
+
+    const mockMilestoneWithoutImpact = {
+      quarter: 'Quarter 1',
+      tasks: 'Task M1',
       impact: '',
       impactCriterion: '',
       signsOfSuccess: '',
