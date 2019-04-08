@@ -10,7 +10,8 @@ const routes = async fastify => {
   const activityDao = require('../dao/activityDao')(fastify.models.activity);
   const activityService = require('../core/activityService')({
     fastify,
-    activityDao
+    activityDao,
+    oracleActivityDao
   });
   const milestoneDao = require('../dao/milestoneDao')(fastify.models.milestone);
   const milestoneService = require('../core/milestoneService')({
@@ -272,9 +273,10 @@ const routes = async fastify => {
       );
 
       try {
-        const milestones = await projectService.getProjectMilestones({
-          projectId
-        });
+        const milestones = await projectService.getProjectMilestones(
+          projectId,
+          oracleActivityDao
+        );
         reply.status(200).send(milestones);
       } catch (error) {
         fastify.log.error(error);

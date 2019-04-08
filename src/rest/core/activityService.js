@@ -163,6 +163,23 @@ const activityService = ({ fastify, activityDao, oracleActivityDao }) => ({
    */
   assignOracleToActivity(userId, activityId) {
     return oracleActivityDao.assignOracleToActivity(userId, activityId);
+  },
+
+  /**
+   * Destroy referencie between a user and activity
+   * @param {number} userId
+   * @param {number} activityId
+   */
+  unassignOracleToActivity(activityId) {
+    return oracleActivityDao.unassignOracleToActivity(activityId);
+  },
+
+  /**
+   * Get users with oracle role of an activity
+   * @param {number} activityId
+   */
+  getOracleFromActivity(activityId) {
+    return oracleActivityDao.getOracleFromActivity(activityId);
   }
 });
 
