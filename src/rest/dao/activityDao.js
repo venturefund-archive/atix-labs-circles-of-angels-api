@@ -20,7 +20,13 @@ const updateActivity = activityModel => async (activity, activityId) => {
   return savedActivity;
 };
 
+const deleteActivity = activityModel => async activityId => {
+  const deleted = activityModel.destroy(activityId).fetch();
+  return deleted;
+};
+
 module.exports = activityModel => ({
   saveActivity: saveActivity(activityModel),
+  deleteActivity: deleteActivity(activityModel),
   updateActivity: updateActivity(activityModel)
 });

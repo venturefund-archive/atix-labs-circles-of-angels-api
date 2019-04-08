@@ -4,6 +4,9 @@ const basePath = '/project';
 const routes = async fastify => {
   fastify.register(fileUpload);
 
+  const oracleActivityDao = require('../dao/oracleActivityDao')(
+    fastify.models.oracle_activity
+  );
   const activityDao = require('../dao/activityDao')(fastify.models.activity);
   const activityService = require('../core/activityService')({
     fastify,
@@ -369,7 +372,7 @@ const routes = async fastify => {
           reply
             .status(500)
             // eslint-disable-next-line prettier/prettier
-            .send({ error: 'This project doesn\'t have a milestones file' });
+            .send({ error: "This project doesn't have a milestones file" });
         }
       } catch (error) {
         fastify.log.error(error);
