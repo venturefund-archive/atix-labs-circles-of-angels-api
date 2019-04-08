@@ -280,6 +280,10 @@ describe('Testing activityService delete activity', async () => {
         return [];
       }
     };
+    activityService = require('../rest/core/activityService')({
+      fastify,
+      activityDao
+    });
   });
 
   it('should return the deleted activity', async () => {

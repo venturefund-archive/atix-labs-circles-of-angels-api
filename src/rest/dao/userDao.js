@@ -9,6 +9,10 @@ const UserDao = ({ userModel }) => ({
 
   async createUser(user) {
     return userModel.create(user);
+  },
+
+  async getOracles() {
+    return userModel.find({ role: 3 }).populate('role');
   }
 });
 

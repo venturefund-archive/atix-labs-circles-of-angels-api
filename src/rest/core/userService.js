@@ -99,6 +99,13 @@ const userService = ({ fastify, userDao }) => ({
     );
     // eslint-disable-next-line prettier/prettier
     return { error: 'User doesn\'t have a role' };
+  },
+
+  /**
+   * Returns a list of oracles users
+   */
+  async getOracles() {
+    return userDao.getOracles();
   }
 });
 
