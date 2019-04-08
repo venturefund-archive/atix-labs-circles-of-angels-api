@@ -177,6 +177,36 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.post(
+    `${basePath}/:id/unassignOracle`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/json',
+          properties: {
+            response: { type: 'application/json' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(`[Activity Routes] Unassign oracle to activity ${id}`);
+      try {
+        const assign = await activityService.unassignOracleToActivity(id);
+        reply.status(200).send(Boolean(assign));
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send('Error assigning user on activity');
+      }
+    }
+  );
 };
 
 module.exports = routes;

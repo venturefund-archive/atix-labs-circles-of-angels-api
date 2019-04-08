@@ -250,7 +250,7 @@ const projectService = ({
     return projectDeleted;
   },
 
-  async getProjectMilestones({ projectId }) {
+  async getProjectMilestones(projectId, oracleActivityDao) {
     const projectMilestones = await projectDao.getProjectMilestones({
       projectId
     });
