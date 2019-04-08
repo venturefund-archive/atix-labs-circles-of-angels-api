@@ -181,24 +181,28 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     const milestoneActivities = await milestoneDao.getMilestoneActivities(
       milestone.id
     );
-
     const activities = [];
 
     await forEachPromise(
       milestoneActivities.activities,
-      (activity, context) =>
-        new Promise(resolve => {
+      (activity, context) => {
+        return new Promise(resolve => {
           process.nextTick(async () => {
+            const oracle = await activityService.getOracleFromActivity(
+              activity.id
+            );
             const activityWithType = {
               ...activity,
               type: 'Activity',
-              quarter: milestone.quarter
+              quarter: milestone.quarter,
+              oracle: oracle ? oracle.user : {}
             };
 
             context.push(activityWithType);
             resolve();
           });
-        }),
+        });
+      },
       activities
     );
 

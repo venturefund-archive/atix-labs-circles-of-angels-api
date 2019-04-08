@@ -2,9 +2,13 @@ const basePath = '/milestones';
 
 const routes = async fastify => {
   const activityDao = require('../dao/activityDao')(fastify.models.activity);
+  const oracleActivityDao = require('../dao/oracleActivityDao')(
+    fastify.models.oracle_activity
+  );
   const activityService = require('../core/activityService')({
     fastify,
-    activityDao
+    activityDao,
+    oracleActivityDao
   });
   const milestoneDao = require('../dao/milestoneDao')(fastify.models.milestone);
   const milestoneService = require('../core/milestoneService')({
