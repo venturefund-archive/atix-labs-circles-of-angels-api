@@ -1,5 +1,4 @@
 const fileUpload = require('fastify-file-upload');
-const { addPathToFilesProperties } = require('../util/files');
 
 const basePath = '/project';
 const routes = async fastify => {
@@ -66,16 +65,6 @@ const routes = async fastify => {
 
       const { project, ownerId } = req.raw.body;
 
-      const { projectName } = JSON.parse(project);
-
-      addPathToFilesProperties(
-        projectName,
-        projectProposal,
-        projectCoverPhoto,
-        projectCardPhoto,
-        projectMilestones
-      );
-
       try {
         const response = await projectService.createProject(
           project,
@@ -105,57 +94,6 @@ const routes = async fastify => {
         );
         reply.status(500).send({ error: 'Error creating project' });
       }
-    }
-  );
-
-  // ** NOT USED **
-  fastify.post(
-    `${basePath}/upload`,
-    {
-      schema: {
-        type: 'multipart/form-data',
-        raw: {
-          files: { type: 'object' }
-        }
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
-          }
-        }
-      }
-    },
-    async (req, reply) => {
-      fastify.log.info(
-        '[Project Routes] :: POST request at /project/upload:',
-        req
-      );
-
-      const {
-        projectXls,
-        projectCoverPhoto,
-        projectCardPhoto,
-        projectMilestones
-      } = req.raw.files;
-
-      try {
-        await projectService.createProjectWithFile(
-          projectXls,
-          projectCoverPhoto,
-          projectCardPhoto,
-          projectMilestones
-        );
-      } catch (error) {
-        fastify.log.error(
-          '[Project Routes] :: Error creating project: ',
-          error
-        );
-        reply.status(500).send({ error: 'Error creating project' });
-      }
-
-      reply.send({ sucess: 'Project created successfully!' });
     }
   );
 
@@ -588,6 +526,71 @@ const routes = async fastify => {
       } catch (error) {
         fastify.log.error('[Project Routes] :: Error getting proposal:', error);
         reply.status(500).send({ error: 'Error getting proposal' });
+      }
+    }
+  );
+
+  fastify.put(
+    `${basePath}/:id`,
+    {
+      schema: {
+        type: 'multipart/form-data',
+        params: {
+          id: { type: 'number' }
+        },
+        raw: {
+          files: { type: 'object' },
+          body: { type: 'object' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
+      fastify.log.info(
+        `[Project Routes] :: PUT request at /project/${req.params.id}:`,
+        req.raw.body,
+        req.raw.files
+      );
+
+      const {
+        projectProposal,
+        projectCoverPhoto,
+        projectCardPhoto
+      } = req.raw.files;
+      const { project } = req.raw.body;
+      const { id } = req.params;
+
+      try {
+        const response = await projectService.updateProject(
+          project,
+          projectProposal,
+          projectCoverPhoto,
+          projectCardPhoto,
+          id
+        );
+
+        if (response.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error updating project: ',
+            response.error
+          );
+          reply.status(response.status).send(response.error);
+        } else {
+          reply.send({ success: 'Project updated successfully!' });
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error updating project: ',
+          error
+        );
+        reply.status(500).send({ error: 'Error updating project' });
       }
     }
   );

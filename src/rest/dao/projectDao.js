@@ -5,6 +5,7 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     const createdProject = await projectModel.create(project);
     return createdProject;
   },
+
   async getProjecListWithStatusFrom({ status }) {
     const projects = await projectModel.find({
       where: { status: { '>=': status } }
@@ -14,10 +15,12 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     );
     return projects;
   },
+
   async updateProjectStatus({ projectId, status }) {
     const response = projectModel.updateOne({ id: projectId }).set({ status });
     return response;
   },
+
   async getProjectById({ projectId }) {
     const project = await projectModel.findOne({ id: projectId });
 
@@ -27,34 +30,52 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     }
     return this.addUserInfoOnProject(project);
   },
+
   async addUserInfoOnProject(project) {
-    const user = await userDao.getUserById({ id: project.ownerId });
+    const user = await userDao.getUserById(project.ownerId);
     if (!user) return project;
     project.ownerName = user.username;
     project.ownerEmail = user.email;
     return project;
   },
+
   async deleteProject({ projectId }) {
     const deletedProject = projectModel.destroy({ id: projectId }).fetch();
     return deletedProject;
   },
+
   async getProjectMilestones({ projectId }) {
     const projectMilestones = await projectModel
       .findOne({ id: projectId })
       .populate('milestones');
     return projectMilestones ? projectMilestones.milestones : [];
   },
+
   async getProjectMilestonesFilePath(projectId) {
     return projectModel.findOne({
       where: { id: projectId },
       select: ['milestonesFile']
     });
   },
+
   async updateProjectAgreement({ projectAgreement, projectId }) {
     const updated = projectModel
       .update({ id: projectId })
       .set({ projectAgreement });
     return updated;
+  },
+
+  async updateProject(project, id) {
+    const toUpdate = { ...project };
+
+    delete toUpdate.id;
+    delete toUpdate.ownerId;
+
+    const savedProject = await projectModel
+      .updateOne({ id })
+      .set({ ...toUpdate });
+
+    return savedProject;
   }
 });
 

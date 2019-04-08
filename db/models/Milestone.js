@@ -1,3 +1,18 @@
+/**
+ *@description Represents a milestone of a project in a given quearter
+ *@attribute `id`: milestone id
+ *@attribute `projectId`: id of the project to which it belongs
+ *@attribute `quarter`: quarter to which it belongs
+ *@attribute `tasks`: tasks to be performed in the current milestone
+ *@attribute `impact`: expected changes after the conclusion of the
+ *@attribute `impactCriterion`: documentation activity or evidence of the impact achieved
+ *@attribute `signsOfSuccess`: signs indicating that the activity was successful
+ *@attribute `signsOfSuccessCriterion`: documentation or evidence that the activity was completed
+ *@attribute `category`: category
+ *@attribute `keyPersonnel`: member of the team responsible for each task to be performed
+ *@attribute `budget`: budget with which it is counte
+ */
+
 module.exports = {
   identity: 'milestone',
   primaryKey: 'id',
