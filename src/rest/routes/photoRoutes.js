@@ -1,10 +1,10 @@
 const basePath = '/photos';
+const photoDao = require('../dao/photoDao');
 
 const routes = async (fastify, options) => {
-  const photoDao = require('../dao/photoDao')(fastify.models.photo);
   const photoService = require('../core/photoService')({
     fastify,
-    photoDao
+    photoDao: photoDao(fastify.models.photo)
   });
 
   fastify.get(
