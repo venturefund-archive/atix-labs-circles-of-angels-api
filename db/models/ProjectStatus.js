@@ -1,3 +1,8 @@
+/**
+ * @description Represents the status of a particular project
+ * @attribute `name`: name of the state
+ * @attribute `status`: numerical representation of the state
+ */
 module.exports = {
   identity: 'project_status',
   primaryKey: 'status',

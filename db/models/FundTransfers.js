@@ -1,12 +1,11 @@
 /**
  * @description Represents a bank transfer register
- *
- * @attribute transferId: Bank transfer recipt
- * @attribute senderId: id del usuario que envia
- * @attribute destinationAccount: id del usuario que recibe
- * @attribute projectId: el id del proyecto al cual pertenece esta transferencia bancaria
- * @attribute amount: cantidad de dinero transferida
- * @attribute currency: moneda en la cual se realizó la transferencia
+ * @attribute `transferId`: Bank transfer recipt
+ * @attribute `senderId`: id of the user who sends
+ * @attribute `destinationAccount`: id of the user that receives
+ * @attribute `projectId`: the project id to which this bank transfer belongs
+ * @attribute `amount`: amount of money transferred
+ * @attribute `currency`: currency in which the transfer was made
  */
 module.exports = {
   identity: 'fund_transfer',
@@ -28,16 +27,5 @@ module.exports = {
     createdAt: { type: 'string', autoCreatedAt: true },
     updatedAt: { type: 'string', autoUpdatedAt: true },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
-  },
-  // findTransferById: async function(transferId) {
-  //   console.log(transferId)
-  //   return this.findOne(transferId);
-  // },
-  // async updateTransferState({ transferId, state }) {
-  //   return this.update({ transferId }).set({ state });
-  // }
-  // async findTransferByUserAndProject({ sender, project }) {
-  //   const transfer = await this.findOne({
-  //     and: [{ sender }, { project }]
-  // }
+  }
 };

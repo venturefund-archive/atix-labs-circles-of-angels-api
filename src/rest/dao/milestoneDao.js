@@ -7,6 +7,19 @@ const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
   return createdMilestone;
 };
 
+const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
+  const toUpdate = { ...milestone };
+
+  delete toUpdate.id;
+  delete toUpdate.project;
+
+  const savedMilestone = await milestoneModel
+    .updateOne({ id: milestoneId })
+    .set({ ...toUpdate });
+
+  return savedMilestone;
+};
+
 const getMilestoneActivities = milestoneModel => async milestoneId => {
   const milestone = milestoneModel
     .findOne({ id: milestoneId })
@@ -23,5 +36,6 @@ const deleteMilestone = milestoneModel => async milestoneId => {
 module.exports = milestoneModel => ({
   saveMilestone: saveMilestone(milestoneModel),
   getMilestoneActivities: getMilestoneActivities(milestoneModel),
-  deleteMilestone: deleteMilestone(milestoneModel)
+  deleteMilestone: deleteMilestone(milestoneModel),
+  updateMilestone: updateMilestone(milestoneModel)
 });
