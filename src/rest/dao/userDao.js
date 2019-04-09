@@ -8,6 +8,8 @@ const UserDao = ({ userModel }) => ({
   },
 
   async createUser(user) {
+    const existentUser = await userModel.find({ email: user.email });
+    if (existentUser) return {};
     return userModel.create(user);
   },
 

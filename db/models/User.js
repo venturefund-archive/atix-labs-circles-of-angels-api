@@ -13,6 +13,8 @@ module.exports = {
     username: { type: 'string', required: true },
     email: { type: 'string', required: true },
     pwd: { type: 'string', required: true },
+    privateKey: { type: 'string' },
+    address: { type: 'string' },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },

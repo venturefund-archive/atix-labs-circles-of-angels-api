@@ -55,12 +55,17 @@ const userService = ({ fastify, userDao }) => ({
    */
   async createUser(username, email, pwd, role) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
+
+    const { address, privateKey } = await fastify.eth.createAccount();
+
     try {
       const user = {
         username,
         email,
         pwd: hashedPwd,
-        role
+        role,
+        address,
+        privateKey
       };
 
       const savedUser = await userDao.createUser(user);
@@ -98,7 +103,7 @@ const userService = ({ fastify, userDao }) => ({
       `[User Service] :: User ID ${userId} doesn't have a role`
     );
     // eslint-disable-next-line prettier/prettier
-    return { error: 'User doesn\'t have a role' };
+    return { error: "User doesn't have a role" };
   },
 
   /**

@@ -3,6 +3,10 @@ exports.server = {
   port: 3001
 };
 
+exports.eth = {
+  host: 'http://localhost:8545'
+};
+
 exports.database = {
   adapter: require('sails-postgresql'),
   adapterType: 'postgresql',
