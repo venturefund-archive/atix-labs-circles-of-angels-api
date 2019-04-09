@@ -169,6 +169,30 @@ const routes = async (fastify, options) => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/oracle`,
+    {
+      response: {
+        200: {
+          type: 'application/json',
+          properties: {
+            response: { type: 'application/json' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[User Routes] :: getting list of oracles');
+      try {
+        const oracles = await userService.getOracles();
+        reply.status(200).send(oracles);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error getting oracles' });
+      }
+    }
+  );
 };
 
 module.exports = routes;
