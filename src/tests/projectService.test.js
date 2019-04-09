@@ -12,6 +12,7 @@ const fastify = { log: { info: console.log, error: console.log } };
 
 describe('Testing projectService createProject', () => {
   let projectDao;
+  let photoService;
   let projectService;
   let milestoneService;
   let projectStatusDao;
@@ -26,6 +27,10 @@ describe('Testing projectService createProject', () => {
         }
         const toSave = Object.assign({}, project, { id: 1 });
         return toSave;
+      },
+
+      async updateProject(project) {
+        return project;
       }
     };
 
@@ -35,11 +40,22 @@ describe('Testing projectService createProject', () => {
       }
     };
 
+    photoService = {
+      async savePhoto(path) {
+        const photo = {
+          id: 1,
+          path
+        };
+        return photo;
+      }
+    };
+
     projectService = require('../rest/core/projectService')({
       fastify,
       projectDao,
       milestoneService,
-      projectStatusDao
+      projectStatusDao,
+      photoService
     });
 
     jest.mock('mkdirp-promise');
@@ -51,6 +67,7 @@ describe('Testing projectService createProject', () => {
     async () => {
       const ownerId = 1;
       const projectName = 'Project Name';
+      const projectId = 1;
 
       const mockProject = JSON.stringify({
         projectName,
@@ -72,11 +89,15 @@ describe('Testing projectService createProject', () => {
         faqLink: 'http://www.google.com/',
         ownerId,
         status: 0,
-        cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
-        coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
-        pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
-        milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-        id: 1
+        cardPhoto: 1,
+        coverPhoto: 1,
+        pitchProposal: `${
+          configs.fileServer.filePath
+        }/projects/${projectId}/pitchProposal.pdf`,
+        milestonesFile: `${
+          configs.fileServer.filePath
+        }/projects/${projectId}/milestones.xlsx`,
+        id: projectId
       };
 
       const pathMilestonesXls = require('path').join(
@@ -201,6 +222,9 @@ describe('Testing projectService getProjectList', () => {
   let projectStatusDao;
   let milestoneService;
 
+  const cardPhoto = 1;
+  const coverPhoto = 2;
+
   beforeAll(() => {
     projectStatusDao = {};
 
@@ -214,8 +238,8 @@ describe('Testing projectService getProjectList', () => {
             ownerId: 1,
             location: 'location',
             timeframe: '10/10/2019',
-            cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
-            coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+            cardPhoto,
+            coverPhoto,
             pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
             milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
             status,
@@ -248,12 +272,8 @@ describe('Testing projectService getProjectList', () => {
         ownerId: 1,
         location: 'location',
         timeframe: '10/10/2019',
-        cardPhoto: getBase64htmlFromPath(
-          `${__dirname}/mockFiles/projectCardPhoto.png`
-        ),
-        coverPhoto: getBase64htmlFromPath(
-          `${__dirname}/mockFiles/projectCoverPhoto.png`
-        ),
+        cardPhoto,
+        coverPhoto,
         pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
         milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
         status,
@@ -275,6 +295,9 @@ describe('Testing projectService getActiveProjectList', () => {
   let projectStatusDao;
   let milestoneService;
 
+  const cardPhoto = 1;
+  const coverPhoto = 2;
+
   beforeAll(() => {
     projectStatusDao = {};
 
@@ -288,8 +311,8 @@ describe('Testing projectService getActiveProjectList', () => {
             ownerId: 1,
             location: 'location',
             timeframe: '10/10/2019',
-            cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
-            coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+            cardPhoto,
+            coverPhoto,
             pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
             milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
             status,
@@ -322,12 +345,8 @@ describe('Testing projectService getActiveProjectList', () => {
         ownerId: 1,
         location: 'location',
         timeframe: '10/10/2019',
-        cardPhoto: getBase64htmlFromPath(
-          `${__dirname}/mockFiles/projectCardPhoto.png`
-        ),
-        coverPhoto: getBase64htmlFromPath(
-          `${__dirname}/mockFiles/projectCoverPhoto.png`
-        ),
+        cardPhoto,
+        coverPhoto,
         pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
         milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
         status,
@@ -349,6 +368,9 @@ describe('Testing projectService getProjectWithId', () => {
   let projectStatusDao;
   let milestoneService;
 
+  const cardPhoto = 1;
+  const coverPhoto = 2;
+
   beforeAll(() => {
     projectStatusDao = {};
     milestoneService = {};
@@ -363,8 +385,8 @@ describe('Testing projectService getProjectWithId', () => {
               ownerId: 1,
               location: 'location',
               timeframe: '10/10/2019',
-              cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
-              coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+              cardPhoto,
+              coverPhoto,
               pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
               milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
               status: 1,
@@ -724,13 +746,18 @@ describe('Testing projectService downloadMilestonesTemplate', () => {
     fs.createReadStream = jest.fn();
   });
 
-  it('should return a file ReadStream', async () => {
+  it('should return an object with a filestream and the file name', async () => {
     fs.existsSync.mockReturnValueOnce(true);
     fs.createReadStream.mockReturnValueOnce(mockReadStream);
 
+    const expected = {
+      filename: 'milestones.xlsx',
+      filestream: mockReadStream
+    };
+
     const response = await projectService.downloadMilestonesTemplate();
 
-    await expect(response).toEqual(mockReadStream);
+    await expect(response).toEqual(expected);
   });
 
   it('should return an error if the file could not be read', async () => {
@@ -792,13 +819,22 @@ describe('Testing projectService getProjectMilestonesPath', () => {
     });
   });
 
-  it('should return a path to the milestones file of a project', async () => {
-    const milestonesPath = await projectService.getProjectMilestonesPath(
-      projectId
-    );
+  it(
+    'should return  an object with the file name and ' +
+      ' the path to the milestones file of a project',
+    async () => {
+      const milestonesPath = await projectService.getProjectMilestonesPath(
+        projectId
+      );
 
-    await expect(milestonesPath).toEqual(filepath);
-  });
+      const expected = {
+        filename: 'milestones.xlsx',
+        filepath
+      };
+
+      await expect(milestonesPath).toEqual(expected);
+    }
+  );
 
   // eslint-disable-next-line prettier/prettier
   it('should throw an error if the project doesn\'t exist', async () => {
@@ -865,7 +901,7 @@ describe('Testing projectService uploadAgreement', () => {
     const expected = {
       projectName: 'Project',
       id: 1,
-      projectAgreement: `/home/atixlabs/files/server/projects/${name}/agreement.pdf`
+      projectAgreement: `/home/atixlabs/files/server/projects/${id}/agreement.pdf`
     };
 
     const updatedProject = await projectService.uploadAgreement(
@@ -942,12 +978,17 @@ describe('Testing projectService downloadAgreement', () => {
     fs.createReadStream = jest.fn();
   });
 
-  it('should return a file ReadStream', async () => {
+  it('should return an object with the filename and filestream', async () => {
     fs.createReadStream.mockReturnValueOnce(mockReadStream);
 
     const response = await projectService.downloadAgreement(id);
 
-    return expect(response).toEqual(mockReadStream);
+    const expected = {
+      filename: 'projectProposal.pdf',
+      filestream: mockReadStream
+    };
+
+    return expect(response).toEqual(expected);
   });
 
   it('should throw an error if the file could not be read', async () => {
@@ -1026,12 +1067,17 @@ describe('Testing projectService downloadProposal', () => {
     fs.createReadStream = jest.fn();
   });
 
-  it('should return a file ReadStream', async () => {
+  it('should return an object with the filename and filestream', async () => {
     fs.createReadStream.mockReturnValueOnce(mockReadStream);
 
     const response = await projectService.downloadProposal(id);
 
-    return expect(response).toEqual(mockReadStream);
+    const expected = {
+      filename: 'projectProposal.pdf',
+      filestream: mockReadStream
+    };
+
+    return expect(response).toEqual(expected);
   });
 
   it('should throw an error if the file could not be read', async () => {

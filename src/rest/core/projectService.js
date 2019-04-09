@@ -11,7 +11,8 @@ const projectService = ({
   fastify,
   projectDao,
   milestoneService,
-  projectStatusDao
+  projectStatusDao,
+  photoService
 }) => ({
   /**
    * Uploads the project's images and files to the server.
@@ -58,11 +59,6 @@ const projectService = ({
       const pitchProposalPath = projectProposal.path;
       const milestonesPath = projectMilestones.path;
 
-      savedProject.coverPhoto = coverPhotoPath;
-      savedProject.cardPhoto = cardPhotoPath;
-      savedProject.pitchProposal = pitchProposalPath;
-      savedProject.milestonesFile = milestonesPath;
-
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(
         `${configs.fileServer.filePath}/projects/${savedProject.id}`
@@ -99,6 +95,19 @@ const projectService = ({
         '[Project Service] :: All files saved to:',
         `${configs.fileServer.filePath}/projects/${savedProject.id}`
       );
+
+      const savedCoverPhoto = await photoService.savePhoto(coverPhotoPath);
+      if (savedCoverPhoto && savedCoverPhoto != null) {
+        savedProject.coverPhoto = savedCoverPhoto.id;
+      }
+
+      const savedCardPhoto = await photoService.savePhoto(cardPhotoPath);
+      if (savedCardPhoto && savedCardPhoto != null) {
+        savedProject.cardPhoto = savedCardPhoto.id;
+      }
+
+      savedProject.pitchProposal = pitchProposalPath;
+      savedProject.milestonesFile = milestonesPath;
 
       // updates project to include its files' path
       fastify.log.info('[Project Service] :: Updating project:', savedProject);
@@ -158,10 +167,6 @@ const projectService = ({
       const cardPhotoPath = projectCardPhoto.path;
       const pitchProposalPath = projectProposal.path;
 
-      newProject.coverPhoto = coverPhotoPath;
-      newProject.cardPhoto = cardPhotoPath;
-      newProject.pitchProposal = pitchProposalPath;
-
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(`${configs.fileServer.filePath}/projects/${id}`);
 
@@ -188,6 +193,29 @@ const projectService = ({
         '[Project Service] :: All files saved to:',
         `${configs.fileServer.filePath}/projects/${id}`
       );
+
+      // update photos' path
+      const projectPhotos = await projectDao.getProjectPhotos(id);
+
+      const updatedCoverPhoto = await photoService.updatePhoto(
+        projectPhotos.coverPhoto,
+        coverPhotoPath
+      );
+
+      if (updatedCoverPhoto && updatedCoverPhoto != null) {
+        newProject.coverPhoto = updatedCoverPhoto.id;
+      }
+
+      const updatedCardPhoto = await photoService.updatePhoto(
+        projectPhotos.cardPhoto,
+        cardPhotoPath
+      );
+
+      if (updatedCardPhoto && updatedCardPhoto != null) {
+        newProject.cardPhoto = updatedCardPhoto.id;
+      }
+
+      newProject.pitchProposal = pitchProposalPath;
 
       fastify.log.info('[Project Service] :: Updating project:', newProject);
       const savedProject = await projectDao.updateProject(newProject, id);
@@ -217,7 +245,6 @@ const projectService = ({
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: -1
     });
-    projects.forEach(project => projectImagesToBase64(project));
     return projects;
   },
 
@@ -228,13 +255,11 @@ const projectService = ({
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: 1
     });
-    projects.forEach(project => projectImagesToBase64(project));
     return projects;
   },
 
   async getProjectWithId({ projectId }) {
     const project = await projectDao.getProjectById({ projectId });
-    projectImagesToBase64(project);
     return project;
   },
 
@@ -336,6 +361,10 @@ const projectService = ({
     const milestonesFilePath = await projectDao.getProjectMilestonesFilePath(
       projectId
     );
+
+    if (!milestonesFilePath || milestonesFilePath == null) {
+      throw Error('Error getting milestones file');
+    }
 
     const response = {
       filename: path.basename(milestonesFilePath.milestonesFile),
@@ -526,9 +555,4 @@ const projectService = ({
   }
 });
 
-const projectImagesToBase64 = project => {
-  if (!project) return;
-  project.coverPhoto = getBase64htmlFromPath(project.coverPhoto);
-  project.cardPhoto = getBase64htmlFromPath(project.cardPhoto);
-};
 module.exports = projectService;
