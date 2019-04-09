@@ -182,7 +182,11 @@ describe('Testing milestoneService getMilestoneActivities', () => {
         return mockMilestone;
       }
     };
-    activityService = {};
+    activityService = {
+      getOracleFromActivity() {
+        return [];
+      }
+    };
 
     milestoneService = require('../rest/core/milestoneService')({
       fastify,
@@ -772,7 +776,7 @@ describe('Testing milestoneService updateMilestone', () => {
   });
 });
 
-describe('Testing milestonesService delete milestone', async () => {
+describe('Testing milestonesService delete milestone', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
