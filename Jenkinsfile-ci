@@ -17,7 +17,7 @@ pipeline {
 			updateGitlabCommitStatus name: 'Test', state: 'success'
 		}
 		cleanup {
-			sh 'rm -rf hitcoins/front/'
+			sh 'rm -rf node_modules'
 			cleanWs()
 		}
 	}
