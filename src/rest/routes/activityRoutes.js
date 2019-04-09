@@ -2,9 +2,13 @@ const basePath = '/activities';
 
 const routes = async fastify => {
   const activityDao = require('../dao/activityDao')(fastify.models.activity);
+  const oracleActivityDao = require('../dao/oracleActivityDao')(
+    fastify.models.oracle_activity
+  );
   const activityService = require('../core/activityService')({
     fastify,
-    activityDao
+    activityDao,
+    oracleActivityDao
   });
 
   fastify.post(
@@ -107,6 +111,99 @@ const routes = async fastify => {
           error
         );
         reply.status(500).send({ error: 'Error updating activity' });
+      }
+    }
+  );
+
+  fastify.delete(
+    `${basePath}/:id`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/json',
+          properties: {
+            response: { type: 'application/json' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(`[Activity Routes] Deleting activity with id: ${id}`);
+      try {
+        const deleted = await activityService.deleteActivity(id);
+        reply.status(200).send(deleted);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send('Error deleting activity');
+      }
+    }
+  );
+
+  fastify.post(
+    `${basePath}/:id/assignOracle/:userId`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' },
+          userId: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/json',
+          properties: {
+            response: { type: 'application/json' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id, userId } = request.params;
+      fastify.log.info(
+        `[Activity Routes] Assign user ${userId} to activity ${id} as Oracle`
+      );
+      try {
+        const assign = await activityService.assignOracleToActivity(userId, id);
+        reply.status(200).send(Boolean(assign));
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send('Error assigning user on activity');
+      }
+    }
+  );
+
+  fastify.post(
+    `${basePath}/:id/unassignOracle`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/json',
+          properties: {
+            response: { type: 'application/json' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(`[Activity Routes] Unassign oracle to activity ${id}`);
+      try {
+        const assign = await activityService.unassignOracleToActivity(id);
+        reply.status(200).send(Boolean(assign));
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send('Error assigning user on activity');
       }
     }
   );
