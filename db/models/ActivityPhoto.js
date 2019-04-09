@@ -15,7 +15,7 @@ module.exports = {
       columnName: 'photoId',
       model: 'photo'
     },
-    reatedAt: { type: 'string', autoCreatedAt: true, required: false },
+    createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }

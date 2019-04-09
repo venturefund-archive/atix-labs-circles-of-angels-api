@@ -7,6 +7,11 @@ const saveActivity = activityModel => async (activity, milestoneId) => {
   return createdActivity;
 };
 
+const getActivityById = activityModel => async activityId => {
+  const activity = await activityModel.findOne({ id: activityId });
+  return activity;
+}
+
 const updateActivity = activityModel => async (activity, activityId) => {
   const toUpdate = { ...activity };
 
@@ -27,6 +32,7 @@ const deleteActivity = activityModel => async activityId => {
 
 module.exports = activityModel => ({
   saveActivity: saveActivity(activityModel),
-  deleteActivity: deleteActivity(activityModel),
-  updateActivity: updateActivity(activityModel)
+  updateActivity: updateActivity(activityModel),
+  getActivityById: getActivityById(activityModel),
+  deleteActivity: deleteActivity(activityModel)
 });
