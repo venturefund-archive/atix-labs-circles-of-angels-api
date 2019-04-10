@@ -701,17 +701,13 @@ describe('Testing projectService getProjectMilestones', () => {
       }
     ];
 
-    const milestones = await projectService.getProjectMilestones({
-      projectId
-    });
+    const milestones = await projectService.getProjectMilestones(projectId);
 
     await expect(milestones).toEqual(mockMilestonesWithActivities);
   });
 
   it('should return an empty array for a non-existent project', async () => {
-    const milestones = await projectService.getProjectMilestones({
-      projectId: -1
-    });
+    const milestones = await projectService.getProjectMilestones(-1);
 
     await expect(milestones).toEqual([]);
   });
