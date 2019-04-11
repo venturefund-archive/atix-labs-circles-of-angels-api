@@ -10,6 +10,7 @@
  *@attribute `category`: category
  *@attribute `keyPersonnel`: member of the team responsible for each task to be performed
  *@attribute `budget`: budget with which it is counted
+ *@attribute `status`: actual status of activity
  */
 module.exports = {
   identity: 'activity',
@@ -26,6 +27,10 @@ module.exports = {
     milestone: {
       columnName: 'milestoneId',
       model: 'milestone'
+    },
+    status: {
+      columnName: 'status',
+      model: 'milestone_activity_status'
     },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
