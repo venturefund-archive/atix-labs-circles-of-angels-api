@@ -4,6 +4,11 @@ const basePath = '/project';
 const routes = async fastify => {
   fastify.register(fileUpload);
 
+  const photoDao = require('../dao/photoDao')(fastify.models.photo);
+  const photoService = require('../core/photoService')({
+    fastify,
+    photoDao
+  });
   const oracleActivityDao = require('../dao/oracleActivityDao')(
     fastify.models.oracle_activity
   );
@@ -31,7 +36,8 @@ const routes = async fastify => {
     fastify,
     projectDao,
     milestoneService,
-    projectStatusDao
+    projectStatusDao,
+    photoService
   });
 
   fastify.post(
