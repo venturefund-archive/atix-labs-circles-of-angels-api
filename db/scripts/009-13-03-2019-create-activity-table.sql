@@ -9,5 +9,6 @@ create table public.activity (
 	"category" text,
 	"keyPersonnel" text,
 	"budget" text,
+	"status" int2 NOT NULL,
 	FOREIGN KEY ("milestoneId") REFERENCES milestone(id) ON DELETE CASCADE
 );
