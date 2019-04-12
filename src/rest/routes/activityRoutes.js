@@ -1,14 +1,33 @@
-const basePath = '/activities';
+const fileUpload = require('fastify-file-upload');
+const fileDaoBuilder = require('../dao/fileDao');
+const fileServiceBuilder = require('../core/fileService');
+const photoDaoBuilder = require('../dao/photoDao');
+const photoServiceBuilder = require('../core/photoService');
+const activityFileDaoBuilder = require('../dao/activityFileDao');
+const activityPhotoDaoBuilder = require('../dao/activityPhotoDao');
+const activityDaoBuilder = require('../dao/activityDao');
+const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
+const activityServiceBuilder = require('../core/activityService');
 
+const basePath = '/activities';
 const routes = async fastify => {
-  const activityDao = require('../dao/activityDao')(fastify.models.activity);
-  const oracleActivityDao = require('../dao/oracleActivityDao')(
-    fastify.models.oracle_activity
-  );
-  const activityService = require('../core/activityService')({
+  fastify.register(fileUpload);
+  const fileService = fileServiceBuilder({
     fastify,
-    activityDao,
-    oracleActivityDao
+    fileDao: fileDaoBuilder(fastify.models.file)
+  });
+  const photoService = photoServiceBuilder({
+    fastify,
+    photoDao: photoDaoBuilder(fastify.models.photo)
+  });
+  const activityService = activityServiceBuilder({
+    fastify,
+    activityDao: activityDaoBuilder(fastify.models.activity),
+    fileService,
+    photoService,
+    activityFileDao: activityFileDaoBuilder(fastify.models.activity_file),
+    activityPhotoDao: activityPhotoDaoBuilder(fastify.models.activity_photo),
+    oracleActivityDao: oracleActivityDaoBuilder(fastify.models.oracle_activity)
   });
 
   fastify.post(
@@ -141,6 +160,103 @@ const routes = async fastify => {
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send('Error deleting activity');
+      }
+    }
+  );
+
+  fastify.post(
+    `${basePath}/:id/evidences`,
+    {
+      schema: {
+        type: 'multipart/form-data',
+        params: {
+          id: { type: 'number' }
+        },
+        raw: {
+          files: { type: 'object' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
+      const { id } = req.params;
+      const { evidenceFiles } = req.raw.files;
+
+      fastify.log.info(
+        `[Activity Routes] :: POST request at /activities/${id}/upload:`,
+        evidenceFiles
+      );
+
+      try {
+        const response = await activityService.addEvidenceFiles(
+          id,
+          evidenceFiles
+        );
+
+        reply.status(200).send(response);
+      } catch (error) {
+        fastify.log.error(
+          '[Activity Routes] :: Error uploading evidences:',
+          error
+        );
+        reply.status(500).send({ error: 'Error uploading evidences' });
+      }
+    }
+  );
+
+  fastify.delete(
+    `${basePath}/:activityId/evidences/:evidenceId`,
+    {
+      schema: {
+        params: {
+          activityId: { type: 'number' },
+          evidenceId: { type: 'number' }
+        },
+        body: {
+          fileType: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { activityId, evidenceId } = request.params;
+      const { fileType } = request.body;
+      fastify.log.info(
+        `[Activity Routes] :: DELETE request at /activities/${activityId}/evidence/${evidenceId}`
+      );
+
+      try {
+        const deletedEvidence = activityService.deleteEvidence(
+          activityId,
+          evidenceId,
+          fileType
+        );
+
+        if (deletedEvidence.error) {
+          reply.status(deletedEvidence.status).send(deletedEvidence);
+        } else {
+          reply.status(200).send(deletedEvidence);
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Activity Routes] :: Error deleting evidence:',
+          error
+        );
+        reply.status(500).send({ error: 'Error deleting evidence' });
       }
     }
   );

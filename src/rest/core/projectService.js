@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const { isEmpty } = require('lodash');
 const configs = require('../../../config/configs');
-const { getBase64htmlFromPath } = require('../util/images');
 const { forEachPromise } = require('../util/promises');
 const { addPathToFilesProperties } = require('../util/files');
 
@@ -459,7 +458,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: "ERROR: Project doesn't have an agreement uploaded",
+          error: 'ERROR: Project doesn\'t have an agreement uploaded',
           status: 409
         };
       }
@@ -519,7 +518,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: "ERROR: Project doesn't have a pitch proposal uploaded",
+          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
           status: 409
         };
       }

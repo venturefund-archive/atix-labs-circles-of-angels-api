@@ -1,19 +1,37 @@
-const basePath = '/milestones';
+const fileDaoBuilder = require('../dao/fileDao');
+const fileServiceBuilder = require('../core/fileService');
+const photoDaoBuilder = require('../dao/photoDao');
+const photoServiceBuilder = require('../core/photoService');
+const activityFileDaoBuilder = require('../dao/activityFileDao');
+const activityPhotoDaoBuilder = require('../dao/activityPhotoDao');
+const activityDaoBuilder = require('../dao/activityDao');
+const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
+const activityServiceBuilder = require('../core/activityService');
+const milestoneDaoBuilder = require('../dao/milestoneDao');
+const milestoneServiceBuilder = require('../core/milestoneService');
 
+const basePath = '/milestones';
 const routes = async fastify => {
-  const activityDao = require('../dao/activityDao')(fastify.models.activity);
-  const oracleActivityDao = require('../dao/oracleActivityDao')(
-    fastify.models.oracle_activity
-  );
-  const activityService = require('../core/activityService')({
+  const fileService = fileServiceBuilder({
     fastify,
-    activityDao,
-    oracleActivityDao
+    fileDao: fileDaoBuilder(fastify.models.file)
   });
-  const milestoneDao = require('../dao/milestoneDao')(fastify.models.milestone);
-  const milestoneService = require('../core/milestoneService')({
+  const photoService = photoServiceBuilder({
     fastify,
-    milestoneDao,
+    photoDao: photoDaoBuilder(fastify.models.photo)
+  });
+  const activityService = activityServiceBuilder({
+    fastify,
+    activityDao: activityDaoBuilder(fastify.models.activity),
+    fileService,
+    photoService,
+    activityFileDao: activityFileDaoBuilder(fastify.models.activity_file),
+    activityPhotoDao: activityPhotoDaoBuilder(fastify.models.activity_photo),
+    oracleActivityDao: oracleActivityDaoBuilder(fastify.models.oracle_activity)
+  });
+  const milestoneService = milestoneServiceBuilder({
+    fastify,
+    milestoneDao: milestoneDaoBuilder(fastify.models.milestone),
     activityService
   });
 
