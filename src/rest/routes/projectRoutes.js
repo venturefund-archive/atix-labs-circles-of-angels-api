@@ -87,7 +87,8 @@ const routes = async fastify => {
         projectProposal,
         projectCoverPhoto,
         projectCardPhoto,
-        projectMilestones
+        projectMilestones,
+        projectAgreement
       } = req.raw.files;
 
       const { project, ownerId } = req.raw.body;
@@ -99,6 +100,7 @@ const routes = async fastify => {
           projectCoverPhoto,
           projectCardPhoto,
           projectMilestones,
+          projectAgreement,
           ownerId
         );
 
@@ -112,6 +114,10 @@ const routes = async fastify => {
           );
           reply.status(409).send({ errors: response.milestones.errors });
         } else {
+          fastify.log.info(
+            '[Project Routes] :: Project created: ',
+            response.project
+          );
           reply.send({ sucess: 'Project created successfully!' });
         }
       } catch (error) {

@@ -25,6 +25,12 @@ const getPitchProposalPath = (projectId, proposalName) => {
   }/projects/${projectId}/pitchProposal${path.extname(proposalName)}`;
 };
 
+const getProjectAgreementPath = (projectId, agreementName) => {
+  return `${
+    configs.fileServer.filePath
+  }/projects/${projectId}/agreement${path.extname(agreementName)}`;
+}
+
 const getMilestonesPath = (projectId, milestoneName) => {
   return `${
     configs.fileServer.filePath
@@ -36,6 +42,7 @@ exports.addPathToFilesProperties = ({
   coverPhoto,
   cardPhoto,
   pitchProposal,
+  projectAgreement,
   milestones
 }) => {
   if (coverPhoto) {
@@ -46,6 +53,12 @@ exports.addPathToFilesProperties = ({
   }
   if (pitchProposal) {
     pitchProposal.path = getPitchProposalPath(projectId, pitchProposal.name);
+  }
+  if (projectAgreement) {
+    projectAgreement.path = getProjectAgreementPath(
+      projectId,
+      projectAgreement.name
+    );
   }
   if (milestones) {
     milestones.path = getMilestonesPath(projectId, milestones.name);
