@@ -14,6 +14,13 @@ const getActivityFileByActivityAndFile = activityFileModel => async (activityId,
   return activityFile;
 };
 
+const getActivityFileByActivity = activityFileModel => async activityId => {
+  const activityFiles = await activityFileModel.find({
+    activity: activityId
+  });
+  return activityFiles;
+};
+
 const deleteActivityFile = activityFileModel => async activityFileId => {
   const deleted = activityFileModel.destroy(activityFileId).fetch();
   return deleted;
@@ -24,5 +31,6 @@ module.exports = activityFileModel => ({
   deleteActivityFile: deleteActivityFile(activityFileModel),
   getActivityFileByActivityAndFile: getActivityFileByActivityAndFile(
     activityFileModel
-  )
+  ),
+  getActivityFileByActivity: getActivityFileByActivity(activityFileModel)
 });

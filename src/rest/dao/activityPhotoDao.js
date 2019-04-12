@@ -14,6 +14,13 @@ const getActivityPhotoByActivityAndPhoto = activityPhotoModel => async (activity
   return activityPhoto;
 };
 
+const getActivityPhotoByActivity = activityPhotoModel => async activityId => {
+  const activityPhotos = await activityPhotoModel.find({
+    activity: activityId
+  });
+  return activityPhotos;
+};
+
 const deleteActivityPhoto = activityPhotoModel => async activityPhotoId => {
   const deleted = activityPhotoModel.destroy(activityPhotoId).fetch();
   return deleted;
@@ -24,5 +31,6 @@ module.exports = activityPhotoModel => ({
   deleteActivityPhoto: deleteActivityPhoto(activityPhotoModel),
   getActivityPhotoByActivityAndPhoto: getActivityPhotoByActivityAndPhoto(
     activityPhotoModel
-  )
+  ),
+  getActivityPhotoByActivity: getActivityPhotoByActivity(activityPhotoModel)
 });
