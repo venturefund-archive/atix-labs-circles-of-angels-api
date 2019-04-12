@@ -14,6 +14,8 @@ const userDaoBuilder = require('../dao/userDao');
 const projectDaoBuilder = require('../dao/projectDao');
 const projectStatusDaoBuilder = require('../dao/projectStatusDao');
 const projectServiceBuilder = require('../core/projectService');
+const transferDaoBuilder = require('../dao/transferDao');
+const transferServiceBuilder = require('../core/transferService');
 
 const basePath = '/project';
 const routes = async fastify => {
@@ -44,6 +46,15 @@ const routes = async fastify => {
     milestoneDao: milestoneDaoBuilder(fastify.models.milestone),
     activityService
   });
+
+  const transferService = transferServiceBuilder({
+    fastify,
+    transferDao: transferDaoBuilder({
+      transferModel: fastify.models.fund_transfer,
+      transferStatusModel: fastify.models.transfer_status
+    })
+  });
+
   const projectService = projectServiceBuilder({
     fastify,
     projectDao: projectDaoBuilder({
@@ -54,7 +65,8 @@ const routes = async fastify => {
     projectStatusDao: projectStatusDaoBuilder({
       projectStatusModel: fastify.models.project_status
     }),
-    photoService
+    photoService,
+    transferService
   });
 
   fastify.post(
@@ -618,6 +630,45 @@ const routes = async fastify => {
           reply.status(response.status).send(response.error);
         } else {
           reply.send({ success: 'Project updated successfully!' });
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error updating project: ',
+          error
+        );
+        reply.status(500).send({ error: 'Error updating project' });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:id/alreadyFunded`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' }
+        }
+      },
+      response: {
+        200: { type: 'number' }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(
+        `[Project Routes] :: GET request at /project/${id}/alreadyFunded`
+      );
+      try {
+        const fundedAmount = await projectService.getTotalFunded(id);
+
+        if (fundedAmount.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error getting total funded amount:',
+            fundedAmount.error
+          );
+          reply.status(fundedAmount.status).send(fundedAmount.error);
+        } else {
+          reply.status(200).send(fundedAmount);
         }
       } catch (error) {
         fastify.log.error(

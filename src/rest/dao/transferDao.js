@@ -62,6 +62,18 @@ const TransferDao = ({ transferModel, transferStatusModel }) => ({
 
   async getTransferByProjectId({ projectId }) {
     return transferModel.find({ project: projectId });
+  },
+
+  async getTransfersByProjectAndState(projectId, state) {
+    const transferStatus = await transferStatusModel.findOne({ name: state });
+
+    if (transferStatus) {
+      const transfers = await transferModel.find({
+        and: [{ project: projectId, state: transferStatus.status }]
+      });
+      return transfers;
+    }
+    return transferStatus;
   }
 });
 
