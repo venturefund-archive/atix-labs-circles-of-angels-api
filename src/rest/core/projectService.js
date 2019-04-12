@@ -11,7 +11,8 @@ const projectService = ({
   projectDao,
   milestoneService,
   projectStatusDao,
-  photoService
+  photoService,
+  transferService
 }) => ({
   /**
    * Uploads the project's images and files to the server.
@@ -560,6 +561,45 @@ const projectService = ({
         error
       );
       throw Error('Error getting pitch proposal');
+    }
+  },
+
+  /**
+   * Returns the total amount funded for an existing project
+   *
+   * @param {number} projectId
+   * @returns total amount funded || error
+   */
+  async getTotalFunded(projectId) {
+    fastify.log.info(
+      '[Project Service] :: Getting already funded amount for Project ID',
+      projectId
+    );
+
+    try {
+      // verify if project exists
+      const project = await projectDao.getProjectById({ projectId });
+      if (!project || project == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
+      }
+
+      const totalAmount = await transferService.getTotalFundedByProject(
+        projectId
+      );
+
+      fastify.log.info(
+        `[Project Service] :: Total funded amount for Project ID ${projectId} is ${totalAmount}`
+      );
+      return totalAmount;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error getting funded amount:',
+        error
+      );
+      throw Error('Error getting funded amount');
     }
   }
 });
