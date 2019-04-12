@@ -13,8 +13,14 @@ const updatePhoto = photoModel => async (photoId, path) => {
   return photo;
 };
 
+const deletePhoto = photoModel => async photoId => {
+  const deletedPhoto = await photoModel.destroyOne({ id: photoId });
+  return deletedPhoto;
+};
+
 module.exports = photoModel => ({
   savePhoto: savePhoto(photoModel),
   getPhotoById: getPhotoById(photoModel),
-  updatePhoto: updatePhoto(photoModel)
+  updatePhoto: updatePhoto(photoModel),
+  deletePhoto: deletePhoto(photoModel)
 });

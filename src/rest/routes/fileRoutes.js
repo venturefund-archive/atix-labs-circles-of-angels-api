@@ -1,0 +1,56 @@
+const basePath = '/files';
+
+const routes = async (fastify, options) => {
+  const fileDao = require('../dao/fileDao')(fastify.models.file);
+  const fileService = require('../core/fileService')({
+    fastify,
+    fileDao
+  });
+
+  fastify.delete(
+    `${basePath}/:id`,
+    {
+      schema: {
+        params: {
+          id: { type: 'integer' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(`[File Routes] :: Deleting file ID ${id}`);
+
+      try {
+        const res = await fileService.deleteFile(id);
+
+        if (res && res.error) {
+          fastify.log.error(
+            `[File Routes] :: Error deleting file ID ${id}:`,
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info('[File Routes] :: deleting file ID', id);
+
+          reply.send(res);
+        }
+      } catch (error) {
+        fastify.log.error(
+          `[File Routes] :: Error deleting file ID ${id}:`,
+          error
+        );
+        reply.status(500).send({ error: 'Error deleting file' });
+      }
+    }
+  );
+};
+
+module.exports = routes;

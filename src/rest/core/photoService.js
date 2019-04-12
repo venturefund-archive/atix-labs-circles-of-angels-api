@@ -1,4 +1,8 @@
+const { unlink } = require('fs');
+const { promisify } = require('util');
 const { getBase64htmlFromPath } = require('../util/images');
+
+const unlinkPromise = promisify(unlink);
 
 const photoService = ({ fastify, photoDao }) => ({
   /**
@@ -97,6 +101,38 @@ const photoService = ({ fastify, photoDao }) => ({
     } catch (error) {
       fastify.log.error('[Photo Service] :: Error updating photo:', error);
       throw Error('Error updating photo');
+    }
+  },
+
+  /**
+   * Deletes a record in the Photo table
+   *
+   * @param {number} photoId photo to delete
+   * @returns deleted photo
+   */
+  async deletePhoto(photoId) {
+    fastify.log.info(`[Photo Service] :: Deleting photo ID ${photoId}`);
+
+    try {
+      const deletedPhoto = await photoDao.deletePhoto(photoId);
+
+      await unlinkPromise(deletedPhoto.path);
+
+      if (!deletedPhoto || deletedPhoto == null) {
+        fastify.log.error(
+          `[Photo Service] :: Photo ID ${photoId} not found in database:`
+        );
+        return {
+          error: 'Photo not found in database',
+          status: 404
+        };
+      }
+
+      fastify.log.info('[Photo Service] :: Photo deleted:', deletedPhoto);
+      return deletedPhoto;
+    } catch (error) {
+      fastify.log.error('[Photo Service] :: Error deleting photo:', error);
+      throw Error('Error deleting photo');
     }
   }
 });

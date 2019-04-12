@@ -1,42 +1,59 @@
 const fileUpload = require('fastify-file-upload');
+const fileDaoBuilder = require('../dao/fileDao');
+const fileServiceBuilder = require('../core/fileService');
+const photoDaoBuilder = require('../dao/photoDao');
+const photoServiceBuilder = require('../core/photoService');
+const activityFileDaoBuilder = require('../dao/activityFileDao');
+const activityPhotoDaoBuilder = require('../dao/activityPhotoDao');
+const activityDaoBuilder = require('../dao/activityDao');
+const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
+const activityServiceBuilder = require('../core/activityService');
+const milestoneDaoBuilder = require('../dao/milestoneDao');
+const milestoneServiceBuilder = require('../core/milestoneService');
+const userDaoBuilder = require('../dao/userDao');
+const projectDaoBuilder = require('../dao/projectDao');
+const projectStatusDaoBuilder = require('../dao/projectStatusDao');
+const projectServiceBuilder = require('../core/projectService');
 
 const basePath = '/project';
 const routes = async fastify => {
   fastify.register(fileUpload);
 
-  const photoDao = require('../dao/photoDao')(fastify.models.photo);
-  const photoService = require('../core/photoService')({
+  const fileService = fileServiceBuilder({
     fastify,
-    photoDao
+    fileDao: fileDaoBuilder(fastify.models.file)
   });
-  const oracleActivityDao = require('../dao/oracleActivityDao')(
+  const photoService = photoServiceBuilder({
+    fastify,
+    photoDao: photoDaoBuilder(fastify.models.photo)
+  });
+  const oracleActivityDao = oracleActivityDaoBuilder(
     fastify.models.oracle_activity
   );
-  const activityDao = require('../dao/activityDao')(fastify.models.activity);
-  const activityService = require('../core/activityService')({
+  const activityService = activityServiceBuilder({
     fastify,
-    activityDao,
+    activityDao: activityDaoBuilder(fastify.models.activity),
+    fileService,
+    photoService,
+    activityFileDao: activityFileDaoBuilder(fastify.models.activity_file),
+    activityPhotoDao: activityPhotoDaoBuilder(fastify.models.activity_photo),
     oracleActivityDao
   });
-  const milestoneDao = require('../dao/milestoneDao')(fastify.models.milestone);
-  const milestoneService = require('../core/milestoneService')({
+  const milestoneService = milestoneServiceBuilder({
     fastify,
-    milestoneDao,
+    milestoneDao: milestoneDaoBuilder(fastify.models.milestone),
     activityService
   });
-  const userDao = require('../dao/userDao')({ userModel: fastify.models.user });
-  const projectDao = require('../dao/projectDao')({
-    projectModel: fastify.models.project,
-    userDao
-  });
-  const projectStatusDao = require('../dao/projectStatusDao')({
-    projectStatusModel: fastify.models.project_status
-  });
-  const projectService = require('../core/projectService')({
+  const projectService = projectServiceBuilder({
     fastify,
-    projectDao,
+    projectDao: projectDaoBuilder({
+      projectModel: fastify.models.project,
+      userDao: userDaoBuilder({ userModel: fastify.models.user })
+    }),
     milestoneService,
-    projectStatusDao,
+    projectStatusDao: projectStatusDaoBuilder({
+      projectStatusModel: fastify.models.project_status
+    }),
     photoService
   });
 
