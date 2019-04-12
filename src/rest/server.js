@@ -1,4 +1,5 @@
 const configs = require('../../config/configs');
+const ethService = require('./services/eth/ethServices');
 
 const swaggerConfigs = configs.swagger;
 
@@ -23,6 +24,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     // Load Swagger
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
+    fastify.eth = ethService(configs.eth.host);
 
     loadRoutes(fastify);
 

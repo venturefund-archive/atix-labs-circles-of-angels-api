@@ -3,6 +3,8 @@ CREATE TABLE public.user (
 	"username" varchar NOT NULL,
 	"email" varchar NOT NULL,
 	"pwd" varchar NOT NULL,
+	"privateKey" varchar,
+	"address" varchar,
 	"roleId" int4 NOT NULL,
 	"createdAt" date NULL,
 	"updatedAt" date NULL,
