@@ -14,7 +14,7 @@ const UserDao = ({ userModel }) => ({
   },
 
   async getOracles() {
-    return userModel.find({ role: 3 }).populate('role');
+    return userModel.find({ role: 4 }).populate('role');
   }
 });
 
