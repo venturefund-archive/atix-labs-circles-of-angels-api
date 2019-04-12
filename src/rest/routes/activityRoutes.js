@@ -236,7 +236,7 @@ const routes = async fastify => {
       const { activityId, evidenceId } = request.params;
       const { fileType } = request.body;
       fastify.log.info(
-        `[Activity Routes] :: DELETE request at /activities/${activityId}/evidence/${evidenceId}`
+        `[Activity Routes] :: DELETE request at /activities/${activityId}/evidences/${evidenceId}`
       );
 
       try {
@@ -257,6 +257,50 @@ const routes = async fastify => {
           error
         );
         reply.status(500).send({ error: 'Error deleting evidence' });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/:id`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      fastify.log.info(
+        `[Activity Routes] :: GET request at /activities/${id}`,
+        request
+      );
+
+      try {
+        const activity = await activityService.getActivityDetails(id);
+
+        if (activity.error) {
+          reply.status(activity.status).send(activity);
+        } else {
+          fastify.log.info('[Activity Routes] :: Activity found:', activity);
+          reply.status(200).send(activity);
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Activity Routes] :: Error getting activity:',
+          error
+        );
+        reply.status(500).send({ error: 'Error getting activity' });
       }
     }
   );

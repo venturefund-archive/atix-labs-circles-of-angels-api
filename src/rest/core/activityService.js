@@ -514,6 +514,85 @@ const activityService = ({
    */
   getOracleFromActivity(activityId) {
     return oracleActivityDao.getOracleFromActivity(activityId);
+  },
+
+  async getActivityDetails(activityId) {
+    fastify.log.info('[Activity Service] :: Getting activity ID', activityId);
+    try {
+      // find activity
+      const activity = await activityDao.getActivityById(activityId);
+
+      if (!activity || activity == null) {
+        fastify.log.error(
+          `[Activity Service] :: Activity ID: ${activityId} could not be found`
+        );
+        return {
+          error: 'Activity could not be found',
+          status: 404
+        };
+      }
+      // find all evidence from
+      // activity_file
+      fastify.log.info(
+        '[Activity Service] :: Getting file evidences for Activity ID',
+        activityId
+      );
+
+      const activityFiles = await activityFileDao.getActivityFileByActivity(
+        activityId
+      );
+
+      const fileEvidence = [];
+      if (activityFiles && activityFiles != null) {
+        // add type to each
+        activityFiles.map(activityFile =>
+          fileEvidence.push({
+            ...activityFile,
+            fileType: 'File'
+          })
+        );
+      } else {
+        fastify.log.info(
+          `[Activity Service] :: Activity ID: ${activityId} does not have file evidence`
+        );
+      }
+
+      // activity_photo
+      fastify.log.info(
+        '[Activity Service] :: Getting photo evidences for Activity ID',
+        activityId
+      );
+
+      const activityPhotos = await activityPhotoDao.getActivityPhotoByActivity(
+        activityId
+      );
+
+      const photoEvidence = [];
+      if (activityPhotos && activityPhotos != null) {
+        // add type to each
+        activityPhotos.map(activityPhoto =>
+          photoEvidence.push({
+            ...activityPhoto,
+            fileType: 'Photo'
+          })
+        );
+      } else {
+        fastify.log.info(
+          `[Activity Service] :: Activity ID: ${activityId} does not have photo evidence`
+        );
+      }
+
+      const evidence = [...fileEvidence, ...photoEvidence];
+      const activityDetail = { ...activity, evidence };
+
+      return activityDetail;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Error getting Activity details:',
+        error
+      );
+      throw Error('Error getting Activity details');
+    }
   }
 });
 
