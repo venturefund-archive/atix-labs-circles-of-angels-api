@@ -10,5 +10,6 @@ create table public.milestone (
 	"category" text,
 	"keyPersonnel" text,
 	"budget" text,
+	"status" int2 NOT NULL,
 	FOREIGN KEY ("projectId") REFERENCES project(id) ON DELETE CASCADE
 );
