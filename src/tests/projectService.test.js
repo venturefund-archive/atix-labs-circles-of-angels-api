@@ -5,6 +5,7 @@ const { promisify } = require('util');
 const { addPathToFilesProperties } = require('../rest/util/files');
 const configs = require('../../config/configs');
 const { getBase64htmlFromPath } = require('../rest/util/images');
+const projectServiceBuilder = require('../rest/core/projectService');
 
 const readFile = promisify(fs.readFile);
 
@@ -50,7 +51,7 @@ describe('Testing projectService createProject', () => {
       }
     };
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -97,6 +98,9 @@ describe('Testing projectService createProject', () => {
         milestonesFile: `${
           configs.fileServer.filePath
         }/projects/${projectId}/milestones.xlsx`,
+        projectAgreement: `${
+          configs.fileServer.filePath
+        }/projects/${projectId}/agreement.pdf`,
         id: projectId
       };
 
@@ -132,12 +136,19 @@ describe('Testing projectService createProject', () => {
         mv: jest.fn()
       };
 
+      const mockProjectAgreement = {
+        name: 'projectAgreement.pdf',
+        path: `${__dirname}/mockFiles/projectProposal.pdf`,
+        mv: jest.fn()
+      };
+
       const project = await projectService.createProject(
         mockProject,
         mockProjectProposal,
         mockProjectCoverPhoto,
         mockProjectCardPhoto,
         mockProjectMilestones,
+        mockProjectAgreement,
         ownerId
       );
 
@@ -188,6 +199,12 @@ describe('Testing projectService createProject', () => {
       mv: jest.fn()
     };
 
+    const mockProjectAgreement = {
+      name: 'projectAgreement.pdf',
+      path: `${__dirname}/mockFiles/projectProposal.pdf`,
+      mv: jest.fn()
+    };
+
     const mockProjectMilestones = {
       name: 'projectMilestones.xlsx',
       path: `${__dirname}/mockFiles/projectMilestones.xlsx`,
@@ -200,7 +217,8 @@ describe('Testing projectService createProject', () => {
       mockProjectCoverPhoto,
       mockProjectCardPhoto,
       mockProjectProposal,
-      mockProjectMilestones
+      mockProjectMilestones,
+      mockProjectAgreement
     );
 
     await expect(
@@ -210,6 +228,7 @@ describe('Testing projectService createProject', () => {
         mockProjectCoverPhoto,
         mockProjectCardPhoto,
         mockProjectMilestones,
+        mockProjectAgreement,
         ownerId
       )
     ).rejects.toEqual(Error('Error creating Project'));
@@ -253,7 +272,7 @@ describe('Testing projectService getProjectList', () => {
 
     milestoneService = {};
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -326,7 +345,7 @@ describe('Testing projectService getActiveProjectList', () => {
 
     milestoneService = {};
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -399,7 +418,7 @@ describe('Testing projectService getProjectWithId', () => {
         }
       }
     };
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -459,7 +478,7 @@ describe('Testing projectService updateProjectStatus', () => {
       }
     };
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -534,7 +553,7 @@ describe('Testing projectService deleteProject', () => {
       }
     };
     projectDao = require('../rest/dao/projectDao')({ projectModel });
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao
     });
@@ -627,7 +646,7 @@ describe('Testing projectService getProjectMilestones', () => {
       }
     };
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -731,7 +750,7 @@ describe('Testing projectService downloadMilestonesTemplate', () => {
     projectDao = {};
     milestoneService = {};
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -807,7 +826,7 @@ describe('Testing projectService getProjectMilestonesPath', () => {
     };
     milestoneService = {};
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -885,7 +904,7 @@ describe('Testing projectService uploadAgreement', () => {
     };
     milestoneService = {};
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -964,7 +983,7 @@ describe('Testing projectService downloadAgreement', () => {
 
     milestoneService = {};
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -1053,7 +1072,7 @@ describe('Testing projectService downloadProposal', () => {
 
     milestoneService = {};
 
-    projectService = require('../rest/core/projectService')({
+    projectService = projectServiceBuilder({
       fastify,
       projectDao,
       milestoneService,
@@ -1102,4 +1121,56 @@ describe('Testing projectService downloadProposal', () => {
 
     return expect(response).toEqual(mockError);
   });
+});
+
+describe('Testing projectService getTotalFunded', () => {
+  let projectDao;
+  let projectService;
+  let transferService;
+
+  const project = 1;
+
+  beforeAll(() => {
+    transferService = {
+      getTotalFundedByProject: () => 300
+    };
+    projectDao = {
+      getProjectById: ({ projectId }) => {
+        if (projectId === 0) {
+          return undefined;
+        }
+
+        if (!projectId) {
+          throw Error('Error getting project from db');
+        }
+
+        return {
+          id: projectId
+        };
+      }
+    };
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao,
+      transferService
+    });
+  });
+
+  it('should return the total funded amount for a project', async () => {
+    const response = await projectService.getTotalFunded(project);
+    const expected = 300;
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project does not exist', async () => {
+    const response = await projectService.getTotalFunded(0);
+    const expected = { error: 'ERROR: Project not found', status: 404 };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should throw an error if it fails to get the project', async () =>
+    expect(projectService.getTotalFunded()).rejects.toEqual(
+      Error('Error getting funded amount')
+    ));
 });
