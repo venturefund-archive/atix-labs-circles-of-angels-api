@@ -568,7 +568,7 @@ const projectService = ({
    * Returns the total amount funded for an existing project
    *
    * @param {number} projectId
-   * @returns total amount funded || error
+   * @returns total funded amount || error
    */
   async getTotalFunded(projectId) {
     fastify.log.info(

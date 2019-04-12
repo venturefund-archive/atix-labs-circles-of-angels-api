@@ -43,7 +43,7 @@ const transferService = ({ fastify, transferDao }) => ({
    * Finds all verified funds for a project and returns the total amount
    *
    * @param {number} projectId
-   * @returns total amount funded || error
+   * @returns total funded amount || error
    */
   async getTotalFundedByProject(projectId) {
     fastify.log.info(
