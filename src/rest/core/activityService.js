@@ -1,8 +1,11 @@
 const { values, isEmpty } = require('lodash');
 const mkdirp = require('mkdirp-promise');
 const mime = require('mime-types');
+const fs = require('fs');
+const path = require('path');
 const { forEachPromise } = require('../util/promises');
 const configs = require('../../../config/configs');
+const { evidenceFileTypes } = require('../util/constants');
 
 const activityService = ({
   fastify,
@@ -220,29 +223,29 @@ const activityService = ({
       );
 
       // uploading file
-      const path = `${configs.fileServer.filePath}/activities/${
+      const filepath = `${configs.fileServer.filePath}/activities/${
         activity.id
       }/evidence/${file.name}`;
-      await file.mv(path);
+      await file.mv(filepath);
 
       // check file type
-      const filetype = mime.lookup(path);
+      const filetype = mime.lookup(filepath);
 
       if (!filetype) {
         fastify.log.error(
           '[Activity Service] :: Error getting mime type of file:',
-          path
+          filepath
         );
         return { error: 'Error uploading evidence', status: 409 };
       }
 
       if (filetype.includes('image/')) {
         // save photo
-        const savedPhoto = await photoService.savePhoto(path);
+        const savedPhoto = await photoService.savePhoto(filepath);
         if (!savedPhoto || savedPhoto == null) {
           fastify.log.error(
             '[Activity Service] :: Error saving photo to database:',
-            path
+            filepath
           );
           return { error: 'Error uploading evidence', status: 409 };
         }
@@ -254,7 +257,7 @@ const activityService = ({
 
         if (!savedActivityPhoto || savedActivityPhoto == null) {
           fastify.log.error(
-            `[Activity Service] :: Error associating photo ${path} to Activity ID ${
+            `[Activity Service] :: Error associating photo ${filepath} to Activity ID ${
               activity.id
             }`
           );
@@ -262,7 +265,7 @@ const activityService = ({
           fastify.log.info('[Activity Service] :: Rolling back Operation');
           const deletedPhoto = await photoService.deletePhoto(savedPhoto.id);
 
-          if (!deletedPhoto || deletedPhoto == null) {
+          if (deletedPhoto && deletedPhoto.error) {
             fastify.log.error(
               `[Activity Service] :: Photo ID ${
                 savedPhoto.id
@@ -279,11 +282,11 @@ const activityService = ({
       }
       // if not a photo
       // save file
-      const savedFile = await fileService.saveFile(path);
+      const savedFile = await fileService.saveFile(filepath);
       if (!savedFile || savedFile == null) {
         fastify.log.error(
           '[Activity Service] :: Error saving file to database:',
-          path
+          filepath
         );
         return { error: 'Error uploading evidence', status: 409 };
       }
@@ -295,7 +298,7 @@ const activityService = ({
 
       if (!savedActivityFile || savedActivityFile == null) {
         fastify.log.error(
-          `[Activity Service] :: Error associating file ${path} to Activity ID ${
+          `[Activity Service] :: Error associating file ${filepath} to Activity ID ${
             activity.id
           }`
         );
@@ -303,7 +306,7 @@ const activityService = ({
         fastify.log.info('[Activity Service] :: Rolling back Operation');
         const deletedFile = await fileService.deleteFile(savedFile.id);
 
-        if (!deletedFile || deletedFile == null) {
+        if (deletedFile && deletedFile.error) {
           fastify.log.error(
             `[Activity Service] :: File ID ${savedFile.id} could not be deleted`
           );
@@ -329,13 +332,13 @@ const activityService = ({
    *
    * @param {number} activityId
    * @param {number} evidenceId
-   * @param {string} fileType 'Photo' or 'File'
+   * @param {string} fileType 'Photo' | 'File'
    * @returns success | error message
    */
   async deleteEvidence(activityId, evidenceId, fileType) {
     try {
       // need type to know if it's a photo or another type of file
-      if (fileType === 'Photo') {
+      if (fileType === evidenceFileTypes.PHOTO) {
         fastify.log.info(
           `[Activity Service] :: Getting relation for Activity ${activityId} and Photo ${evidenceId}`
         );
@@ -380,16 +383,13 @@ const activityService = ({
 
         // deletes photo from Photo table and file in server
         const deletedPhoto = await photoService.deletePhoto(evidenceId);
-        if (!deletedPhoto || deletedPhoto == null) {
+        if (deletedPhoto && deletedPhoto.error) {
           fastify.log.error(
             `[Activity Service] :: Photo ID ${evidenceId} could not be deleted`
           );
-          return {
-            error: 'Evidence for this activity could not be deleted',
-            status: 409
-          };
+          return deletedPhoto;
         }
-      } else if (fileType === 'File') {
+      } else if (fileType === evidenceFileTypes.FILE) {
         fastify.log.info(
           `[Activity Service] :: Getting relation for Activity ${activityId} and File ${evidenceId}`
         );
@@ -434,14 +434,11 @@ const activityService = ({
 
         // deletes record in File table and file in server
         const deletedFile = await fileService.deleteFile(evidenceId);
-        if (!deletedFile || deletedFile == null) {
+        if (deletedFile && deletedFile.error) {
           fastify.log.error(
             `[Activity Service] :: File ID ${evidenceId} could not be deleted`
           );
-          return {
-            error: 'Evidence for this activity could not be deleted',
-            status: 409
-          };
+          return deletedFile;
         }
       } else {
         fastify.log.error(
@@ -460,6 +457,116 @@ const activityService = ({
         error
       );
       throw Error('There was an error when trying to delete the evidence');
+    }
+  },
+
+  /**
+   * Downloads an evidence
+   *
+   * @param {number} activityId
+   * @param {number} evidenceId
+   * @param {string} fileType 'Photo' | 'File'
+   * @returns file object | error
+   */
+  async downloadEvidence(activityId, evidenceId, fileType) {
+    try {
+      // check if activity exists in database
+      const activity = await activityDao.getActivityById(activityId);
+
+      if (!activity || activity == null) {
+        fastify.log.error(
+          `[Activity Service] :: Activity ID ${activityId} not found`
+        );
+        return { error: 'Activity not found', status: 404 };
+      }
+
+      let evidencePath = '';
+
+      // check if activity and evidence are associated
+      if (fileType === evidenceFileTypes.PHOTO) {
+        const activityPhoto = await activityPhotoDao.getActivityPhotoByActivityAndPhoto(
+          activityId,
+          evidenceId
+        );
+
+        if (!activityPhoto || activityPhoto == null) {
+          fastify.log.error(
+            `[Activity Service] :: Activity ${activityId} - Photo ${evidenceId} relation not found`
+          );
+          return { error: 'Evidence not found for this activity', status: 404 };
+        }
+
+        const photo = await photoService.getPhotoById(evidenceId);
+
+        if (photo && photo.error) {
+          fastify.log.error(
+            `[Activity Service] :: Photo ${evidenceId} not found`
+          );
+          return photo;
+        }
+
+        evidencePath = photo.path;
+      } else if (fileType === evidenceFileTypes.FILE) {
+        const activityFile = await activityFileDao.getActivityFileByActivityAndFile(
+          activityId,
+          evidenceId
+        );
+
+        if (!activityFile || activityFile == null) {
+          fastify.log.error(
+            `[Activity Service] :: Activity ${activityId} - File ${evidenceId} relation not found`
+          );
+          return { error: 'Evidence not found for this activity', status: 404 };
+        }
+
+        const file = await fileService.getFileById(evidenceId);
+
+        if (file && file.error) {
+          fastify.log.error(
+            `[Activity Service] :: File ${evidenceId} not found`
+          );
+          return file;
+        }
+
+        evidencePath = file.path;
+      } else {
+        fastify.log.error(
+          `[Activity Service] :: Wrong file type received: ${fileType}`
+        );
+        return {
+          error: 'Wrong file type',
+          status: 400
+        };
+      }
+      // read file
+      if (evidencePath === '') {
+        return { error: 'Evidence not found for this activity', status: 404 };
+      }
+      const filestream = fs.createReadStream(evidencePath);
+
+      filestream.on('error', error => {
+        fastify.log.error(
+          `[Activity Service] :: Evidence file ${evidencePath} not found:`,
+          error
+        );
+        return {
+          error: 'Evidence file not found',
+          status: 404
+        };
+      });
+
+      const response = {
+        filename: path.basename(evidencePath),
+        filestream
+      };
+
+      return response;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Error downloading evidence:',
+        error
+      );
+      throw Error('Error downloading evidence');
     }
   },
 

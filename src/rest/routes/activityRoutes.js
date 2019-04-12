@@ -323,6 +323,62 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/:activityId/evidences/:evidenceId/download/:fileType`,
+    {
+      schema: {
+        params: {
+          activityId: { type: 'number' },
+          evidenceId: { type: 'number' },
+          fileType: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/octet-stream',
+          properties: {
+            response: { type: 'application/octet-stream' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { activityId, evidenceId, fileType } = request.params;
+      fastify.log.info(
+        `[Activity Routes] :: GET request at /activities/${activityId}/evidence/${evidenceId}/download/${fileType}`
+      );
+      try {
+        const res = await activityService.downloadEvidence(
+          activityId,
+          evidenceId,
+          fileType
+        );
+
+        if (res && res.error) {
+          fastify.log.error(
+            '[Activity Routes] :: Error getting evidence:',
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info(
+            '[Activity Routes] :: Activity evidence downloaded:',
+            res
+          );
+          reply.header('file', res.filename);
+          reply.header('Access-Control-Expose-Headers', 'file');
+          reply.send(res.filestream);
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Activity Routes] :: Error getting evidence:',
+          error
+        );
+        reply.status(500).send({ error: 'Error getting evidence' });
+      }
+    }
+  );
 };
 
 module.exports = routes;

@@ -5,6 +5,36 @@ const unlinkPromise = promisify(unlink);
 
 const fileService = ({ fastify, fileDao }) => ({
   /**
+   * Returns a record from the File table
+   *
+   * @param {number} fileId
+   * @returns file object | error
+   */
+  async getFileById(fileId) {
+    fastify.log.info('[File Service] :: Getting file ID:', fileId);
+
+    try {
+      const file = await fileDao.getFileById(fileId);
+
+      if (!file || file == null) {
+        fastify.log.error(
+          `[File Service] :: File ID ${fileId} could not be found in database`
+        );
+        return {
+          error: 'File could not be found',
+          status: 404
+        };
+      }
+
+      fastify.log.info('[File Service] :: File found:', file);
+      return file;
+    } catch (error) {
+      fastify.log.error('[File Service] :: Error getting file:', error);
+      throw Error('Error getting file');
+    }
+  },
+
+  /**
    * Creates a new record in the Files table
    *
    * @param {string} path file path
