@@ -13,7 +13,7 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
 
   delete toUpdate.id;
   delete toUpdate.project;
-  toUpdate.status = 1;
+  toUpdate.status = toUpdate.status || 1;
 
   const savedMilestone = await milestoneModel
     .updateOne({ id: milestoneId })

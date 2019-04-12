@@ -6,6 +6,36 @@ const unlinkPromise = promisify(unlink);
 
 const photoService = ({ fastify, photoDao }) => ({
   /**
+   * Returns a record from the Photo table
+   *
+   * @param {number} photoId
+   * @returns photo object | error
+   */
+  async getPhotoById(photoId) {
+    fastify.log.info('[Photo Service] :: Getting photo ID:', photoId);
+
+    try {
+      const photo = await photoDao.getPhotoById(photoId);
+
+      if (!photo || photo == null) {
+        fastify.log.error(
+          `[Photo Service] :: Photo ID ${photoId} could not be found in database`
+        );
+        return {
+          error: 'Photo could not be found',
+          status: 404
+        };
+      }
+
+      fastify.log.info('[Photo Service] :: Photo found:', photo);
+      return photo;
+    } catch (error) {
+      fastify.log.error('[Photo Service] :: Error getting photo:', error);
+      throw Error('Error getting photo');
+    }
+  },
+
+  /**
    * Looks up the photo in the database and encodes it to base64
    *
    * @param {number} photoId photo's id

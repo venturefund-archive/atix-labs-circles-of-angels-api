@@ -1,3 +1,8 @@
+const getFileById = fileModel => async id => {
+  const file = await fileModel.findOne({ id });
+  return file;
+};
+
 const saveFile = fileModel => async path => {
   const savedFile = await fileModel.create({
     path
@@ -12,5 +17,6 @@ const deleteFile = fileModel => async fileId => {
 
 module.exports = fileModel => ({
   saveFile: saveFile(fileModel),
-  deleteFile: deleteFile(fileModel)
+  deleteFile: deleteFile(fileModel),
+  getFileById: getFileById(fileModel)
 });

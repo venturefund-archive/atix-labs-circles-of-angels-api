@@ -11,14 +11,14 @@ const saveActivity = activityModel => async (activity, milestoneId) => {
 const getActivityById = activityModel => async activityId => {
   const activity = await activityModel.findOne({ id: activityId });
   return activity;
-}
+};
 
 const updateActivity = activityModel => async (activity, activityId) => {
   const toUpdate = { ...activity };
 
   delete toUpdate.id;
   delete toUpdate.milestone;
-  toUpdate.status = 1;
+  toUpdate.status = toUpdate || 1;
 
   const savedActivity = await activityModel
     .updateOne({ id: activityId })
