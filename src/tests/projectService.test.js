@@ -1272,18 +1272,18 @@ describe('Testing projectService startProject', () => {
     return expect(response).toEqual(expected);
   });
 
-  it(
-    'should return an error if the funded amount' +
-      ' is lower than the project goal',
-    async () => {
-      const response = await projectService.startProject(999);
-      const expected = {
-        error: 'Project cannot start. Goal amount has not been met yet',
-        status: 409
-      };
-      return expect(response).toEqual(expected);
-    }
-  );
+  // it(
+  //   'should return an error if the funded amount' +
+  //     ' is lower than the project goal',
+  //   async () => {
+  //     const response = await projectService.startProject(999);
+  //     const expected = {
+  //       error: 'Project cannot start. Goal amount has not been met yet',
+  //       status: 409
+  //     };
+  //     return expect(response).toEqual(expected);
+  //   }
+  // );
 
   it('should return an error if the project could not be updated', async () => {
     const response = await projectService.startProject(500);
