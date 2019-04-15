@@ -652,7 +652,7 @@ const projectService = ({
       //   };
       // }
 
-      const startedProject = await projectDao.updateProjectStatus({
+      const startedProject = projectDao.updateProjectStatus({
         projectId,
         status: projectStatus.IN_PROGRESS.status
       });
@@ -666,8 +666,11 @@ const projectService = ({
 
       return startedProject;
     } catch (error) {
-      fastify.log.error('[Project Service] :: Error starting project:', error);
-      throw Error('Error starting project');
+      fastify.log.error(
+        '[Project Service] :: Error getting funded amount:',
+        error
+      );
+      throw Error('Error getting funded amount');
     }
   }
 });
