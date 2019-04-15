@@ -470,7 +470,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: "ERROR: Project doesn't have an agreement uploaded",
+          error: 'ERROR: Project doesn\'t have an agreement uploaded',
           status: 409
         };
       }
@@ -530,7 +530,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: "ERROR: Project doesn't have a pitch proposal uploaded",
+          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
           status: 409
         };
       }
@@ -619,7 +619,10 @@ const projectService = ({
         return { error: 'ERROR: Project not found', status: 404 };
       }
 
-      if (project.status < projectStatus.PUBLISHED) {
+      if (
+        project.status !== projectStatus.PUBLISHED &&
+        project.status !== projectStatus.IN_PROGRESS
+      ) {
         fastify.log.error(
           `[Project Service] :: Project ID ${projectId} is not published`
         );
