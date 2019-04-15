@@ -8,7 +8,7 @@ VALUES(0, 'Pending Verification');
 
 INSERT INTO public.transfer_status
 (status, "name")
-VALUES(1, 'Reconsiliaton');
+VALUES(1, 'Reconciliaton');
 
 INSERT INTO public.transfer_status
 (status, "name")
