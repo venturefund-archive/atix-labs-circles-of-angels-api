@@ -6,7 +6,10 @@ const saveActivityPhoto = activityPhotoModel => async (activityId, photoId) => {
   return activityPhoto;
 };
 
-const getActivityPhotoByActivityAndPhoto = activityPhotoModel => async (activityId, photoId) => {
+const getActivityPhotoByActivityAndPhoto = activityPhotoModel => async (
+  activityId,
+  photoId
+) => {
   const activityPhoto = await activityPhotoModel.findOne({
     activity: activityId,
     photo: photoId
@@ -15,9 +18,11 @@ const getActivityPhotoByActivityAndPhoto = activityPhotoModel => async (activity
 };
 
 const getActivityPhotoByActivity = activityPhotoModel => async activityId => {
-  const activityPhotos = await activityPhotoModel.find({
-    activity: activityId
-  });
+  const activityPhotos = await activityPhotoModel
+    .find({
+      activity: activityId
+    })
+    .populate('photo');
   return activityPhotos;
 };
 
