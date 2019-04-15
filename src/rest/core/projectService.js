@@ -41,7 +41,7 @@ const projectService = ({
       const response = {};
 
       newProject.ownerId = ownerId;
-      newProject.status = 0;
+      newProject.status = projectStatus.PENDING_APPROVAL;
 
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
@@ -254,7 +254,7 @@ const projectService = ({
 
   async getProjectList() {
     const projects = await projectDao.getProjecListWithStatusFrom({
-      status: -1
+      status: projectStatus.PENDING_APPROVAL
     });
     return projects;
   },
@@ -264,7 +264,7 @@ const projectService = ({
    */
   async getActiveProjectList() {
     const projects = await projectDao.getProjecListWithStatusFrom({
-      status: 1
+      status: projectStatus.PUBLISHED
     });
     return projects;
   },
@@ -470,7 +470,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: 'ERROR: Project doesn\'t have an agreement uploaded',
+          error: "ERROR: Project doesn't have an agreement uploaded",
           status: 409
         };
       }
@@ -530,7 +530,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
+          error: "ERROR: Project doesn't have a pitch proposal uploaded",
           status: 409
         };
       }
