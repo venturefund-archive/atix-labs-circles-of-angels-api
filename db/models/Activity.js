@@ -32,6 +32,8 @@ module.exports = {
       columnName: 'status',
       model: 'milestone_activity_status'
     },
+    createdAt: { type: 'string', autoCreatedAt: true, required: false },
+    updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
 };
