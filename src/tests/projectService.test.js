@@ -6,6 +6,7 @@ const { addPathToFilesProperties } = require('../rest/util/files');
 const configs = require('../../config/configs');
 const { getBase64htmlFromPath } = require('../rest/util/images');
 const projectServiceBuilder = require('../rest/core/projectService');
+const { projectStatus } = require('../rest/util/constants');
 
 const readFile = promisify(fs.readFile);
 
@@ -1173,4 +1174,129 @@ describe('Testing projectService getTotalFunded', () => {
     expect(projectService.getTotalFunded()).rejects.toEqual(
       Error('Error getting funded amount')
     ));
+});
+
+describe('Testing projectService startProject', () => {
+  let projectDao;
+  let projectService;
+  let transferService;
+
+  const project = 1;
+  const goalAmount = 1000;
+
+  beforeAll(() => {
+    transferService = {
+      getTotalFundedByProject: projectId => {
+        if (projectId === 999) {
+          return goalAmount - 1;
+        }
+        return goalAmount;
+      }
+    };
+    projectDao = {
+      getProjectById: ({ projectId }) => {
+        if (projectId === 0) {
+          return undefined;
+        }
+
+        if (projectId === 50) {
+          return {
+            id: projectId,
+            status: projectStatus.REJECTED,
+            goalAmount
+          };
+        }
+
+        if (projectId === 100) {
+          return {
+            id: projectId,
+            status: projectStatus.IN_PROGRESS.status,
+            goalAmount
+          };
+        }
+
+        if (!projectId) {
+          throw Error('Error getting project from db');
+        }
+
+        return {
+          id: projectId,
+          status: projectStatus.PUBLISHED,
+          goalAmount
+        };
+      },
+
+      updateProjectStatus: ({ projectId, status }) => {
+        if (projectId === 500) {
+          return undefined;
+        }
+
+        return {
+          id: projectId,
+          status
+        };
+      }
+    };
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao,
+      transferService
+    });
+  });
+
+  it('should return the updated project with status In Progress', async () => {
+    const response = await projectService.startProject(project);
+    const expected = {
+      id: project,
+      status: projectStatus.IN_PROGRESS
+    };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project does not exist', async () => {
+    const response = await projectService.startProject(0);
+    const expected = { error: 'ERROR: Project not found', status: 404 };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project is not Published', async () => {
+    const response = await projectService.startProject(50);
+    const expected = { error: 'Project needs to be published', status: 409 };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project is already In Progress', async () => {
+    const response = await projectService.startProject(100);
+    const expected = { error: 'Project has already started', status: 409 };
+    return expect(response).toEqual(expected);
+  });
+
+  // it(
+  //   'should return an error if the funded amount' +
+  //     ' is lower than the project goal',
+  //   async () => {
+  //     const response = await projectService.startProject(999);
+  //     const expected = {
+  //       error: 'Project cannot start. Goal amount has not been met yet',
+  //       status: 409
+  //     };
+  //     return expect(response).toEqual(expected);
+  //   }
+  // );
+
+  it('should return an error if the project could not be updated', async () => {
+    const response = await projectService.startProject(500);
+    const expected = {
+      error: 'ERROR: Project could not be started',
+      status: 500
+    };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should throw an error if it fails to get the project', async () => {
+    expect(projectService.startProject()).rejects.toEqual(
+      Error('Error starting project')
+    );
+  });
 });
