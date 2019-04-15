@@ -4,17 +4,17 @@ const evidenceFileTypes = {
 };
 
 const transferStatus = {
-  CANCELLED: { status: -1, name: 'Cancelled' },
-  PENDING_VERIFICATION: { status: 0, name: 'Pending Verification' },
-  RECONCILIATION: { status: 1, name: 'Reconciliaton' },
-  VERIFIED: { status: 2, name: 'Verified' }
+  RECONCILIATION: 1,
+  PENDING_VERIFICATION: 0,
+  CANCELLED: -1,
+  VERIFIED: 2
 };
 
 const projectStatus = {
-  REJECTED: { status: -1, name: 'Rejected' },
-  PENDING_APPROVAL: { status: 0, name: 'Pending Approval' },
-  PUBLISHED: { status: 1, name: 'Published' },
-  IN_PROGRESS: { status: 2, name: 'In Progress' }
+  REJECTED: 1,
+  PENDING_APPROVAL: 0,
+  PUBLISHED: 2,
+  IN_PROGRESS: 3
 };
 
 module.exports = {

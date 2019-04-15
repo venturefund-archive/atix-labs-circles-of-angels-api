@@ -1202,7 +1202,7 @@ describe('Testing projectService startProject', () => {
         if (projectId === 50) {
           return {
             id: projectId,
-            status: projectStatus.REJECTED.status,
+            status: projectStatus.REJECTED,
             goalAmount
           };
         }
@@ -1221,7 +1221,7 @@ describe('Testing projectService startProject', () => {
 
         return {
           id: projectId,
-          status: projectStatus.PUBLISHED.status,
+          status: projectStatus.PUBLISHED,
           goalAmount
         };
       },
@@ -1249,7 +1249,7 @@ describe('Testing projectService startProject', () => {
     const response = await projectService.startProject(project);
     const expected = {
       id: project,
-      status: projectStatus.IN_PROGRESS.status
+      status: projectStatus.IN_PROGRESS
     };
     return expect(response).toEqual(expected);
   });

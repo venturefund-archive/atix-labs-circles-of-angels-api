@@ -619,14 +619,14 @@ const projectService = ({
         return { error: 'ERROR: Project not found', status: 404 };
       }
 
-      if (project.status < projectStatus.PUBLISHED.status) {
+      if (project.status < projectStatus.PUBLISHED) {
         fastify.log.error(
           `[Project Service] :: Project ID ${projectId} is not published`
         );
         return { error: 'Project needs to be published', status: 409 };
       }
 
-      if (project.status === projectStatus.IN_PROGRESS.status) {
+      if (project.status === projectStatus.IN_PROGRESS) {
         fastify.log.error(
           `[Project Service] :: Project ID ${projectId} already in progress`
         );
@@ -654,7 +654,7 @@ const projectService = ({
 
       const startedProject = await projectDao.updateProjectStatus({
         projectId,
-        status: projectStatus.IN_PROGRESS.status
+        status: projectStatus.IN_PROGRESS
       });
 
       if (!startedProject && startedProject == null) {
