@@ -653,14 +653,11 @@ const activityService = ({
       if (activityFiles && activityFiles != null) {
         // add type to each
         activityFiles.map(activityFile => {
-          const fileNameAsPath = {
-            ...activityFile.file,
-            path: path.basename(activityFile.file.path)
-          };
           return fileEvidence.push({
             ...activityFile,
             fileType: 'File',
-            file: fileNameAsPath
+            file: activityFile.file.id,
+            fileName: path.basename(activityFile.file.path)
           });
         });
       } else {
@@ -683,14 +680,11 @@ const activityService = ({
       if (activityPhotos && activityPhotos != null) {
         // add type to each
         activityPhotos.map(activityPhoto => {
-          const photoNameAsPath = {
-            ...activityPhoto.photo,
-            path: path.basename(activityPhoto.photo.path)
-          };
           return photoEvidence.push({
             ...activityPhoto,
             fileType: 'Photo',
-            photo: photoNameAsPath
+            photo: activityPhoto.photo.id,
+            fileName: path.basename(activityPhoto.photo.path)
           });
         });
       } else {
