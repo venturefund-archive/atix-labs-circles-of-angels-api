@@ -633,24 +633,24 @@ const projectService = ({
         return { error: 'Project has already started', status: 409 };
       }
 
-      const totalAmount = await transferService.getTotalFundedByProject(
-        projectId
-      );
+      // const totalAmount = await transferService.getTotalFundedByProject(
+      //   projectId
+      // );
 
-      fastify.log.info(
-        `[Project Service] :: Total funded amount for Project ID ${projectId} is ${totalAmount}`
-      );
+      // fastify.log.info(
+      //   `[Project Service] :: Total funded amount for Project ID ${projectId} is ${totalAmount}`
+      // );
 
-      // compare current funded amount to goal amount
-      if (totalAmount < project.goalAmount) {
-        fastify.log.error(
-          `[Project Service] :: Goal Amount for Project ID ${projectId} not reached`
-        );
-        return {
-          error: 'Project cannot start. Goal amount has not been met yet',
-          status: 409
-        };
-      }
+      // // compare current funded amount to goal amount
+      // if (totalAmount < project.goalAmount) {
+      //   fastify.log.error(
+      //     `[Project Service] :: Goal Amount for Project ID ${projectId} not reached`
+      //   );
+      //   return {
+      //     error: 'Project cannot start. Goal amount has not been met yet',
+      //     status: 409
+      //   };
+      // }
 
       const startedProject = await projectDao.updateProjectStatus({
         projectId,
