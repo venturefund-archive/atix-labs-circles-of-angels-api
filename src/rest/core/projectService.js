@@ -5,7 +5,7 @@ const { isEmpty } = require('lodash');
 const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
 const { addPathToFilesProperties } = require('../util/files');
-const { projectStatus } = require('../util/status');
+const { projectStatus } = require('../util/constants');
 
 const projectService = ({
   fastify,
@@ -470,7 +470,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: "ERROR: Project doesn't have an agreement uploaded",
+          error: 'ERROR: Project doesn\'t have an agreement uploaded',
           status: 409
         };
       }
@@ -530,7 +530,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: "ERROR: Project doesn't have a pitch proposal uploaded",
+          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
           status: 409
         };
       }
@@ -601,6 +601,76 @@ const projectService = ({
         error
       );
       throw Error('Error getting funded amount');
+    }
+  },
+
+  async startProject(projectId) {
+    fastify.log.info(
+      `[Project Service] :: Updating Project ID ${projectId} status to In Progress`
+    );
+
+    try {
+      // verify if project exists
+      const project = await projectDao.getProjectById({ projectId });
+      if (!project || project == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
+      }
+
+      if (
+        project.status !== projectStatus.PUBLISHED &&
+        project.status !== projectStatus.IN_PROGRESS
+      ) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} is not published`
+        );
+        return { error: 'Project needs to be published', status: 409 };
+      }
+
+      if (project.status === projectStatus.IN_PROGRESS) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} already in progress`
+        );
+        return { error: 'Project has already started', status: 409 };
+      }
+
+      // const totalAmount = await transferService.getTotalFundedByProject(
+      //   projectId
+      // );
+
+      // fastify.log.info(
+      //   `[Project Service] :: Total funded amount for Project ID ${projectId} is ${totalAmount}`
+      // );
+
+      // // compare current funded amount to goal amount
+      // if (totalAmount < project.goalAmount) {
+      //   fastify.log.error(
+      //     `[Project Service] :: Goal Amount for Project ID ${projectId} not reached`
+      //   );
+      //   return {
+      //     error: 'Project cannot start. Goal amount has not been met yet',
+      //     status: 409
+      //   };
+      // }
+
+      const startedProject = await projectDao.updateProjectStatus({
+        projectId,
+        status: projectStatus.IN_PROGRESS
+      });
+
+      if (!startedProject && startedProject == null) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} could not be updated`
+        );
+        return { error: 'ERROR: Project could not be started', status: 500 };
+      }
+
+      return startedProject;
+    } catch (error) {
+      fastify.log.error('[Project Service] :: Error starting project:', error);
+      throw Error('Error starting project');
     }
   }
 });
