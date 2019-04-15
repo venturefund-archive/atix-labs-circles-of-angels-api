@@ -263,7 +263,7 @@ const projectService = ({
    */
   async getActiveProjectList() {
     const projects = await projectDao.getProjecListWithStatusFrom({
-      status: 1
+      status: 2
     });
     return projects;
   },
