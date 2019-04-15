@@ -4,7 +4,7 @@ const evidenceFileTypes = {
 };
 
 const transferStatus = {
-  RECONSILIATION: 'Reconsiliaton',
+  RECONCILIATION: 'Reconciliaton',
   PENDING_VERIFICATION: 'Pending Verification',
   CANCELLED: 'Cancelled',
   VERIFIED: 'Verified'
