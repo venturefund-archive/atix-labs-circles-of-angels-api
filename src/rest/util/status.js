@@ -5,4 +5,4 @@ const projectStatus = {
   IN_PROGRESS: 3
 };
 
-export { projectStatus };
+module.exports = { projectStatus };
