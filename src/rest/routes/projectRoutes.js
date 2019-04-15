@@ -679,6 +679,45 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.put(
+    `${basePath}/:id/start`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' }
+        }
+      },
+      response: {
+        200: { type: 'number' }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(
+        `[Project Routes] :: PUT request at /project/${id}/start`
+      );
+      try {
+        const startedProject = await projectService.startProject(id);
+
+        if (startedProject.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error starting project:',
+            startedProject.error
+          );
+          reply.status(startedProject.status).send(startedProject.error);
+        } else {
+          reply.status(200).send({ success: 'Project started successfully!' });
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error starting project: ',
+          error
+        );
+        reply.status(500).send({ error: 'Error starting project' });
+      }
+    }
+  );
 };
 
 module.exports = routes;
