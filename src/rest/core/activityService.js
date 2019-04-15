@@ -652,12 +652,14 @@ const activityService = ({
       const fileEvidence = [];
       if (activityFiles && activityFiles != null) {
         // add type to each
-        activityFiles.map(activityFile =>
-          fileEvidence.push({
+        activityFiles.map(activityFile => {
+          return fileEvidence.push({
             ...activityFile,
-            fileType: 'File'
-          })
-        );
+            fileType: 'File',
+            file: activityFile.file.id,
+            fileName: path.basename(activityFile.file.path)
+          });
+        });
       } else {
         fastify.log.info(
           `[Activity Service] :: Activity ID: ${activityId} does not have file evidence`
@@ -677,12 +679,14 @@ const activityService = ({
       const photoEvidence = [];
       if (activityPhotos && activityPhotos != null) {
         // add type to each
-        activityPhotos.map(activityPhoto =>
-          photoEvidence.push({
+        activityPhotos.map(activityPhoto => {
+          return photoEvidence.push({
             ...activityPhoto,
-            fileType: 'Photo'
-          })
-        );
+            fileType: 'Photo',
+            photo: activityPhoto.photo.id,
+            fileName: path.basename(activityPhoto.photo.path)
+          });
+        });
       } else {
         fastify.log.info(
           `[Activity Service] :: Activity ID: ${activityId} does not have photo evidence`

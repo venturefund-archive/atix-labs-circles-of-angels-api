@@ -6,7 +6,10 @@ const saveActivityFile = activityFileModel => async (activityId, fileId) => {
   return activityFile;
 };
 
-const getActivityFileByActivityAndFile = activityFileModel => async (activityId, fileId) => {
+const getActivityFileByActivityAndFile = activityFileModel => async (
+  activityId,
+  fileId
+) => {
   const activityFile = await activityFileModel.findOne({
     activity: activityId,
     file: fileId
@@ -15,9 +18,11 @@ const getActivityFileByActivityAndFile = activityFileModel => async (activityId,
 };
 
 const getActivityFileByActivity = activityFileModel => async activityId => {
-  const activityFiles = await activityFileModel.find({
-    activity: activityId
-  });
+  const activityFiles = await activityFileModel
+    .find({
+      activity: activityId
+    })
+    .populate('file');
   return activityFiles;
 };
 

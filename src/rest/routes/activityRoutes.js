@@ -187,12 +187,11 @@ const routes = async fastify => {
     },
     async (req, reply) => {
       const { id } = req.params;
-      const { evidenceFiles } = req.raw.files;
-
       fastify.log.info(
-        `[Activity Routes] :: POST request at /activities/${id}/upload:`,
-        evidenceFiles
+        `[Activity Routes] :: POST request at /activities/${id}/evidences:`,
+        req
       );
+      const { evidenceFiles } = req.raw.files;
 
       try {
         const response = await activityService.addEvidenceFiles(
@@ -212,14 +211,12 @@ const routes = async fastify => {
   );
 
   fastify.delete(
-    `${basePath}/:activityId/evidences/:evidenceId`,
+    `${basePath}/:activityId/evidences/:evidenceId/:fileType`,
     {
       schema: {
         params: {
           activityId: { type: 'number' },
-          evidenceId: { type: 'number' }
-        },
-        body: {
+          evidenceId: { type: 'number' },
           fileType: { type: 'string' }
         }
       },
@@ -233,14 +230,13 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
-      const { activityId, evidenceId } = request.params;
-      const { fileType } = request.body;
+      const { activityId, evidenceId, fileType } = request.params;
       fastify.log.info(
-        `[Activity Routes] :: DELETE request at /activities/${activityId}/evidences/${evidenceId}`
+        `[Activity Routes] :: DELETE request atctivities/${activityId}/evidences/${evidenceId}/${fileType}`
       );
 
       try {
-        const deletedEvidence = activityService.deleteEvidence(
+        const deletedEvidence = await activityService.deleteEvidence(
           activityId,
           evidenceId,
           fileType
@@ -249,7 +245,7 @@ const routes = async fastify => {
         if (deletedEvidence.error) {
           reply.status(deletedEvidence.status).send(deletedEvidence);
         } else {
-          reply.status(200).send(deletedEvidence);
+          reply.status(200).send({ success: 'Evidence deleted successfully!' });
         }
       } catch (error) {
         fastify.log.error(
@@ -281,10 +277,7 @@ const routes = async fastify => {
     async (request, reply) => {
       const { id } = request.params;
 
-      fastify.log.info(
-        `[Activity Routes] :: GET request at /activities/${id}`,
-        request
-      );
+      fastify.log.info(`[Activity Routes] :: GET request at /activities/${id}`);
 
       try {
         const activity = await activityService.getActivityDetails(id);
