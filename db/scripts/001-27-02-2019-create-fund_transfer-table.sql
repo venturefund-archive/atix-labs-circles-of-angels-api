@@ -8,7 +8,7 @@ CREATE TABLE public.fund_transfer (
 	state int2 NOT NULL,
 	"createdAt" date NULL,
 	"updatedAt" date NULL,
-	amount int8 NOT null,
+	amount int4 NOT null,
 	FOREIGN KEY ("senderId") REFERENCES "user"(id),
 	FOREIGN KEY ("projectId") REFERENCES project(id) on delete cascade
 );
