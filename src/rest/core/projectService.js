@@ -5,7 +5,7 @@ const { isEmpty } = require('lodash');
 const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
 const { addPathToFilesProperties } = require('../util/files');
-const { projectStatus } = require('../util/status');
+const { projectStatus } = require('../util/constants');
 
 const projectService = ({
   fastify,
