@@ -3,6 +3,14 @@ const evidenceFileTypes = {
   PHOTO: 'Photo'
 };
 
+const transferStatus = {
+  RECONCILIATION: 'Reconciliaton',
+  PENDING_VERIFICATION: 'Pending Verification',
+  CANCELLED: 'Cancelled',
+  VERIFIED: 'Verified'
+};
+
 module.exports = {
-  evidenceFileTypes
+  evidenceFileTypes,
+  transferStatus
 };
