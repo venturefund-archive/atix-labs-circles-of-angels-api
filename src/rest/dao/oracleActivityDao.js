@@ -26,8 +26,16 @@ const getOracleFromActivity = oracleActivityModel => async activityId => {
   return oracle;
 };
 
+const getActivitiesByOracle = oracleActivityModel => async oracleId => {
+  const activities = oracleActivityModel
+    .find({ user: oracleId })
+    .populate('activity');
+  return activities;
+};
+
 module.exports = oracleActivityModel => ({
   assignOracleToActivity: assignOracleToActivity(oracleActivityModel),
   getOracleFromActivity: getOracleFromActivity(oracleActivityModel),
-  unassignOracleToActivity: unassignOracleToActivity(oracleActivityModel)
+  unassignOracleToActivity: unassignOracleToActivity(oracleActivityModel),
+  getActivitiesByOracle: getActivitiesByOracle(oracleActivityModel)
 });

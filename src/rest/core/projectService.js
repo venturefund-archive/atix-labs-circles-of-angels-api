@@ -1,7 +1,7 @@
 const mkdirp = require('mkdirp-promise');
 const fs = require('fs');
 const path = require('path');
-const { isEmpty } = require('lodash');
+const { isEmpty, uniq } = require('lodash');
 const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
 const { addPathToFilesProperties } = require('../util/files');
@@ -604,6 +604,12 @@ const projectService = ({
     }
   },
 
+  /**
+   * Changes the status of a PUBLISHED project to IN_PROGRESS
+   *
+   * @param {number} projectId
+   * @returns updated project || error
+   */
   async startProject(projectId) {
     fastify.log.info(
       `[Project Service] :: Updating Project ID ${projectId} status to In Progress`
@@ -671,6 +677,35 @@ const projectService = ({
     } catch (error) {
       fastify.log.error('[Project Service] :: Error starting project:', error);
       throw Error('Error starting project');
+    }
+  },
+
+  /**
+   * Returns an array of the projects' id that an oracle
+   * has any of its activities assigned without duplicates
+   *
+   * @param {number} oracleId
+   * @return object with the oracle and its projects } | error
+   */
+  async getProjectsAsOracle(oracleId) {
+    fastify.log.info(
+      '[Project Service] :: Getting Projects for Oracle ID',
+      oracleId
+    );
+    try {
+      const projects = await milestoneService.getProjectsAsOracle(oracleId);
+      if (projects.error) {
+        return projects;
+      }
+
+      const uniqueProjects = uniq(projects);
+      fastify.log.info(
+        `[Project Service] :: Projects found for Oracle ID ${oracleId}: ${uniqueProjects}`
+      );
+      return { projects: uniqueProjects, oracle: oracleId };
+    } catch (error) {
+      fastify.log.error('[Project Service] :: Error getting Projects:', error);
+      throw Error('Error getting Projects');
     }
   }
 });
