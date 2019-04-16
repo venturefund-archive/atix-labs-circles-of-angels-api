@@ -8,7 +8,8 @@ const ProjectDao = ({ projectModel, userDao }) => ({
 
   async getProjecListWithStatusFrom({ status }) {
     const projects = await projectModel.find({
-      where: { status: { '>=': status } }
+      where: { status: { '>=': status } },
+      sort: 'createdAt DESC'
     });
     await forEachPromise(projects, project =>
       this.addUserInfoOnProject(project)
