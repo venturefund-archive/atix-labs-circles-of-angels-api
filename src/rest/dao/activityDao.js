@@ -18,7 +18,7 @@ const updateActivity = activityModel => async (activity, activityId) => {
 
   delete toUpdate.id;
   delete toUpdate.milestone;
-  toUpdate.status = toUpdate || 1;
+  toUpdate.status = toUpdate.status || 1;
 
   const savedActivity = await activityModel
     .updateOne({ id: activityId })
