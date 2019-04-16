@@ -1,6 +1,6 @@
 INSERT INTO public.transfer_status
 (status, "name")
-VALUES(-1, 'Cancelled');
+VALUES(3, 'Cancelled');
 
 INSERT INTO public.transfer_status
 (status, "name")
