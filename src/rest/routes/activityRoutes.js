@@ -416,6 +416,36 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.post(
+    `${basePath}/:activityId/complete`,
+    {
+      schema: {
+        params: {
+          activityId: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/json',
+          properties: {
+            response: { type: 'application/json' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { activityId } = request.params;
+      fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
+      try {
+        const response = await activityService.completeActivity(activityId);
+        reply.status(200).send(Boolean(response));
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send('Error assigning user on activity');
+      }
+    }
+  );
 };
 
 module.exports = routes;

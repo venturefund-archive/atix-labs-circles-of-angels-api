@@ -17,8 +17,16 @@ const projectStatus = {
   IN_PROGRESS: 3
 };
 
+const activityStatus = {
+  IDLE: 1,
+  STARTED: 2,
+  VERIFIED: 3,
+  COMPLETED: 4
+};
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
-  projectStatus
+  projectStatus,
+  activityStatus
 };

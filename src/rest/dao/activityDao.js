@@ -32,9 +32,14 @@ const deleteActivity = activityModel => async activityId => {
   return deleted;
 };
 
+const updateStatus = activityModel => async (activityId, status) => {
+  return activityModel.update(activityId).set({ status });
+};
+
 module.exports = activityModel => ({
   saveActivity: saveActivity(activityModel),
   updateActivity: updateActivity(activityModel),
   getActivityById: getActivityById(activityModel),
-  deleteActivity: deleteActivity(activityModel)
+  deleteActivity: deleteActivity(activityModel),
+  updateStatus: updateStatus(activityModel)
 });

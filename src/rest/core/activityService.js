@@ -6,6 +6,7 @@ const path = require('path');
 const { forEachPromise } = require('../util/promises');
 const configs = require('../../../config/configs');
 const { evidenceFileTypes } = require('../util/constants');
+const { activityStatus } = require('../util/constants');
 
 const activityService = ({
   fastify,
@@ -704,6 +705,9 @@ const activityService = ({
       );
       throw Error('Error getting Activity details');
     }
+  },
+  async completeActivity(activityId) {
+    return activityDao.updateStatus(activityId, activityStatus.COMPLETED);
   }
 });
 
