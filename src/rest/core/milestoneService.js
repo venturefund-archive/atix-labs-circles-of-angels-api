@@ -500,6 +500,42 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
    */
   deleteMilestone(milestoneId) {
     return milestoneDao.deleteMilestone(milestoneId);
+  },
+
+  /**
+   * Returns an array of the projects' id that an oracle
+   * has any of its activities assigned
+   *
+   * @param {number} oracleId
+   * @returns array of project ids | error
+   */
+  async getProjectsAsOracle(oracleId) {
+    fastify.log.info(
+      '[Milestone Service] :: Getting Milestones for Oracle ID',
+      oracleId
+    );
+    try {
+      const milestones = await activityService.getMilestonesAsOracle(oracleId);
+
+      if (milestones.error) {
+        return milestones;
+      }
+
+      const projects = await Promise.all(
+        milestones.map(async milestoneId => {
+          const milestone = await milestoneDao.getMilestoneById(milestoneId);
+          return milestone.project;
+        })
+      );
+
+      return projects;
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error getting Milestones:',
+        error
+      );
+      throw Error('Error getting Milestones');
+    }
   }
 });
 

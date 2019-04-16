@@ -708,6 +708,50 @@ const activityService = ({
   },
   async completeActivity(activityId) {
     return activityDao.updateStatus(activityId, activityStatus.COMPLETED);
+  },
+
+  /**
+   * Returns an array of the milestones' id that an oracle
+   * has any of its activities assigned
+   *
+   * @param {number} oracleId
+   * @returns array of milestone ids | error
+   */
+  async getMilestonesAsOracle(oracleId) {
+    fastify.log.info(
+      '[Activity Service] :: Getting Activities for Oracle ID',
+      oracleId
+    );
+    try {
+      const milestones = [];
+      const oracleActivities = await oracleActivityDao.getActivitiesByOracle(
+        oracleId
+      );
+
+      if (!oracleActivities || oracleActivities == null) {
+        fastify.log.error(
+          `[Activity Service] :: Oracle ID ${oracleId} doesn't have any activities assigned`
+        );
+        return {
+          error: 'Oracle does not have any activities assigned',
+          status: 404
+        };
+      }
+
+      await oracleActivities.forEach(oracleActivity => {
+        if (milestones.indexOf(oracleActivity.activity.milestone) === -1) {
+          milestones.push(oracleActivity.activity.milestone);
+        }
+      });
+
+      return milestones;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Error getting Activities:',
+        error
+      );
+      throw Error('Error getting Activities');
+    }
   }
 });
 
