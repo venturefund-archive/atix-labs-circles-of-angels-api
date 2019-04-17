@@ -536,6 +536,37 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
       );
       throw Error('Error getting Milestones');
     }
+  },
+
+  async getMilestonesByProject(projectId) {
+    fastify.log.info(
+      '[Milestone Service] :: Getting milestones for Project',
+      projectId
+    );
+    try {
+      const milestones = await milestoneDao.getMilestonesByProject(projectId);
+
+      if (!milestones || milestones == null) {
+        return milestones;
+      }
+
+      const milestonesWithActivities = await Promise.all(
+        milestones.map(async milestone => {
+          const milestoneWithActivity = await this.getMilestoneActivities(
+            milestone
+          );
+          return milestoneWithActivity;
+        })
+      );
+
+      return milestonesWithActivities;
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error getting Milestones:',
+        error
+      );
+      throw Error('Error getting Milestones');
+    }
   }
 });
 

@@ -41,10 +41,16 @@ const deleteMilestone = milestoneModel => async milestoneId => {
   return deleted;
 };
 
+const getMilestonesByProject = milestoneModel => async projectId => {
+  const milestones = milestoneModel.find({ project: projectId });
+  return milestones;
+};
+
 module.exports = milestoneModel => ({
   getMilestoneById: getMilestoneById(milestoneModel),
   saveMilestone: saveMilestone(milestoneModel),
   getMilestoneActivities: getMilestoneActivities(milestoneModel),
   deleteMilestone: deleteMilestone(milestoneModel),
-  updateMilestone: updateMilestone(milestoneModel)
+  updateMilestone: updateMilestone(milestoneModel),
+  getMilestonesByProject: getMilestonesByProject(milestoneModel)
 });

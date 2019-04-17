@@ -661,6 +661,17 @@ const projectService = ({
       //   };
       // }
 
+      const projectWithOracles = await this.isFullyAssigned(projectId);
+      if (!projectWithOracles) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} has activities with no oracles assigned`
+        );
+        return {
+          error: 'Project has activities with no oracles assigned',
+          status: 409
+        };
+      }
+
       const startedProject = await projectDao.updateProjectStatus({
         projectId,
         status: projectStatus.IN_PROGRESS
@@ -678,6 +689,25 @@ const projectService = ({
       fastify.log.error('[Project Service] :: Error starting project:', error);
       throw Error('Error starting project');
     }
+  },
+
+  async isFullyAssigned(projectId) {
+    let isFullyAssigned = true;
+    const milestones = await milestoneService.getMilestonesByProject(projectId);
+
+    if (!milestones || milestones == null) {
+      return false;
+    }
+
+    await milestones.forEach(async milestone => {
+      await milestone.activities.forEach(activity => {
+        if (!activity.oracle || isEmpty(activity.oracle)) {
+          isFullyAssigned = false;
+        }
+      });
+    });
+
+    return isFullyAssigned;
   },
 
   /**
