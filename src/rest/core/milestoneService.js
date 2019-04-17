@@ -389,6 +389,22 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
       milestones
     );
 
+    let valid = false;
+    await milestones.forEach(m => {
+      if (!this.isMilestoneEmpty(m)) {
+        if (!isEmpty(m.activityList)) {
+          valid = true;
+        }
+      }
+    });
+    if (!valid) {
+      response.errors.push({
+        rowNumber: 1,
+        msg:
+          'Could not find any valid activities. There should be at least one.'
+      });
+    }
+
     return response;
   },
 
