@@ -695,7 +695,10 @@ const activityService = ({
       }
 
       const evidence = [...fileEvidence, ...photoEvidence];
-      const activityDetail = { ...activity, evidence };
+
+      const oracle = await this.getOracleFromActivity(activityId);
+
+      const activityDetail = { ...activity, evidence, oracle };
 
       return activityDetail;
     } catch (error) {
