@@ -10,6 +10,8 @@ const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
 const activityServiceBuilder = require('../core/activityService');
 
 const basePath = '/activities';
+const restBasePath = '/activity';
+
 const routes = async fastify => {
   fastify.register(fileUpload);
   const fileService = fileServiceBuilder({
@@ -135,7 +137,7 @@ const routes = async fastify => {
   );
 
   fastify.delete(
-    `${basePath}/:id`,
+    `${restBasePath}/:id`,
     {
       schema: {
         params: {
