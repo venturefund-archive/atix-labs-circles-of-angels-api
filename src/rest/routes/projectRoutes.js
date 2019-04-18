@@ -705,7 +705,9 @@ const routes = async fastify => {
             '[Project Routes] :: Error starting project:',
             startedProject.error
           );
-          reply.status(startedProject.status).send(startedProject.error);
+          reply
+            .status(startedProject.status)
+            .send({ error: startedProject.error });
         } else {
           reply.status(200).send({ success: 'Project started successfully!' });
         }
@@ -738,45 +740,6 @@ const routes = async fastify => {
       );
       try {
         const projects = await projectService.getProjectsAsOracle(id);
-
-        if (projects.error) {
-          fastify.log.error(
-            '[Project Routes] :: Error getting projects:',
-            projects.error
-          );
-          reply.status(projects.status).send(projects.error);
-        } else {
-          reply.status(200).send(projects);
-        }
-      } catch (error) {
-        fastify.log.error(
-          '[Project Routes] :: Error getting projects: ',
-          error
-        );
-        reply.status(500).send({ error: 'Error getting projects' });
-      }
-    }
-  );
-
-  fastify.get(
-    `${basePath}/:id/isokay`,
-    {
-      schema: {
-        params: {
-          id: { type: 'number' }
-        }
-      },
-      response: {
-        200: { type: 'number' }
-      }
-    },
-    async (request, reply) => {
-      const { id } = request.params;
-      fastify.log.info(
-        `[Project Routes] :: GET request at /project/${id}/isokay`
-      );
-      try {
-        const projects = await projectService.isFullyAssigned(id);
 
         if (projects.error) {
           fastify.log.error(
