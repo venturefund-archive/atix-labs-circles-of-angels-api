@@ -35,6 +35,36 @@ const routes = async fastify => {
     activityService
   });
 
+  fastify.delete(
+    `${basePath}/:id`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'application/json',
+          properties: {
+            response: { type: 'application/json' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(`[Milestone Routes] Deleting milestone with id: ${id}`);
+      try {
+        const deleted = await milestoneService.deleteMilestone(id);
+        reply.status(200).send(deleted);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send('Error deleting milestone');
+      }
+    }
+  );
+
   fastify.post(
     `${basePath}`,
     {
