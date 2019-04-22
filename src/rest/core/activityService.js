@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { forEachPromise } = require('../util/promises');
 const configs = require('../../../config/configs');
-const { evidenceFileTypes } = require('../util/constants');
+const { evidenceFileTypes, userRoles } = require('../util/constants');
 const { activityStatus } = require('../util/constants');
 
 const activityService = ({
@@ -15,7 +15,8 @@ const activityService = ({
   photoService,
   activityFileDao,
   activityPhotoDao,
-  oracleActivityDao
+  oracleActivityDao,
+  userService
 }) => ({
   /**
    * Creates an Activity for an existing Milestone
@@ -599,21 +600,116 @@ const activityService = ({
   },
 
   /**
-   * Create a oracle reference between a user and activity
+   * Assigns an oracle to an activity, overwriting existing relation if there is one
+   *
    * @param {number} userId
    * @param {number} activityId
+   * @returns created record | error
    */
-  assignOracleToActivity(userId, activityId) {
-    return oracleActivityDao.assignOracleToActivity(userId, activityId);
+  async assignOracleToActivity(userId, activityId) {
+    fastify.log.info(
+      `[Activity Service] :: Assigning User ID ${userId} to Activity ID ${activityId}`
+    );
+
+    try {
+      // check if user is oracle
+      const user = await userService.getUserById(userId);
+
+      if (!user || user == null) {
+        fastify.log.error(`[Activity Service] :: User ID ${userId} not found`);
+        return { error: 'User not found', status: 404 };
+      }
+
+      if (user.role && user.role.id !== userRoles.ORACLE) {
+        fastify.log.error(
+          `[Activity Service] :: User ID ${userId} is not an oracle`
+        );
+        return { error: 'User is not an oracle', status: 409 };
+      }
+
+      // check if activity has oracle assigned
+      const oracleActivity = await oracleActivityDao.getOracleFromActivity(
+        activityId
+      );
+
+      if (oracleActivity) {
+        // if user already assigned then return
+        if (oracleActivity.user.id === userId) {
+          fastify.log.info(
+            '[Activity Service] :: This oracle is already assigned to this Activity',
+            oracleActivity
+          );
+          return oracleActivity;
+        }
+        // unassign if user is different
+        const unassignOracleActivty = await this.unassignOracleToActivity(
+          activityId
+        );
+
+        if (unassignOracleActivty.error) {
+          fastify.log.error(
+            `[Activity Service] :: Could not unassign Oracles from Activity ID ${activityId}`
+          );
+          return unassignOracleActivty;
+        }
+      }
+      // assign user
+      const assignedOracle = await oracleActivityDao.assignOracleToActivity(
+        userId,
+        activityId
+      );
+
+      if (!assignedOracle || assignedOracle == null) {
+        fastify.log.error(
+          `[Activity Service] :: Could not assign User ID ${userId} to Activity ID ${activityId}`
+        );
+        return { error: 'Error assigning user to activity', status: 500 };
+      }
+
+      return assignedOracle;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Error assigning user to activity:',
+        error
+      );
+      throw Error('Error assigning user to activity');
+    }
   },
 
   /**
-   * Destroy referencie between a user and activity
-   * @param {number} userId
+   * Unassigns oracles from an activity
+   *
    * @param {number} activityId
+   * @returns deleted record | errors
    */
-  unassignOracleToActivity(activityId) {
-    return oracleActivityDao.unassignOracleToActivity(activityId);
+  async unassignOracleToActivity(activityId) {
+    fastify.log.info(
+      `[Activity Service] :: Unassigning Oracles from Activity ID ${activityId}`
+    );
+
+    try {
+      const oracleActivity = await oracleActivityDao.unassignOracleToActivity(
+        activityId
+      );
+
+      if (!oracleActivity || oracleActivity == null) {
+        fastify.log.error(
+          `[Activity Service] :: Could not unassign Oracles from Activity ID ${activityId}`
+        );
+        return {
+          error: 'Could not unassign Oracles from Activity',
+          status: 500
+        };
+      }
+
+      return oracleActivity;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Error unassigning oracles from activity',
+        error
+      );
+      throw Error('Error unassigning oracles from activity');
+    }
   },
 
   /**

@@ -8,6 +8,8 @@ const activityPhotoDaoBuilder = require('../dao/activityPhotoDao');
 const activityDaoBuilder = require('../dao/activityDao');
 const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
 const activityServiceBuilder = require('../core/activityService');
+const userServiceBuilder = require('../core/userService');
+const userDaoBuilder = require('../dao/userDao');
 
 const basePath = '/activities';
 const restBasePath = '/activity';
@@ -22,6 +24,10 @@ const routes = async fastify => {
     fastify,
     photoDao: photoDaoBuilder(fastify.models.photo)
   });
+  const userService = userServiceBuilder({
+    fastify,
+    userDao: userDaoBuilder({ userModel: fastify.models.user })
+  });
   const activityService = activityServiceBuilder({
     fastify,
     activityDao: activityDaoBuilder(fastify.models.activity),
@@ -29,7 +35,8 @@ const routes = async fastify => {
     photoService,
     activityFileDao: activityFileDaoBuilder(fastify.models.activity_file),
     activityPhotoDao: activityPhotoDaoBuilder(fastify.models.activity_photo),
-    oracleActivityDao: oracleActivityDaoBuilder(fastify.models.oracle_activity)
+    oracleActivityDao: oracleActivityDaoBuilder(fastify.models.oracle_activity),
+    userService
   });
 
   fastify.post(
@@ -300,7 +307,7 @@ const routes = async fastify => {
     }
   );
 
-  fastify.post(
+  fastify.put(
     `${basePath}/:id/assignOracle/:userId`,
     {
       schema: {
@@ -321,19 +328,28 @@ const routes = async fastify => {
     async (request, reply) => {
       const { id, userId } = request.params;
       fastify.log.info(
-        `[Activity Routes] Assign user ${userId} to activity ${id} as Oracle`
+        `[Activity Routes] :: PUT request at /activities/${id}/assignOracle/${userId}`
       );
+
       try {
         const assign = await activityService.assignOracleToActivity(userId, id);
-        reply.status(200).send(Boolean(assign));
+
+        if (assign.error) {
+          reply.status(assign.status).send(assign);
+        } else {
+          reply.status(200).send({ success: 'Oracle assigned successfully!' });
+        }
       } catch (error) {
-        fastify.log.error(error);
-        reply.status(500).send('Error assigning user on activity');
+        fastify.log.error(
+          '[Activity Routes] :: Error assigning user to activity:',
+          error
+        );
+        reply.status(500).send({ error: 'Error assigning user to activity' });
       }
     }
   );
 
-  fastify.post(
+  fastify.delete(
     `${basePath}/:id/unassignOracle`,
     {
       schema: {
@@ -352,13 +368,24 @@ const routes = async fastify => {
     },
     async (request, reply) => {
       const { id } = request.params;
-      fastify.log.info(`[Activity Routes] Unassign oracle to activity ${id}`);
+      fastify.log.info(
+        `[Activity Routes] :: DELETE request at /activities/${id}/unassignOracle`
+      );
       try {
         const assign = await activityService.unassignOracleToActivity(id);
-        reply.status(200).send(Boolean(assign));
+        if (assign.error) {
+          reply.status(assign.status).send(assign);
+        } else {
+          reply
+            .status(200)
+            .send({ success: 'Oracles successfully unassigned!' });
+        }
       } catch (error) {
-        fastify.log.error(error);
-        reply.status(500).send('Error assigning user on activity');
+        fastify.log.error(
+          '[Activity Routes] :: Error unassigning oracles from activity:',
+          error
+        );
+        reply.status(500).send('Error unassigning oracles from activity');
       }
     }
   );
