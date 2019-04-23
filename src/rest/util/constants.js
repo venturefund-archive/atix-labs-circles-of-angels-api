@@ -24,9 +24,17 @@ const activityStatus = {
   COMPLETED: 4
 };
 
+const userRoles = {
+  BO_ADMIN: 1,
+  SOCIAL_ENTREPRENEUR: 2,
+  IMPACT_FUNDER: 3,
+  ORACLE: 4
+};
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
   projectStatus,
-  activityStatus
+  activityStatus,
+  userRoles
 };
