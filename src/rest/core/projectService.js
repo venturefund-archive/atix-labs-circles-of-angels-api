@@ -34,7 +34,8 @@ const projectService = ({
     projectCardPhoto,
     projectMilestones,
     projectAgreement,
-    ownerId
+    ownerId,
+    userDao
   ) {
     try {
       const newProject = Object.assign({}, JSON.parse(project));
@@ -46,6 +47,18 @@ const projectService = ({
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
       const savedProject = await projectDao.saveProject(newProject);
+      const userOwner = await userDao.getUserById(ownerId);
+
+      /**integration with smart contract */
+      const transactionHash = await fastify.eth.createProject(
+        userOwner.address,
+        error => {
+          fastify.log.error(error);
+        }
+      );
+      savedProject.transactionHash = transactionHash;
+      /** */
+
       fastify.log.info('[Project Service] :: Project created:', savedProject);
 
       addPathToFilesProperties({
@@ -470,7 +483,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: 'ERROR: Project doesn\'t have an agreement uploaded',
+          error: "ERROR: Project doesn't have an agreement uploaded",
           status: 409
         };
       }
@@ -530,7 +543,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
+          error: "ERROR: Project doesn't have a pitch proposal uploaded",
           status: 409
         };
       }

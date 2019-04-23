@@ -16,6 +16,7 @@ CREATE TABLE public.project (
 	"updatedAt" date NULL,
 	"projectAgreement" varchar(100) NULL,
 	"milestonesFile" varchar(100) NULL,
+	"transactionHash" varchar(80) NULL,
 	CONSTRAINT project_pkey PRIMARY KEY (id),
 	CONSTRAINT card_photo_fk FOREIGN KEY ("cardPhoto") REFERENCES photo(id),
 	CONSTRAINT cover_photo_fk FOREIGN KEY ("coverPhoto") REFERENCES photo(id)

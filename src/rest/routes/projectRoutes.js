@@ -113,7 +113,8 @@ const routes = async fastify => {
           projectCardPhoto,
           projectMilestones,
           projectAgreement,
-          ownerId
+          ownerId,
+          userDaoBuilder({ userModel: fastify.models.user })
         );
 
         if (response.milestones.errors) {

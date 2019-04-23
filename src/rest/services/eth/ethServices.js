@@ -67,13 +67,13 @@ const ethSend = async (sender, method, onError, onConfirm) => {
       gasLimit: 1000000
     })
     .on('error', error => {
-      onError(error);
+      if (onError) onError(error);
     })
     .on('transactionHash', transactionHash => {
       return transactionHash;
     })
     .on('confirmation', async (confirmationNumber, receipt) => {
-      onConfirm({ confirmationNumber, receipt });
+      if (onConfirm) onConfirm({ confirmationNumber, receipt });
     });
 };
 
