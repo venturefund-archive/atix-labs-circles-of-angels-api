@@ -3,8 +3,16 @@ exports.server = {
   port: 3001
 };
 
+const contractJson = require('../../temporal_contract/build/contracts/MetaCoin.json');
+
 exports.eth = {
-  host: 'http://localhost:8545'
+  HOST: 'http://localhost:9545',
+  CONTRACT_ADDRESS: contractJson.networks['5777'].address,
+  CONTRACT_ABI: contractJson.abi,
+  DEFAULT_CONFIG: {
+    defaultGas: 50000,
+    defaultGasPrice: 1000000
+  }
 };
 
 exports.database = {
@@ -27,7 +35,7 @@ exports.database = {
 };
 
 exports.fileServer = {
-  filePath: '/home/atixlabs/files/server'
+  filePath: '/home/federico/files/server'
 };
 
 exports.swagger = {
