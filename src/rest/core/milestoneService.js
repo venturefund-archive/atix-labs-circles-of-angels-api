@@ -1,5 +1,6 @@
 const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
+const { activityStatus } = require('../util/constants');
 
 const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
   /**
@@ -582,6 +583,40 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
         error
       );
       throw Error('Error getting Milestones');
+    }
+  },
+
+  async tryCompleteMilestone(milestoneId) {
+    try {
+      fastify.log.info(
+        '[Milestone Service] :: Check if milestone is complete with id: ',
+        milestoneId
+      );
+      const { activities } = await milestoneDao.getMilestoneActivities(
+        milestoneId
+      );
+      let isCompleted = true;
+      await activities.forEach(async activity => {
+        const transactionConfirmed = activity.transactionHash
+          ? await fastify.eth.isTransactionConfirmed(activity.transactionHash)
+          : false;
+
+        if (
+          !transactionConfirmed &&
+          activity.status !== activityStatus.COMPLETED
+        ) {
+          isCompleted = false;
+        }
+      });
+      if (isCompleted)
+        fastify.log.info('[Milestone Service] :: milestone complete: ', milestoneId);
+      return milestoneDao.updateMilestoneStatus(
+        milestoneId,
+        activityStatus.COMPLETED
+      );
+    } catch (error) {
+      console.error(error);
+      fastify.log.error('Error trying complete milestone');
     }
   }
 });

@@ -10,6 +10,8 @@ const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
 const activityServiceBuilder = require('../core/activityService');
 const userServiceBuilder = require('../core/userService');
 const userDaoBuilder = require('../dao/userDao');
+const milestoneDaoBuilder = require('../dao/milestoneDao');
+const milestoneServiceBuilder = require('../core/milestoneService');
 
 const basePath = '/activities';
 const restBasePath = '/activity';
@@ -37,6 +39,11 @@ const routes = async fastify => {
     activityPhotoDao: activityPhotoDaoBuilder(fastify.models.activity_photo),
     oracleActivityDao: oracleActivityDaoBuilder(fastify.models.oracle_activity),
     userService
+  });
+  const milestoneService = milestoneServiceBuilder({
+    fastify,
+    milestoneDao: milestoneDaoBuilder(fastify.models.milestone),
+    activityService
   });
 
   fastify.post(
@@ -467,8 +474,11 @@ const routes = async fastify => {
       const { activityId } = request.params;
       fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
       try {
-        const response = await activityService.completeActivity(activityId);
-        reply.status(200).send(Boolean(response));
+        const activity = (await activityService.completeActivity(
+          activityId
+        ))[0];
+        await milestoneService.tryCompleteMilestone(activity.milestone);
+        reply.status(200).send(Boolean(activity));
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send('Error assigning user on activity');

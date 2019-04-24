@@ -28,7 +28,9 @@ const ethServices = async providerHost => {
     },
     async isTransactionConfirmed(transactionHash) {
       const transaction = await web3.eth.getTransaction(transactionHash);
-      return transaction && transaction.blockHash && transaction.blockNumber;
+      return Boolean(
+        transaction && transaction.blockHash && transaction.blockNumber
+      );
     }
   };
 };
