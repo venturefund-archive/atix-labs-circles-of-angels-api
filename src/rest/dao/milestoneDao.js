@@ -50,6 +50,7 @@ const getAllMilestones = milestoneModel => async () => {
   const milestones = await milestoneModel
     .find()
     .populate('status')
+    .populate('project')
     .sort('createdAt DESC');
   return milestones;
 };
