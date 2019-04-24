@@ -1,7 +1,7 @@
 const getMilestoneById = milestoneModel => async milestoneId => {
   const milestone = await milestoneModel.findOne({ id: milestoneId });
   return milestone;
-}
+};
 
 const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
   const toSave = {
@@ -28,7 +28,7 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
 };
 
 const getMilestoneActivities = milestoneModel => async milestoneId => {
-  const milestone = milestoneModel
+  const milestone = await milestoneModel
     .findOne({ id: milestoneId })
     .populate('activities')
     .populate('status');
@@ -37,12 +37,20 @@ const getMilestoneActivities = milestoneModel => async milestoneId => {
 };
 
 const deleteMilestone = milestoneModel => async milestoneId => {
-  const deleted = milestoneModel.destroy(milestoneId).fetch();
+  const deleted = await milestoneModel.destroy(milestoneId).fetch();
   return deleted;
 };
 
 const getMilestonesByProject = milestoneModel => async projectId => {
-  const milestones = milestoneModel.find({ project: projectId });
+  const milestones = await milestoneModel.find({ project: projectId });
+  return milestones;
+};
+
+const getAllMilestones = milestoneModel => async () => {
+  const milestones = await milestoneModel
+    .find()
+    .populate('status')
+    .sort('createdAt DESC');
   return milestones;
 };
 
@@ -52,5 +60,6 @@ module.exports = milestoneModel => ({
   getMilestoneActivities: getMilestoneActivities(milestoneModel),
   deleteMilestone: deleteMilestone(milestoneModel),
   updateMilestone: updateMilestone(milestoneModel),
-  getMilestonesByProject: getMilestonesByProject(milestoneModel)
+  getMilestonesByProject: getMilestonesByProject(milestoneModel),
+  getAllMilestones: getAllMilestones(milestoneModel)
 });
