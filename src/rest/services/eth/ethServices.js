@@ -17,48 +17,33 @@ const ethServices = async providerHost => {
     async createAccount() {
       return web3.eth.accounts.create();
     },
-    async createProject(sender, onError, onConfirm) {
-      return ethSend(
-        sender,
-        COAContract.methods.createProject(),
-        onError,
-        onConfirm
-      );
+    async createProject(sender, onError) {
+      return ethSend(sender, COAContract.methods.createProject(), onError);
     },
-    async startProject(sender, onError, onConfirm) {
-      return ethSend(
-        sender,
-        COAContract.methods.startProject(),
-        onError,
-        onConfirm
-      );
+    async startProject(sender, onError) {
+      return ethSend(sender, COAContract.methods.startProject(), onError);
     },
-    async validateActivity(sender, onError, onConfirm) {
-      return ethSend(
-        sender,
-        COAContract.methods.validateActivity(),
-        onError,
-        onConfirm
-      );
+    async validateActivity(sender, onError) {
+      return ethSend(sender, COAContract.methods.validateActivity(), onError);
     }
   };
 };
 
-const ethSend = async (sender, method, onError, onConfirm) => {
-  method
-    .send({
-      from: sender,
-      gasLimit: 1000000
-    })
-    .on('error', error => {
-      if (onError) onError(error);
-    })
-    .on('transactionHash', transactionHash => {
-      return transactionHash;
-    })
-    .on('confirmation', async (confirmationNumber, receipt) => {
-      if (onConfirm) onConfirm({ confirmationNumber, receipt });
-    });
+const ethSend = async (sender, method, onError) => {
+  return new Promise((resolve, reject) => {
+    method
+      .send({
+        from: sender,
+        gasLimit: 1000000
+      })
+      .on('error', error => {
+        if (onError) onError(error);
+        reject();
+      })
+      .on('transactionHash', transactionHash => {
+        resolve(transactionHash);
+      });
+  });
 };
 
 module.exports = ethServices;
