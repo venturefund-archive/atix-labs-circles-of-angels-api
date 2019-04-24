@@ -377,6 +377,55 @@ const routes = async fastify => {
   );
 
   fastify.get(
+    `${basePath}/proposalTemplate`,
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              response: { type: 'object' }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info(
+        '[Project Routes] :: Downloading project proposal template file'
+      );
+      try {
+        const res = await projectService.downloadProposalTemplate();
+
+        if (res && res.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error getting project proposal template:',
+            res.error
+          );
+          reply.status(res.status).send(res.error);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Project proposal template downloaded:',
+            res
+          );
+
+          reply.header('file', res.filename);
+          reply.header('Access-Control-Expose-Headers', 'file');
+          reply.send(res.filestream);
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error getting project proposal template:',
+          error
+        );
+        reply
+          .status(500)
+          .send({ error: 'Error getting  project proposal template' });
+      }
+    }
+  );
+
+  fastify.get(
     `${basePath}/:projectId/getMilestonesFile`,
     {
       schema: {
