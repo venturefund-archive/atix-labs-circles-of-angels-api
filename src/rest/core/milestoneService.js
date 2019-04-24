@@ -2,7 +2,12 @@ const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
 
-const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
+const milestoneService = ({
+  fastify,
+  milestoneDao,
+  activityService,
+  milestoneBudgetStatusDao
+}) => ({
   /**
    * Creates a Milestone for an existing Project.
    *
@@ -591,7 +596,7 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     try {
       const milestones = await milestoneDao.getAllMilestones();
 
-      if (!milestones || milestones == null) {
+      if (milestones.length === 0) {
         fastify.log.info('[Milestone Service] :: There are no milestones');
       }
 
@@ -679,6 +684,28 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
         error
       );
       throw Error('Error updating Milestone budget transfer status');
+    }
+  },
+
+  async getAllBudgetStatus() {
+    fastify.log.info(
+      '[Milestone Service] :: Getting all available budget status'
+    );
+
+    try {
+      const budgetStatus = milestoneBudgetStatusDao.findAll();
+
+      if (budgetStatus.length === 0) {
+        fastify.log.info('[Milestone Service] :: No budget status loaded');
+      }
+
+      return budgetStatus;
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error getting all available budget status:',
+        error
+      );
+      throw Error('Error getting all available budget transfer status');
     }
   }
 });
