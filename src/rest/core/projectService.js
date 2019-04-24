@@ -816,6 +816,25 @@ const projectService = ({
       fastify.log.error('[Project Service] :: Error getting Projects:', error);
       throw Error('Error getting Projects');
     }
+  },
+
+  async getProjectOwner(projectId) {
+    try {
+      const project = await projectDao.getProjectById({ projectId });
+      const user = await userDao.getUserById(project.ownerId);
+      return user;
+    } catch (error) {
+      throw Error('Error getting project owner');
+    }
+  },
+
+  async isProjectTransactionConfirmed(projectId) {
+    try {
+      const project = await projectDao.getProjectById({ projectId });
+      return fastify.eth.isTransactionConfirmed(project.transactionHash);
+    } catch (error) {
+      throw Error('Error getting confirmation of transaction');
+    }
   }
 });
 

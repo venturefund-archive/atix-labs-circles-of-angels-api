@@ -25,6 +25,10 @@ const ethServices = async providerHost => {
     },
     async validateActivity(sender, onError) {
       return ethSend(sender, COAContract.methods.validateActivity(), onError);
+    },
+    async isTransactionConfirmed(transactionHash) {
+      const transaction = await web3.eth.getTransaction(transactionHash);
+      return transaction && transaction.blockHash && transaction.blockNumber;
     }
   };
 };
