@@ -7,7 +7,8 @@ const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
   const toSave = {
     ...milestone,
     project: projectId,
-    status: 1
+    status: 1,
+    budgetStatus: 1
   };
   const createdMilestone = await milestoneModel.create(toSave);
   return createdMilestone;
@@ -19,6 +20,7 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
   delete toUpdate.id;
   delete toUpdate.project;
   toUpdate.status = toUpdate.status || 1;
+  toUpdate.budgetStatus = toUpdate.budgetStatus || 1;
 
   const savedMilestone = await milestoneModel
     .updateOne({ id: milestoneId })
@@ -31,7 +33,8 @@ const getMilestoneActivities = milestoneModel => async milestoneId => {
   const milestone = await milestoneModel
     .findOne({ id: milestoneId })
     .populate('activities')
-    .populate('status');
+    .populate('status')
+    .populate('budgetStatus');
 
   return milestone || [];
 };
@@ -51,8 +54,10 @@ const getAllMilestones = milestoneModel => async () => {
     .find()
     .populate('status')
     .populate('project')
+    .populate('budgetStatus')
     .sort('createdAt DESC');
-  return milestones;
+
+  return milestones || [];
 };
 
 module.exports = milestoneModel => ({
