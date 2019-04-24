@@ -13,7 +13,8 @@ const projectService = ({
   milestoneService,
   projectStatusDao,
   photoService,
-  transferService
+  transferService,
+  userDao
 }) => ({
   /**
    * Uploads the project's images and files to the server.
@@ -34,8 +35,7 @@ const projectService = ({
     projectCardPhoto,
     projectMilestones,
     projectAgreement,
-    ownerId,
-    userDao
+    ownerId
   ) {
     try {
       const newProject = Object.assign({}, JSON.parse(project));
@@ -49,15 +49,17 @@ const projectService = ({
       const savedProject = await projectDao.saveProject(newProject);
       const userOwner = await userDao.getUserById(ownerId);
 
-      /**integration with smart contract */
       const transactionHash = await fastify.eth.createProject(
         userOwner.address,
         error => {
           fastify.log.error(error);
         }
       );
-      savedProject.transactionHash = transactionHash;
-      /** */
+
+      fastify.log.info(
+        '[Project Service] :: transaction hash of project creation: ',
+        transactionHash
+      );
 
       fastify.log.info('[Project Service] :: Project created:', savedProject);
 
@@ -738,10 +740,21 @@ const projectService = ({
         };
       }
 
-      const startedProject = await projectDao.updateProjectStatus({
-        projectId,
-        status: projectStatus.IN_PROGRESS
-      });
+      const userOwner = await projectDao.getUserOwnerOfProject(projectId);
+      const transactionHash = await fastify.eth.startProject(
+        userOwner.address,
+        error => {
+          fastify.log.error(error);
+        }
+      );
+
+      const startedProject = await projectDao.updateProjectStatusWithTransaction(
+        {
+          projectId,
+          status: projectStatus.IN_PROGRESS,
+          transactionHash
+        }
+      );
 
       if (!startedProject && startedProject == null) {
         fastify.log.error(

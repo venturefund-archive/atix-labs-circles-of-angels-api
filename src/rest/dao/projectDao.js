@@ -22,6 +22,17 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     return response;
   },
 
+  async updateProjectStatusWithTransaction({
+    projectId,
+    status,
+    transactionHash
+  }) {
+    const response = projectModel
+      .updateOne({ id: projectId })
+      .set({ status, transactionHash });
+    return response;
+  },
+
   async getProjectById({ projectId }) {
     const project = await projectModel.findOne({ id: projectId });
 
@@ -84,6 +95,16 @@ const ProjectDao = ({ projectModel, userDao }) => ({
       where: { id: projectId },
       select: ['coverPhoto', 'cardPhoto']
     });
+  },
+
+  async getUserOwnerOfProject(projectId) {
+    try {
+      const project = await this.getProjectById({ projectId });
+      const owner = await userDao.getUserById(project.ownerId);
+      return owner;
+    } catch (error) {
+      throw Error('Error getting User');
+    }
   }
 });
 

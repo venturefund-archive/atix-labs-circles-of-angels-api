@@ -25,22 +25,6 @@ const ethServices = async providerHost => {
         onConfirm
       );
     },
-    async createMilestones(sender, onError, onConfirm) {
-      return ethSend(
-        sender,
-        COAContract.methods.createMilestones(),
-        onError,
-        onConfirm
-      );
-    },
-    async createActivity(sender, onError, onConfirm) {
-      return ethSend(
-        sender,
-        COAContract.methods.createActivity(),
-        onError,
-        onConfirm
-      );
-    },
     async startProject(sender, onError, onConfirm) {
       return ethSend(
         sender,
