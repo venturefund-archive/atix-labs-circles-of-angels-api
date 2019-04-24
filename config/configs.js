@@ -3,7 +3,7 @@ exports.server = {
   port: 3001
 };
 
-const contractJson = require('../../temporal_contract/build/contracts/MetaCoin.json');
+const contractJson = require('../../circle-of-angels-solidity/build/contracts/COAProjectAdmin.json');
 
 exports.eth = {
   HOST: 'http://localhost:9545',
@@ -11,7 +11,7 @@ exports.eth = {
   CONTRACT_ABI: contractJson.abi,
   DEFAULT_CONFIG: {
     defaultGas: 50000,
-    defaultGasPrice: 1000000
+    defaultGasPrice: 1000000,
   }
 };
 

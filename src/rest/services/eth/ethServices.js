@@ -13,6 +13,17 @@ const ethServices = async providerHost => {
     ethConfig.DEFAULT_CONFIG
   );
 
+  const res = await ethSend(
+    '0x60faacf4fc1c1077b8c5d3daa2650e8e43085157',
+    COAContract.methods.createProject(
+      1,
+      '0x60faacf4fc1c1077b8c5d3daa2650e8e43085157',
+      'Nombre proyecto'
+    ),
+    error => console.log.error(error)
+  );
+  console.log(res);
+
   return {
     async createAccount() {
       return web3.eth.accounts.create();
