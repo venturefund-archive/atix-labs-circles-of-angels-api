@@ -55,9 +55,20 @@ const getAllMilestones = milestoneModel => async () => {
     .populate('status')
     .populate('project')
     .populate('budgetStatus')
-    .sort('createdAt DESC');
+    .sort('id DESC');
 
   return milestones || [];
+};
+
+const updateBudgetStatus = milestoneModel => async (
+  milestoneId,
+  budgetStatusId
+) => {
+  const milestone = await milestoneModel
+    .updateOne({ id: milestoneId })
+    .set({ budgetStatus: budgetStatusId });
+
+  return milestone;
 };
 
 module.exports = milestoneModel => ({
@@ -67,5 +78,6 @@ module.exports = milestoneModel => ({
   deleteMilestone: deleteMilestone(milestoneModel),
   updateMilestone: updateMilestone(milestoneModel),
   getMilestonesByProject: getMilestonesByProject(milestoneModel),
-  getAllMilestones: getAllMilestones(milestoneModel)
+  getAllMilestones: getAllMilestones(milestoneModel),
+  updateBudgetStatus: updateBudgetStatus(milestoneModel)
 });

@@ -42,7 +42,7 @@ const routes = async fastify => {
         200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            milestones: { type: 'array', items: { type: 'object' } }
           }
         }
       }
@@ -51,7 +51,6 @@ const routes = async fastify => {
       fastify.log.info('[Milestone Routes] :: GET request at /milestones');
       try {
         const milestones = await milestoneService.getAllMilestones();
-
         reply.status(200).send({ milestones });
       } catch (error) {
         fastify.log.error(
@@ -62,6 +61,62 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.put(
+    `${basePath}/:id/budgetStatus`,
+    {
+      schema: {
+        params: {
+          id: { type: 'number' }
+        },
+        body: {
+          budgetStatusId: { type: 'number' }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    async (req, reply) => {
+      fastify.log.info(
+        `[Milestone Routes] :: PUT request at /${basePath}/${
+          req.params.id
+        }/budgetStatus:`,
+        req.body
+      );
+
+      const { budgetStatusId } = req.body;
+      const { id } = req.params;
+
+      try {
+        const response = await milestoneService.updateBudgetStatus(
+          id,
+          budgetStatusId
+        );
+
+        if (response.error) {
+          fastify.log.error(
+            '[Milestone Routes] :: Error updating milestone: ',
+            response.error
+          );
+          reply.status(response.status).send(response);
+        } else {
+          reply.send({ success: 'Milestone updated successfully!' });
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Milestone Routes] :: Error updating milestone: ',
+          error
+        );
+        reply.status(500).send({ error: 'Error updating milestone' });
+      }
+    }
+  )
 
   fastify.delete(
     `${basePath}/:id`,

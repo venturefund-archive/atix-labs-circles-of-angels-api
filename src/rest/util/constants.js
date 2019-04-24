@@ -31,10 +31,16 @@ const userRoles = {
   ORACLE: 4
 };
 
+const milestoneBudgetStatus = {
+  PENDING: 1,
+  TRANSFERRED: 2
+};
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
   projectStatus,
   activityStatus,
-  userRoles
+  userRoles,
+  milestoneBudgetStatus
 };
