@@ -35,6 +35,34 @@ const routes = async fastify => {
     activityService
   });
 
+  fastify.get(
+    `${basePath}`,
+    {
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[Milestone Routes] :: GET request at /milestones');
+      try {
+        const milestones = await milestoneService.getAllMilestones();
+
+        reply.status(200).send({ milestones });
+      } catch (error) {
+        fastify.log.error(
+          '[Milestone Routes] :: Error getting all milestones: ',
+          error
+        );
+        reply.status(500).send({ error: 'Error getting all milestones' });
+      }
+    }
+  );
+
   fastify.delete(
     `${basePath}/:id`,
     {

@@ -1,13 +1,14 @@
 const getMilestoneById = milestoneModel => async milestoneId => {
   const milestone = await milestoneModel.findOne({ id: milestoneId });
   return milestone;
-}
+};
 
 const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
   const toSave = {
     ...milestone,
     project: projectId,
-    status: 1
+    status: 1,
+    budgetStatus: 1
   };
   const createdMilestone = await milestoneModel.create(toSave);
   return createdMilestone;
@@ -19,6 +20,7 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
   delete toUpdate.id;
   delete toUpdate.project;
   toUpdate.status = toUpdate.status || 1;
+  toUpdate.budgetStatus = toUpdate.budgetStatus || 1;
 
   const savedMilestone = await milestoneModel
     .updateOne({ id: milestoneId })
@@ -28,22 +30,34 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
 };
 
 const getMilestoneActivities = milestoneModel => async milestoneId => {
-  const milestone = milestoneModel
+  const milestone = await milestoneModel
     .findOne({ id: milestoneId })
     .populate('activities')
-    .populate('status');
+    .populate('status')
+    .populate('budgetStatus');
 
   return milestone || [];
 };
 
 const deleteMilestone = milestoneModel => async milestoneId => {
-  const deleted = milestoneModel.destroy(milestoneId).fetch();
+  const deleted = await milestoneModel.destroy(milestoneId).fetch();
   return deleted;
 };
 
 const getMilestonesByProject = milestoneModel => async projectId => {
-  const milestones = milestoneModel.find({ project: projectId });
+  const milestones = await milestoneModel.find({ project: projectId });
   return milestones;
+};
+
+const getAllMilestones = milestoneModel => async () => {
+  const milestones = await milestoneModel
+    .find()
+    .populate('status')
+    .populate('project')
+    .populate('budgetStatus')
+    .sort('createdAt DESC');
+
+  return milestones || [];
 };
 
 module.exports = milestoneModel => ({
@@ -52,5 +66,6 @@ module.exports = milestoneModel => ({
   getMilestoneActivities: getMilestoneActivities(milestoneModel),
   deleteMilestone: deleteMilestone(milestoneModel),
   updateMilestone: updateMilestone(milestoneModel),
-  getMilestonesByProject: getMilestonesByProject(milestoneModel)
+  getMilestonesByProject: getMilestonesByProject(milestoneModel),
+  getAllMilestones: getAllMilestones(milestoneModel)
 });

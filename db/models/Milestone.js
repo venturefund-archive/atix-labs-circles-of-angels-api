@@ -41,6 +41,10 @@ module.exports = {
     },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } }
+    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    budgetStatus: {
+      columnName: 'budgetStatus',
+      model: 'milestone_budget_status'
+    }
   }
 };
