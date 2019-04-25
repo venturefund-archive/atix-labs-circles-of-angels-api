@@ -646,6 +646,11 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
       });
     });
   },
+
+  async getMilestoneById(milestoneId) {
+    return milestoneDao.getMilestoneById(milestoneId);
+  },
+
   async getAllMilestones() {
     fastify.log.info('[Milestone Service] :: Getting all milestones');
     try {
