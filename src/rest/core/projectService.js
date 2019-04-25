@@ -745,21 +745,23 @@ const projectService = ({
       }
 
       const userOwner = await projectDao.getUserOwnerOfProject(projectId);
-      
+
       // TODO: check start project in the blockchain and save the tx id
       const transactionHash = await fastify.eth.startProject(
         userOwner.address,
-        error => {
-          fastify.log.error(error);
-        }
+        { projectId }
       );
-
       const startedProject = await projectDao.updateProjectStatusWithTransaction(
         {
           projectId,
           status: projectStatus.IN_PROGRESS,
           transactionHash
         }
+      );
+
+      await milestoneService.startMilestonesOfProject(
+        startedProject,
+        userOwner
       );
 
       if (!startedProject && startedProject == null) {
