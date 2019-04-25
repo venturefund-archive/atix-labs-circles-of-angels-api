@@ -609,7 +609,10 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
         }
       });
       if (isCompleted)
-        fastify.log.info('[Milestone Service] :: milestone complete: ', milestoneId);
+        fastify.log.info(
+          '[Milestone Service] :: milestone complete: ',
+          milestoneId
+        );
       return milestoneDao.updateMilestoneStatus(
         milestoneId,
         activityStatus.COMPLETED
@@ -617,6 +620,53 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     } catch (error) {
       console.error(error);
       fastify.log.error('Error trying complete milestone');
+    }
+  },
+
+  async startMilestonesOfProject(project, owner) {
+    const milestones = await this.getMilestonesByProject(project.id);
+    milestones.forEach(async milestone => {
+      await fastify.eth.createMilestone(owner.address, {
+        milestoneId: milestone.id,
+        projectId: project.id,
+        budget: milestone.budget,
+        description: milestone.tasks
+      });
+      const activities = await this.getMilestoneActivities(milestone);
+
+      activities.activities.forEach(async activity => {
+        const oracle = await activityService.getOracleFromActivity(activity.id);
+        await fastify.eth.createActivity(owner.address, {
+          activityId: activity.id,
+          milestoneId: milestone.id,
+          projectId: project.id,
+          oracleAddress: oracle.user.address,
+          description: activity.tasks
+        });
+      });
+    });
+  },
+
+  async getMilestoneById(milestoneId) {
+    return milestoneDao.getMilestoneById(milestoneId);
+  },
+
+  async getAllMilestones() {
+    fastify.log.info('[Milestone Service] :: Getting all milestones');
+    try {
+      const milestones = await milestoneDao.getAllMilestones();
+
+      if (!milestones || milestones == null) {
+        fastify.log.info('[Milestone Service] :: There are no milestones');
+      }
+
+      return milestones;
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error getting Milestones:',
+        error
+      );
+      throw Error('Error getting Milestones');
     }
   }
 });
