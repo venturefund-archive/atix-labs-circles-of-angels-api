@@ -1,7 +1,12 @@
-const saveActivityPhoto = activityPhotoModel => async (activityId, photoId) => {
+const saveActivityPhoto = activityPhotoModel => async (
+  activityId,
+  photoId,
+  fileHash
+) => {
   const activityPhoto = await activityPhotoModel.create({
     activity: activityId,
-    photo: photoId
+    photo: photoId,
+    fileHash
   });
   return activityPhoto;
 };

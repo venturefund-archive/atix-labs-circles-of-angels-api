@@ -3,10 +3,14 @@ const mkdirp = require('mkdirp-promise');
 const mime = require('mime-types');
 const fs = require('fs');
 const path = require('path');
+const sha256 = require('sha256');
+const { promisify } = require('util');
 const { forEachPromise } = require('../util/promises');
 const configs = require('../../../config/configs');
 const { evidenceFileTypes, userRoles } = require('../util/constants');
 const { activityStatus } = require('../util/constants');
+
+const readFile = promisify(fs.readFile);
 
 const activityService = ({
   fastify,
@@ -230,6 +234,10 @@ const activityService = ({
       }/evidence/${file.name}`;
       await file.mv(filepath);
 
+      // getting file hash
+      const fileBuffer = await readFile(filepath);
+      const fileHash = sha256(fileBuffer);
+
       // check file type
       const filetype = mime.lookup(filepath);
 
@@ -254,7 +262,8 @@ const activityService = ({
 
         const savedActivityPhoto = await activityPhotoDao.saveActivityPhoto(
           activity.id,
-          savedPhoto.id
+          savedPhoto.id,
+          fileHash
         );
 
         if (!savedActivityPhoto || savedActivityPhoto == null) {
@@ -295,7 +304,8 @@ const activityService = ({
 
       const savedActivityFile = await activityFileDao.saveActivityFile(
         activity.id,
-        savedFile.id
+        savedFile.id,
+        fileHash
       );
 
       if (!savedActivityFile || savedActivityFile == null) {
