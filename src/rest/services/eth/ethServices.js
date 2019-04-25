@@ -137,6 +137,14 @@ const ethServices = async (providerHost, { logger }) => {
      */
     async validateActivity(sender, { activityId, milestoneId, projectId }) {
       logger.info(`[SC::Validate Activity] Validate Activity: ${activityId}`);
+      logger.info(
+        `[SC::Validate Activity] Validate Activity project: ${projectId}`
+      );
+      logger.info(
+        `[SC::Validate Activity] Validate Activity milestone: ${milestoneId}`
+      );
+      logger.info(`[SC::Validate Activity] Validate Activity: ${sender}`);
+
       const validateActivity = COAContract.methods.validateActivity(
         activityId,
         milestoneId,
