@@ -3,8 +3,16 @@ exports.server = {
   port: 3001
 };
 
+const contractJson = require('../../circle-of-angels-solidity/build/contracts/COAProjectAdmin.json');
+
 exports.eth = {
-  host: 'http://localhost:8545'
+  HOST: 'http://localhost:8545',
+  CONTRACT_ADDRESS: contractJson.networks['5777'].address,
+  CONTRACT_ABI: contractJson.abi,
+  DEFAULT_CONFIG: {
+    defaultGas: 50000,
+    defaultGasPrice: 1000000,
+  }
 };
 
 exports.database = {

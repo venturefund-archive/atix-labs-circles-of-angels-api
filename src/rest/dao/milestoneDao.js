@@ -49,6 +49,10 @@ const getMilestonesByProject = milestoneModel => async projectId => {
   return milestones;
 };
 
+const updateMilestoneStatus = milestoneModel => async (milestoneId, status) => {
+  return milestoneModel.update(milestoneId).set({ status });
+};
+
 const getAllMilestones = milestoneModel => async () => {
   const milestones = await milestoneModel
     .find()
@@ -79,5 +83,6 @@ module.exports = milestoneModel => ({
   updateMilestone: updateMilestone(milestoneModel),
   getMilestonesByProject: getMilestonesByProject(milestoneModel),
   getAllMilestones: getAllMilestones(milestoneModel),
-  updateBudgetStatus: updateBudgetStatus(milestoneModel)
+  updateBudgetStatus: updateBudgetStatus(milestoneModel),
+  updateMilestoneStatus: updateMilestoneStatus(milestoneModel)
 });
