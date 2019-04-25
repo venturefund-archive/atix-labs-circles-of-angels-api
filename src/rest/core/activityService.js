@@ -806,7 +806,24 @@ const activityService = ({
     }
   },
   async completeActivity(activityId) {
-    return activityDao.updateStatus(activityId, activityStatus.COMPLETED);
+    try {
+      const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
+      const transactionHash = await fastify.eth.validateActivity(
+        oracle.user.address,
+        error => fastify.log.error(error)
+      );
+      return activityDao.updateStatusWithTransaction(
+        activityId,
+        activityStatus.COMPLETED,
+        transactionHash
+      );
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Error completing activity:',
+        error
+      );
+      throw Error('Error completing activity');
+    }
   },
 
   /**
