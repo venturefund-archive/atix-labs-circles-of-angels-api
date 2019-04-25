@@ -30,9 +30,10 @@ const routes = async fastify => {
     fastify,
     userDao: userDaoBuilder({ userModel: fastify.models.user })
   });
+  const activityDao = activityDaoBuilder(fastify.models.activity);
   const activityService = activityServiceBuilder({
     fastify,
-    activityDao: activityDaoBuilder(fastify.models.activity),
+    activityDao,
     fileService,
     photoService,
     activityFileDao: activityFileDaoBuilder(fastify.models.activity_file),
@@ -475,7 +476,8 @@ const routes = async fastify => {
       fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
       try {
         const activity = (await activityService.completeActivity(
-          activityId
+          activityId,
+          milestoneService.getMilestoneById
         ))[0];
         await milestoneService.tryCompleteMilestone(activity.milestone);
         reply.status(200).send(Boolean(activity));

@@ -805,12 +805,18 @@ const activityService = ({
       throw Error('Error getting Activity details');
     }
   },
-  async completeActivity(activityId) {
+  async completeActivity(activityId, getMilestone) {
     try {
       const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
+      const activity = await activityDao.getActivityById(activityId);
+      const milestone = await getMilestone(activity.milestone);
       const transactionHash = await fastify.eth.validateActivity(
         oracle.user.address,
-        error => fastify.log.error(error)
+        {
+          activityId,
+          milestoneId: milestone.id,
+          projectId: milestone.project
+        }
       );
       return activityDao.updateStatusWithTransaction(
         activityId,

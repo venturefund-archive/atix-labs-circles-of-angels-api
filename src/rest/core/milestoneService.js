@@ -645,6 +645,10 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
         });
       });
     });
+  },
+
+  async getMilestoneById(milestoneId) {
+    return milestoneDao.getMilestoneById(milestoneId);
   }
 });
 
