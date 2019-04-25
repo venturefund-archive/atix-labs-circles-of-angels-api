@@ -1,8 +1,13 @@
 const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
-const { activityStatus } = require('../util/constants');
+const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
 
-const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
+const milestoneService = ({
+  fastify,
+  milestoneDao,
+  activityService,
+  milestoneBudgetStatusDao
+}) => ({
   /**
    * Creates a Milestone for an existing Project.
    *
@@ -656,7 +661,7 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     try {
       const milestones = await milestoneDao.getAllMilestones();
 
-      if (!milestones || milestones == null) {
+      if (milestones.length === 0) {
         fastify.log.info('[Milestone Service] :: There are no milestones');
       }
 
@@ -667,6 +672,105 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
         error
       );
       throw Error('Error getting Milestones');
+    }
+  },
+
+  /**
+   * Updates the budget transfer status of a milestone
+   * @param {number} milestoneId
+   * @param {number} budgetStatusId
+   * @returns updated milestone | error
+   */
+  async updateBudgetStatus(milestoneId, budgetStatusId) {
+    fastify.log.info(
+      `[Milestone Service] :: Updating Milestone ID ${milestoneId} budget status. 
+      New status ID: ${budgetStatusId}`
+    );
+    try {
+      const milestone = await milestoneDao.getMilestoneById(milestoneId);
+
+      if (!milestone || milestone == null) {
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} does not exist`
+        );
+        return {
+          status: 404,
+          error: 'Milestone does not exist'
+        };
+      }
+
+      if (
+        budgetStatusId !== milestoneBudgetStatus.TRANSFERRED &&
+        budgetStatusId !== milestoneBudgetStatus.PENDING
+      ) {
+        fastify.log.error(
+          `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
+        );
+        return {
+          status: 404,
+          error: 'Budget transfer status is not valid'
+        };
+      }
+
+      // the milestone needs to be completed in order to set the budget status to transferred
+      if (
+        budgetStatusId === milestoneBudgetStatus.TRANSFERRED &&
+        milestone.status !== activityStatus.COMPLETED
+      ) {
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} needs to be Completed 
+          in order to set the budget status to transferred`
+        );
+        return {
+          status: 409,
+          error: 'Milestone Status needs to be Completed'
+        };
+      }
+
+      const updatedMilestone = await milestoneDao.updateBudgetStatus(
+        milestoneId,
+        budgetStatusId
+      );
+
+      if (!updatedMilestone || updatedMilestone == null) {
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} could not be updated`
+        );
+        return {
+          status: 500,
+          error: 'Milestone could not be updated'
+        };
+      }
+
+      return updatedMilestone;
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error updating Milestone budget status:',
+        error
+      );
+      throw Error('Error updating Milestone budget transfer status');
+    }
+  },
+
+  async getAllBudgetStatus() {
+    fastify.log.info(
+      '[Milestone Service] :: Getting all available budget status'
+    );
+
+    try {
+      const budgetStatus = milestoneBudgetStatusDao.findAll();
+
+      if (budgetStatus.length === 0) {
+        fastify.log.info('[Milestone Service] :: No budget status loaded');
+      }
+
+      return budgetStatus;
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error getting all available budget status:',
+        error
+      );
+      throw Error('Error getting all available budget transfer status');
     }
   }
 });
