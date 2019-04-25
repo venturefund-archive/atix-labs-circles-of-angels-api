@@ -6,7 +6,7 @@ const makeTx = async (sender, method, logger) => {
     method.send(
       {
         from: sender,
-        gasLimit: 100000
+        gasLimit: 10000000000
       },
       (err, hash) => {
         if (err) {
