@@ -53,6 +53,11 @@ const projectService = ({
         userOwner.address,
         error => {
           fastify.log.error(error);
+        },
+        {
+          projectId: savedProject.id,
+          seAddress: userOwner.address,
+          projectName: savedProject.projectName
         }
       );
 
@@ -147,6 +152,8 @@ const projectService = ({
         '[Project Service] :: Creating Milestones for Project ID:',
         updatedProject.id
       );
+
+      // TODO: create milestones in the blockchain
 
       const milestones = await milestoneService.createMilestones(
         milestonesPath,
@@ -741,6 +748,8 @@ const projectService = ({
       }
 
       const userOwner = await projectDao.getUserOwnerOfProject(projectId);
+      
+      // TODO: check start project in the blockchain and save the tx id
       const transactionHash = await fastify.eth.startProject(
         userOwner.address,
         error => {
