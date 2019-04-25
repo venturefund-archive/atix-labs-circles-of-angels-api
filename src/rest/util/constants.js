@@ -18,7 +18,7 @@ const projectStatus = {
 };
 
 const activityStatus = {
-  IDLE: 1,
+  PENDING: 1,
   STARTED: 2,
   VERIFIED: 3,
   COMPLETED: 4
