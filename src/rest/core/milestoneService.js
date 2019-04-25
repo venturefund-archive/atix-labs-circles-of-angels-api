@@ -649,6 +649,25 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
 
   async getMilestoneById(milestoneId) {
     return milestoneDao.getMilestoneById(milestoneId);
+  },
+
+  async getAllMilestones() {
+    fastify.log.info('[Milestone Service] :: Getting all milestones');
+    try {
+      const milestones = await milestoneDao.getAllMilestones();
+
+      if (!milestones || milestones == null) {
+        fastify.log.info('[Milestone Service] :: There are no milestones');
+      }
+
+      return milestones;
+    } catch (error) {
+      fastify.log.error(
+        '[Milestone Service] :: Error getting Milestones:',
+        error
+      );
+      throw Error('Error getting Milestones');
+    }
   }
 });
 
