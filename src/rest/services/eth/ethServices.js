@@ -1,20 +1,22 @@
 const Web3 = require('web3');
 const ethConfig = require('../../../../config/configs').eth;
 
-const ethSend = async (sender, method, onError) => {
+const makeTx = async (sender, method, logger) => {
   return new Promise((resolve, reject) => {
-    method
-      .send({
+    method.send(
+      {
         from: sender,
-        gasLimit: 1000000
-      })
-      .on('transactionHash', transactionHash => {
-        resolve(transactionHash);
-      })
-      .on('error', error => {
-        if (onError) onError(error);
-        reject();
-      });
+        gasLimit: 100000
+      },
+      (err, hash) => {
+        if (err) {
+          logger.error(err);
+          reject(err);
+        }
+        logger.info(`TxHash: ${hash}`);
+        resolve(hash);
+      }
+    );
   });
 };
 
@@ -54,12 +56,11 @@ const ethServices = async (providerHost, { logger }) => {
   // console.log('tu hna');
   // console.log(llamada);
 
-    // .send({
-    //   sender: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
-    //   gasLimit: 100000
-    // });
+  // .send({
+  //   sender: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
+  //   gasLimit: 100000
+  // });
 
-  
   // const res = await ethSend(
   //   '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
   //   COAContract.methods.createProject(
@@ -75,61 +76,26 @@ const ethServices = async (providerHost, { logger }) => {
     async createAccount() {
       return web3.eth.accounts.create();
     },
-    async createProject(
-      sender,
-      onError,
-      { projectId, seAddress, projectName }
-    ) {
+    async createProject(sender, { projectId, seAddress, projectName }) {
       logger.info(
         `[SC::Create Project] Creating Project: ${projectId} - ${projectName}`
       );
-
       const create = COAContract.methods.createProject(
         projectId,
         seAddress,
         projectName
       );
-
-      const tx = create.send(
-        {
-          from: sender,
-          gasLimit: 100000
-        },
-        (err, hash) => {
-          if (err) {
-            logger.error(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-        }
-      );
-
-      logger.info(tx);
-
-      return tx;
+      return makeTx(sender, create, logger);
     },
-    async startProject(sender, onError, { projectId }) {
+
+    async startProject(sender, { projectId }) {
       logger.info(`[SC::Start Project] Starting Project: ${projectId}`);
       const start = COAContract.methods.startProject(projectId);
-      const tx = start.send(
-        {
-          from: sender,
-          gasLimit: 100000
-        },
-        (err, hash) => {
-          if (err) {
-            logger.error(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-        }
-      );
-
-      logger.info(tx);
-
-      return tx;
+      return makeTx(sender, start, logger);
     },
+
     async createMilestone(
       sender,
-      onError,
       { milestoneId, projectId, budget, description }
     ) {
       logger.info(
@@ -143,26 +109,11 @@ const ethServices = async (providerHost, { logger }) => {
         description
       );
 
-      const tx = createMilestone.send(
-        {
-          from: sender,
-          gasLimit: 100000
-        },
-        (err, hash) => {
-          if (err) {
-            logger.error(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-        }
-      );
-
-      logger.info(tx);
-
-      return tx;
+      return makeTx(sender, createMilestone, logger);
     },
+
     async createActivity(
       sender,
-      onError,
       { activityId, milestoneId, projectId, oracleAddress, description }
     ) {
       logger.info(
@@ -177,33 +128,14 @@ const ethServices = async (providerHost, { logger }) => {
         description
       );
 
-      const tx = createActivity.send(
-        {
-          from: sender,
-          gasLimit: 100000
-        },
-        (err, hash) => {
-          if (err) {
-            logger.error(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-        }
-      );
-
-      logger.info(tx);
-
-      return tx;
+      return makeTx(sender, createActivity, logger);
     },
     /**
      * @param {*} sender The oracle address assigned to this activity
      * @param {*} onError error callback
      * @param {*} activity {activityId, projectId, milestoneId}
      */
-    async validateActivity(
-      sender,
-      onError,
-      { activityId, milestoneId, projectId }
-    ) {
+    async validateActivity(sender, { activityId, milestoneId, projectId }) {
       logger.info(`[SC::Validate Activity] Validate Activity: ${activityId}`);
 
       const validateActivity = COAContract.methods.validateActivity(
@@ -212,22 +144,7 @@ const ethServices = async (providerHost, { logger }) => {
         projectId
       );
 
-      const tx = validateActivity.send(
-        {
-          from: sender,
-          gasLimit: 100000
-        },
-        (err, hash) => {
-          if (err) {
-            logger.error(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-        }
-      );
-
-      logger.info(tx);
-
-      return tx;
+      return makeTx(sender, validateActivity, logger);
     },
     async isTransactionConfirmed(transactionHash) {
       const transaction = await web3.eth.getTransaction(transactionHash);

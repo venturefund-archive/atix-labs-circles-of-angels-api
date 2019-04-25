@@ -51,9 +51,6 @@ const projectService = ({
 
       const transactionHash = await fastify.eth.createProject(
         userOwner.address,
-        error => {
-          fastify.log.error(error);
-        },
         {
           projectId: savedProject.id,
           seAddress: userOwner.address,
