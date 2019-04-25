@@ -1,5 +1,6 @@
 const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
+const { activityStatus } = require('../util/constants');
 
 const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
   /**
@@ -585,6 +586,66 @@ const milestoneService = ({ fastify, milestoneDao, activityService }) => ({
     }
   },
 
+  async tryCompleteMilestone(milestoneId) {
+    try {
+      fastify.log.info(
+        '[Milestone Service] :: Check if milestone is complete with id: ',
+        milestoneId
+      );
+      const { activities } = await milestoneDao.getMilestoneActivities(
+        milestoneId
+      );
+      let isCompleted = true;
+      await activities.forEach(async activity => {
+        const transactionConfirmed = activity.transactionHash
+          ? await fastify.eth.isTransactionConfirmed(activity.transactionHash)
+          : false;
+
+        if (
+          !transactionConfirmed &&
+          activity.status !== activityStatus.COMPLETED
+        ) {
+          isCompleted = false;
+        }
+      });
+      if (isCompleted)
+        fastify.log.info(
+          '[Milestone Service] :: milestone complete: ',
+          milestoneId
+        );
+      return milestoneDao.updateMilestoneStatus(
+        milestoneId,
+        activityStatus.COMPLETED
+      );
+    } catch (error) {
+      console.error(error);
+      fastify.log.error('Error trying complete milestone');
+    }
+  },
+
+  async startMilestonesOfProject(project, owner) {
+    const milestones = await this.getMilestonesByProject(project.id);
+    milestones.forEach(async milestone => {
+      await fastify.eth.createMilestone(owner.address, {
+        milestoneId: milestone.id,
+        projectId: project.id,
+        budget: milestone.budget,
+        description: milestone.tasks
+      });
+      const activities = await this.getMilestoneActivities(milestone);
+
+      activities.activities.forEach(async activity => {
+        const oracle = await activityService.getOracleFromActivity(activity.id);
+        await fastify.eth.createActivity(owner.address, {
+          activityId: activity.id,
+          milestoneId: milestone.id,
+          projectId: project.id,
+          oracleAddress: oracle.user.address,
+          description: activity.tasks
+        });
+      });
+    });
+  },
   async getAllMilestones() {
     fastify.log.info('[Milestone Service] :: Getting all milestones');
     try {

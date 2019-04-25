@@ -13,7 +13,8 @@ const projectService = ({
   milestoneService,
   projectStatusDao,
   photoService,
-  transferService
+  transferService,
+  userDao
 }) => ({
   /**
    * Uploads the project's images and files to the server.
@@ -46,6 +47,22 @@ const projectService = ({
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
       const savedProject = await projectDao.saveProject(newProject);
+      const userOwner = await userDao.getUserById(ownerId);
+
+      const transactionHash = await fastify.eth.createProject(
+        userOwner.address,
+        {
+          projectId: savedProject.id,
+          seAddress: userOwner.address,
+          projectName: savedProject.projectName
+        }
+      );
+
+      fastify.log.info(
+        '[Project Service] :: transaction hash of project creation: ',
+        transactionHash
+      );
+
       fastify.log.info('[Project Service] :: Project created:', savedProject);
 
       addPathToFilesProperties({
@@ -132,6 +149,8 @@ const projectService = ({
         '[Project Service] :: Creating Milestones for Project ID:',
         updatedProject.id
       );
+
+      // TODO: create milestones in the blockchain
 
       const milestones = await milestoneService.createMilestones(
         milestonesPath,
@@ -523,7 +542,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: 'ERROR: Project doesn\'t have an agreement uploaded',
+          error: "ERROR: Project doesn't have an agreement uploaded",
           status: 409
         };
       }
@@ -583,7 +602,7 @@ const projectService = ({
         );
         return {
           // eslint-disable-next-line prettier/prettier
-          error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
+          error: "ERROR: Project doesn't have a pitch proposal uploaded",
           status: 409
         };
       }
@@ -725,10 +744,25 @@ const projectService = ({
         };
       }
 
-      const startedProject = await projectDao.updateProjectStatus({
-        projectId,
-        status: projectStatus.IN_PROGRESS
-      });
+      const userOwner = await projectDao.getUserOwnerOfProject(projectId);
+
+      // TODO: check start project in the blockchain and save the tx id
+      const transactionHash = await fastify.eth.startProject(
+        userOwner.address,
+        { projectId }
+      );
+      const startedProject = await projectDao.updateProjectStatusWithTransaction(
+        {
+          projectId,
+          status: projectStatus.IN_PROGRESS,
+          transactionHash
+        }
+      );
+
+      await milestoneService.startMilestonesOfProject(
+        startedProject,
+        userOwner
+      );
 
       if (!startedProject && startedProject == null) {
         fastify.log.error(
@@ -789,6 +823,25 @@ const projectService = ({
     } catch (error) {
       fastify.log.error('[Project Service] :: Error getting Projects:', error);
       throw Error('Error getting Projects');
+    }
+  },
+
+  async getProjectOwner(projectId) {
+    try {
+      const project = await projectDao.getProjectById({ projectId });
+      const user = await userDao.getUserById(project.ownerId);
+      return user;
+    } catch (error) {
+      throw Error('Error getting project owner');
+    }
+  },
+
+  async isProjectTransactionConfirmed(projectId) {
+    try {
+      const project = await projectDao.getProjectById({ projectId });
+      return fastify.eth.isTransactionConfirmed(project.transactionHash);
+    } catch (error) {
+      throw Error('Error getting confirmation of transaction');
     }
   }
 });

@@ -24,7 +24,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     // Load Swagger
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
-    fastify.eth = ethService(configs.eth.host);
+    fastify.eth = await ethService(configs.eth.HOST, { logger });
 
     loadRoutes(fastify);
 

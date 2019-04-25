@@ -43,6 +43,7 @@ module.exports = {
     projectAgreement: { type: 'string', required: false },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
+    transactionHash: { type: 'string', required: false },
     milestones: {
       collection: 'milestone',
       via: 'project'

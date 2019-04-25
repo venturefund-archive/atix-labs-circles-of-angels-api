@@ -11,6 +11,7 @@ CREATE TABLE public.milestone (
 	"keyPersonnel" text NULL,
 	"budget" text NULL,
 	"status" int2 NOT NULL,
+	"transactionHash" varchar(80) NULL,
 	"createdAt" date NULL,
 	"updatedAt" date NULL,
 	"budgetStatus" int4 NOT NULL,
