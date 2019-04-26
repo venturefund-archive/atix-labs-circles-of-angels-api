@@ -44,6 +44,7 @@ module.exports = {
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     transactionHash: { type: 'string', required: false },
+    creationTransactionHash: { type: 'string', required: false },
     milestones: {
       collection: 'milestone',
       via: 'project'
