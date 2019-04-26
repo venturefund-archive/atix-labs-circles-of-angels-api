@@ -12,4 +12,4 @@ VALUES(3, 'Verified');
 
 INSERT INTO public.milestone_activity_status
 (status, "name")
-VALUES(4, 'Complete');
+VALUES(4, 'Completed');
