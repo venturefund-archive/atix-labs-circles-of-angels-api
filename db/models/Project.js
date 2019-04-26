@@ -27,7 +27,7 @@ module.exports = {
     location: { type: 'string', required: true },
     timeframe: { type: 'string', required: true },
     pitchProposal: { type: 'string', required: false },
-    faqLink: { type: 'string', required: true },
+    faqLink: { type: 'string', required: false },
     coverPhoto: {
       columnName: 'coverPhoto',
       model: 'photo'
