@@ -6,7 +6,9 @@
   "scripts": {
     "lint": "eslint src/**/*.js",
     "test": "jest",
-    "start": "node index"
+    "start": "node index",
+    "migrate": "./get_flyway.sh & flyway -configFiles=flyway.conf -locations=filesystem:db/migrations migrate",
+    "clean": "./get_flyway.sh & flyway -configFiles=flyway.conf -locations=filesystem:db/migrations clean"
   },
   "author": "Atix Labs S.R.L",
   "license": "ISC",
