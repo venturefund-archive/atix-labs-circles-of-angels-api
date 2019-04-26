@@ -1,7 +1,12 @@
-const saveActivityFile = activityFileModel => async (activityId, fileId) => {
+const saveActivityFile = activityFileModel => async (
+  activityId,
+  fileId,
+  fileHash
+) => {
   const activityFile = await activityFileModel.create({
     activity: activityId,
-    file: fileId
+    file: fileId,
+    fileHash
   });
   return activityFile;
 };

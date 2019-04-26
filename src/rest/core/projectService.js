@@ -342,7 +342,10 @@ const projectService = ({
    * @returns milestone template file stream
    */
   async downloadMilestonesTemplate() {
-    const filepath = `${configs.fileServer.filePath}/templates/milestones.xlsx`;
+    const filepath = require('path').join(
+      __dirname,
+      '../../../assets/templates/milestones.xlsx'
+    );
 
     try {
       if (fs.existsSync(filepath)) {
@@ -393,9 +396,10 @@ const projectService = ({
    * @returns project proposal file | error
    */
   async downloadProposalTemplate() {
-    const filepath = `${
-      configs.fileServer.filePath
-    }/templates/PitchProposal.docx`;
+    const filepath = require('path').join(
+      __dirname,
+      '../../../assets/templates/PitchProposal.docx'
+    );
 
     try {
       if (fs.existsSync(filepath)) {
