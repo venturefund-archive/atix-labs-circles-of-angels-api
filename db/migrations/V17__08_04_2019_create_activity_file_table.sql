@@ -4,7 +4,7 @@ CREATE TABLE public.activity_file (
 	"fileId" int4 NOT NULL,
 	"createdAt" date NULL,
 	"updatedAt" date NULL,
-	"fileHash" varchar(80),
+	"fileHash" varchar(80) NULL,
 	FOREIGN KEY ("activityId") REFERENCES activity(id) on delete cascade,
 	FOREIGN KEY ("fileId") REFERENCES file(id) on delete cascade
 );
