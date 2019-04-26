@@ -22,7 +22,6 @@
     "fastify-file-upload": "1.0.0",
     "fastify-static": "1.1.0",
     "fastify-swagger": "1.2.0",
-    "flywaydb-cli": "^0.8.3",
     "lodash": "4.17.11",
     "mkdirp-promise": "5.0.1",
     "sails-postgresql": "1.0.2",
