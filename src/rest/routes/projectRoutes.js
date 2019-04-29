@@ -122,7 +122,7 @@ const routes = async fastify => {
             '[Project Routes] :: Error creating Project:',
             response.error
           );
-          reply.status(response.status).send(response.error);
+          reply.status(response.status).send(response);
         } else if (response.milestones.errors) {
           await projectService.deleteProject({
             projectId: response.project.id
