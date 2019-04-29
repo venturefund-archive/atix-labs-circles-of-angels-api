@@ -172,7 +172,12 @@ const routes = async fastify => {
       const { id } = request.params;
       fastify.log.info(`[Activity Routes] Deleting activity with id: ${id}`);
       try {
-        const deleted = await activityService.deleteActivity(id);
+        const deleted = (await activityService.deleteActivity(id))[0];
+        const milestoneEmpty =
+          deleted &&
+          !(await milestoneService.milestoneHasActivities(deleted.milestone));
+        if (milestoneEmpty)
+          await milestoneService.deleteMilestone(deleted.milestone);
         reply.status(200).send(deleted);
       } catch (error) {
         fastify.log.error(error);
