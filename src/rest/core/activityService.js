@@ -223,6 +223,17 @@ const activityService = ({
         return { error: 'Activity could not be found', status: 404 };
       }
 
+      fastify.log.info('[Activity Service] :: Checking evidences file types');
+      if (!file || !this.checkEvidenceType(file)) {
+        fastify.log.error(
+          '[Project Service] :: Wrong file type for Evidence',
+          file
+        );
+        return {
+          error: 'Invalid file type for the uploaded Evidence'
+        };
+      }
+
       // creates the directory where this activities' evidence files will be saved if not exists
       await mkdirp(
         `${configs.fileServer.filePath}/activities/${activityId}/evidence`
@@ -337,6 +348,20 @@ const activityService = ({
       );
       throw Error('Error uploading evidence');
     }
+  },
+
+  checkEvidenceType(file) {
+    const fileType = file.mimetype;
+    return (
+      fileType.includes('image/') ||
+      fileType === 'application/pdf' ||
+      fileType === 'application/msword' ||
+      fileType ===
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      fileType === 'application/vnd.ms-powerpoint' ||
+      fileType ===
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    );
   },
 
   /**
