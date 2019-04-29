@@ -79,7 +79,9 @@ const projectService = ({
       const coverPhotoPath = projectCoverPhoto.path;
       const cardPhotoPath = projectCardPhoto.path;
       const pitchProposalPath = projectProposal.path;
-      const projectAgreementPath = projectAgreement.path;
+      const projectAgreementPath = projectAgreement
+        ? projectAgreement.path
+        : '';
       const milestonesPath = projectMilestones.path;
 
       // creates the directory where this project's files will be saved if not exists
@@ -106,11 +108,13 @@ const projectService = ({
       );
       await projectProposal.mv(pitchProposalPath);
 
-      fastify.log.info(
-        '[Project Service] :: Saving project agreement to:',
-        projectAgreementPath
-      );
-      await projectAgreement.mv(projectAgreementPath);
+      if (projectAgreementPath) {
+        fastify.log.info(
+          '[Project Service] :: Saving project agreement to:',
+          projectAgreementPath
+        );
+        await projectAgreement.mv(projectAgreementPath);
+      }
 
       fastify.log.info(
         '[Milestone Service] :: Saving Milestone excel to:',
