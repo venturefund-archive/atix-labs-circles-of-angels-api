@@ -224,7 +224,11 @@ const activityService = ({
       }
 
       fastify.log.info('[Activity Service] :: Checking evidences file types');
-      if (!file || !this.checkEvidenceType(file)) {
+      if (
+        !file ||
+        (!fileService.checkEvidenceFileType(file) &&
+          !photoService.checkEvidencePhotoType(file))
+      ) {
         fastify.log.error(
           '[Project Service] :: Wrong file type for Evidence',
           file
@@ -348,20 +352,6 @@ const activityService = ({
       );
       throw Error('Error uploading evidence');
     }
-  },
-
-  checkEvidenceType(file) {
-    const fileType = file.mimetype;
-    return (
-      fileType.includes('image/') ||
-      fileType === 'application/pdf' ||
-      fileType === 'application/msword' ||
-      fileType ===
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      fileType === 'application/vnd.ms-powerpoint' ||
-      fileType ===
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    );
   },
 
   /**
