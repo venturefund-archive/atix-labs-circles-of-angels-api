@@ -91,7 +91,7 @@ const routes = async fastify => {
     },
     async (req, reply) => {
       fastify.log.info(
-        '[Project Routes] :: POST request at /project/upload:',
+        '[Project Routes] :: POST request at /project/create:',
         req.raw.body,
         req.raw.files
       );
@@ -117,7 +117,13 @@ const routes = async fastify => {
           ownerId
         );
 
-        if (response.milestones.errors) {
+        if (response && response.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error creating Project:',
+            response.error
+          );
+          reply.status(response.status).send(response.error);
+        } else if (response.milestones.errors) {
           await projectService.deleteProject({
             projectId: response.project.id
           });
