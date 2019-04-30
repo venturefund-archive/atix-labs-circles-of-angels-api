@@ -89,6 +89,50 @@ const routes = async (fastify, options) => {
     }
   );
 
+  fastify.get(
+    `${basePath}/registrationStatus`,
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              registrationStatus: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    name: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        fastify.log.info(
+          `[User Routes] :: GET request at ${basePath}/user/registrationStatus`
+        );
+
+        const registrationStatus = await userService.getAllRegistrationStatus();
+        reply.status(200).send({ registrationStatus });
+      } catch (error) {
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all user registration status:',
+          error
+        );
+        reply.status(500).send({
+          error:
+            'There was an unexpected error getting all user registration status'
+        });
+      }
+    }
+  );
+
   fastify.post(
     `${basePath}/login`,
     {

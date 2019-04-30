@@ -131,6 +131,12 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
     return { error: 'User doesn\'t have a role' };
   },
 
+  /**
+   * Updates an existing user
+   * @param {number} userId
+   * @param {*} user
+   * @returns updated user | error
+   */
   async updateUser(userId, user) {
     fastify.log.info('[User Service] :: Updating User:', user);
     try {
@@ -200,6 +206,31 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
     } catch (error) {
       fastify.log.error('[User Service] :: Error updating User:', error);
       throw Error('Error updating User');
+    }
+  },
+
+  /**
+   * Gets all valid user registration status
+   * @returns registration status list | error
+   */
+  async getAllRegistrationStatus() {
+    fastify.log.info('[User Service] :: Getting all User Registration Status');
+    try {
+      const userRegistrationStatusList = await userRegistrationStatusDao.getAllRegistrationStatus();
+
+      if (userRegistrationStatusList.length === 0) {
+        fastify.log.info(
+          '[User Service] :: No User Registration Status loaded'
+        );
+      }
+
+      return userRegistrationStatusList;
+    } catch (error) {
+      fastify.log.error(
+        '[User Service] :: Error getting all User Registration Status:',
+        error
+      );
+      throw Error('Error getting all User Registration Status');
     }
   },
 
