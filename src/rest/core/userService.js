@@ -1,6 +1,11 @@
 const bcrypt = require('bcrypt');
 
-const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
+const userService = ({
+  fastify,
+  userDao,
+  userRegistrationStatusDao,
+  roleDao
+}) => ({
   async getUserById(id) {
     return userDao.getUserById(id);
   },
@@ -68,6 +73,16 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
         return {
           status: 409,
           error: 'A user with that email already exists'
+        };
+      }
+
+      const validRole = await roleDao.getRoleById(role);
+
+      if (!validRole) {
+        fastify.log.error(`[User Service] :: Role ID ${role} does not exist.`);
+        return {
+          status: 404,
+          error: 'User role does not exist'
         };
       }
 
@@ -231,6 +246,29 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
         error
       );
       throw Error('Error getting all User Registration Status');
+    }
+  },
+
+  /**
+   * Gets all valid user roles
+   * @returns role list | error
+   */
+  async getAllRoles() {
+    fastify.log.info('[User Service] :: Getting all User Roles');
+    try {
+      const userRoleList = await roleDao.getAllRoles();
+
+      if (userRoleList.length === 0) {
+        fastify.log.info('[User Service] :: No User Roles loaded');
+      }
+
+      return userRoleList;
+    } catch (error) {
+      fastify.log.error(
+        '[User Service] :: Error getting all User Roles:',
+        error
+      );
+      throw Error('Error getting all User Roles');
     }
   },
 
