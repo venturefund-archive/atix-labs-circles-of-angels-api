@@ -5,8 +5,13 @@ const userService = ({
   fastify,
   userDao,
   userRegistrationStatusDao,
-  roleDao
+  roleDao,
+  userFunderDao
 }) => ({
+  roleCreationMap: {
+    [userRoles.IMPACT_FUNDER]: userFunderDao
+  },
+
   async getUserById(id) {
     return userDao.getUserById(id);
   },
@@ -90,7 +95,7 @@ const userService = ({
    * @param {number} roleId
    * @returns new user | error
    */
-  async createUser(username, email, pwd, role) {
+  async createUser(username, email, pwd, role, detail) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
     const { privateKey, address } = await fastify.eth.createAccount(hashedPwd);
@@ -129,6 +134,11 @@ const userService = ({
       };
 
       const savedUser = await userDao.createUser(user);
+      const savedInfo = await this.roleCreationMap[role].create({
+        user: savedUser.id,
+        ...detail
+      });
+      fastify.log.info('[User Service] :: Info saved: ', savedInfo);
 
       if (!savedUser || savedUser == null) {
         fastify.log.error(
@@ -174,8 +184,7 @@ const userService = ({
     fastify.log.error(
       `[User Service] :: User ID ${userId} doesn't have a role`
     );
-    // eslint-disable-next-line prettier/prettier
-    return { error: 'User doesn\'t have a role' };
+    return { error: "User doesn't have a role" };
   },
 
   /**
