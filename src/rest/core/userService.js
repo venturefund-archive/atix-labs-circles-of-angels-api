@@ -1,6 +1,11 @@
 const bcrypt = require('bcrypt');
+const { userRoles } = require('../util/constants');
 
-const userService = ({ fastify, userDao }) => ({
+const userService = ({ fastify, userDao, userFunderDao }) => ({
+  roleCreationMap: {
+    [userRoles.IMPACT_FUNDER]: userFunderDao
+  },
+
   async getUserById(id) {
     return userDao.getUserById(id);
   },
@@ -53,7 +58,7 @@ const userService = ({ fastify, userDao }) => ({
    * @param {number} roleId
    * @returns new user | error
    */
-  async createUser(username, email, pwd, role) {
+  async createUser(username, email, pwd, role, detail) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
     const { address, privateKey } = await fastify.eth.createAccount();
@@ -82,6 +87,11 @@ const userService = ({ fastify, userDao }) => ({
       };
 
       const savedUser = await userDao.createUser(user);
+      const savedInfo = await this.roleCreationMap[role].create({
+        user: savedUser.id,
+        ...detail
+      });
+      console.log('Info saved: ', savedInfo);
 
       if (!savedUser || savedUser == null) {
         fastify.log.error(
@@ -128,7 +138,7 @@ const userService = ({ fastify, userDao }) => ({
       `[User Service] :: User ID ${userId} doesn't have a role`
     );
     // eslint-disable-next-line prettier/prettier
-    return { error: 'User doesn\'t have a role' };
+    return { error: "User doesn't have a role" };
   },
 
   /**
