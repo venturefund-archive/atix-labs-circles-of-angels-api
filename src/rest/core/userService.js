@@ -208,6 +208,10 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
    */
   async getOracles() {
     return userDao.getOracles();
+  },
+
+  async getUsers() {
+    return userDao.getUsers();
   }
 });
 

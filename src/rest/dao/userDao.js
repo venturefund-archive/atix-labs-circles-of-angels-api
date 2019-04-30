@@ -19,6 +19,13 @@ const UserDao = ({ userModel }) => ({
   async updateUser(id, user) {
     const updatedUser = await userModel.updateOne({ id }).set({ ...user });
     return updatedUser;
+  },
+
+  async getUsers() {
+    return userModel
+      .find()
+      .populate('role')
+      .populate('registrationStatus');
   }
 });
 

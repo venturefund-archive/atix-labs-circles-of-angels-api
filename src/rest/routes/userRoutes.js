@@ -44,6 +44,29 @@ const routes = async (fastify, options) => {
   );
 
   fastify.get(
+    `${basePath}`,
+    {
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[User Routes] :: Getting all users');
+      try {
+        const users = await userService.getUsers();
+        reply.status(200).send(users);
+      } catch (error) {
+        reply.status(500).send({ error });
+      }
+    }
+  );
+
+  fastify.get(
     `${basePath}/:userId/role`,
     {
       schema: {
@@ -78,13 +101,15 @@ const routes = async (fastify, options) => {
       } catch (error) {
         fastify.log.error(
           // eslint-disable-next-line prettier/prettier
-          '[User Routes] :: There was an error getting the user\'s role:',
+          "[User Routes] :: There was an error getting the user's role:",
           error
         );
         reply
           .status(500)
           // eslint-disable-next-line prettier/prettier
-          .send({ error: 'There was an unexpected error getting the user\'s role' });
+          .send({
+            error: "There was an unexpected error getting the user's role"
+          });
       }
     }
   );
