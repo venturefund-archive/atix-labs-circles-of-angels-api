@@ -45,7 +45,7 @@ const userService = ({ fastify, userDao }) => ({
   },
 
   /**
-   * Simple method to create an user with postman
+   * Creates a new user with basic information
    *
    * @param {string} username
    * @param {string} email
@@ -59,20 +59,45 @@ const userService = ({ fastify, userDao }) => ({
     const { address, privateKey } = await fastify.eth.createAccount();
 
     try {
+      const existingUser = await userDao.getUserByEmail(email);
+
+      if (existingUser) {
+        fastify.log.error(
+          `[User Service] :: User with email ${email} already exists.`
+        );
+        return {
+          status: 409,
+          error: 'A user with that email already exists'
+        };
+      }
+
       const user = {
         username,
         email,
         pwd: hashedPwd,
         role,
         address,
-        privateKey
+        privateKey,
+        registrationStatus: 1
       };
 
       const savedUser = await userDao.createUser(user);
 
+      if (!savedUser || savedUser == null) {
+        fastify.log.error(
+          '[User Service] :: There was an unexpected error creating the user:',
+          user
+        );
+        return {
+          status: 500,
+          error: 'There was an unexpected error creating the user'
+        };
+      }
+
       return savedUser;
     } catch (error) {
-      return { error };
+      fastify.log.error('[User Service] :: Error creating User:', error);
+      throw Error('Error creating User');
     }
   },
 
@@ -103,7 +128,7 @@ const userService = ({ fastify, userDao }) => ({
       `[User Service] :: User ID ${userId} doesn't have a role`
     );
     // eslint-disable-next-line prettier/prettier
-    return { error: "User doesn't have a role" };
+    return { error: 'User doesn\'t have a role' };
   },
 
   /**

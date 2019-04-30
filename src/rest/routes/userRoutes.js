@@ -130,7 +130,7 @@ const routes = async (fastify, options) => {
   );
 
   fastify.post(
-    `${basePath}/register`,
+    `${basePath}/signup`,
     {
       schema: {
         type: 'application/json',
@@ -139,33 +139,45 @@ const routes = async (fastify, options) => {
           email: { type: 'string' },
           pwd: { type: 'string' },
           role: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          409: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
           }
         }
       }
     },
     async (request, reply) => {
-      const { email, pwd, username, role } = request.body;
+      try {
+        const { email, pwd, username, role } = request.body;
 
-      fastify.log.info('[User Routes] :: Creating new user:', request.body);
+        fastify.log.info('[User Routes] :: Creating new user:', request.body);
 
-      const user = await userService.createUser(username, email, pwd, role);
+        const user = await userService.createUser(username, email, pwd, role);
 
-      if (user.error) {
-        fastify.log.error(
-          '[User Routes] :: Creation failed for user:',
-          request.body
-        );
-        reply.status(409).send(user.error);
-      } else {
-        fastify.log.info('[User Routes] :: Creation successful:', user);
-        reply.status(200).send(user);
+        if (user.error) {
+          fastify.log.error(
+            '[User Routes] :: Creation failed for user:',
+            request.body
+          );
+          reply.status(user.status).send(user);
+        } else {
+          fastify.log.info('[User Routes] :: Creation successful:', user);
+          reply.status(200).send({ success: 'User succesfully created!' });
+        }
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error creating user' });
       }
     }
   );
