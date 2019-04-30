@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 
-const userService = ({ fastify, userDao }) => ({
+const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
   async getUserById(id) {
     return userDao.getUserById(id);
   },
@@ -129,6 +129,78 @@ const userService = ({ fastify, userDao }) => ({
     );
     // eslint-disable-next-line prettier/prettier
     return { error: 'User doesn\'t have a role' };
+  },
+
+  async updateUser(userId, user) {
+    fastify.log.info('[User Service] :: Updating User:', user);
+    try {
+      // check user existence
+      const existingUser = await userDao.getUserById(userId);
+
+      if (!existingUser) {
+        fastify.log.error(`[User Service] :: User ID ${userId} does not exist`);
+        return {
+          status: 404,
+          error: 'User does not exist'
+        };
+      }
+
+      const { pwd, email, registrationStatus } = user;
+      const newUser = { ...user };
+
+      if (pwd) {
+        const hashedPwd = await bcrypt.hash(pwd, 10);
+        newUser.pwd = hashedPwd;
+      }
+
+      if (email) {
+        const anotherUser = await userDao.getUserByEmail(email);
+
+        if (anotherUser && anotherUser.id !== existingUser.id) {
+          fastify.log.error(
+            `[User Service] :: User with email ${email} already exists.`
+          );
+          return {
+            status: 409,
+            error: 'A user with that email already exists'
+          };
+        }
+      }
+
+      if (registrationStatus) {
+        const existingStatus = await userRegistrationStatusDao.getUserRegistrationStatusById(
+          registrationStatus
+        );
+
+        if (!existingStatus) {
+          fastify.log.error(
+            `[User Service] :: Registration Status ID ${registrationStatus} does not exist`
+          );
+          return {
+            status: 404,
+            error: 'Registration status is not valid'
+          };
+        }
+      }
+
+      const updatedUser = await userDao.updateUser(userId, newUser);
+
+      if (!updatedUser) {
+        fastify.log.error(
+          '[User Service] :: User could not be updated',
+          newUser
+        );
+        return {
+          status: 500,
+          error: 'User could not be updated'
+        };
+      }
+
+      return updatedUser;
+    } catch (error) {
+      fastify.log.error('[User Service] :: Error updating User:', error);
+      throw Error('Error updating User');
+    }
   },
 
   /**

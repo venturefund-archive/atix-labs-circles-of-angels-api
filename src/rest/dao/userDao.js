@@ -14,6 +14,11 @@ const UserDao = ({ userModel }) => ({
 
   async getOracles() {
     return userModel.find({ role: 4 }).populate('role');
+  },
+
+  async updateUser(id, user) {
+    const updatedUser = await userModel.updateOne({ id }).set({ ...user });
+    return updatedUser;
   }
 });
 

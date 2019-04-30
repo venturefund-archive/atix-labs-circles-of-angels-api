@@ -1,12 +1,17 @@
+const userDaoBuilder = require('../dao/userDao');
+const userRegistrationStatusDaoBuilder = require('../dao/userRegistrationStatusDao');
+
 const basePath = '/user';
 
 const routes = async (fastify, options) => {
-  const userDao = require('../dao/userDao')({
-    userModel: fastify.models.user
-  });
   const userService = require('../core/userService')({
     fastify,
-    userDao
+    userDao: userDaoBuilder({
+      userModel: fastify.models.user
+    }),
+    userRegistrationStatusDao: userRegistrationStatusDaoBuilder(
+      fastify.models.user_registration_status
+    )
   });
 
   fastify.get(
@@ -156,6 +161,13 @@ const routes = async (fastify, options) => {
               status: { type: 'number' },
               error: { type: 'string' }
             }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -169,10 +181,7 @@ const routes = async (fastify, options) => {
         const user = await userService.createUser(username, email, pwd, role);
 
         if (user.error) {
-          fastify.log.error(
-            '[User Routes] :: Creation failed for user:',
-            request.body
-          );
+          fastify.log.error('[User Routes] :: User creation failed', user);
           reply.status(user.status).send(user);
         } else {
           fastify.log.info('[User Routes] :: Creation successful:', user);
@@ -185,38 +194,71 @@ const routes = async (fastify, options) => {
     }
   );
 
-  // fastify.put(
-  //   `${basePath}/:id`,
-  //   {
-  //     schema: {
-  //       type: 'application/json',
-  //       body: {
-  //         username: { type: 'string', required: false },
-  //         email: { type: 'string' },
-  //         pwd: { type: 'string' },
-  //         role: { type: 'number' }
-  //       },
-  //       response: {
-  //         200: {
-  //           type: 'object',
-  //           properties: {
-  //             success: { type: 'string' }
-  //           }
-  //         },
-  //         409: {
-  //           type: 'object',
-  //           properties: {
-  //             status: { type: 'number' },
-  //             error: { type: 'string' }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   },
-  //   async (request, reply) => {
+  fastify.put(
+    `${basePath}/:id`,
+    {
+      schema: {
+        body: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            email: { type: 'string' },
+            pwd: { type: 'string' },
+            registrationStatus: { type: 'number' }
+          },
+          additionalProperties: false
+        },
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'number' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(`PUT request at ${basePath}/${id}`, request.body);
+      try {
+        const { body } = request;
 
-  //   }
-  // );
+        const updatedUser = await userService.updateUser(id, body);
+
+        if (updatedUser.error) {
+          fastify.log.error('[User Routes] :: User update failed', updatedUser);
+          reply.status(updatedUser.status).send(updatedUser);
+        } else {
+          fastify.log.info('[User Routes] :: Update successful:', updatedUser);
+          reply.status(200).send({ success: 'User successfully updated!' });
+        }
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error updating user' });
+      }
+    }
+  );
 
   fastify.get(
     `${basePath}/oracle`,
