@@ -229,7 +229,7 @@ const routes = async (fastify, options) => {
     async (request, reply) => {
       try {
         fastify.log.info(
-          `[User Routes] :: GET request at ${basePath}/user/registrationStatus`
+          `[User Routes] :: GET request at ${basePath}/registrationStatus`
         );
 
         const registrationStatus = await userService.getAllRegistrationStatus();
@@ -242,6 +242,47 @@ const routes = async (fastify, options) => {
         reply.status(500).send({
           error:
             'There was an unexpected error getting all user registration status'
+        });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/role`,
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              roles: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    name: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
+
+        const roles = await userService.getAllRoles();
+        reply.status(200).send({ roles });
+      } catch (error) {
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all user roles:',
+          error
+        );
+        reply.status(500).send({
+          error: 'There was an unexpected error getting all user roles'
         });
       }
     }
