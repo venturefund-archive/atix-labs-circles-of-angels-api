@@ -4,6 +4,7 @@ const roleDaoBuilder = require('../dao/roleDao');
 
 const basePath = '/user';
 const userFunderDaoBuilder = require('../dao/userFunderDao');
+const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurDao');
 
 const routes = async (fastify, options) => {
   const userService = require('../core/userService')({
@@ -15,7 +16,10 @@ const routes = async (fastify, options) => {
       fastify.models.user_registration_status
     ),
     roleDao: roleDaoBuilder(fastify.models.role),
-    userFunderDao: userFunderDaoBuilder(fastify.models.user_funder)
+    userFunderDao: userFunderDaoBuilder(fastify.models.user_funder),
+    userSocialEntrepreneurDao: userSocialEntrepreneurDaoBuilder(
+      fastify.models.user_social_entrepreneur
+    )
   });
 
   fastify.get(
@@ -81,16 +85,12 @@ const routes = async (fastify, options) => {
         }
       } catch (error) {
         fastify.log.error(
-          // eslint-disable-next-line prettier/prettier
           "[User Routes] :: There was an error getting the user's role:",
           error
         );
-        reply
-          .status(500)
-          // eslint-disable-next-line prettier/prettier
-          .send({
-            error: "There was an unexpected error getting the user's role"
-          });
+        reply.status(500).send({
+          error: "There was an unexpected error getting the user's role"
+        });
       }
     }
   );

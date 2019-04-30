@@ -6,10 +6,12 @@ const userService = ({
   userDao,
   userRegistrationStatusDao,
   roleDao,
-  userFunderDao
+  userFunderDao,
+  userSocialEntrepreneurDao
 }) => ({
   roleCreationMap: {
-    [userRoles.IMPACT_FUNDER]: userFunderDao
+    [userRoles.IMPACT_FUNDER]: userFunderDao,
+    [userRoles.SOCIAL_ENTREPRENEUR]: userSocialEntrepreneurDao
   },
 
   async getUserById(id) {
@@ -134,11 +136,13 @@ const userService = ({
       };
 
       const savedUser = await userDao.createUser(user);
-      const savedInfo = await this.roleCreationMap[role].create({
-        user: savedUser.id,
-        ...detail
-      });
-      fastify.log.info('[User Service] :: Info saved: ', savedInfo);
+      if (this.roleCreationMap[role]) {
+        const savedInfo = await this.roleCreationMap[role].create({
+          user: savedUser.id,
+          ...detail
+        });
+        fastify.log.info('[User Service] :: Info saved', savedInfo);
+      }
 
       if (!savedUser || savedUser == null) {
         fastify.log.error(
