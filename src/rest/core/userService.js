@@ -1,9 +1,15 @@
 const bcrypt = require('bcrypt');
 const { userRoles } = require('../util/constants');
 
-const userService = ({ fastify, userDao, userFunderDao }) => ({
+const userService = ({
+  fastify,
+  userDao,
+  userFunderDao,
+  userSocialEntrepreneurDao
+}) => ({
   roleCreationMap: {
-    [userRoles.IMPACT_FUNDER]: userFunderDao
+    [userRoles.IMPACT_FUNDER]: userFunderDao,
+    [userRoles.SOCIAL_ENTREPRENEUR]: userSocialEntrepreneurDao
   },
 
   async getUserById(id) {
@@ -87,11 +93,13 @@ const userService = ({ fastify, userDao, userFunderDao }) => ({
       };
 
       const savedUser = await userDao.createUser(user);
-      const savedInfo = await this.roleCreationMap[role].create({
-        user: savedUser.id,
-        ...detail
-      });
-      console.log('Info saved: ', savedInfo);
+      if (this.roleCreationMap[role]) {
+        const savedInfo = await this.roleCreationMap[role].create({
+          user: savedUser.id,
+          ...detail
+        });
+        fastify.log.info('Info saved', savedInfo);
+      }
 
       if (!savedUser || savedUser == null) {
         fastify.log.error(

@@ -1,5 +1,6 @@
 const basePath = '/user';
 const userFunderDaoBuilder = require('../dao/userFunderDao');
+const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurDao');
 
 const routes = async (fastify, options) => {
   const userDao = require('../dao/userDao')({
@@ -8,7 +9,10 @@ const routes = async (fastify, options) => {
   const userService = require('../core/userService')({
     fastify,
     userDao,
-    userFunderDao: userFunderDaoBuilder(fastify.models.user_funder)
+    userFunderDao: userFunderDaoBuilder(fastify.models.user_funder),
+    userSocialEntrepreneurDao: userSocialEntrepreneurDaoBuilder(
+      fastify.models.user_social_entrepreneur
+    )
   });
 
   fastify.get(
