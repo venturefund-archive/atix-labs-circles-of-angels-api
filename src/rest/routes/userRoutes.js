@@ -133,12 +133,15 @@ const routes = async (fastify, options) => {
     `${basePath}/signup`,
     {
       schema: {
-        type: 'application/json',
         body: {
-          username: { type: 'string' },
-          email: { type: 'string' },
-          pwd: { type: 'string' },
-          role: { type: 'number' }
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            email: { type: 'string' },
+            pwd: { type: 'string' },
+            role: { type: 'number' }
+          },
+          required: ['username', 'email', 'pwd', 'role']
         },
         response: {
           200: {
@@ -173,7 +176,7 @@ const routes = async (fastify, options) => {
           reply.status(user.status).send(user);
         } else {
           fastify.log.info('[User Routes] :: Creation successful:', user);
-          reply.status(200).send({ success: 'User succesfully created!' });
+          reply.status(200).send({ success: 'User successfully created!' });
         }
       } catch (error) {
         fastify.log.error(error);
@@ -181,6 +184,39 @@ const routes = async (fastify, options) => {
       }
     }
   );
+
+  // fastify.put(
+  //   `${basePath}/:id`,
+  //   {
+  //     schema: {
+  //       type: 'application/json',
+  //       body: {
+  //         username: { type: 'string', required: false },
+  //         email: { type: 'string' },
+  //         pwd: { type: 'string' },
+  //         role: { type: 'number' }
+  //       },
+  //       response: {
+  //         200: {
+  //           type: 'object',
+  //           properties: {
+  //             success: { type: 'string' }
+  //           }
+  //         },
+  //         409: {
+  //           type: 'object',
+  //           properties: {
+  //             status: { type: 'number' },
+  //             error: { type: 'string' }
+  //           }
+  //         }
+  //       }
+  //     }
+  //   },
+  //   async (request, reply) => {
+
+  //   }
+  // );
 
   fastify.get(
     `${basePath}/oracle`,
