@@ -51,6 +51,7 @@ const projectService = ({
 
       const transactionHash = await fastify.eth.createProject(
         userOwner.address,
+        userOwner.pwd,
         {
           projectId: savedProject.id,
           seAddress: userOwner.address,
@@ -757,6 +758,7 @@ const projectService = ({
       // TODO: check start project in the blockchain and save the tx id
       const transactionHash = await fastify.eth.startProject(
         userOwner.address,
+        userOwner.pwd,
         { projectId }
       );
       const startedProject = await projectDao.updateProjectStatusWithTransaction(

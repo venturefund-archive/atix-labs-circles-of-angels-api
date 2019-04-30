@@ -822,6 +822,7 @@ const activityService = ({
       const milestone = await getMilestone(activity.milestone);
       const transactionHash = await fastify.eth.validateActivity(
         oracle.user.address,
+        oracle.user.pwd,
         {
           activityId,
           milestoneId: milestone.id,

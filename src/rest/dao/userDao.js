@@ -1,3 +1,5 @@
+const { isEmpty } = require('lodash');
+
 const UserDao = ({ userModel }) => ({
   async getUserById(id) {
     return userModel.findOne({ id }).populate('role');
@@ -9,7 +11,7 @@ const UserDao = ({ userModel }) => ({
 
   async createUser(user) {
     const existentUser = await userModel.find({ email: user.email });
-    if (existentUser) return {};
+    if (!isEmpty(existentUser)) return {};
     return userModel.create(user);
   },
 

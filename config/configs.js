@@ -11,8 +11,10 @@ exports.eth = {
   CONTRACT_ABI: contractJson.abi,
   DEFAULT_CONFIG: {
     defaultGas: 50000,
-    defaultGasPrice: 1000000,
-  }
+    defaultGasPrice: 1000000
+  },
+  UNLOCK_DURATION: 800,
+  INITIAL_FUNDS: 10000000000000000
 };
 
 exports.database = {
