@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const { userRegistrationStatus } = require('../util/constants');
 
 const userService = ({
   fastify,
@@ -33,8 +34,39 @@ const userService = ({
           username: user.username,
           email: user.email,
           id: user.id,
-          role: user.role
+          role: user.role,
+          registrationStatus: user.registrationStatus
         };
+
+        if (
+          user.registrationStatus === userRegistrationStatus.PENDING_APPROVAL
+        ) {
+          fastify.log.error(
+            `[User Service] :: User ID ${
+              user.id
+            } registration status is Pending Approval`
+          );
+
+          return {
+            status: 409,
+            error: 'User registration is still pending approval by the admin',
+            user: authenticatedUser
+          };
+        }
+
+        if (user.registrationStatus === userRegistrationStatus.REJECTED) {
+          fastify.log.error(
+            `[User Service] :: User ID ${
+              user.id
+            } registration status is Rejected`
+          );
+
+          return {
+            status: 409,
+            error: 'User registration was rejected by the admin',
+            user: authenticatedUser
+          };
+        }
 
         return authenticatedUser;
       }
