@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const { userRegistrationStatus } = require('../util/constants');
+const { userRegistrationStatus, userRoles } = require('../util/constants');
 
 const userService = ({
   fastify,
@@ -290,11 +290,15 @@ const userService = ({
     try {
       const userRoleList = await roleDao.getAllRoles();
 
-      if (userRoleList.length === 0) {
+      const userRoleWithoutAdmin = await userRoleList.filter(
+        userRole => userRole.id !== userRoles.BO_ADMIN
+      );
+
+      if (userRoleWithoutAdmin.length === 0) {
         fastify.log.info('[User Service] :: No User Roles loaded');
       }
 
-      return userRoleList;
+      return userRoleWithoutAdmin;
     } catch (error) {
       fastify.log.error(
         '[User Service] :: Error getting all User Roles:',
