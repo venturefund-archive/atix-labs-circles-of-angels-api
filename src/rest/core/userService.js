@@ -1,12 +1,19 @@
 const bcrypt = require('bcrypt');
-const { userRegistrationStatus } = require('../util/constants');
+const { userRoles } = require('../util/constants');
 
 const userService = ({
   fastify,
   userDao,
+  userFunderDao,
+  userSocialEntrepreneurDao,
   userRegistrationStatusDao,
   roleDao
 }) => ({
+  roleCreationMap: {
+    [userRoles.IMPACT_FUNDER]: userFunderDao,
+    [userRoles.SOCIAL_ENTREPRENEUR]: userSocialEntrepreneurDao
+  },
+
   async getUserById(id) {
     return userDao.getUserById(id);
   },
@@ -90,7 +97,7 @@ const userService = ({
    * @param {number} roleId
    * @returns new user | error
    */
-  async createUser(username, email, pwd, role) {
+  async createUser(username, email, pwd, role, detail) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
     const { address, privateKey } = await fastify.eth.createAccount();
@@ -129,6 +136,13 @@ const userService = ({
       };
 
       const savedUser = await userDao.createUser(user);
+      if (this.roleCreationMap[role]) {
+        const savedInfo = await this.roleCreationMap[role].create({
+          user: savedUser.id,
+          ...detail
+        });
+        fastify.log.info('Info saved', savedInfo);
+      }
 
       if (!savedUser || savedUser == null) {
         fastify.log.error(
@@ -175,7 +189,7 @@ const userService = ({
       `[User Service] :: User ID ${userId} doesn't have a role`
     );
     // eslint-disable-next-line prettier/prettier
-    return { error: 'User doesn\'t have a role' };
+    return { error: "User doesn't have a role" };
   },
 
   /**
