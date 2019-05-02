@@ -339,8 +339,50 @@ const userService = ({
     return userDao.getOracles();
   },
 
+  /**
+   * Returns a list of all non-admin users with their details
+   *
+   * @returns user list
+   */
   async getUsers() {
-    return userDao.getUsers();
+    fastify.log.info('[User Service] :: Getting all Users');
+    try {
+      // get users
+      const userList = await userDao.getUsers();
+
+      if (!userList || userList.length === 0) {
+        fastify.log.info(
+          '[User Service] :: There are currently no non-admin users in the database'
+        );
+        return [];
+      }
+
+      const allUsersWithDetail = await Promise.all(
+        userList.map(async user => {
+          // if se or funder get details
+          if (this.roleCreationMap[user.role.id]) {
+            const detail = await this.roleCreationMap[user.role.id].getById(
+              user.id
+            );
+
+            // add details to user
+            const userWithDetail = {
+              ...user,
+              detail
+            };
+
+            return userWithDetail;
+          }
+
+          return user;
+        })
+      );
+
+      return allUsersWithDetail;
+    } catch (error) {
+      fastify.log.error('[User Service] :: Error getting all Users:', error);
+      throw Error('Error getting all Users');
+    }
   }
 });
 
