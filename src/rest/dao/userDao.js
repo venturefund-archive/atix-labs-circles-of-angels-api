@@ -1,3 +1,5 @@
+const { userRoles } = require('../util/constants');
+
 const UserDao = ({ userModel }) => ({
   async getUserById(id) {
     return userModel.findOne({ id }).populate('role');
@@ -19,6 +21,15 @@ const UserDao = ({ userModel }) => ({
   async updateUser(id, user) {
     const updatedUser = await userModel.updateOne({ id }).set({ ...user });
     return updatedUser;
+  },
+
+  async getUsers() {
+    return userModel
+      .find({
+        where: { role: { '!=': userRoles.BO_ADMIN } }
+      })
+      .populate('role')
+      .populate('registrationStatus');
   }
 });
 

@@ -7,7 +7,8 @@ const userService = ({
   userFunderDao,
   userSocialEntrepreneurDao,
   userRegistrationStatusDao,
-  roleDao
+  roleDao,
+  questionnaireService
 }) => ({
   roleCreationMap: {
     [userRoles.IMPACT_FUNDER]: userFunderDao,
@@ -97,9 +98,8 @@ const userService = ({
    * @param {number} roleId
    * @returns new user | error
    */
-  async createUser(username, email, pwd, role, detail) {
+  async createUser(username, email, pwd, role, detail, questionnaire) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
-
     const { address, privateKey } = await fastify.eth.createAccount();
 
     try {
@@ -154,6 +154,8 @@ const userService = ({
           error: 'There was an unexpected error creating the user'
         };
       }
+
+      questionnaireService.saveQuestionnaireOfUser(savedUser.id, questionnaire);
 
       return savedUser;
     } catch (error) {
@@ -323,6 +325,10 @@ const userService = ({
    */
   async getOracles() {
     return userDao.getOracles();
+  },
+
+  async getUsers() {
+    return userDao.getUsers();
   }
 });
 
