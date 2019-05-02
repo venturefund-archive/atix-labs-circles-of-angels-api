@@ -361,7 +361,7 @@ const userService = ({
         userList.map(async user => {
           // if se or funder get details
           if (this.roleCreationMap[user.role.id]) {
-            const detail = await this.roleCreationMap[user.role.id].getById(
+            const detail = await this.roleCreationMap[user.role.id].getByUserId(
               user.id
             );
 
