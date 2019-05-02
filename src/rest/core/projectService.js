@@ -58,6 +58,8 @@ const projectService = ({
         }
       );
 
+      savedProject.creationTransactionHash = transactionHash;
+
       fastify.log.info(
         '[Project Service] :: transaction hash of project creation: ',
         transactionHash
@@ -298,6 +300,19 @@ const projectService = ({
   },
 
   async updateProjectStatus({ projectId, status }) {
+    if (
+      status === projectStatus.IN_PROGRESS ||
+      status === projectStatus.PUBLISHED
+    ) {
+      const project = await this.getProjectWithId({ projectId });
+      const isConfirmedOnBlockchain = await fastify.eth.isTransactionConfirmed(
+        project.creationTransactionHash
+      );
+      if (!isConfirmedOnBlockchain)
+        throw Error(
+          `Project ${project.projectName} is not confirmed on blockchain yet`
+        );
+    }
     const existsStatus = await projectStatusDao.existStatus({ status });
     if (existsStatus) {
       return projectDao.updateProjectStatus({ projectId, status });
