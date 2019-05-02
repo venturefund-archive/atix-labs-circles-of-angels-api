@@ -1,5 +1,9 @@
 const bcrypt = require('bcrypt');
+const mkdirp = require('mkdirp-promise');
+const { invert } = require('lodash');
+const path = require('path');
 const { userRoles } = require('../util/constants');
+const configs = require('../../../config/configs');
 
 const userService = ({
   fastify,
@@ -8,11 +12,22 @@ const userService = ({
   userSocialEntrepreneurDao,
   userRegistrationStatusDao,
   roleDao,
-  questionnaireService
+  questionnaireService,
+  fileService
 }) => ({
   roleCreationMap: {
-    [userRoles.IMPACT_FUNDER]: userFunderDao,
-    [userRoles.SOCIAL_ENTREPRENEUR]: userSocialEntrepreneurDao
+    [userRoles.IMPACT_FUNDER]: async (info, { files, filesDir }) => {
+      const { identifier } = files;
+      const filePath = `${filesDir}/Identifier${path.extname(identifier.name)}`;
+      await identifier.mv(filePath);
+      const savedIdentifier = await fileService.saveFile(filePath);
+      if (savedIdentifier && savedIdentifier != null) {
+        userFunderDao.create({ ...info, identifier: savedIdentifier.id });
+      }
+    },
+    [userRoles.SOCIAL_ENTREPRENEUR]: async info => {
+      userSocialEntrepreneurDao.create(info);
+    }
   },
 
   async getUserById(id) {
@@ -98,7 +113,7 @@ const userService = ({
    * @param {number} roleId
    * @returns new user | error
    */
-  async createUser(username, email, pwd, role, detail, questionnaire) {
+  async createUser(username, email, pwd, role, detail, questionnaire, files) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
     const { address, privateKey } = await fastify.eth.createAccount();
 
@@ -137,10 +152,18 @@ const userService = ({
 
       const savedUser = await userDao.createUser(user);
       if (this.roleCreationMap[role]) {
-        const savedInfo = await this.roleCreationMap[role].create({
-          user: savedUser.id,
-          ...detail
-        });
+        const roleName = invert(userRoles)[role];
+        const filesDir = `${configs.fileServer.filePath}/users/${roleName}/${
+          savedUser.id
+        }`;
+        await mkdirp(filesDir);
+        const savedInfo = await this.roleCreationMap[role](
+          {
+            user: savedUser.id,
+            ...detail
+          },
+          { files, filesDir }
+        );
         fastify.log.info('Info saved', savedInfo);
       }
 

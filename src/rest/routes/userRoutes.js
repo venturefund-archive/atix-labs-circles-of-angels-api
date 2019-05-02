@@ -1,3 +1,5 @@
+const fileUpload = require('fastify-file-upload');
+
 const userDaoBuilder = require('../dao/userDao');
 const userRegistrationStatusDaoBuilder = require('../dao/userRegistrationStatusDao');
 const roleDaoBuilder = require('../dao/roleDao');
@@ -9,9 +11,17 @@ const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurD
 const questionnaireServiceBuilder = require('../core/questionnaireService');
 const answerQuestionDaoBuilder = require('../dao/answerQuestionDao');
 
+const fileServiceBuilder = require('../core/fileService');
+const fileDaoBuilder = require('../dao/fileDao');
+
 const routes = async (fastify, options) => {
+  fastify.register(fileUpload);
   const questionnaireService = questionnaireServiceBuilder({
     answerQuestionDao: answerQuestionDaoBuilder(fastify.models.answer_question)
+  });
+  const fileService = fileServiceBuilder({
+    fastify,
+    fileDao: fileDaoBuilder(fastify.models.file)
   });
   const userService = require('../core/userService')({
     fastify,
@@ -26,7 +36,8 @@ const routes = async (fastify, options) => {
     userSocialEntrepreneurDao: userSocialEntrepreneurDaoBuilder(
       fastify.models.user_social_entrepreneur
     ),
-    questionnaireService
+    questionnaireService,
+    fileService
   });
 
   fastify.get(
@@ -263,22 +274,31 @@ const routes = async (fastify, options) => {
     `${basePath}/signup`,
     {
       schema: {
-        body: {
-          type: 'object',
-          properties: {
-            username: { type: 'string' },
-            email: { type: 'string' },
-            pwd: { type: 'string' },
-            role: { type: 'number' },
-            detail: { type: 'object' },
-            questionnaire: {
-              type: 'array',
-              items: {
-                type: 'object'
+        type: 'multipart/form-data',
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: {
+              user: {
+                type: 'object',
+                properties: {
+                  username: { type: 'string' },
+                  email: { type: 'string' },
+                  pwd: { type: 'string' },
+                  role: { type: 'number' },
+                  detail: { type: 'object' },
+                  questionnaire: {
+                    type: 'array',
+                    items: {
+                      type: 'object'
+                    }
+                  }
+                }
               }
-            }
-          },
-          required: ['username', 'email', 'pwd', 'role']
+            },
+            required: ['username', 'email', 'pwd', 'role']
+          }
         },
         response: {
           200: {
@@ -306,6 +326,7 @@ const routes = async (fastify, options) => {
     },
     async (request, reply) => {
       try {
+        const userObject = Object.assign({}, JSON.parse(request.raw.body.user));
         const {
           email,
           pwd,
@@ -313,16 +334,16 @@ const routes = async (fastify, options) => {
           role,
           detail,
           questionnaire
-        } = request.body;
-
-        fastify.log.info('[User Routes] :: Creating new user:', request.body);
+        } = userObject;
+        fastify.log.info('[User Routes] :: Creating new user:', userObject);
         const user = await userService.createUser(
           username,
           email,
           pwd,
           role,
           detail,
-          questionnaire
+          questionnaire,
+          request.raw.files
         );
 
         if (user.error) {
