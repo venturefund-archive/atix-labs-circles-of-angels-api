@@ -314,7 +314,6 @@ const userService = ({
     try {
       const userRoleList = await roleDao.getAllRoles();
 
-<<<<<<< HEAD
       const userRoleWithoutAdmin = await userRoleList.filter(
         userRole => userRole.id !== userRoles.BO_ADMIN
       );
@@ -324,13 +323,6 @@ const userService = ({
       }
 
       return userRoleWithoutAdmin;
-=======
-      if (userRoleList.length === 0) {
-        fastify.log.info('[User Service] :: No User Roles loaded');
-      }
-
-      return userRoleList;
->>>>>>> COA-561 add role verification at sign up and endpoint to get all roles
     } catch (error) {
       fastify.log.error(
         '[User Service] :: Error getting all User Roles:',
