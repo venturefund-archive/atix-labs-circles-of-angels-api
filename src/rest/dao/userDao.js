@@ -1,4 +1,3 @@
-const { isEmpty } = require('lodash');
 const { userRoles } = require('../util/constants');
 
 const UserDao = ({ userModel }) => ({
