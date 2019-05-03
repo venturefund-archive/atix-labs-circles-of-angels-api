@@ -21,6 +21,10 @@ module.exports = {
     role: {
       columnName: 'roleId',
       model: 'role'
+    },
+    registrationStatus: {
+      columnName: 'registrationStatus',
+      model: 'user_registration_status'
     }
   },
   async findById(id) {

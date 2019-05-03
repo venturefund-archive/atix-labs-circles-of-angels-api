@@ -36,11 +36,18 @@ const milestoneBudgetStatus = {
   TRANSFERRED: 2
 };
 
+const userRegistrationStatus = {
+  PENDING_APPROVAL: 1,
+  APPROVED: 2,
+  REJECTED: 3
+};
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
   projectStatus,
   activityStatus,
   userRoles,
-  milestoneBudgetStatus
+  milestoneBudgetStatus,
+  userRegistrationStatus
 };
