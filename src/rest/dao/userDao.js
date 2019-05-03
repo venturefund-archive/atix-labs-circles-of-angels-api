@@ -8,13 +8,17 @@ const UserDao = ({ userModel }) => ({
   },
 
   async createUser(user) {
-    const existentUser = await userModel.find({ email: user.email });
-    if (existentUser) return {};
-    return userModel.create(user);
+    const createdUser = await userModel.create(user);
+    return createdUser;
   },
 
   async getOracles() {
     return userModel.find({ role: 4 }).populate('role');
+  },
+
+  async updateUser(id, user) {
+    const updatedUser = await userModel.updateOne({ id }).set({ ...user });
+    return updatedUser;
   }
 });
 
