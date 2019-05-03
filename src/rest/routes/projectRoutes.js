@@ -253,7 +253,7 @@ const routes = async fastify => {
         reply.status(200).send(response);
       } catch (error) {
         fastify.log.error(error);
-        reply.status(500).send({ error: error.message });
+        reply.status(500).send( 'Error updating project status' );
       }
     }
   );
