@@ -155,17 +155,6 @@ const userService = ({
         };
       }
 
-      if (!savedUser || savedUser == null) {
-        fastify.log.error(
-          '[User Service] :: There was an unexpected error creating the user:',
-          user
-        );
-        return {
-          status: 500,
-          error: 'There was an unexpected error creating the user'
-        };
-      }
-
       return savedUser;
     } catch (error) {
       fastify.log.error('[User Service] :: Error creating User:', error);
