@@ -87,6 +87,19 @@ const fileService = ({ fastify, fileDao }) => ({
       fastify.log.error('[File Service] :: Error deleting file:', error);
       throw Error('Error deleting file');
     }
+  },
+
+  checkEvidenceFileType(file) {
+    const fileType = file.mimetype;
+    const validTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ];
+
+    return validTypes.includes(fileType);
   }
 });
 

@@ -164,6 +164,11 @@ const photoService = ({ fastify, photoDao }) => ({
       fastify.log.error('[Photo Service] :: Error deleting photo:', error);
       throw Error('Error deleting photo');
     }
+  },
+
+  checkEvidencePhotoType(photo) {
+    const fileType = photo.mimetype;
+    return fileType.includes('image/');
   }
 });
 
