@@ -313,6 +313,10 @@ const userService = ({
    */
   async getOracles() {
     return userDao.getOracles();
+  },
+
+  async getUsers() {
+    return userDao.getUsers();
   }
 });
 
