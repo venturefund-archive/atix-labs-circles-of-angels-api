@@ -1,5 +1,6 @@
 const userDaoBuilder = require('../dao/userDao');
 const userRegistrationStatusDaoBuilder = require('../dao/userRegistrationStatusDao');
+const roleDaoBuilder = require('../dao/roleDao');
 
 const basePath = '/user';
 
@@ -11,7 +12,8 @@ const routes = async (fastify, options) => {
     }),
     userRegistrationStatusDao: userRegistrationStatusDaoBuilder(
       fastify.models.user_registration_status
-    )
+    ),
+    roleDao: roleDaoBuilder(fastify.models.role)
   });
 
   fastify.get(
@@ -114,6 +116,91 @@ const routes = async (fastify, options) => {
     }
   );
 
+  fastify.get(
+    `${basePath}/registrationStatus`,
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              registrationStatus: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    name: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        fastify.log.info(
+          `[User Routes] :: GET request at ${basePath}/registrationStatus`
+        );
+
+        const registrationStatus = await userService.getAllRegistrationStatus();
+        reply.status(200).send({ registrationStatus });
+      } catch (error) {
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all user registration status:',
+          error
+        );
+        reply.status(500).send({
+          error:
+            'There was an unexpected error getting all user registration status'
+        });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/role`,
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              roles: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    name: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
+
+        const roles = await userService.getAllRoles();
+        reply.status(200).send({ roles });
+      } catch (error) {
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all user roles:',
+          error
+        );
+        reply.status(500).send({
+          error: 'There was an unexpected error getting all user roles'
+        });
+      }
+    }
+  );
+
   fastify.post(
     `${basePath}/login`,
     {
@@ -180,7 +267,7 @@ const routes = async (fastify, options) => {
               success: { type: 'string' }
             }
           },
-          409: {
+          '4xx': {
             type: 'object',
             properties: {
               status: { type: 'number' },

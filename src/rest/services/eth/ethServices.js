@@ -1,25 +1,6 @@
 const Web3 = require('web3');
 const ethConfig = require('../../../../config/configs').eth;
 
-const makeTx = async (sender, method, logger) => {
-  return new Promise((resolve, reject) => {
-    method.send(
-      {
-        from: sender,
-        gasLimit: 10000000000
-      },
-      (err, hash) => {
-        if (err) {
-          logger.error(err);
-          reject(err);
-        }
-        logger.info(`TxHash: ${hash}`);
-        resolve(hash);
-      }
-    );
-  });
-};
-
 /**
  * Init a ethereum services, receiving the provider host and returns and object
  * @param {string} providerHost
@@ -32,51 +13,59 @@ const ethServices = async (providerHost, { logger }) => {
     ethConfig.DEFAULT_CONFIG
   );
 
-  // const create = COAContract.methods.createProject(
-  //   1,
-  //   '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
-  //   'Nombre proyecto'
-  // );
-  // // console.log(create);
-  // // console.log(create.send);
-  // // console.log('antes');
+  const makeTx = async (sender, pwd, method) => {
+    await web3.eth.personal.unlockAccount(
+      sender,
+      pwd,
+      ethConfig.UNLOCK_DURATION
+    );
+    return new Promise((resolve, reject) => {
+      method.send(
+        {
+          from: sender,
+          gasLimit: 10000000000
+        },
+        (err, hash) => {
+          if (err) {
+            logger.error(err);
+            reject(err);
+          }
+          logger.info(`TxHash: ${hash}`);
+          resolve(hash);
+        }
+      );
+    });
+  };
 
-  // const llamada = create.send(
-  //   {
-  //     from: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
-  //     gasLimit: 100000
-  //   },
-  //   (err, hash) => {
-  //     if (err) {
-  //       console.log(err);
-  //     }
-  //     console.log(`TxHash: ${hash}`);
-  //   }
-  // );
-  // console.log('tu hna');
-  // console.log(llamada);
-
-  // .send({
-  //   sender: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
-  //   gasLimit: 100000
-  // });
-
-  // const res = await ethSend(
-  //   '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
-  //   COAContract.methods.createProject(
-  //     1,
-  //     '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
-  //     'Nombre proyecto'
-  //   ),
-  //   error => console.error(error)
-  // );
-  // console.log(res);
+  const transfer = async (sender, receiver, value) => {
+    return new Promise((resolve, reject) => {
+      web3.eth.sendTransaction(
+        {
+          from: sender,
+          to: receiver,
+          value
+        },
+        (err, recipt) => {
+          if (err) {
+            logger.error(err);
+            reject(err);
+          }
+          logger.info(`TxHash: ${recipt}`);
+          resolve(recipt);
+        }
+      );
+    });
+  };
 
   return {
-    async createAccount() {
-      return web3.eth.accounts.create();
+    async createAccount(pwd) {
+      const account = await web3.eth.personal.newAccount(pwd);
+      const adminAccount = (await web3.eth.getAccounts())[0];
+      await transfer(adminAccount, account, ethConfig.INITIAL_FUNDS);
+      return account;
     },
-    async createProject(sender, { projectId, seAddress, projectName }) {
+
+    async createProject(sender, pwd, { projectId, seAddress, projectName }) {
       logger.info(
         `[SC::Create Project] Creating Project: ${projectId} - ${projectName}`
       );
@@ -85,17 +74,18 @@ const ethServices = async (providerHost, { logger }) => {
         seAddress,
         projectName
       );
-      return makeTx(sender, create, logger);
+      return makeTx(sender, pwd, create);
     },
 
-    async startProject(sender, { projectId }) {
+    async startProject(sender, pwd, { projectId }) {
       logger.info(`[SC::Start Project] Starting Project: ${projectId}`);
       const start = COAContract.methods.startProject(projectId);
-      return makeTx(sender, start, logger);
+      return makeTx(sender, pwd, start);
     },
 
     async createMilestone(
       sender,
+      pwd,
       { milestoneId, projectId, budget, description }
     ) {
       logger.info(
@@ -109,11 +99,12 @@ const ethServices = async (providerHost, { logger }) => {
         description
       );
 
-      return makeTx(sender, createMilestone, logger);
+      return makeTx(sender, pwd, createMilestone);
     },
 
     async createActivity(
       sender,
+      pwd,
       { activityId, milestoneId, projectId, oracleAddress, description }
     ) {
       logger.info(
@@ -128,14 +119,18 @@ const ethServices = async (providerHost, { logger }) => {
         description
       );
 
-      return makeTx(sender, createActivity, logger);
+      return makeTx(sender, pwd, createActivity);
     },
     /**
      * @param {*} sender The oracle address assigned to this activity
      * @param {*} onError error callback
      * @param {*} activity {activityId, projectId, milestoneId}
      */
-    async validateActivity(sender, { activityId, milestoneId, projectId }) {
+    async validateActivity(
+      sender,
+      pwd,
+      { activityId, milestoneId, projectId }
+    ) {
       logger.info(`[SC::Validate Activity] Validate Activity: ${activityId}`);
       logger.info(
         `[SC::Validate Activity] Validate Activity project: ${projectId}`
@@ -151,7 +146,7 @@ const ethServices = async (providerHost, { logger }) => {
         projectId
       );
 
-      return makeTx(sender, validateActivity, logger);
+      return makeTx(sender, pwd, validateActivity);
     },
     async isTransactionConfirmed(transactionHash) {
       const transaction = await web3.eth.getTransaction(transactionHash);

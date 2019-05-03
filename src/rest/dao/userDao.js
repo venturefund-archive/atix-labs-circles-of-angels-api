@@ -1,4 +1,5 @@
 const { userRoles } = require('../util/constants');
+const { isEmpty } = require('lodash');
 
 const UserDao = ({ userModel }) => ({
   async getUserById(id) {
@@ -10,8 +11,9 @@ const UserDao = ({ userModel }) => ({
   },
 
   async createUser(user) {
-    const createdUser = await userModel.create(user);
-    return createdUser;
+    const existentUser = await userModel.find({ email: user.email });
+    if (!isEmpty(existentUser)) return {};
+    return userModel.create(user);
   },
 
   async getOracles() {

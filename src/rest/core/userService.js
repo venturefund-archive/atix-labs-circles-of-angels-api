@@ -1,6 +1,12 @@
 const bcrypt = require('bcrypt');
+const { userRegistrationStatus, userRoles } = require('../util/constants');
 
-const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
+const userService = ({
+  fastify,
+  userDao,
+  userRegistrationStatusDao,
+  roleDao
+}) => ({
   async getUserById(id) {
     return userDao.getUserById(id);
   },
@@ -28,8 +34,39 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
           username: user.username,
           email: user.email,
           id: user.id,
-          role: user.role
+          role: user.role,
+          registrationStatus: user.registrationStatus
         };
+
+        if (
+          user.registrationStatus === userRegistrationStatus.PENDING_APPROVAL
+        ) {
+          fastify.log.error(
+            `[User Service] :: User ID ${
+              user.id
+            } registration status is Pending Approval`
+          );
+
+          return {
+            status: 409,
+            error: 'User registration is still pending approval by the admin',
+            user: authenticatedUser
+          };
+        }
+
+        if (user.registrationStatus === userRegistrationStatus.REJECTED) {
+          fastify.log.error(
+            `[User Service] :: User ID ${
+              user.id
+            } registration status is Rejected`
+          );
+
+          return {
+            status: 409,
+            error: 'User registration was rejected by the admin',
+            user: authenticatedUser
+          };
+        }
 
         return authenticatedUser;
       }
@@ -56,7 +93,7 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
   async createUser(username, email, pwd, role) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
-    const { address, privateKey } = await fastify.eth.createAccount();
+    const address = await fastify.eth.createAccount(hashedPwd);
 
     try {
       const existingUser = await userDao.getUserByEmail(email);
@@ -68,6 +105,16 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
         return {
           status: 409,
           error: 'A user with that email already exists'
+        };
+      }
+
+      const validRole = await roleDao.getRoleById(role);
+
+      if (!validRole) {
+        fastify.log.error(`[User Service] :: Role ID ${role} does not exist.`);
+        return {
+          status: 404,
+          error: 'User role does not exist'
         };
       }
 
@@ -131,6 +178,12 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
     return { error: 'User doesn\'t have a role' };
   },
 
+  /**
+   * Updates an existing user
+   * @param {number} userId
+   * @param {*} user
+   * @returns updated user | error
+   */
   async updateUser(userId, user) {
     fastify.log.info('[User Service] :: Updating User:', user);
     try {
@@ -200,6 +253,58 @@ const userService = ({ fastify, userDao, userRegistrationStatusDao }) => ({
     } catch (error) {
       fastify.log.error('[User Service] :: Error updating User:', error);
       throw Error('Error updating User');
+    }
+  },
+
+  /**
+   * Gets all valid user registration status
+   * @returns registration status list | error
+   */
+  async getAllRegistrationStatus() {
+    fastify.log.info('[User Service] :: Getting all User Registration Status');
+    try {
+      const userRegistrationStatusList = await userRegistrationStatusDao.getAllRegistrationStatus();
+
+      if (userRegistrationStatusList.length === 0) {
+        fastify.log.info(
+          '[User Service] :: No User Registration Status loaded'
+        );
+      }
+
+      return userRegistrationStatusList;
+    } catch (error) {
+      fastify.log.error(
+        '[User Service] :: Error getting all User Registration Status:',
+        error
+      );
+      throw Error('Error getting all User Registration Status');
+    }
+  },
+
+  /**
+   * Gets all valid user roles
+   * @returns role list | error
+   */
+  async getAllRoles() {
+    fastify.log.info('[User Service] :: Getting all User Roles');
+    try {
+      const userRoleList = await roleDao.getAllRoles();
+
+      const userRoleWithoutAdmin = await userRoleList.filter(
+        userRole => userRole.id !== userRoles.BO_ADMIN
+      );
+
+      if (userRoleWithoutAdmin.length === 0) {
+        fastify.log.info('[User Service] :: No User Roles loaded');
+      }
+
+      return userRoleWithoutAdmin;
+    } catch (error) {
+      fastify.log.error(
+        '[User Service] :: Error getting all User Roles:',
+        error
+      );
+      throw Error('Error getting all User Roles');
     }
   },
 
