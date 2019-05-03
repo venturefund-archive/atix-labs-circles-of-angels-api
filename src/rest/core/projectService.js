@@ -1,6 +1,7 @@
 const mkdirp = require('mkdirp-promise');
 const fs = require('fs');
 const path = require('path');
+const mime = require('mime');
 const { isEmpty, uniq } = require('lodash');
 const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
@@ -46,6 +47,66 @@ const projectService = ({
 
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
+      fastify.log.info('[Project Service] :: Checking file types');
+
+      if (!projectAgreement || !this.checkAgreementType(projectAgreement)) {
+        fastify.log.error(
+          '[Project Service] :: Wrong file type for Project Agreement',
+          projectAgreement
+        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded Agreement'
+        };
+      }
+
+      if (!projectProposal || !this.checkProposalType(projectProposal)) {
+        fastify.log.error(
+          '[Project Service] :: Wrong file type for Project Proposal',
+          projectProposal
+        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded Proposal'
+        };
+      }
+
+      if (!projectCardPhoto || !this.checkCardPhotoType(projectCardPhoto)) {
+        fastify.log.error(
+          '[Project Service] :: Wrong file type for Project Card Photo',
+          projectCardPhoto
+        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded card photo'
+        };
+      }
+
+      if (!projectCoverPhoto || !this.checkCoverPhotoType(projectCoverPhoto)) {
+        fastify.log.error(
+          '[Project Service] :: Wrong file type for Project Cover Photo',
+          projectCoverPhoto
+        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded cover photo'
+        };
+      }
+
+      if (
+        !projectMilestones ||
+        !this.checkMilestonesFileType(projectMilestones)
+      ) {
+        fastify.log.error(
+          '[Project Service] :: Wrong file type for Project Milestones file',
+          projectMilestones
+        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded Milestones file'
+        };
+      }
+
       const savedProject = await projectDao.saveProject(newProject);
       const userOwner = await userDao.getUserById(ownerId);
 
@@ -57,6 +118,8 @@ const projectService = ({
           projectName: savedProject.projectName
         }
       );
+
+      savedProject.creationTransactionHash = transactionHash;
 
       fastify.log.info(
         '[Project Service] :: transaction hash of project creation: ',
@@ -169,6 +232,48 @@ const projectService = ({
       fastify.log.error('[Project Service] :: Error creating Project:', err);
       throw Error('Error creating Project');
     }
+  },
+
+  checkProposalType(file) {
+    const fileType = file.mimetype;
+    return (
+      fileType === 'application/msword' ||
+      fileType ===
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      fileType === 'application/pdf' ||
+      fileType === 'application/vnd.ms-powerpoint' ||
+      fileType ===
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    );
+  },
+
+  checkAgreementType(file) {
+    const fileType = file.mimetype;
+    return (
+      fileType === 'application/msword' ||
+      fileType ===
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      fileType === 'application/pdf'
+    );
+  },
+
+  checkCoverPhotoType(file) {
+    const fileType = file.mimetype;
+    return fileType.includes('image/');
+  },
+
+  checkCardPhotoType(file) {
+    const fileType = file.mimetype;
+    return fileType.includes('image/');
+  },
+
+  checkMilestonesFileType(file) {
+    const fileType = file.mimetype;
+    return (
+      fileType === 'application/vnd.ms-excel' ||
+      fileType ===
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
   },
 
   /**
@@ -298,6 +403,19 @@ const projectService = ({
   },
 
   async updateProjectStatus({ projectId, status }) {
+    if (
+      status === projectStatus.IN_PROGRESS ||
+      status === projectStatus.PUBLISHED
+    ) {
+      const project = await this.getProjectWithId({ projectId });
+      const isConfirmedOnBlockchain = await fastify.eth.isTransactionConfirmed(
+        project.creationTransactionHash
+      );
+      if (!isConfirmedOnBlockchain)
+        throw Error(
+          `Project ${project.projectName} is not confirmed on blockchain yet`
+        );
+    }
     const existsStatus = await projectStatusDao.existStatus({ status });
     if (existsStatus) {
       return projectDao.updateProjectStatus({ projectId, status });
