@@ -52,6 +52,29 @@ const routes = async (fastify, options) => {
   );
 
   fastify.get(
+    `${basePath}`,
+    {
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[User Routes] :: Getting all users');
+      try {
+        const users = await userService.getUsers();
+        reply.status(200).send(users);
+      } catch (error) {
+        reply.status(500).send({ error });
+      }
+    }
+  );
+
+  fastify.get(
     `${basePath}/:userId/role`,
     {
       schema: {
