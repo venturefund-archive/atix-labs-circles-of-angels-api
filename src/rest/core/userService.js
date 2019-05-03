@@ -141,7 +141,7 @@ const userService = ({
           user: savedUser.id,
           ...detail
         });
-        fastify.log.info('[User Service] :: Info saved', savedInfo);
+        fastify.log.info('[User Service] :: User Info saved', savedInfo);
       }
 
       if (!savedUser || savedUser == null) {
