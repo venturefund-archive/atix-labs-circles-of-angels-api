@@ -11,9 +11,8 @@ const UserDao = ({ userModel }) => ({
   },
 
   async createUser(user) {
-    const existentUser = await userModel.find({ email: user.email });
-    if (!isEmpty(existentUser)) return {};
-    return userModel.create(user);
+    const createdUser = await userModel.create(user);
+    return createdUser;
   },
 
   async getOracles() {
