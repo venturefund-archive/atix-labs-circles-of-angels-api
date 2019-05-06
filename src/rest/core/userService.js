@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const { userRoles } = require('../util/constants');
+const { userRegistrationStatus, userRoles } = require('../util/constants');
 
 const userService = ({
   fastify,
@@ -100,7 +100,8 @@ const userService = ({
    */
   async createUser(username, email, pwd, role, detail, questionnaire) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
-    const { address, privateKey } = await fastify.eth.createAccount();
+
+    const { address, privateKey } = await fastify.eth.createAccount(hashedPwd);
 
     try {
       const existingUser = await userDao.getUserByEmail(email);
@@ -141,7 +142,7 @@ const userService = ({
           user: savedUser.id,
           ...detail
         });
-        fastify.log.info('Info saved', savedInfo);
+        fastify.log.info('[User Service] :: User Info saved', savedInfo);
       }
 
       if (!savedUser || savedUser == null) {
@@ -190,7 +191,6 @@ const userService = ({
     fastify.log.error(
       `[User Service] :: User ID ${userId} doesn't have a role`
     );
-    // eslint-disable-next-line prettier/prettier
     return { error: "User doesn't have a role" };
   },
 
@@ -306,11 +306,15 @@ const userService = ({
     try {
       const userRoleList = await roleDao.getAllRoles();
 
-      if (userRoleList.length === 0) {
+      const userRoleWithoutAdmin = await userRoleList.filter(
+        userRole => userRole.id !== userRoles.BO_ADMIN
+      );
+
+      if (userRoleWithoutAdmin.length === 0) {
         fastify.log.info('[User Service] :: No User Roles loaded');
       }
 
-      return userRoleList;
+      return userRoleWithoutAdmin;
     } catch (error) {
       fastify.log.error(
         '[User Service] :: Error getting all User Roles:',
@@ -327,8 +331,50 @@ const userService = ({
     return userDao.getOracles();
   },
 
+  /**
+   * Returns a list of all non-admin users with their details
+   *
+   * @returns user list
+   */
   async getUsers() {
-    return userDao.getUsers();
+    fastify.log.info('[User Service] :: Getting all Users');
+    try {
+      // get users
+      const userList = await userDao.getUsers();
+
+      if (!userList || userList.length === 0) {
+        fastify.log.info(
+          '[User Service] :: There are currently no non-admin users in the database'
+        );
+        return [];
+      }
+
+      const allUsersWithDetail = await Promise.all(
+        userList.map(async user => {
+          // if se or funder get details
+          if (this.roleCreationMap[user.role.id]) {
+            const detail = await this.roleCreationMap[user.role.id].getByUserId(
+              user.id
+            );
+
+            // add details to user
+            const userWithDetail = {
+              ...user,
+              detail
+            };
+
+            return userWithDetail;
+          }
+
+          return user;
+        })
+      );
+
+      return allUsersWithDetail;
+    } catch (error) {
+      fastify.log.error('[User Service] :: Error getting all Users:', error);
+      throw Error('Error getting all Users');
+    }
   }
 });
 

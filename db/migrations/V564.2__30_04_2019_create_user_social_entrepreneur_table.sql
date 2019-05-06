@@ -6,5 +6,6 @@ CREATE TABLE public.user_social_entrepreneur (
 	"address" varchar(80) not null,
 	"industry" varchar(80) not null,
 	"bank_account" varchar(40) not null,
+	"phoneNumber" varchar(80),
 	foreign key ("userId") references "user"(id)
 );

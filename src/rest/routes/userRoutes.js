@@ -13,6 +13,7 @@ const routes = async (fastify, options) => {
   const questionnaireService = questionnaireServiceBuilder({
     answerQuestionDao: answerQuestionDaoBuilder(fastify.models.answer_question)
   });
+
   const userService = require('../core/userService')({
     fastify,
     userDao: userDaoBuilder({
@@ -74,9 +75,15 @@ const routes = async (fastify, options) => {
       fastify.log.info('[User Routes] :: Getting all users');
       try {
         const users = await userService.getUsers();
-        reply.status(200).send(users);
+        reply.status(200).send({ users });
       } catch (error) {
-        reply.status(500).send({ error });
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all users:',
+          error
+        );
+        reply.status(500).send({
+          error: 'There was an unexpected error getting all users'
+        });
       }
     }
   );
@@ -115,16 +122,12 @@ const routes = async (fastify, options) => {
         }
       } catch (error) {
         fastify.log.error(
-          // eslint-disable-next-line prettier/prettier
           "[User Routes] :: There was an error getting the user's role:",
           error
         );
-        reply
-          .status(500)
-          // eslint-disable-next-line prettier/prettier
-          .send({
-            error: "There was an unexpected error getting the user's role"
-          });
+        reply.status(500).send({
+          error: "There was an unexpected error getting the user's role"
+        });
       }
     }
   );

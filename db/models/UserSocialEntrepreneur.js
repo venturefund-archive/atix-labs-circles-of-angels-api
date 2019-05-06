@@ -7,6 +7,7 @@
  * @attribute `registrationNumber`: identification number of company
  * @attribute `industry`: wich industry is the company
  * @attribute `bank_account`: bank account of company
+ * @attribute `phoneNumber`: phone number
  */
 module.exports = {
   identity: 'user_social_entrepreneur',
@@ -21,6 +22,7 @@ module.exports = {
     registrationNumber: { type: 'string', required: true },
     industry: { type: 'string', required: true },
     address: { type: 'string', required: true },
-    bank_account: { type: 'string', required: true }
+    bank_account: { type: 'string', required: true },
+    phoneNumber: { type: 'string', allowNull: true }
   }
 };
