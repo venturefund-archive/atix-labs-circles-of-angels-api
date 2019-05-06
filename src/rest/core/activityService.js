@@ -620,8 +620,13 @@ const activityService = ({
    * Delete an activity with id
    * @param {number} activityId
    */
-  deleteActivity(activityId) {
-    return activityDao.deleteActivity(activityId);
+  async deleteActivity(activityId, milestoneService) {
+    const deleted = await activityDao.deleteActivity(activityId);
+    const milestoneEmpty =
+      deleted &&
+      !(await milestoneService.milestoneHasActivities(deleted.milestone));
+    if (milestoneEmpty)
+      await milestoneService.deleteMilestone(deleted.milestone);
   },
 
   /**

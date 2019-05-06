@@ -177,6 +177,14 @@ const milestoneService = ({
     }
   },
 
+  async milestoneHasActivities(milestoneId) {
+    const milestoneActivities = await milestoneDao.getMilestoneActivities(
+      milestoneId
+    );
+    console.log(milestoneActivities.activities)
+    return !isEmpty(milestoneActivities.activities);
+  },
+
   /**
    * Receives a Milestone and populates them with its Activities
    *
