@@ -101,7 +101,7 @@ const userService = ({
   async createUser(username, email, pwd, role, detail, questionnaire) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
-    const { address } = await fastify.eth.createAccount(hashedPwd);
+    const address = await fastify.eth.createAccount(hashedPwd);
 
     try {
       const existingUser = await userDao.getUserByEmail(email);
@@ -340,6 +340,10 @@ const userService = ({
     try {
       // get users
       const userList = await userDao.getUsers();
+      userList.forEach(async user => {
+        const answers = await questionnaireService.getAnswersOfUser(user);
+        user.answers = answers;
+      });
 
       if (!userList || userList.length === 0) {
         fastify.log.info(
