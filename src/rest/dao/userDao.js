@@ -1,5 +1,4 @@
 const { userRoles } = require('../util/constants');
-const { isEmpty } = require('lodash');
 
 const UserDao = ({ userModel }) => ({
   async getUserById(id) {
