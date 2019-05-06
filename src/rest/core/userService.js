@@ -101,7 +101,7 @@ const userService = ({
   async createUser(username, email, pwd, role, detail, questionnaire) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
-    const { address, privateKey } = await fastify.eth.createAccount(hashedPwd);
+    const { address } = await fastify.eth.createAccount(hashedPwd);
 
     try {
       const existingUser = await userDao.getUserByEmail(email);
@@ -132,7 +132,6 @@ const userService = ({
         pwd: hashedPwd,
         role,
         address,
-        privateKey,
         registrationStatus: 1
       };
 
