@@ -12,6 +12,10 @@ const questionnaireService = ({ answerQuestionDao }) => ({
       });
     });
     answerQuestionDao.createQuestionnaireEntry(proccessedQuestionnaire);
+  },
+
+  async getAnswersOfUser(user) {
+    return answerQuestionDao.getByUserId(user.id);
   }
 });
 
