@@ -4,7 +4,10 @@ const createQuestionnaireEntry = answerQuestionModel => async questionnaire => {
 };
 
 const getByUserId = answerQuestionModel => async userId => {
-  return answerQuestionModel.find({ user: userId }).populate('answer');
+  return answerQuestionModel
+    .find({ user: userId })
+    .populate('answer')
+    .populate('question');
 };
 
 module.exports = answerQuestionModel => ({
