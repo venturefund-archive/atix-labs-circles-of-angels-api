@@ -67,9 +67,15 @@ const routes = async (fastify, options) => {
       fastify.log.info('[User Routes] :: Getting all users');
       try {
         const users = await userService.getUsers();
-        reply.status(200).send(users);
+        reply.status(200).send({ users });
       } catch (error) {
-        reply.status(500).send({ error });
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all users:',
+          error
+        );
+        reply.status(500).send({
+          error: 'There was an unexpected error getting all users'
+        });
       }
     }
   );
