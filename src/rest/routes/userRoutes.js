@@ -238,7 +238,7 @@ const routes = async (fastify, options) => {
 
         if (user.error) {
           fastify.log.error('[User Routes] :: Log in failed for user:', email);
-          reply.status(401).send({ error: user.error });
+          reply.status(401).send({ error: user });
         } else {
           fastify.log.info(
             '[User Routes] :: Log in successful for user:',
