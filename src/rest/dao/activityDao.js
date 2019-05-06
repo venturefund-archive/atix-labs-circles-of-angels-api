@@ -28,7 +28,7 @@ const updateActivity = activityModel => async (activity, activityId) => {
 };
 
 const deleteActivity = activityModel => async activityId => {
-  const deleted = activityModel.destroy(activityId).fetch();
+  const deleted = activityModel.destroyOne(activityId);
   return deleted;
 };
 

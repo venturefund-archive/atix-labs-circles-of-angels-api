@@ -13,7 +13,6 @@ module.exports = {
     username: { type: 'string', required: true },
     email: { type: 'string', required: true },
     pwd: { type: 'string', required: true },
-    privateKey: { type: 'string', allowNull: true },
     address: { type: 'string', allowNull: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
@@ -21,6 +20,10 @@ module.exports = {
     role: {
       columnName: 'roleId',
       model: 'role'
+    },
+    registrationStatus: {
+      columnName: 'registrationStatus',
+      model: 'user_registration_status'
     }
   },
   async findById(id) {

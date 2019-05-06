@@ -639,7 +639,7 @@ const milestoneService = ({
   async startMilestonesOfProject(project, owner) {
     const milestones = await this.getMilestonesByProject(project.id);
     milestones.forEach(async milestone => {
-      await fastify.eth.createMilestone(owner.address, {
+      await fastify.eth.createMilestone(owner.address, owner.pwd, {
         milestoneId: milestone.id,
         projectId: project.id,
         budget: milestone.budget,
@@ -649,7 +649,7 @@ const milestoneService = ({
 
       activities.activities.forEach(async activity => {
         const oracle = await activityService.getOracleFromActivity(activity.id);
-        await fastify.eth.createActivity(owner.address, {
+        await fastify.eth.createActivity(owner.address, owner.pwd, {
           activityId: activity.id,
           milestoneId: milestone.id,
           projectId: project.id,

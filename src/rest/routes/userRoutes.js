@@ -1,12 +1,25 @@
+const userDaoBuilder = require('../dao/userDao');
+const userRegistrationStatusDaoBuilder = require('../dao/userRegistrationStatusDao');
+const roleDaoBuilder = require('../dao/roleDao');
+
 const basePath = '/user';
+const userFunderDaoBuilder = require('../dao/userFunderDao');
+const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurDao');
 
 const routes = async (fastify, options) => {
-  const userDao = require('../dao/userDao')({
-    userModel: fastify.models.user
-  });
   const userService = require('../core/userService')({
     fastify,
-    userDao
+    userDao: userDaoBuilder({
+      userModel: fastify.models.user
+    }),
+    userRegistrationStatusDao: userRegistrationStatusDaoBuilder(
+      fastify.models.user_registration_status
+    ),
+    roleDao: roleDaoBuilder(fastify.models.role),
+    userFunderDao: userFunderDaoBuilder(fastify.models.user_funder),
+    userSocialEntrepreneurDao: userSocialEntrepreneurDaoBuilder(
+      fastify.models.user_social_entrepreneur
+    )
   });
 
   fastify.get(
@@ -35,6 +48,35 @@ const routes = async (fastify, options) => {
         });
 
       reply.send(user);
+    }
+  );
+
+  fastify.get(
+    `${basePath}`,
+    {
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      fastify.log.info('[User Routes] :: Getting all users');
+      try {
+        const users = await userService.getUsers();
+        reply.status(200).send({ users });
+      } catch (error) {
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all users:',
+          error
+        );
+        reply.status(500).send({
+          error: 'There was an unexpected error getting all users'
+        });
+      }
     }
   );
 
@@ -72,14 +114,97 @@ const routes = async (fastify, options) => {
         }
       } catch (error) {
         fastify.log.error(
-          // eslint-disable-next-line prettier/prettier
-          '[User Routes] :: There was an error getting the user\'s role:',
+          "[User Routes] :: There was an error getting the user's role:",
           error
         );
-        reply
-          .status(500)
-          // eslint-disable-next-line prettier/prettier
-          .send({ error: 'There was an unexpected error getting the user\'s role' });
+        reply.status(500).send({
+          error: "There was an unexpected error getting the user's role"
+        });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/registrationStatus`,
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              registrationStatus: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    name: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        fastify.log.info(
+          `[User Routes] :: GET request at ${basePath}/registrationStatus`
+        );
+
+        const registrationStatus = await userService.getAllRegistrationStatus();
+        reply.status(200).send({ registrationStatus });
+      } catch (error) {
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all user registration status:',
+          error
+        );
+        reply.status(500).send({
+          error:
+            'There was an unexpected error getting all user registration status'
+        });
+      }
+    }
+  );
+
+  fastify.get(
+    `${basePath}/role`,
+    {
+      schema: {
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              roles: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    name: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
+
+        const roles = await userService.getAllRoles();
+        reply.status(200).send({ roles });
+      } catch (error) {
+        fastify.log.error(
+          '[User Routes] :: There was an error getting all user roles:',
+          error
+        );
+        reply.status(500).send({
+          error: 'There was an unexpected error getting all user roles'
+        });
       }
     }
   );
@@ -130,42 +255,133 @@ const routes = async (fastify, options) => {
   );
 
   fastify.post(
-    `${basePath}/register`,
+    `${basePath}/signup`,
     {
       schema: {
-        type: 'application/json',
         body: {
-          username: { type: 'string' },
-          email: { type: 'string' },
-          pwd: { type: 'string' },
-          role: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            username: { type: 'string' },
+            email: { type: 'string' },
+            pwd: { type: 'string' },
+            role: { type: 'number' },
+            detail: { type: 'object' }
+          },
+          required: ['username', 'email', 'pwd', 'role']
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
           }
         }
       }
     },
     async (request, reply) => {
-      const { email, pwd, username, role } = request.body;
+      try {
+        const { email, pwd, username, role, detail } = request.body;
 
-      fastify.log.info('[User Routes] :: Creating new user:', request.body);
-
-      const user = await userService.createUser(username, email, pwd, role);
-
-      if (user.error) {
-        fastify.log.error(
-          '[User Routes] :: Creation failed for user:',
-          request.body
+        fastify.log.info('[User Routes] :: Creating new user:', request.body);
+        const user = await userService.createUser(
+          username,
+          email,
+          pwd,
+          role,
+          detail
         );
-        reply.status(409).send(user.error);
-      } else {
-        fastify.log.info('[User Routes] :: Creation successful:', user);
-        reply.status(200).send(user);
+
+        if (user.error) {
+          fastify.log.error('[User Routes] :: User creation failed', user);
+          reply.status(user.status).send(user);
+        } else {
+          fastify.log.info('[User Routes] :: Creation successful:', user);
+          reply.status(200).send({ success: 'User successfully created!' });
+        }
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error creating user' });
+      }
+    }
+  );
+
+  fastify.put(
+    `${basePath}/:id`,
+    {
+      schema: {
+        body: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            email: { type: 'string' },
+            pwd: { type: 'string' },
+            registrationStatus: { type: 'number' }
+          },
+          additionalProperties: false
+        },
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'number' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      fastify.log.info(`PUT request at ${basePath}/${id}`, request.body);
+      try {
+        const { body } = request;
+
+        const updatedUser = await userService.updateUser(id, body);
+
+        if (updatedUser.error) {
+          fastify.log.error('[User Routes] :: User update failed', updatedUser);
+          reply.status(updatedUser.status).send(updatedUser);
+        } else {
+          fastify.log.info('[User Routes] :: Update successful:', updatedUser);
+          reply.status(200).send({ success: 'User successfully updated!' });
+        }
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error updating user' });
       }
     }
   );
