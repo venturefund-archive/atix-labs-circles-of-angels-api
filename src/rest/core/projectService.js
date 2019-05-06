@@ -236,7 +236,7 @@ const projectService = ({
   },
 
   checkProposalType(file) {
-    const fileType = file.mimetype;
+    const fileType = mime.lookup(file.name);
     return (
       fileType === 'application/msword' ||
       fileType ===
@@ -249,7 +249,7 @@ const projectService = ({
   },
 
   checkAgreementType(file) {
-    const fileType = file.mimetype;
+    const fileType = mime.lookup(file.name);
     return (
       fileType === 'application/msword' ||
       fileType ===
@@ -259,17 +259,17 @@ const projectService = ({
   },
 
   checkCoverPhotoType(file) {
-    const fileType = file.mimetype;
+    const fileType = mime.lookup(file.name);
     return fileType.includes('image/');
   },
 
   checkCardPhotoType(file) {
-    const fileType = file.mimetype;
+    const fileType = mime.lookup(file.name);
     return fileType.includes('image/');
   },
 
   checkMilestonesFileType(file) {
-    const fileType = file.mimetype;
+    const fileType = mime.lookup(file.name);
     return (
       fileType === 'application/vnd.ms-excel' ||
       fileType ===
