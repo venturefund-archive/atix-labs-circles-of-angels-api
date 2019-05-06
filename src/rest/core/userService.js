@@ -4,10 +4,11 @@ const { userRegistrationStatus, userRoles } = require('../util/constants');
 const userService = ({
   fastify,
   userDao,
+  userFunderDao,
+  userSocialEntrepreneurDao,
   userRegistrationStatusDao,
   roleDao,
-  userFunderDao,
-  userSocialEntrepreneurDao
+  questionnaireService
 }) => ({
   roleCreationMap: {
     [userRoles.IMPACT_FUNDER]: userFunderDao,
@@ -97,7 +98,7 @@ const userService = ({
    * @param {number} roleId
    * @returns new user | error
    */
-  async createUser(username, email, pwd, role, detail) {
+  async createUser(username, email, pwd, role, detail, questionnaire) {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
     const { address } = await fastify.eth.createAccount(hashedPwd);
@@ -153,6 +154,8 @@ const userService = ({
           error: 'There was an unexpected error creating the user'
         };
       }
+
+      questionnaireService.saveQuestionnaireOfUser(savedUser.id, questionnaire);
 
       return savedUser;
     } catch (error) {

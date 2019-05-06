@@ -6,7 +6,14 @@ const basePath = '/user';
 const userFunderDaoBuilder = require('../dao/userFunderDao');
 const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurDao');
 
+const questionnaireServiceBuilder = require('../core/questionnaireService');
+const answerQuestionDaoBuilder = require('../dao/answerQuestionDao');
+
 const routes = async (fastify, options) => {
+  const questionnaireService = questionnaireServiceBuilder({
+    answerQuestionDao: answerQuestionDaoBuilder(fastify.models.answer_question)
+  });
+
   const userService = require('../core/userService')({
     fastify,
     userDao: userDaoBuilder({
@@ -19,7 +26,8 @@ const routes = async (fastify, options) => {
     userFunderDao: userFunderDaoBuilder(fastify.models.user_funder),
     userSocialEntrepreneurDao: userSocialEntrepreneurDaoBuilder(
       fastify.models.user_social_entrepreneur
-    )
+    ),
+    questionnaireService
   });
 
   fastify.get(
@@ -265,7 +273,13 @@ const routes = async (fastify, options) => {
             email: { type: 'string' },
             pwd: { type: 'string' },
             role: { type: 'number' },
-            detail: { type: 'object' }
+            detail: { type: 'object' },
+            questionnaire: {
+              type: 'array',
+              items: {
+                type: 'object'
+              }
+            }
           },
           required: ['username', 'email', 'pwd', 'role']
         },
@@ -295,7 +309,14 @@ const routes = async (fastify, options) => {
     },
     async (request, reply) => {
       try {
-        const { email, pwd, username, role, detail } = request.body;
+        const {
+          email,
+          pwd,
+          username,
+          role,
+          detail,
+          questionnaire
+        } = request.body;
 
         fastify.log.info('[User Routes] :: Creating new user:', request.body);
         const user = await userService.createUser(
@@ -303,7 +324,8 @@ const routes = async (fastify, options) => {
           email,
           pwd,
           role,
-          detail
+          detail,
+          questionnaire
         );
 
         if (user.error) {

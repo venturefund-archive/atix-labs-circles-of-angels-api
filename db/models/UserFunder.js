@@ -15,6 +15,9 @@ module.exports = {
       columnName: 'userId',
       model: 'user'
     },
+    identifier: { type: 'string', required: true },
+    address: { type: 'string', required: true },
+    tel: { type: 'string', allowNull: true },
     phoneNumber: { type: 'string', allowNull: true }
   }
 };
