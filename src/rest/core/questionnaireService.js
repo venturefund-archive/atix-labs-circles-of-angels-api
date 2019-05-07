@@ -1,4 +1,10 @@
-const questionnaireService = ({ answerQuestionDao }) => ({
+const { forEachPromise } = require('../util/promises');
+
+const questionnaireService = ({
+  answerQuestionDao,
+  questionDao,
+  answerDao
+}) => ({
   async saveQuestionnaireOfUser(userId, questionnaire) {
     const proccessedQuestionnaire = [];
     questionnaire.forEach(entry => {
@@ -16,6 +22,21 @@ const questionnaireService = ({ answerQuestionDao }) => ({
 
   async getAnswersOfUser(user) {
     return answerQuestionDao.getByUserId(user.id);
+  },
+
+  async getQuestionnaireOfRole(roleId) {
+    const questions = await questionDao.findByRoleId(roleId);
+    const questionnaire = [];
+    const pushAnswers = (question, context) =>
+      new Promise(resolve => {
+        process.nextTick(async () => {
+          question.answers = await answerDao.findByQuestionId(question.id);
+          context.push(question);
+          resolve();
+        });
+      });
+    await forEachPromise(questions, pushAnswers, questionnaire);
+    return questionnaire;
   }
 });
 
