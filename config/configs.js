@@ -17,6 +17,12 @@ exports.eth = {
   INITIAL_FUNDS: 10000000000000000
 };
 
+exports.supportAccount = {
+  service: 'Gmail',
+  email: 'circlesOfAngelsSupport@gmail.com',
+  password: 'coasupport1'
+};
+
 exports.database = {
   adapter: require('sails-postgresql'),
   adapterType: 'postgresql',

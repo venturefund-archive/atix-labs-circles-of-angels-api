@@ -9,16 +9,21 @@ const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurD
 const questionnaireServiceBuilder = require('../core/questionnaireService');
 const answerQuestionDaoBuilder = require('../dao/answerQuestionDao');
 
+const passRecoveryDaoBuilder = require('../dao/passRecoveryDao');
+const passRecoveryServiceBuilder = require('../core/passRecoveryService');
+
 const routes = async (fastify, options) => {
   const questionnaireService = questionnaireServiceBuilder({
     answerQuestionDao: answerQuestionDaoBuilder(fastify.models.answer_question)
   });
 
+  const userDao = userDaoBuilder({
+    userModel: fastify.models.user
+  });
+
   const userService = require('../core/userService')({
     fastify,
-    userDao: userDaoBuilder({
-      userModel: fastify.models.user
-    }),
+    userDao,
     userRegistrationStatusDao: userRegistrationStatusDaoBuilder(
       fastify.models.user_registration_status
     ),
@@ -28,6 +33,12 @@ const routes = async (fastify, options) => {
       fastify.models.user_social_entrepreneur
     ),
     questionnaireService
+  });
+
+  const passRecoveryService = await passRecoveryServiceBuilder({
+    fastify,
+    passRecoveryDao: passRecoveryDaoBuilder(fastify.models.pass_recovery),
+    userDao
   });
 
   fastify.get(
@@ -428,6 +439,70 @@ const routes = async (fastify, options) => {
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send({ error: 'Error getting oracles' });
+      }
+    }
+  );
+
+  fastify.post(
+    `${basePath}/recoverPassword`,
+    {
+      schema: {
+        body: {
+          type: 'object',
+          properties: {
+            email: { type: 'string' }
+          },
+          required: ['email']
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              email: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        fastify.log.info('[User Routes] :: Starting pass recovery proccess');
+        const { email } = request.body;
+        const response = await passRecoveryService.startPassRecoveryProcess(
+          email
+        );
+        if (response.error) {
+          fastify.log.error(
+            '[User Routes] :: Recovery password procces failed',
+            response
+          );
+          reply.status(response.status).send(response.error);
+        } else {
+          fastify.log.info(
+            '[User Routes] :: Recovery password procces started successfully',
+            response
+          );
+          reply.status(200).send(response);
+        }
+      } catch (error) {
+        fastify.log.error(error);
+        reply
+          .status(500)
+          .send({ error: 'Error Starting recovery password proccess' });
       }
     }
   );
