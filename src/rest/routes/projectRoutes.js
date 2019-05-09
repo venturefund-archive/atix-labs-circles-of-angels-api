@@ -704,7 +704,16 @@ const routes = async fastify => {
         req.raw.files
       );
 
-      const { projectCoverPhoto, projectCardPhoto } = req.raw.files;
+      const projectCoverPhoto =
+        req.raw.files && req.raw.files.projectCoverPhoto
+          ? req.raw.files.projectCoverPhoto
+          : undefined;
+
+      const projectCardPhoto =
+        req.raw.files && req.raw.files.projectCardPhoto
+          ? req.raw.files.projectCardPhoto
+          : undefined;
+
       const { project } = req.raw.body;
       const { id } = req.params;
 
