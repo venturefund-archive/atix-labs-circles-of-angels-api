@@ -4,6 +4,16 @@ const createRecovery = passRecoveryModel => async (email, token) => {
   return passRecoveryModel.create({ email, token });
 };
 
+const findRecoverBytoken = passRecoveryModel => async token => {
+  return passRecoveryModel.findOne({ where: { token } });
+};
+
+const deleteRecoverByToken = passRecoveryModel => async token => {
+  return passRecoveryModel.destroyOne({ where: { token } });
+};
+
 module.exports = passRecoveryModel => ({
-  createRecovery: createRecovery(passRecoveryModel)
+  createRecovery: createRecovery(passRecoveryModel),
+  findRecoverBytoken: findRecoverBytoken(passRecoveryModel),
+  deleteRecoverByToken: deleteRecoverByToken(passRecoveryModel)
 });

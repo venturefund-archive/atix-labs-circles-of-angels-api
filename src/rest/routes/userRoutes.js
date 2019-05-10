@@ -506,6 +506,72 @@ const routes = async (fastify, options) => {
       }
     }
   );
+
+  fastify.post(
+    `${basePath}/updatePassword`,
+    {
+      schema: {
+        body: {
+          type: 'object',
+          properties: {
+            token: { type: 'string' },
+            password: { type: 'string' }
+          },
+          required: ['token']
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              message: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        fastify.log.info('[User Routes] :: Starting pass recovery proccess');
+        const { token, password } = request.body;
+        const response = await passRecoveryService.updatePassword(
+          token,
+          password
+        );
+        if (response.error) {
+          fastify.log.error(
+            '[User Routes] :: Update password failed',
+            response
+          );
+          reply.status(response.status).send(response.error);
+        } else {
+          fastify.log.info(
+            '[User Routes] :: Password updated successfully',
+            response
+          );
+          reply.status(200).send(response);
+        }
+      } catch (error) {
+        fastify.log.error(error);
+        reply
+          .status(500)
+          .send({ error: 'Error Starting recovery password proccess' });
+      }
+    }
+  );
 };
 
 module.exports = routes;

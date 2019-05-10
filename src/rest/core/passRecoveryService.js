@@ -1,14 +1,15 @@
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const { isEmpty } = require('lodash');
-const { supportAccount } = require('../../../config/configs');
+const { support } = require('../../../config/configs');
 
 const passRecoveryService = async ({ fastify, passRecoveryDao, userDao }) => {
   const transporter = nodemailer.createTransport({
-    service: supportAccount.service,
+    service: support.service,
     auth: {
-      user: supportAccount.email,
-      pass: supportAccount.password
+      user: support.email,
+      pass: support.password
     }
   });
 
@@ -53,6 +54,29 @@ const passRecoveryService = async ({ fastify, passRecoveryDao, userDao }) => {
         );
         throw Error('Error staring recovery process');
       }
+    },
+
+    async updatePassword(token, password) {
+      const recover = await passRecoveryDao.findRecoverBytoken(token);
+      const hoursFromCreation =
+        (new Date() - new Date(recover.createdAt)) / 3600000;
+      if (hoursFromCreation > support.recoveryTime) {
+        await passRecoveryDao.deleteRecoverByToken(token);
+        return { status: 403, error: 'Expired token' };
+      }
+
+      if (!isEmpty(recover)) {
+        const hashedPwd = await bcrypt.hash(password, 10);
+        const updated = await userDao.updatePasswordByMail(
+          recover.email,
+          hashedPwd
+        );
+        if (!updated)
+          return { status: 402, error: 'Error trying update password' };
+        await passRecoveryDao.deleteRecoverByToken(token);
+        return { message: 'Password update successfully' };
+      }
+      return { status: 401, error: 'Invalid token' };
     }
   };
 };
