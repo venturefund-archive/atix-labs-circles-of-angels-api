@@ -1300,3 +1300,192 @@ describe('Testing projectService startProject', () => {
     );
   });
 });
+
+describe('Testing projectService updateProject', () => {
+  let projectDao;
+  let projectService;
+  let photoService;
+
+  beforeAll(() => {
+    projectDao = {
+      getProjectById: ({ projectId }) => {
+        if (projectId === 0) {
+          return undefined;
+        }
+
+        return {
+          id: projectId
+        };
+      },
+
+      getProjectPhotos: () => {
+        return {
+          coverPhoto: 1,
+          cardPhoto: 2
+        };
+      },
+
+      updateProject: (project, id) => {
+        if (id === 999) {
+          return undefined;
+        }
+
+        if (!id) {
+          throw Error('Error updating project in db');
+        }
+
+        const updatedProject = { ...project, id };
+        return updatedProject;
+      }
+    };
+
+    photoService = {
+      getPhotoById: id => {
+        return {
+          id,
+          path: '/server/files/photo.jpg'
+        };
+      },
+      updatePhoto: id => {
+        return { id };
+      }
+    };
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao,
+      photoService
+    });
+  });
+
+  it('should return the updated project', async () => {
+    const projectId = 1;
+    const project = {
+      problemAddressed: 'problem',
+      mission: 'mission'
+    };
+
+    const mockProjectCoverPhoto = {
+      name: 'projectCoverPhoto.png',
+      path: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+      mv: jest.fn()
+    };
+
+    const mockProjectCardPhoto = {
+      name: 'projectCardPhoto.png',
+      path: `${__dirname}/mockFiles/projectCardPhoto.png`,
+      mv: jest.fn()
+    };
+
+    const response = await projectService.updateProject(
+      JSON.stringify(project),
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
+      projectId
+    );
+
+    const expected = {
+      ...project,
+      id: projectId,
+      cardPhoto: 2,
+      coverPhoto: 1
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return a 404 error when the project does not exist', async () => {
+    const projectId = 0;
+    const project = {
+      problemAddressed: 'problem',
+      mission: 'mission'
+    };
+
+    const mockProjectCoverPhoto = {
+      name: 'projectCoverPhoto.png',
+      path: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+      mv: jest.fn()
+    };
+
+    const mockProjectCardPhoto = {
+      name: 'projectCardPhoto.png',
+      path: `${__dirname}/mockFiles/projectCardPhoto.png`,
+      mv: jest.fn()
+    };
+
+    const response = await projectService.updateProject(
+      JSON.stringify(project),
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
+      projectId
+    );
+
+    const expected = {
+      status: 404,
+      error: 'Project does not exist'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return a 404 error when no project could be updated', async () => {
+    const projectId = 999;
+    const project = {
+      problemAddressed: 'problem',
+      mission: 'mission'
+    };
+
+    const mockProjectCoverPhoto = {
+      name: 'projectCoverPhoto.png',
+      path: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+      mv: jest.fn()
+    };
+
+    const mockProjectCardPhoto = {
+      name: 'projectCardPhoto.png',
+      path: `${__dirname}/mockFiles/projectCardPhoto.png`,
+      mv: jest.fn()
+    };
+
+    const response = await projectService.updateProject(
+      JSON.stringify(project),
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
+      projectId
+    );
+
+    const expected = {
+      status: 404,
+      error: 'Project does not exist'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should throw an error if it fails to update the project', async () => {
+    const project = {
+      problemAddressed: 'problem',
+      mission: 'mission'
+    };
+
+    const mockProjectCoverPhoto = {
+      name: 'projectCoverPhoto.png',
+      path: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+      mv: jest.fn()
+    };
+
+    const mockProjectCardPhoto = {
+      name: 'projectCardPhoto.png',
+      path: `${__dirname}/mockFiles/projectCardPhoto.png`,
+      mv: jest.fn()
+    };
+
+    return expect(
+      projectService.updateProject(
+        JSON.stringify(project),
+        mockProjectCoverPhoto,
+        mockProjectCardPhoto
+      )
+    ).rejects.toEqual(Error('Error updating Project'));
+  });
+});
