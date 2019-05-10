@@ -1,16 +1,7 @@
 const basePath = '/questionnaire';
-const routes = async (fastify, options) => {
-  const answerQuestionDao = require('../dao/answerQuestionDao')({
-    answerQuestionModel: fastify.models.answer_question
-  });
-  const answerDao = require('../dao/answerDao')(fastify.models.answer);
-  const questionDao = require('../dao/questionDao')(fastify.models.question);
-  const questionnaireService = require('../core/questionnaireService')({
-    answerQuestionDao,
-    answerDao,
-    questionDao
-  });
+const apiHelper = require('../services/helper');
 
+const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/:roleId`,
     {
@@ -29,6 +20,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { questionnaireService } = apiHelper.helper.services;
       try {
         const { roleId } = request.params;
         fastify.log.info(

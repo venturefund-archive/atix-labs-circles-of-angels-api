@@ -1,5 +1,6 @@
 const configs = require('../../config/configs');
 const ethService = require('./services/eth/ethServices');
+const { helperBuilder } = require('./services/helper');
 
 const swaggerConfigs = configs.swagger;
 
@@ -29,6 +30,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     loadRoutes(fastify);
 
     await fastify.listen(serverConfigs);
+    await helperBuilder(fastify);
     module.exports.fastify = fastify;
   } catch (err) {
     console.error(err);
