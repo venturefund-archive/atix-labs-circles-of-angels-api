@@ -17,10 +17,11 @@ exports.eth = {
   INITIAL_FUNDS: 10000000000000000
 };
 
-exports.supportAccount = {
+exports.support = {
   service: 'Gmail',
   email: 'circlesOfAngelsSupport@gmail.com',
-  password: 'coasupport1'
+  password: 'coasupport1',
+  recoveryTime: 1 //in hours
 };
 
 exports.database = {

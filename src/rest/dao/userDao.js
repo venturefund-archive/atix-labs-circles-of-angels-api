@@ -30,6 +30,10 @@ const UserDao = ({ userModel }) => ({
       })
       .populate('role')
       .populate('registrationStatus');
+  },
+
+  async updatePasswordByMail(email, pwd) {
+    return userModel.updateOne({ where: { email } }).set({ pwd });
   }
 });
 
