@@ -22,7 +22,6 @@ const projectService = ({
   photoService,
   transferService,
   userDao,
-  fileService,
   projectExperienceDao
 }) => ({
   /**
@@ -1064,6 +1063,21 @@ const projectService = ({
       let attachedFileId = 0;
 
       if (file) {
+        const filetype = mime.lookup(file.name);
+
+        if (!filetype) {
+          fastify.log.error(
+            '[Project Service] :: Error getting mime type of file:',
+            file
+          );
+          return { error: 'Error uploading experience', status: 409 };
+        }
+
+        if (!filetype.includes('image/')) {
+          fastify.log.error('[Project Service] :: File type is invalid:', file);
+          return { error: 'File type is invalid', status: 409 };
+        }
+
         fastify.log.info('[Project Service] :: Saving file:', file);
 
         const filename = addTimestampToFilename(file.name);
@@ -1077,7 +1091,7 @@ const projectService = ({
         );
         await file.mv(filepath);
 
-        const savedFile = await fileService.saveFile(filepath);
+        const savedFile = await photoService.savePhoto(filepath);
 
         if (savedFile.error) {
           fastify.log.error(
@@ -1100,7 +1114,7 @@ const projectService = ({
       const newExperience = { ...experience, project: projectId };
 
       if (attachedFileId > 0) {
-        newExperience.file = attachedFileId;
+        newExperience.photo = attachedFileId;
       }
 
       const savedExperience = await projectExperienceDao.saveProjectExperience(
@@ -1119,7 +1133,7 @@ const projectService = ({
             '[Project Service] :: Rolling back transaction. Deleting File ID',
             attachedFileId
           );
-          const deletedFile = await fileService.deleteFile(attachedFileId);
+          const deletedFile = await photoService.deletePhoto(attachedFileId);
           if (deletedFile.error) {
             fastify.log.error(
               '[Project Service] :: There was an error deleting File ID',
