@@ -167,4 +167,3 @@ const helperBuilder = async fastify => {
 };
 
 exports.helperBuilder = helperBuilder;
-exports.helper = {};
