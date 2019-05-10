@@ -1,51 +1,12 @@
 const fileUpload = require('fastify-file-upload');
-const fileDaoBuilder = require('../dao/fileDao');
-const fileServiceBuilder = require('../core/fileService');
-const photoDaoBuilder = require('../dao/photoDao');
-const photoServiceBuilder = require('../core/photoService');
-const activityFileDaoBuilder = require('../dao/activityFileDao');
-const activityPhotoDaoBuilder = require('../dao/activityPhotoDao');
-const activityDaoBuilder = require('../dao/activityDao');
-const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
-const activityServiceBuilder = require('../core/activityService');
-const userServiceBuilder = require('../core/userService');
-const userDaoBuilder = require('../dao/userDao');
-const milestoneDaoBuilder = require('../dao/milestoneDao');
-const milestoneServiceBuilder = require('../core/milestoneService');
 
 const basePath = '/activities';
 const restBasePath = '/activity';
 
+const apiHelper = require('../services/helper');
+
 const routes = async fastify => {
   fastify.register(fileUpload);
-  const fileService = fileServiceBuilder({
-    fastify,
-    fileDao: fileDaoBuilder(fastify.models.file)
-  });
-  const photoService = photoServiceBuilder({
-    fastify,
-    photoDao: photoDaoBuilder(fastify.models.photo)
-  });
-  const userService = userServiceBuilder({
-    fastify,
-    userDao: userDaoBuilder({ userModel: fastify.models.user })
-  });
-  const activityDao = activityDaoBuilder(fastify.models.activity);
-  const activityService = activityServiceBuilder({
-    fastify,
-    activityDao,
-    fileService,
-    photoService,
-    activityFileDao: activityFileDaoBuilder(fastify.models.activity_file),
-    activityPhotoDao: activityPhotoDaoBuilder(fastify.models.activity_photo),
-    oracleActivityDao: oracleActivityDaoBuilder(fastify.models.oracle_activity),
-    userService
-  });
-  const milestoneService = milestoneServiceBuilder({
-    fastify,
-    milestoneDao: milestoneDaoBuilder(fastify.models.milestone),
-    activityService
-  });
 
   fastify.post(
     `${basePath}`,
@@ -67,6 +28,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { activityService } = apiHelper.helper.services;
       fastify.log.info(
         '[Activity Routes] :: POST request at /activities:',
         req.body
@@ -121,6 +83,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { activityService } = apiHelper.helper.services;
       fastify.log.info(
         `[Activity Routes] :: PUT request at /activities/${req.params.id}:`,
         req.body
@@ -169,6 +132,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { activityService, milestoneService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(`[Activity Routes] Deleting activity with id: ${id}`);
       try {
@@ -206,6 +170,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { activityService } = apiHelper.helper.services;
       const { id } = req.params;
       fastify.log.info(
         `[Activity Routes] :: POST request at /activities/${id}/evidences:`,
@@ -250,6 +215,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { activityService } = apiHelper.helper.services;
       const { activityId, evidenceId, fileType } = request.params;
       fastify.log.info(
         `[Activity Routes] :: DELETE request atctivities/${activityId}/evidences/${evidenceId}/${fileType}`
@@ -295,6 +261,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { activityService } = apiHelper.helper.services;
       const { id } = request.params;
 
       fastify.log.info(`[Activity Routes] :: GET request at /activities/${id}`);
@@ -337,6 +304,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { activityService } = apiHelper.helper.services;
       const { id, userId } = request.params;
       fastify.log.info(
         `[Activity Routes] :: PUT request at /activities/${id}/assignOracle/${userId}`
@@ -378,6 +346,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { activityService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(
         `[Activity Routes] :: DELETE request at /activities/${id}/unassignOracle`
@@ -421,6 +390,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { activityService } = apiHelper.helper.services;
       const { activityId, evidenceId, fileType } = request.params;
       fastify.log.info(
         `[Activity Routes] :: GET request at /activities/${activityId}/evidence/${evidenceId}/download/${fileType}`
@@ -475,6 +445,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { activityService, milestoneService } = apiHelper.helper.services;
       const { activityId } = request.params;
       fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
       try {

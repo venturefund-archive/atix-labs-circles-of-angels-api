@@ -1,35 +1,7 @@
-const userDaoBuilder = require('../dao/userDao');
-const userRegistrationStatusDaoBuilder = require('../dao/userRegistrationStatusDao');
-const roleDaoBuilder = require('../dao/roleDao');
-
 const basePath = '/user';
-const userFunderDaoBuilder = require('../dao/userFunderDao');
-const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurDao');
-
-const questionnaireServiceBuilder = require('../core/questionnaireService');
-const answerQuestionDaoBuilder = require('../dao/answerQuestionDao');
+const apiHelper = require('../services/helper');
 
 const routes = async (fastify, options) => {
-  const questionnaireService = questionnaireServiceBuilder({
-    answerQuestionDao: answerQuestionDaoBuilder(fastify.models.answer_question)
-  });
-
-  const userService = require('../core/userService')({
-    fastify,
-    userDao: userDaoBuilder({
-      userModel: fastify.models.user
-    }),
-    userRegistrationStatusDao: userRegistrationStatusDaoBuilder(
-      fastify.models.user_registration_status
-    ),
-    roleDao: roleDaoBuilder(fastify.models.role),
-    userFunderDao: userFunderDaoBuilder(fastify.models.user_funder),
-    userSocialEntrepreneurDao: userSocialEntrepreneurDaoBuilder(
-      fastify.models.user_social_entrepreneur
-    ),
-    questionnaireService
-  });
-
   fastify.get(
     `${basePath}/:id`,
     {
@@ -48,6 +20,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       fastify.log.info('[User Routes] :: Getting user info');
       const user = await userService.getUserById(request.params.id);
       if (!user)
@@ -72,6 +45,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       fastify.log.info('[User Routes] :: Getting all users');
       try {
         const users = await userService.getUsers();
@@ -106,6 +80,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       try {
         fastify.log.info('[User Routes] :: Getting user role');
         const role = await userService.getUserRole(request.params.userId);
@@ -156,6 +131,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       try {
         fastify.log.info(
           `[User Routes] :: GET request at ${basePath}/registrationStatus`
@@ -200,6 +176,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       try {
         fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
 
@@ -237,6 +214,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       try {
         const { email, pwd } = request.body;
 
@@ -308,6 +286,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       try {
         const {
           email,
@@ -387,6 +366,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(`PUT request at ${basePath}/${id}`, request.body);
       try {
@@ -421,6 +401,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { userService } = apiHelper.helper.services;
       fastify.log.info('[User Routes] :: getting list of oracles');
       try {
         const oracles = await userService.getOracles();

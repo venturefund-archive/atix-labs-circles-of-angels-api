@@ -1,13 +1,7 @@
 const basePath = '/photos';
-const photoDao = require('../dao/photoDao');
-const photoServiceBuilder = require('../core/photoService');
+const apiHelper = require('../services/helper');
 
 const routes = async (fastify, options) => {
-  const photoService = photoServiceBuilder({
-    fastify,
-    photoDao: photoDao(fastify.models.photo)
-  });
-
   fastify.get(
     `${basePath}/:id`,
     {
@@ -26,6 +20,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { photoService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(`[Photo Routes] :: Getting photo ID ${id}`);
 

@@ -1,14 +1,7 @@
 const basePath = '/transfer';
-const routes = async (fastify, options) => {
-  const transferDao = require('../dao/transferDao')({
-    transferModel: fastify.models.fund_transfer,
-    transferStatusModel: fastify.models.transfer_status
-  });
-  const transferService = require('../core/transferService')({
-    fastify,
-    transferDao
-  });
+const apiHelper = require('../services/helper');
 
+const routes = async (fastify, options) => {
   fastify.post(
     `${basePath}/:transferId/sendToVerification`,
     {
@@ -32,6 +25,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { transferService } = apiHelper.helper.services;
       fastify.log.info('[Transfer Routes] :: Send transfer to verification');
       const verification = await transferService.sendTransferToVerification({
         transferId: request.params.transferId,
@@ -69,6 +63,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { transferService } = apiHelper.helper.services;
       fastify.log.info('[Transfer Routes] :: Update transfer state');
       const verification = await transferService.updateTransferState({
         transferId: request.body.transferId,
@@ -99,6 +94,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { transferService } = apiHelper.helper.services;
       fastify.log.info(
         `[Transfer Routes] :: Getting state of user ${
           request.params.senderId
@@ -119,6 +115,7 @@ const routes = async (fastify, options) => {
     },
 
     async (request, reply) => {
+      const { transferService } = apiHelper.helper.services;
       fastify.log.info(
         `[Transfer Routes] :: Getting state of transaction with id ${
           request.params.transferId
@@ -152,6 +149,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { transferService } = apiHelper.helper.services;
       fastify.log.info(
         `[Transfer Routes] :: Getting transactions of project ${
           request.params.projectId

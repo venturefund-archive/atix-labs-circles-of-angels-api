@@ -1,9 +1,7 @@
 const basePath = '/general';
+const apiHelper = require('../services/helper');
 
 const routes = async (fastify, options) => {
-  const configsDao = require('../dao/configsDao')({
-    configsModel: fastify.models.configs
-  });
   fastify.get(
     `${basePath}/accountDestination`,
     {
@@ -17,6 +15,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { configsDao } = apiHelper.helper.daos;
       fastify.log.info('[General Routes] :: Getting bank account of COA');
       const account = await configsDao.getCoaBankAccount();
       if (!account)

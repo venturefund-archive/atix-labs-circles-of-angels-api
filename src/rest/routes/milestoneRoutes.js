@@ -1,44 +1,7 @@
-const fileDaoBuilder = require('../dao/fileDao');
-const fileServiceBuilder = require('../core/fileService');
-const photoDaoBuilder = require('../dao/photoDao');
-const photoServiceBuilder = require('../core/photoService');
-const activityFileDaoBuilder = require('../dao/activityFileDao');
-const activityPhotoDaoBuilder = require('../dao/activityPhotoDao');
-const activityDaoBuilder = require('../dao/activityDao');
-const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
-const activityServiceBuilder = require('../core/activityService');
-const milestoneDaoBuilder = require('../dao/milestoneDao');
-const milestoneServiceBuilder = require('../core/milestoneService');
-const milestoneBudgetStatusDaoBuilder = require('../dao/milestoneBudgetStatusDao');
+const apiHelper = require('../services/helper');
 
 const basePath = '/milestones';
 const routes = async fastify => {
-  const fileService = fileServiceBuilder({
-    fastify,
-    fileDao: fileDaoBuilder(fastify.models.file)
-  });
-  const photoService = photoServiceBuilder({
-    fastify,
-    photoDao: photoDaoBuilder(fastify.models.photo)
-  });
-  const activityService = activityServiceBuilder({
-    fastify,
-    activityDao: activityDaoBuilder(fastify.models.activity),
-    fileService,
-    photoService,
-    activityFileDao: activityFileDaoBuilder(fastify.models.activity_file),
-    activityPhotoDao: activityPhotoDaoBuilder(fastify.models.activity_photo),
-    oracleActivityDao: oracleActivityDaoBuilder(fastify.models.oracle_activity)
-  });
-  const milestoneService = milestoneServiceBuilder({
-    fastify,
-    milestoneDao: milestoneDaoBuilder(fastify.models.milestone),
-    milestoneBudgetStatusDao: milestoneBudgetStatusDaoBuilder(
-      fastify.models.milestone_budget_status
-    ),
-    activityService
-  });
-
   fastify.get(
     `${basePath}`,
     {
@@ -52,6 +15,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { milestoneService } = apiHelper.helper.services;
       fastify.log.info('[Milestone Routes] :: GET request at /milestones');
       try {
         const milestones = await milestoneService.getAllMilestones();
@@ -87,6 +51,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { milestoneService } = apiHelper.helper.services;
       fastify.log.info(
         `[Milestone Routes] :: PUT request at /${basePath}/${
           req.params.id
@@ -146,6 +111,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { milestoneService } = apiHelper.helper.services;
       fastify.log.info(
         `[Milestone Routes] :: GET request at ${basePath}/budgetStatus`
       );
@@ -182,6 +148,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { milestoneService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(`[Milestone Routes] Deleting milestone with id: ${id}`);
       try {
@@ -214,6 +181,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { milestoneService } = apiHelper.helper.services;
       fastify.log.info(
         '[Milestone Routes] :: POST request at /milestones:',
         req.body
@@ -268,6 +236,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { milestoneService } = apiHelper.helper.services;
       fastify.log.info(
         `[Milestone Routes] :: PUT request at /milestones/${req.params.id}:`,
         req.body

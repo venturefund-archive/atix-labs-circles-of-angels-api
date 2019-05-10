@@ -1,14 +1,7 @@
 const basePath = '/userProject';
+const apiHelper = require('../services/helper');
 
 const routes = async fastify => {
-  const userProjectDao = require('../dao/userProjectDao')(
-    fastify.models.user_project
-  );
-  const userProjectService = require('../core/userProjectService')({
-    fastify,
-    userProjectDao
-  });
-
   fastify.get(
     `${basePath}/:userId/:projectId/signAgreement`,
     {
@@ -28,6 +21,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { userProjectService } = apiHelper.helper.services;
       fastify.log.info('[User Project Routes] :: Signing Agreement');
       const newUserProject = await userProjectService.signAgreement({
         userId: request.params.userId,
@@ -62,6 +56,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { userProjectService } = apiHelper.helper.services;
       const { projectId } = request.params;
 
       fastify.log.info(
@@ -97,6 +92,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { userProjectService } = apiHelper.helper.services;
       const { userId, projectId } = request.params;
 
       fastify.log.info(
