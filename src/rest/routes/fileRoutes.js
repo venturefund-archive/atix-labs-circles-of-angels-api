@@ -1,12 +1,7 @@
 const basePath = '/files';
+const apiHelper = require('../services/helper');
 
 const routes = async (fastify, options) => {
-  const fileDao = require('../dao/fileDao')(fastify.models.file);
-  const fileService = require('../core/fileService')({
-    fastify,
-    fileDao
-  });
-
   fastify.delete(
     `${basePath}/:id`,
     {
@@ -25,6 +20,7 @@ const routes = async (fastify, options) => {
       }
     },
     async (request, reply) => {
+      const { fileService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(`[File Routes] :: Deleting file ID ${id}`);
 

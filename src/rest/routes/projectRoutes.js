@@ -1,75 +1,9 @@
-const fileUpload = require('fastify-file-upload');
-const fileDaoBuilder = require('../dao/fileDao');
-const fileServiceBuilder = require('../core/fileService');
-const photoDaoBuilder = require('../dao/photoDao');
-const photoServiceBuilder = require('../core/photoService');
-const activityFileDaoBuilder = require('../dao/activityFileDao');
-const activityPhotoDaoBuilder = require('../dao/activityPhotoDao');
-const activityDaoBuilder = require('../dao/activityDao');
-const oracleActivityDaoBuilder = require('../dao/oracleActivityDao');
-const activityServiceBuilder = require('../core/activityService');
-const milestoneDaoBuilder = require('../dao/milestoneDao');
-const milestoneServiceBuilder = require('../core/milestoneService');
-const userDaoBuilder = require('../dao/userDao');
-const projectDaoBuilder = require('../dao/projectDao');
-const projectStatusDaoBuilder = require('../dao/projectStatusDao');
-const projectServiceBuilder = require('../core/projectService');
-const transferDaoBuilder = require('../dao/transferDao');
-const transferServiceBuilder = require('../core/transferService');
-
 const basePath = '/project';
+const fileUpload = require('fastify-file-upload');
+const apiHelper = require('../services/helper');
+
 const routes = async fastify => {
   fastify.register(fileUpload);
-
-  const fileService = fileServiceBuilder({
-    fastify,
-    fileDao: fileDaoBuilder(fastify.models.file)
-  });
-  const photoService = photoServiceBuilder({
-    fastify,
-    photoDao: photoDaoBuilder(fastify.models.photo)
-  });
-  const oracleActivityDao = oracleActivityDaoBuilder(
-    fastify.models.oracle_activity
-  );
-  const activityService = activityServiceBuilder({
-    fastify,
-    activityDao: activityDaoBuilder(fastify.models.activity),
-    fileService,
-    photoService,
-    activityFileDao: activityFileDaoBuilder(fastify.models.activity_file),
-    activityPhotoDao: activityPhotoDaoBuilder(fastify.models.activity_photo),
-    oracleActivityDao
-  });
-  const milestoneService = milestoneServiceBuilder({
-    fastify,
-    milestoneDao: milestoneDaoBuilder(fastify.models.milestone),
-    activityService
-  });
-
-  const transferService = transferServiceBuilder({
-    fastify,
-    transferDao: transferDaoBuilder({
-      transferModel: fastify.models.fund_transfer,
-      transferStatusModel: fastify.models.transfer_status
-    })
-  });
-
-  const projectService = projectServiceBuilder({
-    fastify,
-    projectDao: projectDaoBuilder({
-      projectModel: fastify.models.project,
-      userDao: userDaoBuilder({ userModel: fastify.models.user })
-    }),
-    milestoneService,
-    projectStatusDao: projectStatusDaoBuilder({
-      projectStatusModel: fastify.models.project_status
-    }),
-    photoService,
-    transferService,
-    userDao: userDaoBuilder({ userModel: fastify.models.user })
-  });
-
   fastify.post(
     `${basePath}/create`,
     {
@@ -90,6 +24,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info(
         '[Project Routes] :: POST request at /project/create:',
         req.raw.body,
@@ -162,6 +97,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info('[Project Routes] :: Getting projects');
       try {
         // When User role verification implemented ->
@@ -188,6 +124,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info('[Project Routes] :: Getting projects');
       try {
         const projects = await projectService.getActiveProjectList();
@@ -217,6 +154,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       const { projectId } = request.params;
       fastify.log.info(
         `[Project Routes] :: Getting project with id ${projectId}`
@@ -248,6 +186,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info('[Project Routes] :: update status project');
       const { projectId } = request.params;
       const { status } = request.body;
@@ -283,6 +222,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info('[Project Routes] :: deleteing project');
       const { projectId } = request.params;
       try {
@@ -315,6 +255,8 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
+      const { oracleActivityDao } = apiHelper.helper.daos;
       const { projectId } = request.params;
       fastify.log.info(
         `[Project Routes] :: Getting project milestones of project ${projectId}`
@@ -351,6 +293,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info(
         '[Project Routes] :: Downloading milestones template file'
       );
@@ -398,6 +341,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info(
         '[Project Routes] :: Downloading project proposal template file'
       );
@@ -450,6 +394,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       const { projectId } = request.params;
       fastify.log.info(
         `[Project Routes] :: Getting project milestones of project ${projectId}`
@@ -502,6 +447,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info('[Project Routes] :: Uploading agreement file');
       try {
         const { projectAgreement } = request.raw.files;
@@ -555,6 +501,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info('[Project Routes] :: Downloading agreement file');
       try {
         const res = await projectService.downloadAgreement(
@@ -604,6 +551,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info('[Project Routes] :: Downloading proposal file');
       try {
         const res = await projectService.downloadProposal(
@@ -698,6 +646,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
+      const { projectService } = apiHelper.helper.services;
       fastify.log.info(
         `[Project Routes] :: PUT request at /project/${req.params.id}:`,
         req.raw.body,
@@ -757,6 +706,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(
         `[Project Routes] :: GET request at /project/${id}/alreadyFunded`
@@ -796,6 +746,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(
         `[Project Routes] :: PUT request at /project/${id}/start`
@@ -837,6 +788,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       const { id } = request.params;
       fastify.log.info(
         `[Project Routes] :: GET request at /project/oracle/${id}`
