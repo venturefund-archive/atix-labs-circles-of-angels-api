@@ -24,8 +24,8 @@ module.exports = {
       model: 'file'
     },
     comment: { type: 'string', required: true },
-    createdAt: { type: 'string', autoCreatedAt: true, required: true },
-    updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
+    createdAt: { type: 'string', autoCreatedAt: true },
+    updatedAt: { type: 'string', autoUpdatedAt: true },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
 };
