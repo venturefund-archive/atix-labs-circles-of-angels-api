@@ -6,7 +6,10 @@ const mime = require('mime');
 const { isEmpty, uniq } = require('lodash');
 const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
-const { addPathToFilesProperties } = require('../util/files');
+const {
+  addPathToFilesProperties,
+  addTimestampToFilename
+} = require('../util/files');
 const { projectStatus } = require('../util/constants');
 
 const unlinkPromise = promisify(fs.unlink);
@@ -18,7 +21,9 @@ const projectService = ({
   projectStatusDao,
   photoService,
   transferService,
-  userDao
+  userDao,
+  fileService,
+  projectExperienceDao
 }) => ({
   /**
    * Uploads the project's images and files to the server.
@@ -1014,6 +1019,129 @@ const projectService = ({
 
   async getAllProjectsById(projectsId) {
     return projectDao.getAllProjectsById(projectsId);
+  },
+
+  /**
+   * Uploads a COA user's experience about a project
+   *
+   * @param {number} projectId
+   * @param {object} experience {user, comment}
+   * @param {file} file
+   * @returns saved experience | error msg
+   */
+  async uploadExperience(projectId, experience, file) {
+    fastify.log.info(
+      `[Project Service] :: Uploading experience to Project ID ${projectId}:`,
+      experience,
+      file
+    );
+
+    try {
+      const project = await projectDao.getProjectById({ projectId });
+
+      if (!project) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return {
+          status: 404,
+          error: 'Project not found'
+        };
+      }
+
+      const user = await userDao.getUserById(experience.user);
+
+      if (!user) {
+        fastify.log.error(
+          `[Project Service] :: User ID ${experience.user} not found`
+        );
+        return {
+          status: 404,
+          error: 'User not found'
+        };
+      }
+
+      let attachedFileId = 0;
+
+      if (file) {
+        fastify.log.info('[Project Service] :: Saving file:', file);
+
+        const filename = addTimestampToFilename(file.name);
+
+        const filepath = `${
+          configs.fileServer.filePath
+        }/projects/${projectId}/experiences/${filename}`;
+
+        await mkdirp(
+          `${configs.fileServer.filePath}/projects/${projectId}/experiences`
+        );
+        await file.mv(filepath);
+
+        const savedFile = await fileService.saveFile(filepath);
+
+        if (savedFile.error) {
+          fastify.log.error(
+            '[Project Service] :: Error saving file in database:',
+            savedFile
+          );
+          if (fs.existsSync(filepath)) {
+            await unlinkPromise(filepath);
+          }
+          return {
+            status: 409,
+            error: 'Error saving file'
+          };
+        }
+
+        attachedFileId = savedFile.id;
+        fastify.log.info('[Project Service] :: File saved in', filepath);
+      }
+
+      const newExperience = { ...experience, project: projectId };
+
+      if (attachedFileId > 0) {
+        newExperience.file = attachedFileId;
+      }
+
+      const savedExperience = await projectExperienceDao.saveProjectExperience(
+        newExperience
+      );
+
+      if (!savedExperience) {
+        fastify.log.error(
+          '[Project Service] :: Error saving experience in database:',
+          newExperience
+        );
+
+        // rollback
+        if (attachedFileId > 0) {
+          fastify.log.error(
+            '[Project Service] :: Rolling back transaction. Deleting File ID',
+            attachedFileId
+          );
+          const deletedFile = await fileService.deleteFile(attachedFileId);
+          if (deletedFile.error) {
+            fastify.log.error(
+              '[Project Service] :: There was an error deleting File ID',
+              deletedFile
+            );
+          }
+        }
+
+        return {
+          status: 500,
+          error: 'There was an error uploading the experience'
+        };
+      }
+
+      return savedExperience;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error uploading experience:',
+        error
+      );
+      throw Error('Error uploading experience');
+    }
   }
 });
 
