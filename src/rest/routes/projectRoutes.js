@@ -850,6 +850,7 @@ const routes = async fastify => {
       }
     },
     async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
       const { id } = request.params;
       const { body, files } = request.raw;
       fastify.log.info(
