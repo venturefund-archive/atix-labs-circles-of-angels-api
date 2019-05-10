@@ -412,6 +412,44 @@ const routes = async (fastify, options) => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/:id/projects`,
+    {
+      response: {
+        200: {
+          type: 'application/json',
+          properties: {
+            response: { type: 'application/json' }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const {
+        userService,
+        userProjectService,
+        projectService
+      } = apiHelper.helper.services;
+      const { id } = request.params;
+      fastify.log.info('[User Routes] :: getting list of oracles');
+      try {
+        const projects = await userService.getProjectsOfUser(
+          id,
+          userProjectService,
+          projectService
+        );
+        if (projects.error) {
+          reply.status(projects.status).send(projects.error);
+        } else {
+          reply.status(200).send(projects);
+        }
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: 'Error getting oracles' });
+      }
+    }
+  );
 };
 
 module.exports = routes;

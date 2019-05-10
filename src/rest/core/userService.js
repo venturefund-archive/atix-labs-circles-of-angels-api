@@ -378,6 +378,34 @@ const userService = ({
       fastify.log.error('[User Service] :: Error getting all Users:', error);
       throw Error('Error getting all Users');
     }
+  },
+
+  async getProjectsOfUser(userId, userProjectService, projectService) {
+    try {
+      const user = await this.getUserById(userId);
+      let response = [];
+      if (!user) {
+        return { status: 403, error: 'Nonexistent User' };
+      }
+      switch (user.role.id) {
+        case userRoles.IMPACT_FUNDER:
+          response = await userProjectService.getProjectsOfUser(userId);
+          break;
+        case userRoles.ORACLE:
+          response = await projectService.getAllProjectsById(
+            (await projectService.getProjectsAsOracle(userId)).projects
+          );
+          break;
+        case userRoles.SOCIAL_ENTREPRENEUR:
+          response = await projectService.getProjectsOfOwner(userId);
+          break;
+        default:
+          return { status: 402, error: 'Invalid User' };
+      }
+      return response;
+    } catch (error) {
+      return { status: 401, error: 'Error getting projects of user' };
+    }
   }
 });
 

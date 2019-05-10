@@ -132,6 +132,20 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
       );
       throw Error('There was an error creating the User-Project');
     }
+  },
+
+  async getProjectsOfUser(userId) {
+    try {
+      const userProjects = await userProjectDao.getProjectsOfUser(userId);
+      const projects = userProjects.map(userProject => userProject.project);
+      return projects;
+    } catch (error) {
+      fastify.log.error(
+        '[User Project Service] :: Error geting projects of user.',
+        error
+      );
+      return { status: 401, error: 'Error getting projects of user: ', userId };
+    }
   }
 });
 
