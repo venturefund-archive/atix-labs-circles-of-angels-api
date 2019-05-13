@@ -1,4 +1,5 @@
 const mkdirp = require('mkdirp-promise');
+const { promisify } = require('util');
 const fs = require('fs');
 const path = require('path');
 const mime = require('mime');
@@ -7,6 +8,8 @@ const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
 const { addPathToFilesProperties } = require('../util/files');
 const { projectStatus } = require('../util/constants');
+
+const unlinkPromise = promisify(fs.unlink);
 
 const projectService = ({
   fastify,
@@ -281,81 +284,105 @@ const projectService = ({
    * Updates an existing project
    *
    * @param {object} project
+   * @param {file} projectCoverPhoto
+   * @param {file} projectCardPhoto
    * @param {number} id
    * @returns updated project | error message
    */
-  async updateProject(
-    project,
-    projectProposal,
-    projectCoverPhoto,
-    projectCardPhoto,
-    id
-  ) {
+  async updateProject(project, projectCoverPhoto, projectCardPhoto, id) {
     try {
       const newProject = Object.assign({}, JSON.parse(project));
       fastify.log.info('[Project Service] :: Updating project:', newProject);
 
-      // create files' path
-      addPathToFilesProperties({
-        projectId: id,
-        coverPhoto: projectCoverPhoto,
-        cardPhoto: projectCardPhoto,
-        pitchProposal: projectProposal
-      });
+      // remove fields that shouldn't be updated
+      delete newProject.pitchProposal;
+      delete newProject.projectAgreement;
+      delete newProject.milestonesFile;
+      delete newProject.transactionHash;
+      delete newProject.creationTransactionHash;
 
-      const coverPhotoPath = projectCoverPhoto.path;
-      const cardPhotoPath = projectCardPhoto.path;
-      const pitchProposalPath = projectProposal.path;
-
-      // creates the directory where this project's files will be saved if not exists
-      await mkdirp(`${configs.fileServer.filePath}/projects/${id}`);
-
-      // saves the project's pictures and proposal
-      fastify.log.info(
-        '[Project Service] :: Saving Project cover photo to:',
-        coverPhotoPath
-      );
-      await projectCoverPhoto.mv(coverPhotoPath);
-
-      fastify.log.info(
-        '[Project Service] :: Saving Project card photo to:',
-        cardPhotoPath
-      );
-      await projectCardPhoto.mv(cardPhotoPath);
-
-      fastify.log.info(
-        '[Project Service] :: Saving pitch proposal to:',
-        pitchProposalPath
-      );
-      await projectProposal.mv(pitchProposalPath);
-
-      fastify.log.info(
-        '[Project Service] :: All files saved to:',
-        `${configs.fileServer.filePath}/projects/${id}`
-      );
-
-      // update photos' path
-      const projectPhotos = await projectDao.getProjectPhotos(id);
-
-      const updatedCoverPhoto = await photoService.updatePhoto(
-        projectPhotos.coverPhoto,
-        coverPhotoPath
-      );
-
-      if (updatedCoverPhoto && updatedCoverPhoto != null) {
-        newProject.coverPhoto = updatedCoverPhoto.id;
+      const currentProject = await projectDao.getProjectById({ projectId: id });
+      if (!currentProject) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${id} does not exist`
+        );
+        return {
+          status: 404,
+          error: 'Project does not exist'
+        };
       }
 
-      const updatedCardPhoto = await photoService.updatePhoto(
-        projectPhotos.cardPhoto,
-        cardPhotoPath
-      );
+      if (projectCardPhoto || projectCoverPhoto) {
+        // get current photos
+        const projectPhotos = await projectDao.getProjectPhotos(id);
+        // create files' path
+        addPathToFilesProperties({
+          projectId: id,
+          coverPhoto: projectCoverPhoto,
+          cardPhoto: projectCardPhoto
+        });
 
-      if (updatedCardPhoto && updatedCardPhoto != null) {
-        newProject.cardPhoto = updatedCardPhoto.id;
+        // creates the directory where this project's files will be saved if not exists
+        await mkdirp(`${configs.fileServer.filePath}/projects/${id}`);
+
+        // saves the project's pictures
+        if (projectCoverPhoto) {
+          const currentCoverPhoto = await photoService.getPhotoById(
+            projectPhotos.coverPhoto
+          );
+          const coverPhotoPath = projectCoverPhoto.path;
+          fastify.log.info(
+            '[Project Service] :: Saving Project cover photo to:',
+            coverPhotoPath
+          );
+          // delete current cover photo
+          if (fs.existsSync(currentCoverPhoto.path)) {
+            await unlinkPromise(currentCoverPhoto.path);
+          }
+          // save new cover photo
+          await projectCoverPhoto.mv(coverPhotoPath);
+
+          // update cover photo path in database
+          const updatedCoverPhoto = await photoService.updatePhoto(
+            projectPhotos.coverPhoto,
+            coverPhotoPath
+          );
+          if (updatedCoverPhoto && updatedCoverPhoto != null) {
+            newProject.coverPhoto = updatedCoverPhoto.id;
+          }
+        }
+
+        if (projectCardPhoto) {
+          const currentCardPhoto = await photoService.getPhotoById(
+            projectPhotos.cardPhoto
+          );
+          const cardPhotoPath = projectCardPhoto.path;
+          fastify.log.info(
+            '[Project Service] :: Saving Project card photo to:',
+            cardPhotoPath
+          );
+          // delete current card photo
+          if (fs.existsSync(currentCardPhoto.path)) {
+            await unlinkPromise(currentCardPhoto.path);
+          }
+          // save current card photo
+          await projectCardPhoto.mv(cardPhotoPath);
+
+          // update card photo path in database
+          const updatedCardPhoto = await photoService.updatePhoto(
+            projectPhotos.cardPhoto,
+            cardPhotoPath
+          );
+          if (updatedCardPhoto && updatedCardPhoto != null) {
+            newProject.cardPhoto = updatedCardPhoto.id;
+          }
+        }
+
+        fastify.log.info(
+          '[Project Service] :: All files saved to:',
+          `${configs.fileServer.filePath}/projects/${id}`
+        );
       }
-
-      newProject.pitchProposal = pitchProposalPath;
 
       fastify.log.info('[Project Service] :: Updating project:', newProject);
       const savedProject = await projectDao.updateProject(newProject, id);
@@ -377,7 +404,7 @@ const projectService = ({
       return savedProject;
     } catch (error) {
       fastify.log.error('[Project Service] :: Error updating Project:', error);
-      return { status: 500, error: 'Error updating Project' };
+      throw Error('Error updating Project');
     }
   },
 

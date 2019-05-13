@@ -7,6 +7,7 @@ const questionnaireServiceBuilder = require('../core/questionnaireService');
 const transferServiceBuilder = require('../core/transferService');
 const userProjectServiceBuilder = require('../core/userProjectService');
 const userServiceBuilder = require('../core/userService');
+const passRecoveryServiceBuilder = require('../core/passRecoveryService');
 
 const activityDaoBuilder = require('../dao/activityDao');
 const activityFileDaoBuilder = require('../dao/activityFileDao');
@@ -29,6 +30,7 @@ const userFunderDaoBuilder = require('../dao/userFunderDao');
 const userProjectDaoBuilder = require('../dao/userProjectDao');
 const userRegistrationStatusDaoBuilder = require('../dao/userRegistrationStatusDao');
 const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurDao');
+const passRecoveryDaoBuilder = require('../dao/passRecoveryDao');
 
 const helperBuilder = async fastify => {
   const { models } = fastify;
@@ -119,6 +121,12 @@ const helperBuilder = async fastify => {
     userProjectDao
   });
 
+  const passRecoveryService = passRecoveryDaoBuilder({
+    fastify,
+    passRecoveryDao: passRecoveryDaoBuilder(fastify.models.pass_recovery),
+    userDao
+  });
+
   exports.helper = {
     services: {
       fileService,
@@ -129,7 +137,8 @@ const helperBuilder = async fastify => {
       questionnaireService,
       transferService,
       userProjectService,
-      userService
+      userService,
+      passRecoveryService
     },
     daos: {
       activityDao,
@@ -158,4 +167,3 @@ const helperBuilder = async fastify => {
 };
 
 exports.helperBuilder = helperBuilder;
-exports.helper = {};

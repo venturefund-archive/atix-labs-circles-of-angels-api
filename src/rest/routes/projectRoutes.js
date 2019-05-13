@@ -584,20 +584,63 @@ const routes = async fastify => {
     `${basePath}/:id`,
     {
       schema: {
-        type: 'multipart/form-data',
         params: {
-          id: { type: 'number' }
-        },
-        raw: {
-          files: { type: 'object' },
-          body: { type: 'object' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            id: { type: 'number' }
+          }
+        },
+        raw: {
+          type: 'object',
+          properties: {
+            files: {
+              type: 'object',
+              properties: {
+                projectCoverPhoto: { type: 'object' },
+                projectCardPhoto: { type: 'object' }
+              },
+              additionalProperties: false
+            },
+            body: {
+              type: 'object',
+              properties: {
+                project: {
+                  type: 'object',
+                  properties: {
+                    projectName: { type: 'string' },
+                    mission: { type: 'string' },
+                    problemAddressed: { type: 'string' },
+                    location: { type: 'string' },
+                    timeframe: { type: 'string' },
+                    goalAmount: { type: 'number' },
+                    faqLink: { type: 'string' }
+                  },
+                  additionalProperties: false
+                }
+              }
+            }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -610,18 +653,22 @@ const routes = async fastify => {
         req.raw.files
       );
 
-      const {
-        projectProposal,
-        projectCoverPhoto,
-        projectCardPhoto
-      } = req.raw.files;
+      const projectCoverPhoto =
+        req.raw.files && req.raw.files.projectCoverPhoto
+          ? req.raw.files.projectCoverPhoto
+          : undefined;
+
+      const projectCardPhoto =
+        req.raw.files && req.raw.files.projectCardPhoto
+          ? req.raw.files.projectCardPhoto
+          : undefined;
+
       const { project } = req.raw.body;
       const { id } = req.params;
 
       try {
         const response = await projectService.updateProject(
           project,
-          projectProposal,
           projectCoverPhoto,
           projectCardPhoto,
           id
@@ -632,7 +679,7 @@ const routes = async fastify => {
             '[Project Routes] :: Error updating project: ',
             response.error
           );
-          reply.status(response.status).send(response.error);
+          reply.status(response.status).send(response);
         } else {
           reply.send({ success: 'Project updated successfully!' });
         }
