@@ -5,6 +5,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'integer' }
@@ -35,6 +36,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}`,
     {
+      beforeHandler: [fastify.adminAuth],
       response: {
         200: {
           type: 'object',
@@ -65,6 +67,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/:userId/role`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'integer' }
@@ -97,11 +100,11 @@ const routes = async (fastify, options) => {
         }
       } catch (error) {
         fastify.log.error(
-          "[User Routes] :: There was an error getting the user's role:",
+          '[User Routes] :: There was an error getting the user´s role:',
           error
         );
         reply.status(500).send({
-          error: "There was an unexpected error getting the user's role"
+          error: 'There was an unexpected error getting the user´s role'
         });
       }
     }
@@ -155,6 +158,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/role`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         response: {
           200: {
@@ -230,7 +234,9 @@ const routes = async (fastify, options) => {
             '[User Routes] :: Log in successful for user:',
             email
           );
-          reply.status(200).send(user);
+          const token = fastify.jwt.sign(user);
+          const authUser = { ...user, token };
+          reply.status(200).send(authUser);
         }
       } catch (err) {
         reply
@@ -324,6 +330,7 @@ const routes = async (fastify, options) => {
   fastify.put(
     `${basePath}/:id`,
     {
+      beforeHandler: [fastify.adminAuth],
       schema: {
         body: {
           type: 'object',
@@ -391,6 +398,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/oracle`,
     {
+      beforeHandler: [fastify.generalAuth],
       response: {
         200: {
           type: 'application/json',

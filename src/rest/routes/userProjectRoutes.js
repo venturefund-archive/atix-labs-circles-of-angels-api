@@ -5,6 +5,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:userId/:projectId/signAgreement`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           userId: { type: 'integer' },
@@ -41,6 +42,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:projectId/getUsers`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           projectId: { type: 'integer' }
@@ -76,6 +78,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:userId/:projectId/create`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           userId: { type: 'integer' },

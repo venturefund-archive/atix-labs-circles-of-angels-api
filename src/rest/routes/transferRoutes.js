@@ -5,6 +5,7 @@ const routes = async (fastify, options) => {
   fastify.post(
     `${basePath}/:transferId/sendToVerification`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'application/json',
         body: {
@@ -46,6 +47,7 @@ const routes = async (fastify, options) => {
   fastify.post(
     `${basePath}/updateState`,
     {
+      beforeHandler: [fastify.adminAuth],
       schema: {
         type: 'application/json',
         body: {
@@ -78,6 +80,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/:senderId/:projectId/getState`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           senderId: { type: 'integer' },
@@ -134,6 +137,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/:projectId/getTransfers`,
     {
+      beforeHandler: [fastify.adminAuth],
       schema: {
         params: {
           projectId: { type: 'integer' }

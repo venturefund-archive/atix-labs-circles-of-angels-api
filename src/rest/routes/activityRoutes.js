@@ -11,6 +11,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'application/json',
         body: {
@@ -64,6 +65,7 @@ const routes = async fastify => {
   fastify.put(
     `${basePath}/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'application/json',
         params: {
@@ -117,6 +119,7 @@ const routes = async fastify => {
   fastify.delete(
     `${restBasePath}/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' }
@@ -151,6 +154,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}/:id/evidences`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'multipart/form-data',
         params: {
@@ -198,6 +202,7 @@ const routes = async fastify => {
   fastify.delete(
     `${basePath}/:activityId/evidences/:evidenceId/:fileType`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           activityId: { type: 'number' },
@@ -246,6 +251,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' }
@@ -288,6 +294,7 @@ const routes = async fastify => {
   fastify.put(
     `${basePath}/:id/assignOracle/:userId`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' },
@@ -331,6 +338,7 @@ const routes = async fastify => {
   fastify.delete(
     `${basePath}/:id/unassignOracle`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' }
@@ -373,6 +381,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:activityId/evidences/:evidenceId/download/:fileType`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           activityId: { type: 'number' },
@@ -430,6 +439,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}/:activityId/complete`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           activityId: { type: 'number' }

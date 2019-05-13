@@ -341,8 +341,12 @@ const userService = ({
       // get users
       const userList = await userDao.getUsers();
       userList.forEach(async user => {
-        const answers = await questionnaireService.getAnswersOfUser(user);
-        user.answers = answers;
+        try {
+          const answers = await questionnaireService.getAnswersOfUser(user);
+          user.answers = answers;
+        } catch (error) {
+          fastify.log.error('Questionnaire not found for user:', user.id);
+        }
       });
 
       if (!userList || userList.length === 0) {
@@ -378,6 +382,16 @@ const userService = ({
       fastify.log.error('[User Service] :: Error getting all Users:', error);
       throw Error('Error getting all Users');
     }
+  },
+
+  async validUser(user, roleId) {
+    const existentUser = await userDao.getUserById(user.id);
+    if (
+      !existentUser ||
+      existentUser.registrationStatus !== userRegistrationStatus.APPROVED ||
+      (roleId && existentUser.role.id !== roleId)
+    )
+      throw Error('Invalid authenticated user');
   }
 });
 

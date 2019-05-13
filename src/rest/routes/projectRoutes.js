@@ -7,6 +7,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}/create`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'multipart/form-data',
         raw: {
@@ -87,6 +88,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/getProjects`,
     {
+      beforeHandler: [fastify.adminAuth],
       response: {
         200: {
           type: 'object',
@@ -100,8 +102,6 @@ const routes = async fastify => {
       const { projectService } = apiHelper.helper.services;
       fastify.log.info('[Project Routes] :: Getting projects');
       try {
-        // When User role verification implemented ->
-        // if Backoffice admin, get all projects, else get active projects
         const projects = await projectService.getProjectList();
         reply.send(projects);
       } catch (error) {
@@ -114,6 +114,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/getActiveProjects`,
     {
+      beforeHandler: [fastify.generalAuth],
       response: {
         200: {
           type: 'object',
@@ -139,6 +140,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:projectId/getProject`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           projectId: { type: 'integer' }
@@ -170,6 +172,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}/:projectId/updateStatus`,
     {
+      beforeHandler: [fastify.adminAuth],
       schema: {
         type: 'application/json',
         body: {
@@ -206,6 +209,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}/:projectId/deleteProject`,
     {
+      beforeHandler: [fastify.adminAuth],
       schema: {
         params: {
           projectId: { type: 'integer' }
@@ -240,6 +244,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:projectId/getMilestones`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           projectId: { type: 'integer' }
@@ -278,6 +283,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/downloadMilestonesTemplate`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           projectId: { type: 'number' }
@@ -329,6 +335,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/proposalTemplate`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         response: {
           200: {
@@ -379,6 +386,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:projectId/getMilestonesFile`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           projectId: { type: 'integer' }
@@ -428,6 +436,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}/:projectId/uploadAgreement`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'multipart/form-data',
         params: {
@@ -485,6 +494,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:projectId/downloadAgreement`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'multipart/form-data',
         params: {
@@ -536,6 +546,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:projectId/downloadProposal`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           projectId: { type: 'number' }
@@ -583,6 +594,7 @@ const routes = async fastify => {
   fastify.put(
     `${basePath}/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           type: 'object',
@@ -696,6 +708,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/:id/alreadyFunded`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' }
@@ -736,6 +749,7 @@ const routes = async fastify => {
   fastify.put(
     `${basePath}/:id/start`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' }
@@ -778,6 +792,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/oracle/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' }

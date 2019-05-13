@@ -20,6 +20,7 @@
     "fast-water": "1.0.2",
     "fastify": "1.14.1",
     "fastify-file-upload": "1.0.0",
+    "fastify-jwt": "^0.10.0",
     "fastify-static": "1.1.0",
     "fastify-swagger": "1.2.0",
     "lodash": "4.17.11",

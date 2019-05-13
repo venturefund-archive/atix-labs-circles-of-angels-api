@@ -24,6 +24,10 @@ exports.support = {
   recoveryTime: 1 //in hours
 };
 
+exports.jwt = {
+  secret: 'atix2018'
+};
+
 exports.database = {
   adapter: require('sails-postgresql'),
   adapterType: 'postgresql',
