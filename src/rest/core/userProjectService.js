@@ -144,7 +144,7 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
         '[User Project Service] :: Error geting projects of user.',
         error
       );
-      return { status: 401, error: 'Error getting projects of user: ', userId };
+      return { status: 500, error: 'Error getting projects of user: ', userId };
     }
   }
 });

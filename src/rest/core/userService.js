@@ -385,7 +385,7 @@ const userService = ({
       const user = await this.getUserById(userId);
       let response = [];
       if (!user) {
-        return { status: 403, error: 'Nonexistent User' };
+        return { status: 404, error: 'Nonexistent User' };
       }
       switch (user.role.id) {
         case userRoles.IMPACT_FUNDER:
@@ -400,11 +400,11 @@ const userService = ({
           response = await projectService.getProjectsOfOwner(userId);
           break;
         default:
-          return { status: 402, error: 'Invalid User' };
+          return { status: 409, error: 'Invalid User' };
       }
       return response;
     } catch (error) {
-      return { status: 401, error: 'Error getting projects of user' };
+      return { status: 500, error: 'Error getting projects of user' };
     }
   }
 });

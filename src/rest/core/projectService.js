@@ -1006,7 +1006,7 @@ const projectService = ({
       return projects;
     } catch (error) {
       return {
-        status: 401,
+        status: 500,
         error: `Error getting Projects of owner: ${ownerId}`
       };
     }
