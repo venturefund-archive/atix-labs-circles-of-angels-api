@@ -910,6 +910,97 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.get(
+    `${basePath}/:id/experiences`,
+    {
+      schema: {
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'number' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              experiences: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    project: { type: 'number' },
+                    user: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'number' },
+                        username: { type: 'string' },
+                        email: { type: 'string' },
+                        role: { type: 'number' }
+                      }
+                    },
+                    photo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+                    comment: { type: 'string' },
+                    createdAt: { type: 'string' },
+                    updatedAt: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
+      const { id } = request.params;
+      fastify.log.info(
+        `[Project Routes] :: GET request at /project/${id}/experience`
+      );
+
+      try {
+        const response = await projectService.getExperiences(id);
+
+        if (response.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error getting project experiences: ',
+            response
+          );
+          reply.status(response.status).send(response);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Project experiences: ',
+            response
+          );
+          reply.send({ experiences: response });
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error getting the project experiences: ',
+          error
+        );
+        reply.status(500).send({
+          error: 'There was an unexpected error getting the experiences'
+        });
+      }
+    }
+  );
 };
 
 module.exports = routes;
