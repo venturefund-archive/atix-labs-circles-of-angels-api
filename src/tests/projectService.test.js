@@ -1,10 +1,8 @@
 const _ = require('lodash');
-const mkdirp = require('mkdirp-promise');
 const fs = require('fs');
 const { promisify } = require('util');
 const { addPathToFilesProperties } = require('../rest/util/files');
 const configs = require('../../config/configs');
-const { getBase64htmlFromPath } = require('../rest/util/images');
 const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus } = require('../rest/util/constants');
 
@@ -540,16 +538,10 @@ describe('Testing projectService deleteProject', () => {
     projectModel = {
       projects: [mockProject],
       destroy({ id }) {
-        const project = _.find(this.projects, element => {
-          return element.id === id;
-        });
-        _.remove(this.projects, element => {
-          return element.id === id;
-        });
+        const project = _.find(this.projects, element => element.id === id);
+        _.remove(this.projects, element => element.id === id);
         return {
-          fetch: () => {
-            return project;
-          }
+          fetch: () => project
         };
       }
     };
@@ -939,11 +931,10 @@ describe('Testing projectService uploadAgreement', () => {
     return expect(updatedProject).toEqual(expected);
   });
 
-  it('should return an error if the agreement could not be uploaded', async () => {
-    return expect(
+  it('should return an error if the agreement could not be uploaded', async () =>
+    expect(
       projectService.uploadAgreement(mockProjectAgreement, '')
-    ).rejects.toEqual(Error('Error uploading agreement'));
-  });
+    ).rejects.toEqual(Error('Error uploading agreement')));
 });
 
 describe('Testing projectService downloadAgreement', () => {
@@ -1007,13 +998,12 @@ describe('Testing projectService downloadAgreement', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should throw an error if the file could not be read', async () => {
+  it('should throw an error if the file could not be read', async () =>
     // fs.createReadStream = jest.fn() throws an error
 
-    return expect(projectService.downloadAgreement(id)).rejects.toEqual(
+    expect(projectService.downloadAgreement(id)).rejects.toEqual(
       Error('Error getting agreement')
-    );
-  });
+    ));
 
   it('should return an error if the project does not exist', async () => {
     const mockError = { error: 'ERROR: Project not found', status: 404 };
@@ -1096,13 +1086,12 @@ describe('Testing projectService downloadProposal', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should throw an error if the file could not be read', async () => {
+  it('should throw an error if the file could not be read', async () =>
     // fs.createReadStream = jest.fn() throws an error
 
-    return expect(projectService.downloadProposal(id)).rejects.toEqual(
+    expect(projectService.downloadProposal(id)).rejects.toEqual(
       Error('Error getting pitch proposal')
-    );
-  });
+    ));
 
   it('should return an error if the project does not exist', async () => {
     const mockError = { error: 'ERROR: Project not found', status: 404 };
@@ -1318,12 +1307,10 @@ describe('Testing projectService updateProject', () => {
         };
       },
 
-      getProjectPhotos: () => {
-        return {
-          coverPhoto: 1,
-          cardPhoto: 2
-        };
-      },
+      getProjectPhotos: () => ({
+        coverPhoto: 1,
+        cardPhoto: 2
+      }),
 
       updateProject: (project, id) => {
         if (id === 999) {
@@ -1340,15 +1327,11 @@ describe('Testing projectService updateProject', () => {
     };
 
     photoService = {
-      getPhotoById: id => {
-        return {
-          id,
-          path: '/server/files/photo.jpg'
-        };
-      },
-      updatePhoto: id => {
-        return { id };
-      }
+      getPhotoById: id => ({
+        id,
+        path: '/server/files/photo.jpg'
+      }),
+      updatePhoto: id => ({ id })
     };
 
     projectService = projectServiceBuilder({
@@ -1487,5 +1470,278 @@ describe('Testing projectService updateProject', () => {
         mockProjectCardPhoto
       )
     ).rejects.toEqual(Error('Error updating Project'));
+  });
+});
+
+describe('Testing projectService uploadExperience', () => {
+  let projectDao;
+  let userDao;
+  let projectExperienceDao;
+  let photoService;
+  let projectService;
+
+  const mockPhoto = {
+    name: 'projectCardPhoto.png',
+    path: `${__dirname}/mockFiles/projectCardPhoto.png`,
+    mv: jest.fn()
+  };
+
+  const photoId = 22;
+
+  beforeAll(() => {
+    projectDao = {
+      getProjectById: ({ projectId }) => {
+        if (projectId === 0) {
+          return undefined;
+        }
+
+        return {
+          id: projectId
+        };
+      }
+    };
+
+    userDao = {
+      getUserById: userId => {
+        if (userId === 0) {
+          return undefined;
+        }
+
+        return {
+          id: userId
+        };
+      }
+    };
+
+    photoService = {
+      savePhoto: filepath => {
+        if (filepath.includes('error')) {
+          throw Error('Error saving photo');
+        }
+        return { id: photoId };
+      },
+      deletePhoto: jest.fn(id => ({ id }))
+    };
+
+    projectExperienceDao = {
+      saveProjectExperience: experience => {
+        if (experience.user === -1) {
+          throw Error('Error saving experience in db');
+        }
+
+        if (!experience.comment) {
+          return undefined;
+        }
+        return { experience };
+      }
+    };
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao,
+      photoService,
+      userDao,
+      projectExperienceDao
+    });
+  });
+
+  it('should return the saved experience without an attached file', async () => {
+    const projectId = 12;
+    const experience = {
+      user: 7,
+      comment: 'Testing Comment'
+    };
+
+    const response = await projectService.uploadExperience(
+      projectId,
+      experience
+    );
+
+    const expected = {
+      experience: {
+        ...experience,
+        project: projectId
+      }
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return the saved experience with an attached file', async () => {
+    const projectId = 12;
+    const experience = {
+      user: 7,
+      comment: 'Testing Comment'
+    };
+
+    const response = await projectService.uploadExperience(
+      projectId,
+      experience,
+      mockPhoto
+    );
+
+    const expected = {
+      experience: {
+        ...experience,
+        project: projectId,
+        photo: photoId
+      }
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project does not exist', async () => {
+    const projectId = 0;
+    const experience = {
+      user: 7,
+      comment: 'Testing Comment'
+    };
+
+    const response = await projectService.uploadExperience(
+      projectId,
+      experience,
+      mockPhoto
+    );
+
+    const expected = {
+      status: 404,
+      error: 'Project not found'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the user does not exist', async () => {
+    const projectId = 12;
+    const experience = {
+      user: 0,
+      comment: 'Testing Comment'
+    };
+
+    const response = await projectService.uploadExperience(
+      projectId,
+      experience,
+      mockPhoto
+    );
+
+    const expected = {
+      status: 404,
+      error: 'User not found'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the file type is not an image', async () => {
+    const projectId = 12;
+    const experience = {
+      user: 7,
+      comment: 'Testing Comment'
+    };
+
+    const mockFile = {
+      name: 'projectProposal.pdf',
+      path: `${__dirname}/mockFiles/projectProposal.pdf`,
+      mv: jest.fn()
+    };
+
+    const response = await projectService.uploadExperience(
+      projectId,
+      experience,
+      mockFile
+    );
+
+    const expected = { error: 'File type is invalid', status: 409 };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if it fails to save the file', async () => {
+    const projectId = 12;
+    const experience = {
+      user: 7,
+      comment: 'Testing Comment'
+    };
+
+    const mockFile = {
+      name: 'error.png',
+      path: `${__dirname}/mockFiles/error.png`,
+      mv: jest.fn()
+    };
+
+    const response = await projectService.uploadExperience(
+      projectId,
+      experience,
+      mockFile
+    );
+
+    const expected = {
+      status: 409,
+      error: 'Error saving file'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it(
+    'should return an error if it fails to save the experience ' +
+      'when no file is attached',
+    async () => {
+      const projectId = 12;
+      const experience = {
+        user: 7
+      };
+
+      const response = await projectService.uploadExperience(
+        projectId,
+        experience
+      );
+
+      const expected = {
+        status: 500,
+        error: 'There was an error uploading the experience'
+      };
+
+      return expect(response).toEqual(expected);
+    }
+  );
+
+  // check deletePhoto is called
+  it(
+    'should rollback the transaction and return an error if ' +
+      'it fails to save the experience when a file is attached',
+    async () => {
+      const projectId = 12;
+      const experience = {
+        user: 7
+      };
+
+      const response = await projectService.uploadExperience(
+        projectId,
+        experience,
+        mockPhoto
+      );
+
+      const expected = {
+        status: 500,
+        error: 'There was an error uploading the experience'
+      };
+
+      await expect(photoService.deletePhoto).toHaveBeenCalled();
+      return expect(response).toEqual(expected);
+    }
+  );
+
+  it('should throw an error it saving the experience in database fails', async () => {
+    const projectId = 12;
+    const experience = {
+      user: -1,
+      comment: 'Testing Comment'
+    };
+
+    return expect(
+      projectService.uploadExperience(projectId, experience)
+    ).rejects.toEqual(Error('Error uploading experience'));
   });
 });

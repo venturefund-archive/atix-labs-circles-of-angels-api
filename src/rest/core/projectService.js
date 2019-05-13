@@ -1091,12 +1091,14 @@ const projectService = ({
         );
         await file.mv(filepath);
 
-        const savedFile = await photoService.savePhoto(filepath);
-
-        if (savedFile.error) {
+        try {
+          const savedFile = await photoService.savePhoto(filepath);
+          attachedFileId = savedFile.id;
+          fastify.log.info('[Project Service] :: File saved in', filepath);
+        } catch (error) {
           fastify.log.error(
             '[Project Service] :: Error saving file in database:',
-            savedFile
+            error
           );
           if (fs.existsSync(filepath)) {
             await unlinkPromise(filepath);
@@ -1106,9 +1108,6 @@ const projectService = ({
             error: 'Error saving file'
           };
         }
-
-        attachedFileId = savedFile.id;
-        fastify.log.info('[Project Service] :: File saved in', filepath);
       }
 
       const newExperience = { ...experience, project: projectId };
@@ -1133,11 +1132,18 @@ const projectService = ({
             '[Project Service] :: Rolling back transaction. Deleting File ID',
             attachedFileId
           );
-          const deletedFile = await photoService.deletePhoto(attachedFileId);
-          if (deletedFile.error) {
+          try {
+            const deletedFile = await photoService.deletePhoto(attachedFileId);
+            if (!deletedFile || deletedFile.error) {
+              fastify.log.error(
+                '[Project Service] :: There was an error deleting the file',
+                deletedFile
+              );
+            }
+          } catch (error) {
             fastify.log.error(
-              '[Project Service] :: There was an error deleting File ID',
-              deletedFile
+              '[Project Service] :: There was an error deleting the file',
+              error
             );
           }
         }
