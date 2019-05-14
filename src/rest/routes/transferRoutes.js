@@ -137,7 +137,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/:projectId/getTransfers`,
     {
-      beforeHandler: [fastify.adminAuth],
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           projectId: { type: 'integer' }

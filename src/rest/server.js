@@ -14,6 +14,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
   try {
     const fastify = require('fastify')({ logger });
     fastify.use(require('cors')());
+    fastify.register(require('fastify-cookie'));
     initJWT(fastify);
     // Init DB
     try {
@@ -25,6 +26,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     // Load Swagger
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
+
     fastify.eth = await ethService(configs.eth.HOST, { logger });
 
     loadRoutes(fastify);
@@ -53,10 +55,20 @@ const initJWT = fastify => {
       secret: configs.jwt.secret
     });
 
+    fastify.addHook('preHandler', (request, reply, next) => {
+      reply.header('Access-Control-Allow-Credentials', true);
+      reply.header(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept'
+      );
+      next();
+    });
+
     fasti.decorate('generalAuth', async (request, reply) => {
       try {
         const { helper } = require('./services/helper');
         fasti.log.info('authentication with JWT');
+        console.log(reply);
         const user = await request.jwtVerify();
         await helper.services.userService.validUser(user);
       } catch (err) {

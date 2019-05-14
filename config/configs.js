@@ -1,6 +1,12 @@
 exports.server = {
   host: 'localhost',
-  port: 3001
+  port: 3001,
+  headers: {
+    'Access-Control-Allow-Credentials': true,
+    'Access-Control-Allow-Headers': [
+      'Origin, X-Requested-With, Content-Type, Accept'
+    ]
+  }
 };
 
 const contractJson = require('../../circle-of-angels-solidity/build/contracts/COAProjectAdmin.json');

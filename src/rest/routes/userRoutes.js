@@ -221,7 +221,6 @@ const routes = async (fastify, options) => {
       const { userService } = apiHelper.helper.services;
       try {
         const { email, pwd } = request.body;
-
         fastify.log.info('[User Routes] :: Trying to log in user:', email);
 
         const user = await userService.login(email, pwd);
@@ -235,8 +234,13 @@ const routes = async (fastify, options) => {
             email
           );
           const token = fastify.jwt.sign(user);
-          const authUser = { ...user, token };
-          reply.status(200).send(authUser);
+          reply
+            .status(200)
+            .setCookie('userAuth', token, {
+              domain: 'http://localhost:3001',
+              path: `${basePath}/login`
+            })
+            .send(user);
         }
       } catch (err) {
         reply
