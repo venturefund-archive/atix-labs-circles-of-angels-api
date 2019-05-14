@@ -105,6 +105,14 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     } catch (error) {
       throw Error('Error getting User');
     }
+  },
+
+  async getProjectsByOwner(ownerId) {
+    return projectModel.find({ ownerId });
+  },
+
+  async getAllProjectsById(projectsId) {
+    return projectModel.find({ id: projectsId });
   }
 });
 

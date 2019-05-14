@@ -26,9 +26,14 @@ const createUserProject = userProjectModel => async userProject => {
   return userProjectModel.create(userProject);
 };
 
+const getProjectsOfUser = userProjectModel => async userId => {
+  return userProjectModel.find({ user: userId }).populate('project');
+};
+
 module.exports = userProjectModel => ({
   findUserProject: findUserProject(userProjectModel),
   updateStatus: updateStatus(userProjectModel),
   getUserProjects: getUserProjects(userProjectModel),
-  createUserProject: createUserProject(userProjectModel)
+  createUserProject: createUserProject(userProjectModel),
+  getProjectsOfUser: getProjectsOfUser(userProjectModel)
 });
