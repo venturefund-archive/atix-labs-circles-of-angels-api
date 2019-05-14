@@ -998,6 +998,22 @@ const projectService = ({
     } catch (error) {
       throw Error('Error getting confirmation of transaction');
     }
+  },
+
+  async getProjectsOfOwner(ownerId) {
+    try {
+      const projects = await projectDao.getProjectsByOwner(ownerId);
+      return projects;
+    } catch (error) {
+      return {
+        status: 500,
+        error: `Error getting Projects of owner: ${ownerId}`
+      };
+    }
+  },
+
+  async getAllProjectsById(projectsId) {
+    return projectDao.getAllProjectsById(projectsId);
   }
 });
 
