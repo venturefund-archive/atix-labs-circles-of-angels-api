@@ -31,6 +31,7 @@ const userProjectDaoBuilder = require('../dao/userProjectDao');
 const userRegistrationStatusDaoBuilder = require('../dao/userRegistrationStatusDao');
 const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurDao');
 const passRecoveryDaoBuilder = require('../dao/passRecoveryDao');
+const projectExperienceDaoBuilder = require('../dao/projectExperienceDao');
 
 const helperBuilder = async fastify => {
   const { models } = fastify;
@@ -44,6 +45,9 @@ const helperBuilder = async fastify => {
   const activityFileDao = activityFileDaoBuilder(models.activity_file);
   const activityPhotoDao = activityPhotoDaoBuilder(models.activity_photo);
   const oracleActivityDao = oracleActivityDaoBuilder(models.oracle_activity);
+  const projectExperienceDao = projectExperienceDaoBuilder(
+    models.project_experience
+  );
   const answerQuestionDao = answerQuestionDaoBuilder({
     answerQuestionModel: models.answer_question
   });
@@ -113,7 +117,8 @@ const helperBuilder = async fastify => {
     projectStatusDao,
     photoService,
     transferService,
-    userDao
+    userDao,
+    projectExperienceDao
   });
   const userProjectDao = userProjectDaoBuilder(models.user_project);
   const userProjectService = userProjectServiceBuilder({
@@ -161,7 +166,8 @@ const helperBuilder = async fastify => {
       userFunderDao,
       userProjectDao,
       userRegistrationStatusDao,
-      userSocialEntrepreneurDao
+      userSocialEntrepreneurDao,
+      projectExperienceDao
     }
   };
 };

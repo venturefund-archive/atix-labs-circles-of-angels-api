@@ -29,7 +29,7 @@ const getProjectAgreementPath = (projectId, agreementName) => {
   return `${
     configs.fileServer.filePath
   }/projects/${projectId}/agreement${path.extname(agreementName)}`;
-}
+};
 
 const getMilestonesPath = (projectId, milestoneName) => {
   return `${
@@ -63,4 +63,30 @@ exports.addPathToFilesProperties = ({
   if (milestones) {
     milestones.path = getMilestonesPath(projectId, milestones.name);
   }
+};
+
+exports.addTimestampToFilename = filename => {
+  const fileExtension = path.extname(filename);
+  const currentDate = new Date();
+  const timeString = `${`0${currentDate.getUTCHours()}`.slice(
+    -2
+  )}${`0${currentDate.getUTCMinutes()}`.slice(
+    -2
+  )}${`0${currentDate.getUTCSeconds()}`.slice(
+    -2
+  )}${`0${currentDate.getUTCMilliseconds()}`.slice(-2)}`;
+
+  const timestampString = [
+    currentDate.getUTCFullYear(),
+    `0${currentDate.getUTCMonth() + 1}`.slice(-2),
+    `0${currentDate.getUTCDate()}`.slice(-2),
+    timeString
+  ].join('-');
+
+  const nameWithTimestamp = filename.replace(
+    fileExtension,
+    `_${timestampString}`.concat(fileExtension)
+  );
+
+  return nameWithTimestamp;
 };

@@ -86,11 +86,15 @@ const photoService = ({ fastify, photoDao }) => ({
    * @param {string} path photo file path
    * @returns saved photo
    */
-  async savePhoto(path) {
+  async savePhoto(path, projectExperienceId) {
     fastify.log.info('[Photo Service] :: Saving photo in database:', path);
 
     try {
-      const photo = await photoDao.savePhoto(path);
+      const newPhoto = { path };
+      if (projectExperienceId) {
+        newPhoto.projectExperience = projectExperienceId;
+      }
+      const photo = await photoDao.savePhoto(newPhoto);
 
       fastify.log.info('[Photo Service] :: Photo saved:', photo);
       return photo;
