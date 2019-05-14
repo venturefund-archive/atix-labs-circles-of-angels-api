@@ -237,8 +237,10 @@ const routes = async (fastify, options) => {
           reply
             .status(200)
             .setCookie('userAuth', token, {
-              domain: 'http://localhost:3001',
-              path: `${basePath}/login`
+              domain: 'localhost',
+              path: '/',
+              httpOnly: true
+              // secure: true
             })
             .send(user);
         }

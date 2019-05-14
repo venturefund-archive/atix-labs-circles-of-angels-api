@@ -13,7 +13,14 @@ const swaggerConfigs = configs.swagger;
 module.exports.start = async ({ db, logger, serverConfigs }) => {
   try {
     const fastify = require('fastify')({ logger });
-    fastify.use(require('cors')());
+    fastify.register(require('fastify-cors'), {
+      credentials: true,
+
+      allowedHeaders: ['content-type'],
+
+      origin: 'http://localhost:3000'
+    });
+
     fastify.register(require('fastify-cookie'));
     initJWT(fastify);
     // Init DB
@@ -50,37 +57,46 @@ const loadRoutes = fastify => {
 const initJWT = fastify => {
   const fp = require('fastify-plugin');
   const { userRoles } = require('./util/constants');
-  const jwtPlugin = fp(async (fasti, opts) => {
-    fasti.register(require('fastify-jwt'), {
+  const jwtPlugin = fp(async () => {
+    fastify.register(require('fastify-jwt'), {
       secret: configs.jwt.secret
     });
 
-    fastify.addHook('preHandler', (request, reply, next) => {
-      reply.header('Access-Control-Allow-Credentials', true);
-      reply.header(
-        'Access-Control-Allow-Headers',
-        'Origin, X-Requested-With, Content-Type, Accept'
-      );
-      next();
-    });
+    const getToken = (request, reply) => {
+      const token = request.cookies.userAuth;
+      if (!token)
+        reply
+          .status(401)
+          .send({ error: 'Only registered users, please login' });
+      return token;
+    };
 
-    fasti.decorate('generalAuth', async (request, reply) => {
+    const validateUser = async (token, reply, roleId) => {
+      const { helper } = require('./services/helper');
+      const user = await fastify.jwt.verify(token);
+      const validUser = await helper.services.userService.validUser(
+        user,
+        roleId
+      );
+      if (!validUser) {
+        reply.status(401).send({ error: 'Unauthorized user' });
+      }
+    };
+
+    fastify.decorate('generalAuth', async (request, reply) => {
       try {
-        const { helper } = require('./services/helper');
-        fasti.log.info('authentication with JWT');
-        console.log(reply);
-        const user = await request.jwtVerify();
-        await helper.services.userService.validUser(user);
+        fastify.log.info('authentication with JWT');
+        const token = getToken(request, reply);
+        if (token) await validateUser(token, reply);
       } catch (err) {
         reply.send(err);
       }
     });
     fastify.decorate('adminAuth', async (request, reply) => {
       try {
-        const { helper } = require('./services/helper');
-        fasti.log.info('authentication with JWT');
-        const user = await request.jwtVerify();
-        await helper.services.userService.validUser(user, userRoles.BO_ADMIN);
+        fastify.log.info('authentication with JWT');
+        const token = getToken(request, reply);
+        if (token) await validateUser(token, reply, userRoles.BO_ADMIN);
       } catch (error) {
         reply.send(error);
       }

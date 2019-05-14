@@ -386,12 +386,12 @@ const userService = ({
 
   async validUser(user, roleId) {
     const existentUser = await userDao.getUserById(user.id);
-    if (
-      !existentUser ||
-      existentUser.registrationStatus !== userRegistrationStatus.APPROVED ||
-      (roleId && existentUser.role.id !== roleId)
-    )
-      throw Error('Invalid authenticated user');
+    const role = roleId ? existentUser.role.id === roleId : true;
+    return (
+      existentUser &&
+      existentUser.registrationStatus === userRegistrationStatus.APPROVED &&
+      role
+    );
   }
 });
 
