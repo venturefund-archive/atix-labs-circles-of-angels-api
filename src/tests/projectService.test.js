@@ -1480,11 +1480,18 @@ describe('Testing projectService uploadExperience', () => {
   let photoService;
   let projectService;
 
-  const mockPhoto = {
-    name: 'projectCardPhoto.png',
-    path: `${__dirname}/mockFiles/projectCardPhoto.png`,
-    mv: jest.fn()
-  };
+  const mockPhotos = [
+    {
+      name: 'projectCardPhoto.png',
+      path: `${__dirname}/mockFiles/projectCardPhoto.png`,
+      mv: jest.fn()
+    },
+    {
+      name: 'projectCoverPhoto.png',
+      path: `${__dirname}/mockFiles/projectCoverPhoto.png`,
+      mv: jest.fn()
+    }
+  ];
 
   const photoId = 22;
 
@@ -1519,8 +1526,7 @@ describe('Testing projectService uploadExperience', () => {
           throw Error('Error saving photo');
         }
         return { id: photoId };
-      },
-      deletePhoto: jest.fn(id => ({ id }))
+      }
     };
 
     projectExperienceDao = {
@@ -1532,7 +1538,7 @@ describe('Testing projectService uploadExperience', () => {
         if (!experience.comment) {
           return undefined;
         }
-        return { experience };
+        return experience;
       }
     };
 
@@ -1545,7 +1551,7 @@ describe('Testing projectService uploadExperience', () => {
     });
   });
 
-  it('should return the saved experience without an attached file', async () => {
+  it('should return the saved experience without attached files', async () => {
     const projectId = 12;
     const experience = {
       user: 7,
@@ -1558,16 +1564,14 @@ describe('Testing projectService uploadExperience', () => {
     );
 
     const expected = {
-      experience: {
-        ...experience,
-        project: projectId
-      }
+      ...experience,
+      project: projectId
     };
 
     return expect(response).toEqual(expected);
   });
 
-  it('should return the saved experience with an attached file', async () => {
+  it('should return the saved experience with attached files', async () => {
     const projectId = 12;
     const experience = {
       user: 7,
@@ -1577,15 +1581,13 @@ describe('Testing projectService uploadExperience', () => {
     const response = await projectService.uploadExperience(
       projectId,
       experience,
-      mockPhoto
+      mockPhotos
     );
 
     const expected = {
-      experience: {
-        ...experience,
-        project: projectId,
-        photo: photoId
-      }
+      ...experience,
+      project: projectId,
+      photos: [{ id: 22 }, { id: 22 }]
     };
 
     return expect(response).toEqual(expected);
@@ -1601,7 +1603,7 @@ describe('Testing projectService uploadExperience', () => {
     const response = await projectService.uploadExperience(
       projectId,
       experience,
-      mockPhoto
+      mockPhotos
     );
 
     const expected = {
@@ -1622,7 +1624,7 @@ describe('Testing projectService uploadExperience', () => {
     const response = await projectService.uploadExperience(
       projectId,
       experience,
-      mockPhoto
+      mockPhotos
     );
 
     const expected = {
@@ -1640,11 +1642,13 @@ describe('Testing projectService uploadExperience', () => {
       comment: 'Testing Comment'
     };
 
-    const mockFile = {
-      name: 'projectProposal.pdf',
-      path: `${__dirname}/mockFiles/projectProposal.pdf`,
-      mv: jest.fn()
-    };
+    const mockFile = [
+      {
+        name: 'projectProposal.pdf',
+        path: `${__dirname}/mockFiles/projectProposal.pdf`,
+        mv: jest.fn()
+      }
+    ];
 
     const response = await projectService.uploadExperience(
       projectId,
@@ -1652,7 +1656,17 @@ describe('Testing projectService uploadExperience', () => {
       mockFile
     );
 
-    const expected = { error: 'File type is invalid', status: 409 };
+    const expected = {
+      ...experience,
+      project: projectId,
+      photos: [{ error: 'File type is invalid', status: 409 }],
+      errors: [
+        {
+          error: 'File type is invalid',
+          file: 'projectProposal.pdf'
+        }
+      ]
+    };
 
     return expect(response).toEqual(expected);
   });
@@ -1664,11 +1678,13 @@ describe('Testing projectService uploadExperience', () => {
       comment: 'Testing Comment'
     };
 
-    const mockFile = {
-      name: 'error.png',
-      path: `${__dirname}/mockFiles/error.png`,
-      mv: jest.fn()
-    };
+    const mockFile = [
+      {
+        name: 'error.png',
+        path: `${__dirname}/mockFiles/error.png`,
+        mv: jest.fn()
+      }
+    ];
 
     const response = await projectService.uploadExperience(
       projectId,
@@ -1677,8 +1693,15 @@ describe('Testing projectService uploadExperience', () => {
     );
 
     const expected = {
-      status: 409,
-      error: 'Error saving file'
+      ...experience,
+      project: projectId,
+      photos: [{ error: 'Error saving file', status: 409 }],
+      errors: [
+        {
+          error: 'Error saving file',
+          file: 'error.png'
+        }
+      ]
     };
 
     return expect(response).toEqual(expected);
@@ -1703,32 +1726,6 @@ describe('Testing projectService uploadExperience', () => {
         error: 'There was an error uploading the experience'
       };
 
-      return expect(response).toEqual(expected);
-    }
-  );
-
-  // check deletePhoto is called
-  it(
-    'should rollback the transaction and return an error if ' +
-      'it fails to save the experience when a file is attached',
-    async () => {
-      const projectId = 12;
-      const experience = {
-        user: 7
-      };
-
-      const response = await projectService.uploadExperience(
-        projectId,
-        experience,
-        mockPhoto
-      );
-
-      const expected = {
-        status: 500,
-        error: 'There was an error uploading the experience'
-      };
-
-      await expect(photoService.deletePhoto).toHaveBeenCalled();
       return expect(response).toEqual(expected);
     }
   );

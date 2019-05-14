@@ -1123,7 +1123,7 @@ const projectService = ({
         '[Project Service] :: Error getting mime type of file:',
         file
       );
-      return { error: 'Error uploading experience', status: 409 };
+      return { error: 'Error uploading file', status: 409 };
     }
 
     if (!filetype.includes('image/')) {
