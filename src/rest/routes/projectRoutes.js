@@ -829,7 +829,17 @@ const routes = async fastify => {
           200: {
             type: 'object',
             properties: {
-              success: { type: 'string' }
+              success: { type: 'string' },
+              errors: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string' },
+                    file: { type: 'string' }
+                  }
+                }
+              }
             }
           },
           '4xx': {
@@ -861,16 +871,16 @@ const routes = async fastify => {
       try {
         const { experience } = body;
 
-        let attachedFile;
+        let attachedFiles;
         if (files) {
-          attachedFile = files.file;
+          attachedFiles = files.file.length ? files.file : [files.file];
         }
         const newExperience = Object.assign({}, JSON.parse(experience));
 
         const response = await projectService.uploadExperience(
           id,
           newExperience,
-          attachedFile
+          attachedFiles
         );
 
         if (response.error) {
@@ -880,9 +890,14 @@ const routes = async fastify => {
           );
           reply.status(response.status).send(response);
         } else {
-          reply
-            .status(200)
-            .send({ success: 'Experience uploaded successfully!' });
+          fastify.log.info(
+            '[Project Routes] :: Experience uploaded successfully: ',
+            response
+          );
+          reply.status(200).send({
+            success: 'Experience uploaded successfully!',
+            errors: response.errors || []
+          });
         }
       } catch (error) {
         fastify.log.error(

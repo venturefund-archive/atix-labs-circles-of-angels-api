@@ -4,7 +4,7 @@
  * @attribute `id`: unique identifier
  * @attribute `project`: reference to the related project
  * @attribute `user`: reference to the related user
- * @attribute `photo`: reference to the attached file
+ * @attribute `photos`: reference to the attached files
  * @attribute `comment`: comments from the user
  */
 module.exports = {
@@ -19,9 +19,9 @@ module.exports = {
       columnName: 'userId',
       model: 'user'
     },
-    photo: {
-      columnName: 'photoId',
-      model: 'photo'
+    photos: {
+      collection: 'photo',
+      via: 'projectExperience'
     },
     comment: { type: 'string', required: true },
     createdAt: { type: 'string', autoCreatedAt: true },

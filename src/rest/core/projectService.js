@@ -1028,11 +1028,11 @@ const projectService = ({
    * @param {file} file
    * @returns saved experience | error msg
    */
-  async uploadExperience(projectId, experience, file) {
+  async uploadExperience(projectId, experience, files) {
     fastify.log.info(
       `[Project Service] :: Uploading experience to Project ID ${projectId}:`,
       experience,
-      file
+      files
     );
 
     try {
@@ -1060,61 +1060,7 @@ const projectService = ({
         };
       }
 
-      let attachedFileId = 0;
-
-      if (file) {
-        const filetype = mime.lookup(file.name);
-
-        if (!filetype) {
-          fastify.log.error(
-            '[Project Service] :: Error getting mime type of file:',
-            file
-          );
-          return { error: 'Error uploading experience', status: 409 };
-        }
-
-        if (!filetype.includes('image/')) {
-          fastify.log.error('[Project Service] :: File type is invalid:', file);
-          return { error: 'File type is invalid', status: 409 };
-        }
-
-        fastify.log.info('[Project Service] :: Saving file:', file);
-
-        const filename = addTimestampToFilename(file.name);
-
-        const filepath = `${
-          configs.fileServer.filePath
-        }/projects/${projectId}/experiences/${filename}`;
-
-        await mkdirp(
-          `${configs.fileServer.filePath}/projects/${projectId}/experiences`
-        );
-        await file.mv(filepath);
-
-        try {
-          const savedFile = await photoService.savePhoto(filepath);
-          attachedFileId = savedFile.id;
-          fastify.log.info('[Project Service] :: File saved in', filepath);
-        } catch (error) {
-          fastify.log.error(
-            '[Project Service] :: Error saving file in database:',
-            error
-          );
-          if (fs.existsSync(filepath)) {
-            await unlinkPromise(filepath);
-          }
-          return {
-            status: 409,
-            error: 'Error saving file'
-          };
-        }
-      }
-
       const newExperience = { ...experience, project: projectId };
-
-      if (attachedFileId > 0) {
-        newExperience.photo = attachedFileId;
-      }
 
       const savedExperience = await projectExperienceDao.saveProjectExperience(
         newExperience
@@ -1126,32 +1072,37 @@ const projectService = ({
           newExperience
         );
 
-        // rollback
-        if (attachedFileId > 0) {
-          fastify.log.error(
-            '[Project Service] :: Rolling back transaction. Deleting File ID',
-            attachedFileId
-          );
-          try {
-            const deletedFile = await photoService.deletePhoto(attachedFileId);
-            if (!deletedFile || deletedFile.error) {
-              fastify.log.error(
-                '[Project Service] :: There was an error deleting the file',
-                deletedFile
-              );
-            }
-          } catch (error) {
-            fastify.log.error(
-              '[Project Service] :: There was an error deleting the file',
-              error
-            );
-          }
-        }
-
         return {
           status: 500,
           error: 'There was an error uploading the experience'
         };
+      }
+
+      const errors = [];
+
+      if (files && files.length > 0) {
+        const savedFiles = await Promise.all(
+          files.map(async (file, index) => {
+            const savedFile = await this.saveExperienceFile(
+              file,
+              projectId,
+              savedExperience.id,
+              index
+            );
+            if (savedFile.error) {
+              errors.push({
+                error: savedFile.error,
+                file: file.name
+              });
+            }
+            return savedFile;
+          })
+        );
+        savedExperience.photos = savedFiles;
+      }
+
+      if (errors.length > 0) {
+        savedExperience.errors = errors;
       }
 
       return savedExperience;
@@ -1161,6 +1112,61 @@ const projectService = ({
         error
       );
       throw Error('Error uploading experience');
+    }
+  },
+
+  async saveExperienceFile(file, projectId, projectExperienceId, index) {
+    const filetype = mime.lookup(file.name);
+
+    if (!filetype) {
+      fastify.log.error(
+        '[Project Service] :: Error getting mime type of file:',
+        file
+      );
+      return { error: 'Error uploading experience', status: 409 };
+    }
+
+    if (!filetype.includes('image/')) {
+      fastify.log.error('[Project Service] :: File type is invalid:', file);
+      return { error: 'File type is invalid', status: 409 };
+    }
+
+    fastify.log.info('[Project Service] :: Saving file:', file);
+
+    const filename = addTimestampToFilename(file.name);
+
+    const filepath = `${
+      configs.fileServer.filePath
+    }/projects/${projectId}/experiences/${filename}`;
+
+    if (fs.existsSync(filepath)) {
+      filepath.concat(`-${index}`);
+    }
+
+    await mkdirp(
+      `${configs.fileServer.filePath}/projects/${projectId}/experiences`
+    );
+    await file.mv(filepath);
+
+    try {
+      const savedFile = await photoService.savePhoto(
+        filepath,
+        projectExperienceId
+      );
+      fastify.log.info('[Project Service] :: File saved in', filepath);
+      return savedFile;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error saving file in database:',
+        error
+      );
+      if (fs.existsSync(filepath)) {
+        await unlinkPromise(filepath);
+      }
+      return {
+        status: 409,
+        error: 'Error saving file'
+      };
     }
   }
 });
