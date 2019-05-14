@@ -10,7 +10,7 @@ const readFile = promisify(fs.readFile);
 
 const fastify = { log: { info: console.log, error: console.log } };
 
-describe.skip('Testing projectService createProject', () => {
+describe('Testing projectService createProject', () => {
   let projectDao;
   let photoService;
   let projectService;
@@ -234,7 +234,7 @@ describe.skip('Testing projectService createProject', () => {
   });
 });
 
-describe.skip('Testing projectService getProjectList', () => {
+describe('Testing projectService getProjectList', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -307,7 +307,7 @@ describe.skip('Testing projectService getProjectList', () => {
   });
 });
 
-describe.skip('Testing projectService getActiveProjectList', () => {
+describe('Testing projectService getActiveProjectList', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -380,7 +380,7 @@ describe.skip('Testing projectService getActiveProjectList', () => {
   });
 });
 
-describe.skip('Testing projectService getProjectWithId', () => {
+describe('Testing projectService getProjectWithId', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -436,7 +436,7 @@ describe.skip('Testing projectService getProjectWithId', () => {
   });
 });
 
-describe.skip('Testing projectService updateProjectStatus', () => {
+describe('Testing projectService updateProjectStatus', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -512,7 +512,7 @@ describe.skip('Testing projectService updateProjectStatus', () => {
   });
 });
 
-describe.skip('Testing projectService deleteProject', () => {
+describe('Testing projectService deleteProject', () => {
   let projectDao;
   let projectService;
   let projectModel;
@@ -567,7 +567,7 @@ describe.skip('Testing projectService deleteProject', () => {
   });
 });
 
-describe.skip('Testing projectService getProjectMilestones', () => {
+describe('Testing projectService getProjectMilestones', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -725,7 +725,7 @@ describe.skip('Testing projectService getProjectMilestones', () => {
   });
 });
 
-describe.skip('Testing projectService downloadMilestonesTemplate', () => {
+describe('Testing projectService downloadMilestonesTemplate', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -796,7 +796,7 @@ describe.skip('Testing projectService downloadMilestonesTemplate', () => {
   });
 });
 
-describe.skip('Testing projectService getProjectMilestonesPath', () => {
+describe('Testing projectService getProjectMilestonesPath', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -854,7 +854,7 @@ describe.skip('Testing projectService getProjectMilestonesPath', () => {
   });
 });
 
-describe.skip('Testing projectService uploadAgreement', () => {
+describe('Testing projectService uploadAgreement', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -937,7 +937,7 @@ describe.skip('Testing projectService uploadAgreement', () => {
     ).rejects.toEqual(Error('Error uploading agreement')));
 });
 
-describe.skip('Testing projectService downloadAgreement', () => {
+describe('Testing projectService downloadAgreement', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -1025,7 +1025,7 @@ describe.skip('Testing projectService downloadAgreement', () => {
   });
 });
 
-describe.skip('Testing projectService downloadProposal', () => {
+describe('Testing projectService downloadProposal', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -1113,7 +1113,7 @@ describe.skip('Testing projectService downloadProposal', () => {
   });
 });
 
-describe.skip('Testing projectService getTotalFunded', () => {
+describe('Testing projectService getTotalFunded', () => {
   let projectDao;
   let projectService;
   let transferService;
@@ -1165,7 +1165,7 @@ describe.skip('Testing projectService getTotalFunded', () => {
     ));
 });
 
-describe.skip('Testing projectService startProject', () => {
+describe('Testing projectService startProject', () => {
   let projectDao;
   let projectService;
   let transferService;
@@ -1290,7 +1290,7 @@ describe.skip('Testing projectService startProject', () => {
   });
 });
 
-describe.skip('Testing projectService updateProject', () => {
+describe('Testing projectService updateProject', () => {
   let projectDao;
   let projectService;
   let photoService;
@@ -1473,7 +1473,7 @@ describe.skip('Testing projectService updateProject', () => {
   });
 });
 
-describe.skip('Testing projectService uploadExperience', () => {
+describe('Testing projectService uploadExperience', () => {
   let projectDao;
   let userDao;
   let projectExperienceDao;
@@ -1758,7 +1758,14 @@ describe('Testing projectService getExperiences', () => {
         email: 'se@test.com',
         role: 1
       },
-      photo: 7,
+      photos: [
+        {
+          id: 7
+        },
+        {
+          id: 8
+        }
+      ],
       comment: 'Testing experience'
     },
     {
@@ -1770,7 +1777,7 @@ describe('Testing projectService getExperiences', () => {
         email: 'se@test.com',
         role: 1
       },
-      photo: null,
+      photos: [],
       comment: 'Testing experience'
     }
   ];
