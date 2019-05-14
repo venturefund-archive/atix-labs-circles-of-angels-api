@@ -941,7 +941,17 @@ const routes = async fastify => {
                         role: { type: 'number' }
                       }
                     },
-                    photo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+                    photos: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'number' },
+                          createdAt: { type: 'string' },
+                          updatedAt: { type: 'string' }
+                        }
+                      }
+                    },
                     comment: { type: 'string' },
                     createdAt: { type: 'string' },
                     updatedAt: { type: 'string' }

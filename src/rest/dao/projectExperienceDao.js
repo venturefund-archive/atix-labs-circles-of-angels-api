@@ -10,7 +10,8 @@ const getExperiencesByProject = projectExperienceModel => async project => {
     .find({
       project
     })
-    .populate('user');
+    .populate('user')
+    .populate('photos');
   return projectExperiences;
 };
 
