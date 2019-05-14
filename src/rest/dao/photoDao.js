@@ -1,5 +1,5 @@
-const savePhoto = photoModel => async path => {
-  const createdPhoto = await photoModel.create({ path });
+const savePhoto = photoModel => async photo => {
+  const createdPhoto = await photoModel.create({ ...photo });
   return createdPhoto;
 };
 
