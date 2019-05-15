@@ -1742,3 +1742,118 @@ describe('Testing projectService uploadExperience', () => {
     ).rejects.toEqual(Error('Error uploading experience'));
   });
 });
+
+describe('Testing projectService getExperiences', () => {
+  let projectDao;
+  let projectExperienceDao;
+  let projectService;
+
+  const experiences = projectId => [
+    {
+      id: 1,
+      project: projectId,
+      user: {
+        id: 1,
+        username: 'SE',
+        email: 'se@test.com',
+        role: 1
+      },
+      photos: [
+        {
+          id: 7
+        },
+        {
+          id: 8
+        }
+      ],
+      comment: 'Testing experience'
+    },
+    {
+      id: 2,
+      project: projectId,
+      user: {
+        id: 1,
+        username: 'SE',
+        email: 'se@test.com',
+        role: 1
+      },
+      photos: [],
+      comment: 'Testing experience'
+    }
+  ];
+
+  beforeAll(() => {
+    projectDao = {
+      getProjectById: ({ projectId }) => {
+        if (!projectId) {
+          throw Error('Error getting project from db');
+        }
+        if (projectId === -1) {
+          return undefined;
+        }
+        return {
+          id: projectId
+        };
+      }
+    };
+
+    projectExperienceDao = {
+      getExperiencesByProject: projectId => {
+        if (projectId === 999) {
+          return undefined;
+        }
+        return { experiences: experiences(projectId) };
+      }
+    };
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao,
+      projectExperienceDao
+    });
+  });
+
+  it('should return the experiences of a project', async () => {
+    const projectId = 12;
+
+    const response = await projectService.getExperiences(projectId);
+
+    const expected = {
+      experiences: experiences(projectId)
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project does not exist', async () => {
+    const projectId = -1;
+
+    const response = await projectService.getExperiences(projectId);
+
+    const expected = {
+      status: 404,
+      error: 'Project not found'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the experiences could not be retrieved', async () => {
+    const projectId = 999;
+
+    const response = await projectService.getExperiences(projectId);
+
+    const expected = {
+      status: 500,
+      error: 'There was an error getting the project experiences'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should throw an error if the database query fails', async () => {
+    return expect(projectService.getExperiences()).rejects.toEqual(
+      Error('Error getting experiences')
+    );
+  });
+});
