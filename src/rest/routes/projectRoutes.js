@@ -829,6 +829,102 @@ const routes = async fastify => {
       }
     }
   );
+
+  fastify.post(
+    `${basePath}/:id/experience`,
+    {
+      schema: {
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'number' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'string' },
+              errors: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string' },
+                    file: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { projectService } = apiHelper.helper.services;
+      const { id } = request.params;
+      const { body, files } = request.raw;
+      fastify.log.info(
+        `[Project Routes] :: POST request at /project/${id}/experience`,
+        { body },
+        { files }
+      );
+      try {
+        const { experience } = body;
+
+        let attachedFiles;
+        if (files) {
+          attachedFiles = files.file.length ? files.file : [files.file];
+        }
+        const newExperience = Object.assign({}, JSON.parse(experience));
+
+        const response = await projectService.uploadExperience(
+          id,
+          newExperience,
+          attachedFiles
+        );
+
+        if (response.error) {
+          fastify.log.error(
+            '[Project Routes] :: Error uploading project experience: ',
+            response
+          );
+          reply.status(response.status).send(response);
+        } else {
+          fastify.log.info(
+            '[Project Routes] :: Experience uploaded successfully: ',
+            response
+          );
+          reply.status(200).send({
+            success: 'Experience uploaded successfully!',
+            errors: response.errors || []
+          });
+        }
+      } catch (error) {
+        fastify.log.error(
+          '[Project Routes] :: Error uploading project experience: ',
+          error
+        );
+        reply.status(500).send({
+          error: 'There was an unexpected error uploading the experience'
+        });
+      }
+    }
+  );
 };
 
 module.exports = routes;

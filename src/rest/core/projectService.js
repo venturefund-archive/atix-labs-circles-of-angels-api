@@ -6,7 +6,10 @@ const mime = require('mime');
 const { isEmpty, uniq } = require('lodash');
 const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
-const { addPathToFilesProperties } = require('../util/files');
+const {
+  addPathToFilesProperties,
+  addTimestampToFilename
+} = require('../util/files');
 const { projectStatus } = require('../util/constants');
 
 const unlinkPromise = promisify(fs.unlink);
@@ -18,7 +21,8 @@ const projectService = ({
   projectStatusDao,
   photoService,
   transferService,
-  userDao
+  userDao,
+  projectExperienceDao
 }) => ({
   /**
    * Uploads the project's images and files to the server.
@@ -997,6 +1001,172 @@ const projectService = ({
       return fastify.eth.isTransactionConfirmed(project.transactionHash);
     } catch (error) {
       throw Error('Error getting confirmation of transaction');
+    }
+  },
+
+  async getProjectsOfOwner(ownerId) {
+    try {
+      const projects = await projectDao.getProjectsByOwner(ownerId);
+      return projects;
+    } catch (error) {
+      return {
+        status: 500,
+        error: `Error getting Projects of owner: ${ownerId}`
+      };
+    }
+  },
+
+  async getAllProjectsById(projectsId) {
+    return projectDao.getAllProjectsById(projectsId);
+  },
+
+  /**
+   * Uploads a COA user's experience about a project
+   *
+   * @param {number} projectId
+   * @param {object} experience {user, comment}
+   * @param {file} file
+   * @returns saved experience | error msg
+   */
+  async uploadExperience(projectId, experience, files) {
+    fastify.log.info(
+      `[Project Service] :: Uploading experience to Project ID ${projectId}:`,
+      experience,
+      files
+    );
+
+    try {
+      const project = await projectDao.getProjectById({ projectId });
+
+      if (!project) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return {
+          status: 404,
+          error: 'Project not found'
+        };
+      }
+
+      const user = await userDao.getUserById(experience.user);
+
+      if (!user) {
+        fastify.log.error(
+          `[Project Service] :: User ID ${experience.user} not found`
+        );
+        return {
+          status: 404,
+          error: 'User not found'
+        };
+      }
+
+      const newExperience = { ...experience, project: projectId };
+
+      const savedExperience = await projectExperienceDao.saveProjectExperience(
+        newExperience
+      );
+
+      if (!savedExperience) {
+        fastify.log.error(
+          '[Project Service] :: Error saving experience in database:',
+          newExperience
+        );
+
+        return {
+          status: 500,
+          error: 'There was an error uploading the experience'
+        };
+      }
+
+      const errors = [];
+
+      if (files && files.length > 0) {
+        const savedFiles = await Promise.all(
+          files.map(async (file, index) => {
+            const savedFile = await this.saveExperienceFile(
+              file,
+              projectId,
+              savedExperience.id,
+              index
+            );
+            if (savedFile.error) {
+              errors.push({
+                error: savedFile.error,
+                file: file.name
+              });
+            }
+            return savedFile;
+          })
+        );
+        savedExperience.photos = savedFiles;
+      }
+
+      if (errors.length > 0) {
+        savedExperience.errors = errors;
+      }
+
+      return savedExperience;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error uploading experience:',
+        error
+      );
+      throw Error('Error uploading experience');
+    }
+  },
+
+  async saveExperienceFile(file, projectId, projectExperienceId, index) {
+    const filetype = mime.lookup(file.name);
+
+    if (!filetype) {
+      fastify.log.error(
+        '[Project Service] :: Error getting mime type of file:',
+        file
+      );
+      return { error: 'Error uploading file', status: 409 };
+    }
+
+    if (!filetype.includes('image/')) {
+      fastify.log.error('[Project Service] :: File type is invalid:', file);
+      return { error: 'File type is invalid', status: 409 };
+    }
+
+    fastify.log.info('[Project Service] :: Saving file:', file);
+
+    const filename = addTimestampToFilename(file.name);
+
+    const filepath = `${
+      configs.fileServer.filePath
+    }/projects/${projectId}/experiences/${filename}`;
+
+    if (fs.existsSync(filepath)) {
+      filepath.concat(`-${index}`);
+    }
+
+    await mkdirp(
+      `${configs.fileServer.filePath}/projects/${projectId}/experiences`
+    );
+    await file.mv(filepath);
+
+    try {
+      const savedFile = await photoService.savePhoto(
+        filepath,
+        projectExperienceId
+      );
+      fastify.log.info('[Project Service] :: File saved in', filepath);
+      return savedFile;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error saving file in database:',
+        error
+      );
+      if (fs.existsSync(filepath)) {
+        await unlinkPromise(filepath);
+      }
+      return {
+        status: 409,
+        error: 'Error saving file'
+      };
     }
   }
 });
