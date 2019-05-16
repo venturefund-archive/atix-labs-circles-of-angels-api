@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 const { isEmpty } = require('lodash');
 const { support } = require('../../../config/configs');
 
-const passRecoveryService = async ({ fastify, passRecoveryDao, userDao }) => {
+const passRecoveryService = ({ fastify, passRecoveryDao, userDao }) => {
   const transporter = nodemailer.createTransport({
     service: support.service,
     auth: {
@@ -57,26 +57,50 @@ const passRecoveryService = async ({ fastify, passRecoveryDao, userDao }) => {
     },
 
     async updatePassword(token, password) {
-      const recover = await passRecoveryDao.findRecoverBytoken(token);
-      const hoursFromCreation =
-        (new Date() - new Date(recover.createdAt)) / 3600000;
-      if (hoursFromCreation > support.recoveryTime) {
-        await passRecoveryDao.deleteRecoverByToken(token);
-        return { status: 403, error: 'Expired token' };
-      }
+      try {
+        const recover = await passRecoveryDao.findRecoverBytoken(token);
 
-      if (!isEmpty(recover)) {
-        const hashedPwd = await bcrypt.hash(password, 10);
-        const updated = await userDao.updatePasswordByMail(
-          recover.email,
-          hashedPwd
-        );
-        if (!updated)
-          return { status: 402, error: 'Error trying update password' };
-        await passRecoveryDao.deleteRecoverByToken(token);
-        return { message: 'Password update successfully' };
+        if (!recover) {
+          fastify.log.error(
+            '[Pass Recovery Service] :: Token not found: ',
+            token
+          );
+          return { status: 404, error: 'Invalid Token' };
+        }
+
+        const hoursFromCreation =
+          (new Date() - new Date(recover.createdAt)) / 3600000;
+        if (hoursFromCreation > support.recoveryTime) {
+          fastify.log.error(
+            '[Pass Recovery Service] :: Token has expired: ',
+            token
+          );
+          await passRecoveryDao.deleteRecoverByToken(token);
+          return { status: 409, error: 'Token has expired' };
+        }
+
+        if (!isEmpty(recover)) {
+          const hashedPwd = await bcrypt.hash(password, 10);
+          const updated = await userDao.updatePasswordByMail(
+            recover.email,
+            hashedPwd
+          );
+          if (!updated) {
+            fastify.log.error(
+              '[Pass Recovery Service] :: Error updating password in database for user: ',
+              recover.email
+            );
+            return { status: 500, error: 'Error updating password' };
+          }
+          await passRecoveryDao.deleteRecoverByToken(token);
+          return updated;
+        }
+
+        return { status: 404, error: 'Invalid token' };
+      } catch (error) {
+        fastify.log.error('[Pass Recovery Service] :: Error updating password');
+        throw Error('Error updating password');
       }
-      return { status: 401, error: 'Invalid token' };
     }
   };
 };
