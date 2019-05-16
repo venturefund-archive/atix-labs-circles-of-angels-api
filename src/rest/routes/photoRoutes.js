@@ -5,6 +5,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'integer' }

@@ -341,8 +341,12 @@ const userService = ({
       // get users
       const userList = await userDao.getUsers();
       userList.forEach(async user => {
-        const answers = await questionnaireService.getAnswersOfUser(user);
-        user.answers = answers;
+        try {
+          const answers = await questionnaireService.getAnswersOfUser(user);
+          user.answers = answers;
+        } catch (error) {
+          fastify.log.error('Questionnaire not found for user:', user.id);
+        }
       });
 
       if (!userList || userList.length === 0) {
@@ -406,6 +410,16 @@ const userService = ({
     } catch (error) {
       return { status: 500, error: 'Error getting projects of user' };
     }
+  },
+
+  async validUser(user, roleId) {
+    const existentUser = await userDao.getUserById(user.id);
+    const role = roleId ? existentUser.role.id === roleId : true;
+    return (
+      existentUser &&
+      existentUser.registrationStatus === userRegistrationStatus.APPROVED &&
+      role
+    );
   }
 });
 

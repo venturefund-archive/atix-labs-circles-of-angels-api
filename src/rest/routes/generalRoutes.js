@@ -5,6 +5,7 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/accountDestination`,
     {
+      beforeHandler: [fastify.generalAuth],
       response: {
         200: {
           type: 'object',

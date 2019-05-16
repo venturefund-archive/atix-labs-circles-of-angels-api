@@ -126,7 +126,7 @@ const helperBuilder = async fastify => {
     userProjectDao
   });
 
-  const passRecoveryService = passRecoveryDaoBuilder({
+  const passRecoveryService = passRecoveryServiceBuilder({
     fastify,
     passRecoveryDao: passRecoveryDaoBuilder(fastify.models.pass_recovery),
     userDao
