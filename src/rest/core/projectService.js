@@ -1168,6 +1168,60 @@ const projectService = ({
         error: 'Error saving file'
       };
     }
+  },
+
+  /**
+   * Returns all the experiences uploaded to a project
+   *
+   * @param {number} projectId
+   * @returns list of experiences | error
+   */
+  async getExperiences(projectId) {
+    fastify.log.info(
+      `[Project Service] :: Getting experiences of Project ID ${projectId}`
+    );
+
+    try {
+      const project = await projectDao.getProjectById({ projectId });
+
+      if (!project) {
+        fastify.log.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return {
+          status: 404,
+          error: 'Project not found'
+        };
+      }
+
+      const experiences = await projectExperienceDao.getExperiencesByProject(
+        projectId
+      );
+
+      if (!experiences) {
+        fastify.log.error(
+          `[Project Service] :: Error getting the experiences for project ID ${projectId}`
+        );
+        return {
+          status: 500,
+          error: 'There was an error getting the project experiences'
+        };
+      }
+
+      if (isEmpty(experiences)) {
+        fastify.log.info(
+          `[Project Service] :: Project ID ${projectId} does not have any experiences uploaded`
+        );
+      }
+
+      return experiences;
+    } catch (error) {
+      fastify.log.error(
+        '[Project Service] :: Error getting experiences:',
+        error
+      );
+      throw Error('Error getting experiences');
+    }
   }
 });
 
