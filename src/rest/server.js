@@ -42,7 +42,6 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     await helperBuilder(fastify);
     module.exports.fastify = fastify;
   } catch (err) {
-    console.error(err);
     process.exit(1);
   }
 };
