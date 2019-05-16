@@ -1,6 +1,12 @@
 exports.server = {
   host: 'localhost',
-  port: 3001
+  port: 3001,
+  headers: {
+    'Access-Control-Allow-Credentials': true,
+    'Access-Control-Allow-Headers': [
+      'Origin, X-Requested-With, Content-Type, Accept'
+    ]
+  }
 };
 
 const contractJson = require('../../circle-of-angels-solidity/build/contracts/COAProjectAdmin.json');
@@ -22,6 +28,10 @@ exports.support = {
   email: 'circlesOfAngelsSupport@gmail.com',
   password: 'coasupport1',
   recoveryTime: 1 //in hours
+};
+
+exports.jwt = {
+  secret: 'atix2018'
 };
 
 exports.database = {

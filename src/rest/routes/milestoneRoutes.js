@@ -5,6 +5,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}`,
     {
+      beforeHandler: [fastify.generalAuth],
       response: {
         200: {
           type: 'object',
@@ -33,6 +34,7 @@ const routes = async fastify => {
   fastify.put(
     `${basePath}/:id/budgetStatus`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' }
@@ -90,6 +92,7 @@ const routes = async fastify => {
   fastify.get(
     `${basePath}/budgetStatus`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         response: {
           200: {
@@ -133,6 +136,7 @@ const routes = async fastify => {
   fastify.delete(
     `${basePath}/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           id: { type: 'number' }
@@ -164,6 +168,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'application/json',
         body: {
@@ -217,6 +222,7 @@ const routes = async fastify => {
   fastify.put(
     `${basePath}/:id`,
     {
+      beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'application/json',
         params: {
