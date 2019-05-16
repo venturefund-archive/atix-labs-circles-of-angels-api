@@ -64,10 +64,12 @@ const initJWT = fastify => {
 
     const getToken = (request, reply) => {
       const token = request.cookies.userAuth;
-      if (!token)
+      if (!token) {
+        fastify.log.error('[Server] :: No token received for authentication');
         reply
           .status(401)
           .send({ error: 'Only registered users, please login' });
+      }
       return token;
     };
 
@@ -79,26 +81,29 @@ const initJWT = fastify => {
         roleId
       );
       if (!validUser) {
-        reply.status(401).send({ error: 'Unauthorized user' });
+        fastify.log.error('[Server] :: Unathorized access for user:', user);
+        reply.status(401).send({ error: 'Unauthorized access' });
       }
     };
 
     fastify.decorate('generalAuth', async (request, reply) => {
       try {
-        fastify.log.info('authentication with JWT');
         const token = getToken(request, reply);
+        fastify.log.info('[Server] :: General JWT Authentication', token);
         if (token) await validateUser(token, reply);
       } catch (err) {
-        reply.send(err);
+        fastify.log.error('[Server] :: There was an error authenticating', err);
+        reply.status(500).send({ error: 'There was an error authenticating' });
       }
     });
     fastify.decorate('adminAuth', async (request, reply) => {
       try {
-        fastify.log.info('authentication with JWT');
         const token = getToken(request, reply);
+        fastify.log.info('[Server] :: Admin JWT Authentication', token);
         if (token) await validateUser(token, reply, userRoles.BO_ADMIN);
       } catch (error) {
-        reply.send(error);
+        fastify.log.error('[Server] :: There was an error authenticating', err);
+        reply.status(500).send({ error: 'There was an error authenticating' });
       }
     });
   });
