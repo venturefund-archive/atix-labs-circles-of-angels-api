@@ -135,6 +135,12 @@ describe('Testing activityService createActivity', () => {
       fastify,
       activityDao
     });
+
+    activityService.configs = {
+      fileServer: {
+        filePath: '/home/atixlabs/files/server'
+      }
+    };
   });
 
   it('should return the created activity', async () => {

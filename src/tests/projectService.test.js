@@ -84,6 +84,12 @@ describe('Testing projectService createProject', () => {
       photoService
     });
 
+    projectService.configs = {
+      fileServer: {
+        filePath: '/home/atixlabs/files/server'
+      }
+    };
+
     jest.mock('mkdirp-promise');
   });
 
