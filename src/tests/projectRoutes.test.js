@@ -1,7 +1,4 @@
-const configs = require('../../config/configs');
 const projectRoutes = require('../rest/routes/projectRoutes');
-
-configs.contractJson = jest.fn();
 
 describe.skip('Testing projectRoutes', () => {
   it('should return status code 200 when doing a post request to /project/upload', async () => {

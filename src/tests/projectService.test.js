@@ -2,13 +2,16 @@ const _ = require('lodash');
 const fs = require('fs');
 const { promisify } = require('util');
 const { addPathToFilesProperties } = require('../rest/util/files');
-const configs = require('../../config/configs');
 const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus } = require('../rest/util/constants');
 
 const readFile = promisify(fs.readFile);
 
-configs.contractJson = jest.fn();
+const configs = {
+  fileServer: {
+    filePath: '/home/atixlabs/files/server'
+  }
+};
 
 const fastify = {
   log: { info: console.log, error: console.log },
