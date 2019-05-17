@@ -234,12 +234,16 @@ const routes = async (fastify, options) => {
             email
           );
           const token = fastify.jwt.sign(user);
+
+          const expirationDate = new Date();
+          expirationDate.setDate(expirationDate.getDate() + 1);
           reply
             .status(200)
             .setCookie('userAuth', token, {
               domain: 'localhost',
               path: '/',
-              httpOnly: true
+              httpOnly: true,
+              expires: expirationDate
               // secure: true
             })
             .send(user);
@@ -596,7 +600,6 @@ const routes = async (fastify, options) => {
       }
     }
   );
-
 };
 
 module.exports = routes;
