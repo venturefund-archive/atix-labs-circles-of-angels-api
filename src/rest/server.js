@@ -18,7 +18,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
 
       allowedHeaders: ['content-type'],
 
-      origin: 'http://localhost:3000'
+      origin: true
     });
 
     fastify.register(require('fastify-cookie'));
