@@ -479,7 +479,7 @@ const routes = async (fastify, options) => {
             '[User Routes] :: Recovery password procces failed',
             response
           );
-          reply.status(response.status).send(response.error);
+          reply.status(response.status).send(response);
         } else {
           fastify.log.info(
             '[User Routes] :: Recovery password procces started successfully',
@@ -506,13 +506,13 @@ const routes = async (fastify, options) => {
             token: { type: 'string' },
             password: { type: 'string' }
           },
-          required: ['token']
+          required: ['token', 'password']
         },
         response: {
           200: {
             type: 'object',
             properties: {
-              message: { type: 'string' }
+              success: { type: 'string' }
             }
           },
           '4xx': {
@@ -535,7 +535,7 @@ const routes = async (fastify, options) => {
     async (request, reply) => {
       try {
         const { passRecoveryService } = apiHelper.helper.services;
-        fastify.log.info('[User Routes] :: Starting pass recovery proccess');
+        fastify.log.info('[User Routes] :: Updating password');
         const { token, password } = request.body;
         const response = await passRecoveryService.updatePassword(
           token,
@@ -546,19 +546,17 @@ const routes = async (fastify, options) => {
             '[User Routes] :: Update password failed',
             response
           );
-          reply.status(response.status).send(response.error);
+          reply.status(response.status).send(response);
         } else {
           fastify.log.info(
             '[User Routes] :: Password updated successfully',
             response
           );
-          reply.status(200).send(response);
+          reply.status(200).send({ success: 'Password updated successfully' });
         }
       } catch (error) {
         fastify.log.error(error);
-        reply
-          .status(500)
-          .send({ error: 'Error Starting recovery password proccess' });
+        reply.status(500).send({ error: 'Error updating password' });
       }
     }
   );
