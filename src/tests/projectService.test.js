@@ -8,7 +8,17 @@ const { projectStatus } = require('../rest/util/constants');
 
 const readFile = promisify(fs.readFile);
 
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = {
+  log: { info: console.log, error: console.log },
+  eth: {
+    createProject: () =>
+      '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a',
+    isTransactionConfirmed: creationTransactionHash =>
+      !!creationTransactionHash,
+    startProject: () =>
+      '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
+  }
+};
 
 describe('Testing projectService createProject', () => {
   let projectDao;
@@ -16,6 +26,7 @@ describe('Testing projectService createProject', () => {
   let projectService;
   let milestoneService;
   let projectStatusDao;
+  let userDao;
 
   beforeAll(() => {
     projectStatusDao = {};
@@ -31,6 +42,15 @@ describe('Testing projectService createProject', () => {
 
       async updateProject(project) {
         return project;
+      }
+    };
+
+    userDao = {
+      async getUserById(owner) {
+        return {
+          id: owner,
+          username: 'Social Entrepreneur'
+        };
       }
     };
 
@@ -55,6 +75,7 @@ describe('Testing projectService createProject', () => {
       projectDao,
       milestoneService,
       projectStatusDao,
+      userDao,
       photoService
     });
 
@@ -100,7 +121,9 @@ describe('Testing projectService createProject', () => {
         projectAgreement: `${
           configs.fileServer.filePath
         }/projects/${projectId}/agreement.pdf`,
-        id: projectId
+        id: projectId,
+        creationTransactionHash:
+          '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
       };
 
       const pathMilestonesXls = require('path').join(
@@ -141,7 +164,7 @@ describe('Testing projectService createProject', () => {
         mv: jest.fn()
       };
 
-      const project = await projectService.createProject(
+      const response = await projectService.createProject(
         mockProject,
         mockProjectProposal,
         mockProjectCoverPhoto,
@@ -151,12 +174,12 @@ describe('Testing projectService createProject', () => {
         ownerId
       );
 
-      const response = {
+      const expected = {
         project: savedProject,
         milestones: []
       };
 
-      await expect(project).toEqual(response);
+      await expect(response).toEqual(expected);
     }
   );
 
@@ -279,8 +302,8 @@ describe('Testing projectService getProjectList', () => {
     });
   });
 
-  it('should return an array of all projects with status >= -1', async () => {
-    const status = -1;
+  it('should return an array of all projects with status >= PENDING_APPROVAL', async () => {
+    const status = projectStatus.PENDING_APPROVAL;
 
     const mockProjects = [
       {
@@ -352,8 +375,8 @@ describe('Testing projectService getActiveProjectList', () => {
     });
   });
 
-  it('should return an array of all projects with status == 1', async () => {
-    const status = 1;
+  it('should return an array of all projects with status PUBLISHED', async () => {
+    const status = projectStatus.PUBLISHED;
 
     const mockProjects = [
       {
@@ -440,7 +463,6 @@ describe('Testing projectService updateProjectStatus', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
-  let milestoneService;
 
   beforeAll(() => {
     projectStatusDao = {
@@ -452,7 +474,6 @@ describe('Testing projectService updateProjectStatus', () => {
         return false;
       }
     };
-    milestoneService = {};
     projectDao = {
       async updateProjectStatus({ projectId, status }) {
         return {
@@ -480,9 +501,17 @@ describe('Testing projectService updateProjectStatus', () => {
     projectService = projectServiceBuilder({
       fastify,
       projectDao,
-      milestoneService,
       projectStatusDao
     });
+
+    projectService.getProjectWithId = async projectId => {
+      return {
+        id: projectId,
+        projectName: 'Project',
+        creationTransactionHash:
+          '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
+      };
+    };
   });
 
   it('should return the updated project', async () => {
@@ -1169,6 +1198,7 @@ describe('Testing projectService startProject', () => {
   let projectDao;
   let projectService;
   let transferService;
+  let milestoneService;
 
   const project = 1;
   const goalAmount = 1000;
@@ -1182,6 +1212,11 @@ describe('Testing projectService startProject', () => {
         return goalAmount;
       }
     };
+
+    milestoneService = {
+      startMilestonesOfProject: () => true
+    };
+
     projectDao = {
       getProjectById: ({ projectId }) => {
         if (projectId === 0) {
@@ -1199,7 +1234,7 @@ describe('Testing projectService startProject', () => {
         if (projectId === 100) {
           return {
             id: projectId,
-            status: projectStatus.IN_PROGRESS.status,
+            status: projectStatus.IN_PROGRESS,
             goalAmount
           };
         }
@@ -1215,30 +1250,45 @@ describe('Testing projectService startProject', () => {
         };
       },
 
-      updateProjectStatus: ({ projectId, status }) => {
+      updateProjectStatusWithTransaction: ({
+        projectId,
+        status,
+        transactionHash
+      }) => {
         if (projectId === 500) {
           return undefined;
         }
 
         return {
           id: projectId,
-          status
+          status,
+          transactionHash
         };
-      }
+      },
+
+      getUserOwnerOfProject: () => ({
+        address: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
+        pwd: '$2a$10$phVS6ulzQvLpjIWE8bkyf.1EXtwcKUD7pgpe0CK7bYkYXmD5Ux2YK'
+      })
     };
 
     projectService = projectServiceBuilder({
       fastify,
       projectDao,
-      transferService
+      transferService,
+      milestoneService
     });
+
+    projectService.isFullyAssigned = projectId => projectId !== 0;
   });
 
   it('should return the updated project with status In Progress', async () => {
     const response = await projectService.startProject(project);
     const expected = {
       id: project,
-      status: projectStatus.IN_PROGRESS
+      status: projectStatus.IN_PROGRESS,
+      transactionHash:
+        '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
     };
     return expect(response).toEqual(expected);
   });
@@ -1260,19 +1310,6 @@ describe('Testing projectService startProject', () => {
     const expected = { error: 'Project has already started', status: 409 };
     return expect(response).toEqual(expected);
   });
-
-  // it(
-  //   'should return an error if the funded amount' +
-  //     ' is lower than the project goal',
-  //   async () => {
-  //     const response = await projectService.startProject(999);
-  //     const expected = {
-  //       error: 'Project cannot start. Goal amount has not been met yet',
-  //       status: 409
-  //     };
-  //     return expect(response).toEqual(expected);
-  //   }
-  // );
 
   it('should return an error if the project could not be updated', async () => {
     const response = await projectService.startProject(500);

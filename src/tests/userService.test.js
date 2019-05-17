@@ -1,6 +1,12 @@
 const bcrypt = require('bcrypt');
 
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = {
+  log: { info: console.log, error: console.log },
+  eth: {
+    createAccount: () =>
+      '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
+  }
+};
 
 describe('Testing userService login', () => {
   let userDao;
@@ -95,6 +101,8 @@ describe('Testing userService login', () => {
 describe('Testing userService createUser', () => {
   let userDao;
   let userService;
+  let roleDao;
+  let questionnaireService;
 
   beforeAll(() => {
     userDao = {
@@ -107,15 +115,37 @@ describe('Testing userService createUser', () => {
           username: user.username,
           email: user.email,
           pwd: user.pwd,
-          role: user.role
+          role: user.role,
+          address:
+            '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
         };
         return savedUser;
+      },
+
+      getUserByEmail(email) {
+        if (email === 'existing@test.com') {
+          return { id: 1, email };
+        }
       }
+    };
+
+    roleDao = {
+      getRoleById(role) {
+        if (role > 0 && role < 5) {
+          return { id: role };
+        }
+      }
+    };
+
+    questionnaireService = {
+      saveQuestionnaireOfUser: () => true
     };
 
     userService = require('../rest/core/userService')({
       fastify,
-      userDao
+      userDao,
+      roleDao,
+      questionnaireService
     });
 
     bcrypt.hash = jest.fn();
@@ -135,7 +165,9 @@ describe('Testing userService createUser', () => {
       username,
       email,
       pwd,
-      role
+      role,
+      address:
+        '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
     };
 
     const response = await userService.createUser(username, email, pwd, role);
@@ -151,9 +183,9 @@ describe('Testing userService createUser', () => {
 
     bcrypt.hash.mockReturnValueOnce(pwd);
 
-    const response = await userService.createUser(username, email, pwd, role);
-
-    return expect(response).toEqual({ error: Error('Error creating user') });
+    return expect(
+      userService.createUser(username, email, pwd, role)
+    ).rejects.toEqual(Error('Error creating User'));
   });
 });
 

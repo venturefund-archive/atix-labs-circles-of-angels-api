@@ -108,7 +108,12 @@ describe('Testing milestoneService createMilestones', () => {
             msg:
               'Found a milestone without Expected Changes/ Social Impact Targets'
           },
-          { rowNumber: 11, msg: 'Found a milestone without Tasks' }
+          { rowNumber: 11, msg: 'Found a milestone without Tasks' },
+          {
+            rowNumber: 1,
+            msg:
+              'Could not find any valid activities. There should be at least one.'
+          }
         ],
         milestones: []
       };
