@@ -1,4 +1,7 @@
+const configs = require('../../config/configs');
+
 const fastify = { log: { info: console.log, error: console.log } };
+configs.contractJson = jest.fn();
 
 describe('Testing activityService createActivities', () => {
   let activityDao;

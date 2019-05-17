@@ -8,6 +8,8 @@ const { projectStatus } = require('../rest/util/constants');
 
 const readFile = promisify(fs.readFile);
 
+configs.contractJson = jest.fn();
+
 const fastify = {
   log: { info: console.log, error: console.log },
   eth: {
