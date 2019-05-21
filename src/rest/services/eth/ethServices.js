@@ -7,9 +7,15 @@ const ethConfig = require('../../../../config/configs').eth;
  */
 const ethServices = async (providerHost, { logger }) => {
   const web3 = new Web3(providerHost);
-  const COAContract = new web3.eth.Contract(
-    ethConfig.CONTRACT_ABI,
-    ethConfig.CONTRACT_ADDRESS,
+  const COAProjectAdmin = new web3.eth.Contract(
+    ethConfig.CONTRACT_ADMIN_ABI,
+    ethConfig.CONTRACT_ADMIN_ADDRESS,
+    ethConfig.DEFAULT_CONFIG
+  );
+
+  const COAOracle = new web3.eth.Contract(
+    ethConfig.CONTRACT_ORACLE_ABI,
+    ethConfig.CONTRACT_ORACLE_ADDRESS,
     ethConfig.DEFAULT_CONFIG
   );
 
@@ -69,7 +75,7 @@ const ethServices = async (providerHost, { logger }) => {
       logger.info(
         `[SC::Create Project] Creating Project: ${projectId} - ${projectName}`
       );
-      const create = COAContract.methods.createProject(
+      const create = COAProjectAdmin.methods.createProject(
         projectId,
         seAddress,
         projectName
@@ -79,7 +85,7 @@ const ethServices = async (providerHost, { logger }) => {
 
     async startProject(sender, pwd, { projectId }) {
       logger.info(`[SC::Start Project] Starting Project: ${projectId}`);
-      const start = COAContract.methods.startProject(projectId);
+      const start = COAProjectAdmin.methods.startProject(projectId);
       return makeTx(sender, pwd, start);
     },
 
@@ -92,7 +98,7 @@ const ethServices = async (providerHost, { logger }) => {
         `[SC::Create Milestone] Creating Milestone: ${milestoneId} - ${description}`
       );
 
-      const createMilestone = COAContract.methods.createMilestone(
+      const createMilestone = COAProjectAdmin.methods.createMilestone(
         milestoneId,
         projectId,
         budget,
@@ -111,7 +117,7 @@ const ethServices = async (providerHost, { logger }) => {
         `[SC::Create Activity] Creating Activity: ${activityId} - ${description}`
       );
 
-      const createActivity = COAContract.methods.createActivity(
+      const createActivity = COAProjectAdmin.methods.createActivity(
         activityId,
         milestoneId,
         projectId,
@@ -126,25 +132,11 @@ const ethServices = async (providerHost, { logger }) => {
      * @param {*} onError error callback
      * @param {*} activity {activityId, projectId, milestoneId}
      */
-    async validateActivity(
-      sender,
-      pwd,
-      { activityId, milestoneId, projectId }
-    ) {
+    async validateActivity(sender, pwd, { activityId }) {
       logger.info(`[SC::Validate Activity] Validate Activity: ${activityId}`);
-      logger.info(
-        `[SC::Validate Activity] Validate Activity project: ${projectId}`
-      );
-      logger.info(
-        `[SC::Validate Activity] Validate Activity milestone: ${milestoneId}`
-      );
       logger.info(`[SC::Validate Activity] Validate Activity: ${sender}`);
 
-      const validateActivity = COAContract.methods.validateActivity(
-        activityId,
-        milestoneId,
-        projectId
-      );
+      const validateActivity = COAOracle.methods.validateActivity(activityId);
 
       return makeTx(sender, pwd, validateActivity);
     },

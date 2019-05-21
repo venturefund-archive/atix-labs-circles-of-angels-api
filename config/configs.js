@@ -1,5 +1,5 @@
 exports.server = {
-  host: 'localhost',
+  host: '192.168.3.116',
   port: 3001,
   headers: {
     'Access-Control-Allow-Credentials': true,
@@ -9,12 +9,15 @@ exports.server = {
   }
 };
 
-const contractJson = require('../../circle-of-angels-solidity/build/contracts/COAProjectAdmin.json');
+const COAProjectAdmin = require('../../circle-of-angels-solidity/build/contracts/COAProjectAdmin.json');
+const COAOracle = require('../../circle-of-angels-solidity/build/contracts/COAOracle.json');
 
 exports.eth = {
   HOST: 'http://localhost:8545',
-  CONTRACT_ADDRESS: contractJson.networks['5777'].address,
-  CONTRACT_ABI: contractJson.abi,
+  CONTRACT_ADMIN_ADDRESS: COAProjectAdmin.networks['5777'].address,
+  CONTRACT_ORACLE_ADDRESS: COAOracle.networks['5777'].address,
+  CONTRACT_ADMIN_ABI: COAProjectAdmin.abi,
+  CONTRACT_ORACLE_ABI: COAOracle.abi,
   DEFAULT_CONFIG: {
     defaultGas: 50000,
     defaultGasPrice: 1000000
