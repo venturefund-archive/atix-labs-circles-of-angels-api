@@ -19,16 +19,21 @@ const ethServices = async (providerHost, { logger }) => {
     ethConfig.DEFAULT_CONFIG
   );
 
+  const toChecksum = address => {
+    return web3.utils.toChecksumAddress(address);
+  };
+
   const makeTx = async (sender, pwd, method) => {
+    addressSender = toChecksum(sender);
     await web3.eth.personal.unlockAccount(
-      sender,
+      addressSender,
       pwd,
       ethConfig.UNLOCK_DURATION
     );
     return new Promise((resolve, reject) => {
       method.send(
         {
-          from: sender,
+          from: addressSender,
           gasLimit: 10000000000
         },
         (err, hash) => {
@@ -75,6 +80,7 @@ const ethServices = async (providerHost, { logger }) => {
       logger.info(
         `[SC::Create Project] Creating Project: ${projectId} - ${projectName}`
       );
+      seAddress = toChecksum(seAddress);
       const create = COAProjectAdmin.methods.createProject(
         projectId,
         seAddress,
@@ -121,7 +127,7 @@ const ethServices = async (providerHost, { logger }) => {
         activityId,
         milestoneId,
         projectId,
-        oracleAddress,
+        toChecksum(oracleAddress),
         description
       );
 

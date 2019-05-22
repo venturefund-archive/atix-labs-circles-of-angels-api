@@ -181,7 +181,6 @@ const milestoneService = ({
     const milestoneActivities = await milestoneDao.getMilestoneActivities(
       milestoneId
     );
-    console.log(milestoneActivities.activities)
     return !isEmpty(milestoneActivities.activities);
   },
 
@@ -638,16 +637,20 @@ const milestoneService = ({
 
   async startMilestonesOfProject(project, owner) {
     const milestones = await this.getMilestonesByProject(project.id);
-    milestones.forEach(async milestone => {
+
+    for (let i = 0; i < milestones.length; i++) {
+      const milestone = milestones[i];
       await fastify.eth.createMilestone(owner.address, owner.pwd, {
         milestoneId: milestone.id,
         projectId: project.id,
         budget: milestone.budget,
         description: milestone.tasks
       });
-      const activities = await this.getMilestoneActivities(milestone);
+      const activities = (await this.getMilestoneActivities(milestone))
+        .activities;
 
-      activities.activities.forEach(async activity => {
+      for (let j = 0; j < activities.length; j++) {
+        const activity = activities[j];
         const oracle = await activityService.getOracleFromActivity(activity.id);
         await fastify.eth.createActivity(owner.address, owner.pwd, {
           activityId: activity.id,
@@ -656,8 +659,8 @@ const milestoneService = ({
           oracleAddress: oracle.user.address,
           description: activity.tasks
         });
-      });
-    });
+      }
+    }
   },
 
   async getMilestoneById(milestoneId) {

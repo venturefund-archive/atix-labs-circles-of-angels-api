@@ -1,5 +1,5 @@
 exports.server = {
-  host: '192.168.3.116',
+  host: 'localhost',
   port: 3001,
   headers: {
     'Access-Control-Allow-Credentials': true,

@@ -5,7 +5,6 @@ const routes = async (fastify, options) => {
   fastify.get(
     `${basePath}/:roleId`,
     {
-      beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
           roleId: { type: 'integer' }
