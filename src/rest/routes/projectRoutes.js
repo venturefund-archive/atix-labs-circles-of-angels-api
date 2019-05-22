@@ -885,11 +885,7 @@ const routes = async fastify => {
       );
       try {
         const { experience } = body;
-
-        let attachedFiles;
-        if (files) {
-          attachedFiles = files.file.length ? files.file : [files.file];
-        }
+        let attachedFiles = Object.values(files);
         const newExperience = Object.assign({}, JSON.parse(experience));
 
         const response = await projectService.uploadExperience(
