@@ -90,10 +90,16 @@ const milestoneService = ({
         new Promise(resolve => {
           process.nextTick(async () => {
             if (!this.isMilestoneEmpty(milestone)) {
+              const isFirstMilestone = isEmpty(
+                await milestoneDao.getMilestonesByProject(projectId)
+              );
               const activityList = milestone.activityList.slice(0);
               const savedMilestone = await milestoneDao.saveMilestone({
                 milestone,
-                projectId
+                projectId,
+                budgetStatus: isFirstMilestone
+                  ? milestoneBudgetStatus.CLAIMABLE
+                  : milestoneBudgetStatus.BLOCKED
               });
               fastify.log.info(
                 '[Milestone Service] :: Milestone created:',
@@ -699,6 +705,9 @@ const milestoneService = ({
     );
     try {
       const milestone = await milestoneDao.getMilestoneById(milestoneId);
+      const milestones = await getMilestonesByProject(milestone.project);
+      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
+      const previousMilestone = milestoneIndex > 0 ? milestoneIndex : false;
 
       if (!milestone || milestone == null) {
         fastify.log.error(
@@ -711,8 +720,7 @@ const milestoneService = ({
       }
 
       if (
-        budgetStatusId !== milestoneBudgetStatus.TRANSFERRED &&
-        budgetStatusId !== milestoneBudgetStatus.PENDING
+        !Object.values(milestoneBudgetStatus).includes(parseInt(budgetStatusId))
       ) {
         fastify.log.error(
           `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
@@ -723,14 +731,44 @@ const milestoneService = ({
         };
       }
 
-      // the milestone needs to be completed in order to set the budget status to transferred
       if (
-        budgetStatusId === milestoneBudgetStatus.TRANSFERRED &&
-        milestone.status !== activityStatus.COMPLETED
+        budgetStatusId === milestoneBudgetStatus.FUNDED &&
+        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMED
       ) {
         fastify.log.error(
           `[Milestone Service] :: Milestone ID ${milestoneId} needs to be Completed 
           in order to set the budget status to transferred`
+        );
+        return {
+          status: 409,
+          error: 'Milestone Status needs to be Completed'
+        };
+      }
+
+      if (
+        budgetStatusId === milestoneBudgetStatus.CLAIMABLE &&
+        milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED &&
+        (previousMilestone &&
+          milestones[previousMilestone].budgetStatus !==
+            milestoneBudgetStatus.FUNDED)
+      ) {
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} its blocked, 
+          need complete all previous milestones`
+        );
+        return {
+          status: 409,
+          error: 'Milestone Status needs to be Completed'
+        };
+      }
+
+      if (
+        budgetStatusId === milestoneBudgetStatus.CLAIMED &&
+        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMABLE
+      ) {
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} its blocked, 
+          need complete all previous milestones`
         );
         return {
           status: 409,

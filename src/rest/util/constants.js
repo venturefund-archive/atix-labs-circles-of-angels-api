@@ -33,7 +33,10 @@ const userRoles = {
 
 const milestoneBudgetStatus = {
   PENDING: 1,
-  TRANSFERRED: 2
+  CLAIMABLE: 2,
+  CLAIMED: 3,
+  FUNDED: 4,
+  BLOCKED: 5
 };
 
 const userRegistrationStatus = {
