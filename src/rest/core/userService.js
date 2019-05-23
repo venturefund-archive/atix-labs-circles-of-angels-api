@@ -338,7 +338,7 @@ const userService = ({
             subject: 'Circles of Angels - Account Rejected',
             text: 'Account Rejected',
             html: `<p>We are sorry to inform you that your Circles Of Angels account has been rejected </br></p>
-            <p>If you think an error has been made, please contact us at:
+            <p>If you think there was an error, please contact us at:
             <a href="mailto:hello@circlesofangels.com">
               hello@circlesofangels.com
             </a></br></p>
