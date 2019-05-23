@@ -68,6 +68,13 @@ const ethServices = async (providerHost, { logger }) => {
     });
   };
 
+  const suscribeToEvent = async (event, callback) => {
+    event(async (error, event) => {
+      if (error) return { error };
+      callback(event);
+    });
+  };
+
   return {
     async createAccount(pwd) {
       const account = await web3.eth.personal.newAccount(pwd);
@@ -151,7 +158,31 @@ const ethServices = async (providerHost, { logger }) => {
       return Boolean(
         transaction && transaction.blockHash && transaction.blockNumber
       );
-    }
+    },
+
+    async suscribeNewProjectEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.NewProject, callback);
+    },
+
+    async suscribeNewMilestoneEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.NewMilestone, callback);
+    },
+
+    async suscribeNewActivityEvent(callback) {
+      suscribeToEvent(COAOracle.events.NewActivity, callback);
+    },
+
+    async suscribeActivityValidatedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.ActivityValidated, callback);
+    },
+
+    async suscribeMilestoneCompletedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.MilestoneCompleted, callback);
+    },
+
+    async suscribeProjectCompletedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
+    },
   };
 };
 
