@@ -309,6 +309,46 @@ const userService = ({
           };
         }
 
+        if (
+          registrationStatus &&
+          registrationStatus === userRegistrationStatus.APPROVED
+        ) {
+          const info = await transporter.sendMail({
+            from: '"Circles of Angels Support" <coa@support.com>',
+            to: updatedUser.email,
+            subject: 'Circles of Angels - Account Confirmation',
+            text: 'Account Approved',
+            html: `<p>Your Circles Of Angels account has been approved! </br></p>
+            <p>You can log in and start using our platform at: 
+            <a href='www.coa.com/login'>www.coa.com/login</a></br></p>
+            <p>Thank you for your support </br></p>`
+          });
+
+          if (!isEmpty(info.rejected))
+            return { status: 409, error: 'Invalid Email' };
+        }
+
+        if (
+          registrationStatus &&
+          registrationStatus === userRegistrationStatus.REJECTED
+        ) {
+          const info = await transporter.sendMail({
+            from: '"Circles of Angels Support" <coa@support.com>',
+            to: updatedUser.email,
+            subject: 'Circles of Angels - Account Rejected',
+            text: 'Account Rejected',
+            html: `<p>We are sorry to inform you that your Circles Of Angels account has been rejected </br></p>
+            <p>If you think an error has been made, please contact us at:
+            <a href="mailto:hello@circlesofangels.com">
+              hello@circlesofangels.com
+            </a></br></p>
+            <p>Thank you for your support </br></p>`
+          });
+
+          if (!isEmpty(info.rejected))
+            return { status: 409, error: 'Invalid Email' };
+        }
+
         return updatedUser;
       } catch (error) {
         fastify.log.error('[User Service] :: Error updating User:', error);
