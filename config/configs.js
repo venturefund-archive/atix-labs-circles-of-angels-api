@@ -28,8 +28,8 @@ exports.eth = {
 
 exports.support = {
   service: 'Gmail',
-  email: 'circlesOfAngelsSupport@gmail.com',
-  password: 'coasupport1',
+  email: 'gobbileonel@gmail.com',// 'circlesOfAngelsSupport@gmail.com',
+  password: 'caramelodelimon',//'coasupport1',
   recoveryTime: 1 //in hours
 };
 
