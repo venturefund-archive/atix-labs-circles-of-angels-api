@@ -10,7 +10,7 @@ const {
   addPathToFilesProperties,
   addTimestampToFilename
 } = require('../util/files');
-const { projectStatus } = require('../util/constants');
+const { projectStatus, blockchainStatus } = require('../util/constants');
 
 const unlinkPromise = promisify(fs.unlink);
 
@@ -51,6 +51,7 @@ const projectService = ({
 
       newProject.ownerId = ownerId;
       newProject.status = projectStatus.PENDING_APPROVAL;
+      newProject.blockchainStatus = blockchainStatus.PENDING;
 
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
@@ -128,6 +129,7 @@ const projectService = ({
       );
 
       savedProject.creationTransactionHash = transactionHash;
+      savedProject.blockchainStatus = blockchainStatus.SENDED;
 
       fastify.log.info(
         '[Project Service] :: transaction hash of project creation: ',
