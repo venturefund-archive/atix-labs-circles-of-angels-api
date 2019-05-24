@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "lint": "eslint src/**/*.js",
-    "test": "jest",
+    "test": "NODE_ENV=test jest",
     "start": "NODE_ENV=development node index",
     "migrate": "./get_flyway.sh & flyway -configFiles=flyway.conf -locations=filesystem:db/migrations migrate",
     "clean": "./get_flyway.sh & flyway -configFiles=flyway.conf -locations=filesystem:db/migrations clean"
