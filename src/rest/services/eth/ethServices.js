@@ -1,7 +1,7 @@
 const Web3 = require('web3');
-const ethConfig = require('../../../../config/configs')[
+const ethConfig = require('../../../../config/configs')(
   process.env.NODE_ENV || 'development'
-].eth;
+).eth;
 
 /**
  * Init a ethereum services, receiving the provider host and returns and object

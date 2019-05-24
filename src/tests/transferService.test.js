@@ -1,7 +1,7 @@
 const transferServiceBuilder = require('../rest/core/transferService');
-const configs = require('../../config/configs')[
+const configs = require('../../config/configs')(
   process.env.NODE_ENV || 'development'
-];
+);
 
 const fastify = {
   log: { info: console.log, error: console.log },

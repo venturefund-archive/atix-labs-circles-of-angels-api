@@ -1,6 +1,6 @@
-const configs = require('./config/configs')[
+const configs = require('./config/configs')(
   process.env.NODE_ENV || 'development'
-];
+);
 const server = require('./src/rest/server');
 const db = require('./db/db');
 
