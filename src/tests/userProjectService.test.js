@@ -7,7 +7,7 @@ const fastify = {
   configs
 };
 
-describe('Testing userProjectService signAgreement', () => {
+describe.skip('Testing userProjectService signAgreement', () => {
   let userProjectDao;
   let userProjectService;
 

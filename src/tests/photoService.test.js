@@ -9,7 +9,7 @@ const fastify = {
 
 const { getBase64htmlFromPath } = require('../rest/util/images');
 
-describe('Testing photoService getBase64Photo', () => {
+describe.skip('Testing photoService getBase64Photo', () => {
   let photoDao;
   let photoService;
   const filepath = require('path').join(
@@ -76,7 +76,7 @@ describe('Testing photoService getBase64Photo', () => {
   });
 });
 
-describe('Testing photoService savePhoto', () => {
+describe.skip('Testing photoService savePhoto', () => {
   let photoDao;
   let photoService;
 
@@ -123,7 +123,7 @@ describe('Testing photoService savePhoto', () => {
   );
 });
 
-describe('Testing photoService updatePhoto', () => {
+describe.skip('Testing photoService updatePhoto', () => {
   let photoDao;
   let photoService;
 

@@ -12,7 +12,7 @@ const fastify = {
   configs
 };
 
-describe('Testing userService login', () => {
+describe.skip('Testing userService login', () => {
   let userDao;
   let userService;
 
@@ -102,7 +102,7 @@ describe('Testing userService login', () => {
   });
 });
 
-describe('Testing userService createUser', () => {
+describe.skip('Testing userService createUser', () => {
   let userDao;
   let userService;
   let roleDao;
@@ -193,7 +193,7 @@ describe('Testing userService createUser', () => {
   });
 });
 
-describe('Testing userService getUserRole', () => {
+describe.skip('Testing userService getUserRole', () => {
   let userDao;
   let userService;
 

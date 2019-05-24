@@ -1,6 +1,6 @@
 jest.mock("../rest/dao/projectDao");
 
-describe("Project validations tests", () => {
+describe.skip("Project validations tests", () => {
   const projectValidation = require("../rest/services/validations/projectValidation");
   let mockProjectDto;
   let projectDao;
@@ -47,7 +47,7 @@ describe("Project validations tests", () => {
   });
 });
 
-describe("Milestone dto validations tests", () => {
+describe.skip("Milestone dto validations tests", () => {
   const milestoneValidation = require('../rest/services/validations/milestoneValidation');
   let mockMilestoneDto;
   beforeEach(() => {
