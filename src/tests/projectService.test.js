@@ -135,12 +135,12 @@ describe('Testing projectService createProject', () => {
           '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
       };
 
-      const pathMilestonesXls = require('path').join(
-        __dirname,
-        './mockFiles/projectMilestones.xlsx'
-      );
+      // const pathMilestonesXls = require('path').join(
+      //   __dirname,
+      //   './mockFiles/projectMilestones.xlsx'
+      // );
 
-      const dataMilestones = await readFile(pathMilestonesXls);
+      // const dataMilestones = await readFile(pathMilestonesXls);
 
       const mockProjectCoverPhoto = {
         name: 'projectCoverPhoto.png',
@@ -163,7 +163,7 @@ describe('Testing projectService createProject', () => {
       const mockProjectMilestones = {
         name: 'projectMilestones.xlsx',
         path: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-        data: dataMilestones,
+        // data: dataMilestones,
         mv: jest.fn()
       };
 
