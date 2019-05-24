@@ -707,7 +707,7 @@ const milestoneService = ({
       const milestone = await milestoneDao.getMilestoneById(milestoneId);
       const milestones = await getMilestonesByProject(milestone.project);
       const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
-      const previousMilestone = milestoneIndex > 0 ? milestoneIndex : false;
+      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
 
       if (!milestone || milestone == null) {
         fastify.log.error(
@@ -720,7 +720,7 @@ const milestoneService = ({
       }
 
       if (
-        !Object.values(milestoneBudgetStatus).includes(parseInt(budgetStatusId))
+        !Object.values(milestoneBudgetStatus).includes(budgetStatusId)
       ) {
         fastify.log.error(
           `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
