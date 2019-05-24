@@ -13,7 +13,7 @@ const COAProjectAdmin = require('../../circle-of-angels-solidity/build/contracts
 const COAOracle = require('../../circle-of-angels-solidity/build/contracts/COAOracle.json');
 
 exports.eth = {
-  HOST: 'http://localhost:8545',
+  HOST: 'ws://localhost:8545',
   CONTRACT_ADMIN_ADDRESS: COAProjectAdmin.networks['5777'].address,
   CONTRACT_ORACLE_ADDRESS: COAOracle.networks['5777'].address,
   CONTRACT_ADMIN_ABI: COAProjectAdmin.abi,
@@ -57,7 +57,7 @@ exports.database = {
 };
 
 exports.fileServer = {
-  filePath: '/home/atixlabs/files/server'
+  filePath: '/home/federico/files/server'
 };
 
 exports.swagger = {

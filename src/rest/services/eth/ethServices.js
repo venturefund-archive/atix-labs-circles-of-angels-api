@@ -69,7 +69,7 @@ const ethServices = async (providerHost, { logger }) => {
   };
 
   const suscribeToEvent = async (event, callback) => {
-    event(async (error, event) => {
+    event({},(error, event) => {
       if (error) return { error };
       callback(event);
     });
@@ -182,7 +182,7 @@ const ethServices = async (providerHost, { logger }) => {
 
     async suscribeProjectCompletedEvent(callback) {
       suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
-    },
+    }
   };
 };
 
