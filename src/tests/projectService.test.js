@@ -160,7 +160,7 @@ describe('Testing projectService createProject', () => {
       };
 
       const mockProjectAgreement = {
-        name: 'projectAgreement.pdf',
+        name: 'projectProposal.pdf',
         path: `${__dirname}/mockFiles/projectProposal.pdf`,
         mv: jest.fn()
       };

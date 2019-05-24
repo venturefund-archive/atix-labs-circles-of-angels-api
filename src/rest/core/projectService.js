@@ -152,6 +152,8 @@ const projectService = ({
         : '';
       const milestonesPath = projectMilestones.path;
 
+      fastify.log.info('[Project Service] :: Saving project files');
+
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(
         `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
