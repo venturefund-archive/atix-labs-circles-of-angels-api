@@ -1,6 +1,12 @@
 const transferServiceBuilder = require('../rest/core/transferService');
+const configs = require('../../config/configs')[
+  process.env.NODE_ENV || 'development'
+];
 
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = {
+  log: { info: console.log, error: console.log },
+  configs
+};
 
 describe('Testing projectService getTotalFundedByProject', () => {
   let transferDao;

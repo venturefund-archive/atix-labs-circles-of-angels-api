@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const mime = require('mime');
 const { isEmpty, uniq } = require('lodash');
-const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
 const {
   addPathToFilesProperties,
@@ -155,7 +154,7 @@ const projectService = ({
 
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(
-        `${configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
       );
 
       // saves the project's pictures and proposal
@@ -195,7 +194,7 @@ const projectService = ({
 
       fastify.log.info(
         '[Project Service] :: All files saved to:',
-        `${configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
       );
 
       const savedCoverPhoto = await photoService.savePhoto(coverPhotoPath);
@@ -327,7 +326,7 @@ const projectService = ({
         });
 
         // creates the directory where this project's files will be saved if not exists
-        await mkdirp(`${configs.fileServer.filePath}/projects/${id}`);
+        await mkdirp(`${fastify.configs.fileServer.filePath}/projects/${id}`);
 
         // saves the project's pictures
         if (projectCoverPhoto) {
@@ -384,7 +383,7 @@ const projectService = ({
 
         fastify.log.info(
           '[Project Service] :: All files saved to:',
-          `${configs.fileServer.filePath}/projects/${id}`
+          `${fastify.configs.fileServer.filePath}/projects/${id}`
         );
       }
 
@@ -635,23 +634,27 @@ const projectService = ({
 
       // creates the directory where this project's agreement will be saved if not exists
       // (it should've been created during the project creation though)
-      mkdirp(`${configs.fileServer.filePath}/projects/${project.id}`);
+      mkdirp(`${fastify.configs.fileServer.filePath}/projects/${project.id}`);
 
       const filename = `agreement${path.extname(projectAgreement.name)}`;
 
       // saves the project's agreement
       fastify.log.info(
         '[Project Service] :: Saving Project agreement to:',
-        `${configs.fileServer.filePath}/projects/${project.id}/${filename}`
+        `${fastify.configs.fileServer.filePath}/projects/${
+          project.id
+        }/${filename}`
       );
       await projectAgreement.mv(
-        `${configs.fileServer.filePath}/projects/${project.id}/${filename}`
+        `${fastify.configs.fileServer.filePath}/projects/${
+          project.id
+        }/${filename}`
       );
 
       // update database
-      const projectAgreementPath = `${configs.fileServer.filePath}/projects/${
-        project.id
-      }/${filename}`;
+      const projectAgreementPath = `${
+        fastify.configs.fileServer.filePath
+      }/projects/${project.id}/${filename}`;
 
       const updatedProject = await projectDao.updateProjectAgreement({
         projectAgreement: projectAgreementPath,
@@ -1136,7 +1139,7 @@ const projectService = ({
     const filename = addTimestampToFilename(file.name);
 
     const filepath = `${
-      configs.fileServer.filePath
+      fastify.configs.fileServer.filePath
     }/projects/${projectId}/experiences/${filename}`;
 
     if (fs.existsSync(filepath)) {
@@ -1144,7 +1147,7 @@ const projectService = ({
     }
 
     await mkdirp(
-      `${configs.fileServer.filePath}/projects/${projectId}/experiences`
+      `${fastify.configs.fileServer.filePath}/projects/${projectId}/experiences`
     );
     await file.mv(filepath);
 

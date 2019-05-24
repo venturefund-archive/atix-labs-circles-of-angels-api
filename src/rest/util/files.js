@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const configs = require('../../../config/configs');
+const configs = require('../../../config/configs')[
+  process.env.NODE_ENV || 'development'
+];
 
 exports.getFileFromPath = filepath => {
   const file = fs.createReadStream(filepath, 'utf8');

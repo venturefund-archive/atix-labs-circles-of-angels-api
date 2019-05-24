@@ -1,4 +1,11 @@
-const fastify = { log: { info: console.log, error: console.log } };
+const configs = require('../../config/configs')[
+  process.env.NODE_ENV || 'development'
+];
+
+const fastify = {
+  log: { info: console.log, error: console.log },
+  configs
+};
 
 describe('Testing userProjectService signAgreement', () => {
   let userProjectDao;

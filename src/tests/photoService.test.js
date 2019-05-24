@@ -1,4 +1,12 @@
-const fastify = { log: { info: console.log, error: console.log } };
+const configs = require('../../config/configs')[
+  process.env.NODE_ENV || 'development'
+];
+
+const fastify = {
+  log: { info: console.log, error: console.log },
+  configs
+};
+
 const { getBase64htmlFromPath } = require('../rest/util/images');
 
 describe('Testing photoService getBase64Photo', () => {

@@ -4,14 +4,9 @@ const { promisify } = require('util');
 const { addPathToFilesProperties } = require('../rest/util/files');
 const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus } = require('../rest/util/constants');
-
-const readFile = promisify(fs.readFile);
-
-const configs = {
-  fileServer: {
-    filePath: '/home/atixlabs/files/server'
-  }
-};
+const configs = require('../../config/configs')[
+  process.env.NODE_ENV || 'development'
+];
 
 const fastify = {
   log: { info: console.log, error: console.log },
@@ -22,8 +17,11 @@ const fastify = {
       !!creationTransactionHash,
     startProject: () =>
       '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
-  }
+  },
+  configs
 };
+
+const readFile = promisify(fs.readFile);
 
 describe('Testing projectService createProject', () => {
   let projectDao;

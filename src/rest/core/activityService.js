@@ -6,7 +6,6 @@ const path = require('path');
 const sha256 = require('sha256');
 const { promisify } = require('util');
 const { forEachPromise } = require('../util/promises');
-const configs = require('../../../config/configs');
 const { evidenceFileTypes, userRoles } = require('../util/constants');
 const { activityStatus } = require('../util/constants');
 
@@ -161,7 +160,9 @@ const activityService = ({
     try {
       // creates the directory where this activities' evidence files will be saved if not exists
       await mkdirp(
-        `${configs.fileServer.filePath}/activities/${activityId}/evidence`
+        `${
+          fastify.configs.fileServer.filePath
+        }/activities/${activityId}/evidence`
       );
       if (files.length && files.length > 0) {
         await Promise.all(
@@ -240,11 +241,13 @@ const activityService = ({
 
       // creates the directory where this activities' evidence files will be saved if not exists
       await mkdirp(
-        `${configs.fileServer.filePath}/activities/${activityId}/evidence`
+        `${
+          fastify.configs.fileServer.filePath
+        }/activities/${activityId}/evidence`
       );
 
       // uploading file
-      const filepath = `${configs.fileServer.filePath}/activities/${
+      const filepath = `${fastify.configs.fileServer.filePath}/activities/${
         activity.id
       }/evidence/${file.name}`;
       await file.mv(filepath);
