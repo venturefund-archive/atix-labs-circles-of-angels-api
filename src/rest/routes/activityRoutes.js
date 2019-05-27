@@ -154,7 +154,7 @@ const routes = async fastify => {
   fastify.post(
     `${basePath}/:id/evidences`,
     {
-      beforeHandler: [fastify.generalAuth],
+      beforeHandler: [fastify.generalAuth, fastify.withUser],
       schema: {
         type: 'multipart/form-data',
         params: {
@@ -185,7 +185,8 @@ const routes = async fastify => {
       try {
         const response = await activityService.addEvidenceFiles(
           id,
-          evidenceFiles
+          evidenceFiles,
+          req.user
         );
 
         reply.status(200).send(response);

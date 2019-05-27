@@ -182,6 +182,11 @@ const ethServices = async (providerHost, { logger }) => {
 
     async suscribeProjectCompletedEvent(callback) {
       suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
+    },
+
+    async uploadHashEvidenceToActivity(sender, pwd, activityId, hashes) {
+      const uploadHashEvidence = COAOracle.methods.uploadHashEvidence(activityId, hashes);
+      return makeTx(sender, pwd, uploadHashEvidence);
     }
   };
 };
