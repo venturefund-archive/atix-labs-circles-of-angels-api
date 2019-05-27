@@ -705,7 +705,7 @@ const milestoneService = ({
     );
     try {
       const milestone = await milestoneDao.getMilestoneById(milestoneId);
-      const milestones = await getMilestonesByProject(milestone.project);
+      const milestones = await this.getMilestonesByProject(milestone.project);
       const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
       const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
 

@@ -32,11 +32,10 @@ const userRoles = {
 };
 
 const milestoneBudgetStatus = {
-  PENDING: 1,
-  CLAIMABLE: 2,
-  CLAIMED: 3,
-  FUNDED: 4,
-  BLOCKED: 5
+  CLAIMABLE: 1,
+  CLAIMED: 2,
+  FUNDED: 3,
+  BLOCKED: 4
 };
 
 const userRegistrationStatus = {
