@@ -20,6 +20,8 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
 
   delete toUpdate.id;
   delete toUpdate.project;
+  delete toUpdate.blockchainStatus;
+
   toUpdate.status = toUpdate.status || 1;
   toUpdate.budgetStatus = toUpdate.budgetStatus || 1;
   toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
@@ -77,6 +79,15 @@ const updateBudgetStatus = milestoneModel => async (
   return milestone;
 };
 
+const updateBlockchainStatus = milestoneModel => async (
+  milestoneId,
+  blockchainStatus
+) => {
+  return milestoneModel
+    .updateOne({ id: milestoneId })
+    .set({ blockchainStatus });
+};
+
 module.exports = milestoneModel => ({
   getMilestoneById: getMilestoneById(milestoneModel),
   saveMilestone: saveMilestone(milestoneModel),
@@ -86,5 +97,6 @@ module.exports = milestoneModel => ({
   getMilestonesByProject: getMilestonesByProject(milestoneModel),
   getAllMilestones: getAllMilestones(milestoneModel),
   updateBudgetStatus: updateBudgetStatus(milestoneModel),
-  updateMilestoneStatus: updateMilestoneStatus(milestoneModel)
+  updateMilestoneStatus: updateMilestoneStatus(milestoneModel),
+  updateBlockchainStatus: updateBlockchainStatus(milestoneModel)
 });
