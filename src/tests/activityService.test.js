@@ -7,7 +7,7 @@ const fastify = {
   configs
 };
 
-describe.skip('Testing activityService createActivities', () => {
+describe('Testing activityService createActivities', () => {
   let activityDao;
   let activityService;
   beforeAll(() => {
@@ -96,7 +96,7 @@ describe.skip('Testing activityService createActivities', () => {
   });
 });
 
-describe.skip('Testing activityService createActivity', () => {
+describe('Testing activityService createActivity', () => {
   let activityDao;
   let activityService;
 
@@ -182,7 +182,7 @@ describe.skip('Testing activityService createActivity', () => {
   });
 });
 
-describe.skip('Testing activityService updateActivity', () => {
+describe('Testing activityService updateActivity', () => {
   let activityDao;
   let activityService;
 

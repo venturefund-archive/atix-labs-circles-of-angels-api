@@ -8,7 +8,7 @@ const fastify = {
   configs
 };
 
-describe.skip('Testing projectService getTotalFundedByProject', () => {
+describe('Testing projectService getTotalFundedByProject', () => {
   let transferDao;
   let transferService;
 

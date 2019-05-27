@@ -7,7 +7,7 @@ const fastify = {
   configs
 };
 
-describe.skip('Testing milestoneService createMilestones', () => {
+describe('Testing milestoneService createMilestones', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
@@ -144,7 +144,7 @@ describe.skip('Testing milestoneService createMilestones', () => {
   );
 });
 
-describe.skip('Testing milestoneService getMilestoneActivities', () => {
+describe('Testing milestoneService getMilestoneActivities', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
@@ -282,7 +282,7 @@ describe.skip('Testing milestoneService getMilestoneActivities', () => {
   );
 });
 
-describe.skip('Testing milestoneService readMilestone', () => {
+describe('Testing milestoneService readMilestone', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
@@ -382,7 +382,7 @@ describe.skip('Testing milestoneService readMilestone', () => {
   });
 });
 
-describe.skip('Testing milestoneService isMilestoneEmpty', () => {
+describe('Testing milestoneService isMilestoneEmpty', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
@@ -436,7 +436,7 @@ describe.skip('Testing milestoneService isMilestoneEmpty', () => {
   );
 });
 
-describe.skip('Testing milestoneService isMilestoneValid', () => {
+describe('Testing milestoneService isMilestoneValid', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
@@ -521,7 +521,7 @@ describe.skip('Testing milestoneService isMilestoneValid', () => {
   });
 });
 
-describe.skip('Testing milestoneService verifyActivity', () => {
+describe('Testing milestoneService verifyActivity', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
@@ -576,7 +576,7 @@ describe.skip('Testing milestoneService verifyActivity', () => {
   });
 });
 
-describe.skip('Testing milestoneService createMilestone', () => {
+describe('Testing milestoneService createMilestone', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
@@ -676,7 +676,7 @@ describe.skip('Testing milestoneService createMilestone', () => {
   });
 });
 
-describe.skip('Testing milestoneService updateMilestone', () => {
+describe('Testing milestoneService updateMilestone', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
@@ -788,7 +788,7 @@ describe.skip('Testing milestoneService updateMilestone', () => {
   });
 });
 
-describe.skip('Testing milestonesService delete milestone', () => {
+describe('Testing milestonesService delete milestone', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;

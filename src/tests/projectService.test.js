@@ -90,7 +90,7 @@ describe('Testing projectService createProject', () => {
     };
   });
 
-  it(
+  it.skip(
     'should create and return a new project with ' +
       'status 0 and ownerId from a JSON object',
     async () => {
@@ -183,7 +183,7 @@ describe('Testing projectService createProject', () => {
     }
   );
 
-  it.skip('should throw an error if it fails to save the project', async () => {
+  it('should throw an error if it fails to save the project', async () => {
     const ownerId = 1;
     const projectName = 'Project Name';
 
@@ -257,7 +257,7 @@ describe('Testing projectService createProject', () => {
   });
 });
 
-describe.skip('Testing projectService getProjectList', () => {
+describe('Testing projectService getProjectList', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -330,7 +330,7 @@ describe.skip('Testing projectService getProjectList', () => {
   });
 });
 
-describe.skip('Testing projectService getActiveProjectList', () => {
+describe('Testing projectService getActiveProjectList', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -403,7 +403,7 @@ describe.skip('Testing projectService getActiveProjectList', () => {
   });
 });
 
-describe.skip('Testing projectService getProjectWithId', () => {
+describe('Testing projectService getProjectWithId', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -459,7 +459,7 @@ describe.skip('Testing projectService getProjectWithId', () => {
   });
 });
 
-describe.skip('Testing projectService updateProjectStatus', () => {
+describe('Testing projectService updateProjectStatus', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -541,7 +541,7 @@ describe.skip('Testing projectService updateProjectStatus', () => {
   });
 });
 
-describe.skip('Testing projectService deleteProject', () => {
+describe('Testing projectService deleteProject', () => {
   let projectDao;
   let projectService;
   let projectModel;
@@ -596,7 +596,7 @@ describe.skip('Testing projectService deleteProject', () => {
   });
 });
 
-describe.skip('Testing projectService getProjectMilestones', () => {
+describe('Testing projectService getProjectMilestones', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
@@ -754,7 +754,7 @@ describe.skip('Testing projectService getProjectMilestones', () => {
   });
 });
 
-describe.skip('Testing projectService downloadMilestonesTemplate', () => {
+describe('Testing projectService downloadMilestonesTemplate', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -825,7 +825,7 @@ describe.skip('Testing projectService downloadMilestonesTemplate', () => {
   });
 });
 
-describe.skip('Testing projectService getProjectMilestonesPath', () => {
+describe('Testing projectService getProjectMilestonesPath', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -883,7 +883,7 @@ describe.skip('Testing projectService getProjectMilestonesPath', () => {
   });
 });
 
-describe.skip('Testing projectService uploadAgreement', () => {
+describe('Testing projectService uploadAgreement', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -966,7 +966,7 @@ describe.skip('Testing projectService uploadAgreement', () => {
     ).rejects.toEqual(Error('Error uploading agreement')));
 });
 
-describe.skip('Testing projectService downloadAgreement', () => {
+describe('Testing projectService downloadAgreement', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -1054,7 +1054,7 @@ describe.skip('Testing projectService downloadAgreement', () => {
   });
 });
 
-describe.skip('Testing projectService downloadProposal', () => {
+describe('Testing projectService downloadProposal', () => {
   let projectDao;
   let projectService;
   let milestoneService;
@@ -1142,7 +1142,7 @@ describe.skip('Testing projectService downloadProposal', () => {
   });
 });
 
-describe.skip('Testing projectService getTotalFunded', () => {
+describe('Testing projectService getTotalFunded', () => {
   let projectDao;
   let projectService;
   let transferService;
@@ -1194,7 +1194,7 @@ describe.skip('Testing projectService getTotalFunded', () => {
     ));
 });
 
-describe.skip('Testing projectService startProject', () => {
+describe('Testing projectService startProject', () => {
   let projectDao;
   let projectService;
   let transferService;
@@ -1327,7 +1327,7 @@ describe.skip('Testing projectService startProject', () => {
   });
 });
 
-describe.skip('Testing projectService updateProject', () => {
+describe('Testing projectService updateProject', () => {
   let projectDao;
   let projectService;
   let photoService;
@@ -1510,7 +1510,7 @@ describe.skip('Testing projectService updateProject', () => {
   });
 });
 
-describe.skip('Testing projectService uploadExperience', () => {
+describe('Testing projectService uploadExperience', () => {
   let projectDao;
   let userDao;
   let projectExperienceDao;
@@ -1780,7 +1780,7 @@ describe.skip('Testing projectService uploadExperience', () => {
   });
 });
 
-describe.skip('Testing projectService getExperiences', () => {
+describe('Testing projectService getExperiences', () => {
   let projectDao;
   let projectExperienceDao;
   let projectService;
