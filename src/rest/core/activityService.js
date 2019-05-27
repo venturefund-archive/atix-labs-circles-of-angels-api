@@ -8,7 +8,7 @@ const { promisify } = require('util');
 const { forEachPromise } = require('../util/promises');
 const configs = require('../../../config/configs');
 const { evidenceFileTypes, userRoles } = require('../util/constants');
-const { activityStatus } = require('../util/constants');
+const { activityStatus, blockchainStatus } = require('../util/constants');
 
 const readFile = promisify(fs.readFile);
 
@@ -899,6 +899,13 @@ const activityService = ({
       );
       throw Error('Error getting Activities');
     }
+  },
+
+  async updateBlockchainStatus(activityId, status) {
+    if (!Object.values(blockchainStatus).includes(status)) {
+      return { error: 'Invalid Blockchain status' };
+    }
+    return activityDao.updateBlockchainStatus(activityId, status);
   }
 });
 

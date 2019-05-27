@@ -22,14 +22,13 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     return response;
   },
 
-  async updateProjectStatusWithTransaction({
+  async updateProjectTransaction({
     projectId,
-    status,
     transactionHash
   }) {
     const response = projectModel
       .updateOne({ id: projectId })
-      .set({ status, transactionHash });
+      .set({ transactionHash });
     return response;
   },
 
@@ -82,6 +81,7 @@ const ProjectDao = ({ projectModel, userDao }) => ({
 
     delete toUpdate.id;
     delete toUpdate.ownerId;
+    delete toUpdate.blockchainStatus;
 
     const savedProject = await projectModel
       .updateOne({ id })
@@ -113,6 +113,10 @@ const ProjectDao = ({ projectModel, userDao }) => ({
 
   async getAllProjectsById(projectsId) {
     return projectModel.find({ id: projectsId });
+  },
+
+  async updateBlockchainStatus(id, blockchainStatus) {
+    return projectModel.updateOne({ id }).set({ blockchainStatus });
   }
 });
 
