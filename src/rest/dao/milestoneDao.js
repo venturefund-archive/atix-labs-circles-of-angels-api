@@ -1,14 +1,20 @@
+const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
+
 const getMilestoneById = milestoneModel => async milestoneId => {
   const milestone = await milestoneModel.findOne({ id: milestoneId });
   return milestone;
 };
 
-const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
+const saveMilestone = milestoneModel => async ({
+  milestone,
+  projectId,
+  budgetStatus
+}) => {
   const toSave = {
     ...milestone,
     project: projectId,
-    status: 1,
-    budgetStatus: 1,
+    status: activityStatus.PENDING,
+    budgetStatus: budgetStatus ? budgetStatus : milestoneBudgetStatus.BLOCKED
     blockchainStatus: 1
   };
   const createdMilestone = await milestoneModel.create(toSave);
@@ -20,10 +26,9 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
 
   delete toUpdate.id;
   delete toUpdate.project;
-  delete toUpdate.blockchainStatus;
 
-  toUpdate.status = toUpdate.status || 1;
-  toUpdate.budgetStatus = toUpdate.budgetStatus || 1;
+  toUpdate.status = toUpdate.status || activityStatus.PENDING;
+  toUpdate.budgetStatus = toUpdate.budgetStatus || milestoneBudgetStatus.BLOCKED;
   toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
 
   const savedMilestone = await milestoneModel
