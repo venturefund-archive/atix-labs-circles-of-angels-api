@@ -165,14 +165,14 @@ describe('Testing projectService createProject', () => {
         mv: jest.fn()
       };
 
-      addPathToFilesProperties(
-        projectName,
-        mockProjectCoverPhoto,
-        mockProjectCardPhoto,
-        mockProjectProposal,
-        mockProjectMilestones,
-        mockProjectAgreement
-      );
+      addPathToFilesProperties({
+        projectId,
+        coverPhoto: mockProjectCoverPhoto,
+        cardPhoto: mockProjectCardPhoto,
+        pitchProposal: mockProjectProposal,
+        projectAgreement: mockProjectAgreement,
+        milestones: mockProjectMilestones
+      });
 
       const response = await projectService.createProject(
         mockProject,
