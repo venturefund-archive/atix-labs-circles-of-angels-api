@@ -129,7 +129,7 @@ const projectService = ({
       );
 
       savedProject.creationTransactionHash = transactionHash;
-      savedProject.blockchainStatus = blockchainStatus.SENDED;
+      savedProject.blockchainStatus = blockchainStatus.SENT;
 
       fastify.log.info(
         '[Project Service] :: transaction hash of project creation: ',
