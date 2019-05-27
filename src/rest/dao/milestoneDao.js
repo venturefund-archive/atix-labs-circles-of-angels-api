@@ -15,6 +15,7 @@ const saveMilestone = milestoneModel => async ({
     project: projectId,
     status: activityStatus.PENDING,
     budgetStatus: budgetStatus ? budgetStatus : milestoneBudgetStatus.BLOCKED
+    blockchainStatus: 1
   };
   const createdMilestone = await milestoneModel.create(toSave);
   return createdMilestone;
@@ -25,8 +26,10 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
 
   delete toUpdate.id;
   delete toUpdate.project;
+
   toUpdate.status = toUpdate.status || activityStatus.PENDING;
   toUpdate.budgetStatus = toUpdate.budgetStatus || milestoneBudgetStatus.BLOCKED;
+  toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
 
   const savedMilestone = await milestoneModel
     .updateOne({ id: milestoneId })

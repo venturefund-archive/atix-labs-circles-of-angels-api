@@ -44,6 +44,12 @@ const userRegistrationStatus = {
   REJECTED: 3
 };
 
+const blockchainStatus = {
+  PENDING: 1,
+  SENT: 2,
+  CONFIRMED: 3
+};
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
@@ -51,5 +57,6 @@ module.exports = {
   activityStatus,
   userRoles,
   milestoneBudgetStatus,
-  userRegistrationStatus
+  userRegistrationStatus,
+  blockchainStatus
 };

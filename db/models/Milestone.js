@@ -46,6 +46,10 @@ module.exports = {
     budgetStatus: {
       columnName: 'budgetStatus',
       model: 'milestone_budget_status'
+    },
+    blockchainStatus: {
+      columnName: 'blockchainStatus',
+      model: 'blockchain_status'
     }
   }
 };
