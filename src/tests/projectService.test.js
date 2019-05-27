@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const fs = require('fs');
 const { promisify } = require('util');
+
 const { addPathToFilesProperties } = require('../rest/util/files');
 const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus } = require('../rest/util/constants');
@@ -87,8 +88,6 @@ describe('Testing projectService createProject', () => {
         filePath: '/home/atixlabs/files/server'
       }
     };
-
-    jest.mock('mkdirp-promise');
   });
 
   it(
@@ -164,15 +163,6 @@ describe('Testing projectService createProject', () => {
         path: `${__dirname}/mockFiles/projectProposal.pdf`,
         mv: jest.fn()
       };
-
-      addPathToFilesProperties({
-        projectId,
-        coverPhoto: mockProjectCoverPhoto,
-        cardPhoto: mockProjectCardPhoto,
-        pitchProposal: mockProjectProposal,
-        projectAgreement: mockProjectAgreement,
-        milestones: mockProjectMilestones
-      });
 
       const response = await projectService.createProject(
         mockProject,
