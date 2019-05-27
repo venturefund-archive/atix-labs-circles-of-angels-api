@@ -44,7 +44,7 @@ const userRegistrationStatus = {
 
 const blockchainStatus = {
   PENDING: 1,
-  SENDED: 2,
+  SENT: 2,
   CONFIRMED: 3
 };
 
