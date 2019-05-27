@@ -35,6 +35,10 @@ module.exports = {
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     transactionHash: { type: 'string', required: false },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } }
+    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    blockchainStatus: {
+      columnName: 'blockchainStatus',
+      model: 'blockchain_status'
+    }
   }
 };
