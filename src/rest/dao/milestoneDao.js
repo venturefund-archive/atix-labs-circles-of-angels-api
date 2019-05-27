@@ -8,7 +8,8 @@ const saveMilestone = milestoneModel => async ({ milestone, projectId }) => {
     ...milestone,
     project: projectId,
     status: 1,
-    budgetStatus: 1
+    budgetStatus: 1,
+    blockchainStatus: 1
   };
   const createdMilestone = await milestoneModel.create(toSave);
   return createdMilestone;
@@ -21,6 +22,7 @@ const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
   delete toUpdate.project;
   toUpdate.status = toUpdate.status || 1;
   toUpdate.budgetStatus = toUpdate.budgetStatus || 1;
+  toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
 
   const savedMilestone = await milestoneModel
     .updateOne({ id: milestoneId })
