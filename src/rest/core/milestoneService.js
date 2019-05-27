@@ -1,6 +1,10 @@
 const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
-const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
+const {
+  activityStatus,
+  milestoneBudgetStatus,
+  blockchainStatus
+} = require('../util/constants');
 
 const milestoneService = ({
   fastify,
@@ -652,20 +656,6 @@ const milestoneService = ({
         budget: milestone.budget,
         description: milestone.tasks
       });
-      const activities = (await this.getMilestoneActivities(milestone))
-        .activities;
-
-      for (let j = 0; j < activities.length; j++) {
-        const activity = activities[j];
-        const oracle = await activityService.getOracleFromActivity(activity.id);
-        await fastify.eth.createActivity(owner.address, owner.pwd, {
-          activityId: activity.id,
-          milestoneId: milestone.id,
-          projectId: project.id,
-          oracleAddress: oracle.user.address,
-          description: activity.tasks
-        });
-      }
     }
   },
 
@@ -821,6 +811,13 @@ const milestoneService = ({
       );
       throw Error('Error getting all available budget transfer status');
     }
+  },
+
+  async updateBlockchainStatus(milestoneId, status) {
+    if (!Object.values(blockchainStatus).includes(status)) {
+      return { error: 'Invalid Blockchain status' };
+    }
+    return milestoneDao.updateBlockchainStatus(milestoneId, status);
   }
 });
 
