@@ -741,7 +741,7 @@ const milestoneService = ({
         );
         return {
           status: 409,
-          error: 'Milestone Status needs to be Completed'
+          error: 'Budget transfer status needs to be Claimed'
         };
       }
 
@@ -758,7 +758,7 @@ const milestoneService = ({
         );
         return {
           status: 409,
-          error: 'Milestone Status needs to be Completed'
+          error: 'Needs complete all previos milestones before claim this milestone!'
         };
       }
 
@@ -772,7 +772,7 @@ const milestoneService = ({
         );
         return {
           status: 409,
-          error: 'Milestone Status needs to be Completed'
+          error: 'Only Claimable Milestones can be Claim'
         };
       }
 
