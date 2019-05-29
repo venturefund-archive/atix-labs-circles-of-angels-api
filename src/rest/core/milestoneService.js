@@ -688,13 +688,14 @@ const milestoneService = ({
    * @param {number} budgetStatusId
    * @returns updated milestone | error
    */
-  async updateBudgetStatus(milestoneId, budgetStatusId) {
+  async updateBudgetStatus(milestoneId, budgetStatusId, user) {
     fastify.log.info(
       `[Milestone Service] :: Updating Milestone ID ${milestoneId} budget status. 
       New status ID: ${budgetStatusId}`
     );
     try {
       const milestone = await milestoneDao.getMilestoneById(milestoneId);
+      const actualStatus = await milestone.status.budgetStatus;
       const milestones = await this.getMilestonesByProject(milestone.project);
       const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
       const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
@@ -709,9 +710,7 @@ const milestoneService = ({
         };
       }
 
-      if (
-        !Object.values(milestoneBudgetStatus).includes(budgetStatusId)
-      ) {
+      if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
         fastify.log.error(
           `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
         );
@@ -748,7 +747,8 @@ const milestoneService = ({
         );
         return {
           status: 409,
-          error: 'Needs complete all previos milestones before claim this milestone!'
+          error:
+            'Needs complete all previos milestones before claim this milestone!'
         };
       }
 
@@ -778,6 +778,23 @@ const milestoneService = ({
         return {
           status: 500,
           error: 'Milestone could not be updated'
+        };
+      }
+
+      const txHash = await fastify.eth.updateMilestonFundStatus(
+        user.address,
+        user.pwd,
+        { milestoneId, budgetStatusId }
+      );
+
+      if (!txHash) {
+        await milestoneDao.updateBudgetStatus(milestoneId, actualStatus);
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} could not be updated on blockchain`
+        );
+        return {
+          status: 500,
+          error: 'Milestone could not be updated on blockchain'
         };
       }
 

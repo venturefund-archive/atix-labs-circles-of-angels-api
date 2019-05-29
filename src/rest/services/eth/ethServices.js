@@ -69,7 +69,7 @@ const ethServices = async (providerHost, { logger }) => {
   };
 
   const suscribeToEvent = async (event, callback) => {
-    event({},(error, event) => {
+    event({}, (error, event) => {
       if (error) return { error };
       callback(event);
     });
@@ -187,6 +187,11 @@ const ethServices = async (providerHost, { logger }) => {
     async uploadHashEvidenceToActivity(sender, pwd, activityId, hashes) {
       const uploadHashEvidence = COAOracle.methods.uploadHashEvidence(activityId, hashes);
       return makeTx(sender, pwd, uploadHashEvidence);
+    },
+    
+    async updateMilestonFundStatus(sender, pwd, { milestoneId, status }) {
+      const updateMilestoneFundStatus = COAProjectAdmin.methods.updateMilestoneFundStatus(milestoneId, status);
+      return makeTx(sender, pwd, updateMilestoneFundStatus);
     }
   };
 };
