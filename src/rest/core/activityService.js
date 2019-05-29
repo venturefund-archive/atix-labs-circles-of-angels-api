@@ -156,13 +156,14 @@ const activityService = ({
    * @param {array} files
    * @returns success | errors
    */
-  async addEvidenceFiles(activityId, files) {
+  async addEvidenceFiles(activityId, files, user) {
     const errors = [];
     try {
       // creates the directory where this activities' evidence files will be saved if not exists
       await mkdirp(
         `${configs.fileServer.filePath}/activities/${activityId}/evidence`
       );
+      const hashes = [];
       if (files.length && files.length > 0) {
         await Promise.all(
           files.map(async file => {
@@ -172,6 +173,8 @@ const activityService = ({
                 error: addedEvidence.error,
                 file: file.name
               });
+            } else {
+              hashes.push(addedEvidence.fileHash);
             }
           })
         );
@@ -182,8 +185,17 @@ const activityService = ({
             error: addedEvidence.error,
             file: files.name
           });
+        } else {
+          hashes.push(addedEvidence.fileHash);
         }
       }
+      const userInfo = await userService.userService.getUserById(user.id);
+      fastify.eth.uploadHashEvidenceToActivity(
+        userInfo.address,
+        userInfo.pwd,
+        activityId,
+        hashes
+      );
     } catch (error) {
       fastify.log.error(
         '[Activity Service] :: There was an error uploading the evidence:',
