@@ -23,7 +23,7 @@ exports.eth = {
     defaultGasPrice: 1000000
   },
   UNLOCK_DURATION: 10000,
-  INITIAL_FUNDS: 10000000000000000
+  INITIAL_FUNDS: 1000000000000000000
 };
 
 exports.support = {
