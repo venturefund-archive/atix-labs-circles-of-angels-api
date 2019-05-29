@@ -1,9 +1,9 @@
-const configs = require("./config/configs");
-const server = require("./src/rest/server");
-const db = require("./db/db");
+const configs = require('./config/configs')(
+  process.env.NODE_ENV || 'development'
+);
+const server = require('./src/rest/server');
+const db = require('./db/db');
 
-var logger = configs.logger;
-var serverConfigs = configs.server
+const { logger } = configs;
 
-
-server.start({ db, logger, serverConfigs });
+server.start({ db, logger, configs });

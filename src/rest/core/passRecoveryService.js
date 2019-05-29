@@ -2,9 +2,9 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const { isEmpty } = require('lodash');
-const { support } = require('../../../config/configs');
 
 const passRecoveryService = ({ fastify, passRecoveryDao, userDao }) => {
+  const { support } = fastify.configs;
   const transporter = nodemailer.createTransport({
     service: support.service,
     auth: {

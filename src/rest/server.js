@@ -1,9 +1,8 @@
-const configs = require('../../config/configs');
+const { isEmpty } = require('lodash');
 const ethService = require('./services/eth/ethServices');
+const ethServiceMock = require('./services/eth/ethServicesMock');
 const { helperBuilder } = require('./services/helper');
 const eventListenerBuilder = require('./services/eth/eventListener');
-
-const swaggerConfigs = configs.swagger;
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -11,8 +10,9 @@ const swaggerConfigs = configs.swagger;
  * @param logger instance of a logger that contains the pino interface
  * @param serverConfigs server configs for the connection. I.e -> {host: 'localhost', port: 3000}
  */
-module.exports.start = async ({ db, logger, serverConfigs }) => {
+module.exports.start = async ({ db, logger, configs }) => {
   try {
+    const swaggerConfigs = configs.swagger;
     const fastify = require('fastify')({ logger });
     fastify.register(require('fastify-cors'), {
       credentials: true,
@@ -23,6 +23,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     });
 
     fastify.register(require('fastify-cookie'));
+    fastify.configs = configs;
     initJWT(fastify);
     // Init DB
     try {
@@ -35,11 +36,15 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
 
-    fastify.eth = await ethService(configs.eth.HOST, { logger });
+    if (!isEmpty(configs.eth)) {
+      fastify.eth = await ethService(configs.eth.HOST, { logger });
+    } else {
+      fastify.eth = await ethServiceMock();
+    }
 
     loadRoutes(fastify);
 
-    await fastify.listen(serverConfigs);
+    await fastify.listen(configs.server);
     await helperBuilder(fastify);
     const eventListener = await eventListenerBuilder(fastify);
     await eventListener.recoverPastEvents();
@@ -63,7 +68,7 @@ const initJWT = fastify => {
   const { userRoles } = require('./util/constants');
   const jwtPlugin = fp(async () => {
     fastify.register(require('fastify-jwt'), {
-      secret: configs.jwt.secret
+      secret: fastify.configs.jwt.secret
     });
 
     const getToken = (request, reply) => {
@@ -106,7 +111,10 @@ const initJWT = fastify => {
         fastify.log.info('[Server] :: Admin JWT Authentication', token);
         if (token) await validateUser(token, reply, userRoles.BO_ADMIN);
       } catch (error) {
-        fastify.log.error('[Server] :: There was an error authenticating', err);
+        fastify.log.error(
+          '[Server] :: There was an error authenticating',
+          error
+        );
         reply.status(500).send({ error: 'There was an error authenticating' });
       }
     });
