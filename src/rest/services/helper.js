@@ -32,9 +32,11 @@ const userRegistrationStatusDaoBuilder = require('../dao/userRegistrationStatusD
 const userSocialEntrepreneurDaoBuilder = require('../dao/userSocialEntrepreneurDao');
 const passRecoveryDaoBuilder = require('../dao/passRecoveryDao');
 const projectExperienceDaoBuilder = require('../dao/projectExperienceDao');
+const blockchainBlockDaoBuilder = require('../dao/blockchainBlockDao');
 
 const helperBuilder = async fastify => {
   const { models } = fastify;
+  const blockchainBlockDao = blockchainBlockDaoBuilder(models.blockchain_block);
   const configsDao = configsDaoBuilder({ configsModel: models.configs });
   const fileDao = fileDaoBuilder(models.file);
   const fileService = fileServiceBuilder({ fastify, fileDao });
@@ -167,7 +169,8 @@ const helperBuilder = async fastify => {
       userProjectDao,
       userRegistrationStatusDao,
       userSocialEntrepreneurDao,
-      projectExperienceDao
+      projectExperienceDao,
+      blockchainBlockDao
     }
   };
 };

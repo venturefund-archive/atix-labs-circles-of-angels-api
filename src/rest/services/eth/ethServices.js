@@ -69,7 +69,7 @@ const ethServices = async (providerHost, { logger }) => {
   };
 
   const suscribeToEvent = async (event, callback) => {
-    event({},(error, event) => {
+    event({}, (error, event) => {
       if (error) return { error };
       callback(event);
     });
@@ -182,6 +182,23 @@ const ethServices = async (providerHost, { logger }) => {
 
     async suscribeProjectCompletedEvent(callback) {
       suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
+    },
+
+    async getAllPastEvents(options) {
+      const CoaProjectAdminEvents = await COAProjectAdmin.getPastEvents(
+        'allEvents',
+        options
+      );
+      const CoaOracleEvents = await COAOracle.getPastEvents(
+        'allEvents',
+        options
+      );
+
+      const events = CoaProjectAdminEvents.concat(CoaOracleEvents);
+      events.sort((event1, event2) => event1.blockNumber - event2.blockNumber);
+
+      return events;
+      // return COAProjectAdmin.methods.getPastEvents();
     }
   };
 };
