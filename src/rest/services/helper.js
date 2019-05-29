@@ -48,9 +48,7 @@ const helperBuilder = async fastify => {
   const projectExperienceDao = projectExperienceDaoBuilder(
     models.project_experience
   );
-  const answerQuestionDao = answerQuestionDaoBuilder({
-    answerQuestionModel: models.answer_question
-  });
+  const answerQuestionDao = answerQuestionDaoBuilder(models.answer_question);
   const answerDao = answerDaoBuilder(models.answer);
   const questionDao = questionDaoBuilder(models.question);
   const questionnaireService = questionnaireServiceBuilder({
