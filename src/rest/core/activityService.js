@@ -189,8 +189,8 @@ const activityService = ({
           hashes.push(addedEvidence.fileHash);
         }
       }
-      const userInfo = await userService.userService.getUserById(user.id);
-      fastify.eth.uploadHashEvidenceToActivity(
+      const userInfo = await userService.getUserById(user.id);
+      await fastify.eth.uploadHashEvidenceToActivity(
         userInfo.address,
         userInfo.pwd,
         activityId,
