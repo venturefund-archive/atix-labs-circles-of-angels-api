@@ -24,6 +24,8 @@ const fastify = {
 
 const readFile = promisify(fs.readFile);
 
+const testHelper = require('./testHelper');
+
 describe('Testing projectService createProject', () => {
   let projectDao;
   let photoService;
@@ -184,17 +186,10 @@ describe('Testing projectService createProject', () => {
   );
 
   it('should throw an error if it fails to save the project', async () => {
-    const ownerId = 1;
     const projectName = 'Project Name';
 
-    const mockProject = JSON.stringify({
-      projectName,
-      problemAddressed: 'Problem',
-      location: 'Location',
-      timeframe: 'Project Timeframe',
-      goalAmount: 9000,
-      faqLink: 'http://www.google.com/'
-    });
+    const mockProject = testHelper.buildProject(1, 1, {});
+    const ownerId = mockProject.ownerId;
 
     const pathMilestonesXls = require('path').join(
       __dirname,
@@ -262,33 +257,17 @@ describe('Testing projectService getProjectList', () => {
   let projectService;
   let projectStatusDao;
   let milestoneService;
-
   const cardPhoto = 1;
   const coverPhoto = 2;
+
+  const mockProjects = testHelper.getMockProjects();
 
   beforeAll(() => {
     projectStatusDao = {};
 
     projectDao = {
       async getProjecListWithStatusFrom({ status }) {
-        return [
-          {
-            projectName: 'name',
-            mission: 'mision',
-            problemAddressed: 'problem',
-            ownerId: 1,
-            location: 'location',
-            timeframe: '10/10/2019',
-            cardPhoto,
-            coverPhoto,
-            pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
-            milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-            status,
-            createdAt: '2019-03-13T03:00:00.000Z',
-            updatedAt: '2019-03-13T03:00:00.000Z',
-            id: 1
-          }
-        ];
+        return mockProjects.filter(project => project.status >= status);
       }
     };
 
@@ -305,28 +284,11 @@ describe('Testing projectService getProjectList', () => {
   it('should return an array of all projects with status >= PENDING_APPROVAL', async () => {
     const status = projectStatus.PENDING_APPROVAL;
 
-    const mockProjects = [
-      {
-        projectName: 'name',
-        mission: 'mision',
-        problemAddressed: 'problem',
-        ownerId: 1,
-        location: 'location',
-        timeframe: '10/10/2019',
-        cardPhoto,
-        coverPhoto,
-        pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
-        milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-        status,
-        createdAt: '2019-03-13T03:00:00.000Z',
-        updatedAt: '2019-03-13T03:00:00.000Z',
-        id: 1
-      }
-    ];
-
     const projects = await projectService.getProjectList();
 
-    expect(projects).toEqual(mockProjects);
+    expect(projects).toEqual(
+      mockProjects.filter(project => project.status >= status)
+    );
   });
 });
 
@@ -339,29 +301,14 @@ describe('Testing projectService getActiveProjectList', () => {
   const cardPhoto = 1;
   const coverPhoto = 2;
 
+  const mockProjects = testHelper.getMockProjects();
+
   beforeAll(() => {
     projectStatusDao = {};
 
     projectDao = {
       async getProjecListWithStatusFrom({ status }) {
-        return [
-          {
-            projectName: 'name',
-            mission: 'mision',
-            problemAddressed: 'problem',
-            ownerId: 1,
-            location: 'location',
-            timeframe: '10/10/2019',
-            cardPhoto,
-            coverPhoto,
-            pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
-            milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-            status,
-            createdAt: '2019-03-13T03:00:00.000Z',
-            updatedAt: '2019-03-13T03:00:00.000Z',
-            id: 1
-          }
-        ];
+        return mockProjects.filter(project => project.status >= status);
       }
     };
 
@@ -378,28 +325,11 @@ describe('Testing projectService getActiveProjectList', () => {
   it('should return an array of all projects with status PUBLISHED', async () => {
     const status = projectStatus.PUBLISHED;
 
-    const mockProjects = [
-      {
-        projectName: 'name',
-        mission: 'mision',
-        problemAddressed: 'problem',
-        ownerId: 1,
-        location: 'location',
-        timeframe: '10/10/2019',
-        cardPhoto,
-        coverPhoto,
-        pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
-        milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-        status,
-        createdAt: '2019-03-13T03:00:00.000Z',
-        updatedAt: '2019-03-13T03:00:00.000Z',
-        id: 1
-      }
-    ];
-
     const projects = await projectService.getActiveProjectList();
 
-    expect(projects).toEqual(mockProjects);
+    expect(projects).toEqual(
+      mockProjects.filter(project => project.status >= status)
+    );
   });
 });
 
@@ -412,32 +342,14 @@ describe('Testing projectService getProjectWithId', () => {
   const cardPhoto = 1;
   const coverPhoto = 2;
 
+  const mockProjects = testHelper.getMockProjects();
+
   beforeAll(() => {
     projectStatusDao = {};
     milestoneService = {};
     projectDao = {
       async getProjectById({ projectId }) {
-        switch (projectId) {
-          case 1:
-            return {
-              projectName: 'name',
-              mission: 'mision',
-              problemAddressed: 'problem',
-              ownerId: 1,
-              location: 'location',
-              timeframe: '10/10/2019',
-              cardPhoto,
-              coverPhoto,
-              pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
-              milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-              status: 1,
-              createdAt: '2019-03-13T03:00:00.000Z',
-              updatedAt: '2019-03-13T03:00:00.000Z',
-              id: projectId
-            };
-          default:
-            return null;
-        }
+        return mockProjects.find(project => project.id === projectId);
       }
     };
     projectService = projectServiceBuilder({
@@ -453,9 +365,9 @@ describe('Testing projectService getProjectWithId', () => {
   });
 
   // eslint-disable-next-line prettier/prettier
-  it('should return null if project doesn\'t exist', async () => {
-    const project = await projectService.getProjectWithId({ projectId: 2 });
-    expect(project).toBe(null);
+  it("should return null if project doesn't exist", async () => {
+    const project = await projectService.getProjectWithId({ projectId: -1 });
+    expect(project).toBe(undefined);
   });
 });
 
@@ -463,6 +375,8 @@ describe('Testing projectService updateProjectStatus', () => {
   let projectDao;
   let projectService;
   let projectStatusDao;
+
+  const mockProjects = testHelper.getMockProjects();
 
   beforeAll(() => {
     projectStatusDao = {
@@ -476,25 +390,9 @@ describe('Testing projectService updateProjectStatus', () => {
     };
     projectDao = {
       async updateProjectStatus({ projectId, status }) {
-        return {
-          projectName: 'name',
-          mission: 'mission',
-          problemAddressed: 'problem',
-          location: 'location',
-          timeframe: 'time',
-          faqLink: 'http://www.google.com',
-          cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
-          coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
-          pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
-          milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-          goalAmount: 111,
-          status,
-          ownerId: 1,
-          projectAgreement: '',
-          createdAt: '2019-03-25T03:00:00.000Z',
-          updatedAt: '2019-03-28T03:00:00.000Z',
-          id: projectId
-        };
+        const project = mockProjects.find(project => project.id === projectId);
+        project.status = status;
+        return project;
       }
     };
 
@@ -504,13 +402,8 @@ describe('Testing projectService updateProjectStatus', () => {
       projectStatusDao
     });
 
-    projectService.getProjectWithId = async projectId => {
-      return {
-        id: projectId,
-        projectName: 'Project',
-        creationTransactionHash:
-          '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
-      };
+    projectService.getProjectWithId = async ({ projectId }) => {
+      return mockProjects.find(project => project.id === projectId);
     };
   });
 
@@ -528,9 +421,9 @@ describe('Testing projectService updateProjectStatus', () => {
   });
 
   // eslint-disable-next-line prettier/prettier
-  it('should return undefined if the projectStatus doesn\'t exist', async () => {
+  it("should return undefined if the projectStatus doesn't exist", async () => {
     const projectId = 1;
-    const status = 3;
+    const status = -1;
 
     const updatedProject = await projectService.updateProjectStatus({
       projectId,
@@ -544,37 +437,16 @@ describe('Testing projectService updateProjectStatus', () => {
 describe('Testing projectService deleteProject', () => {
   let projectDao;
   let projectService;
-  let projectModel;
-
-  const mockProject = {
-    projectName: 'name',
-    mission: 'mision',
-    problemAddressed: 'problem',
-    ownerId: 1,
-    location: 'location',
-    timeframe: '10/10/2019',
-    cardPhoto: `${__dirname}/mockFiles/projectCardPhoto.png`,
-    coverPhoto: `${__dirname}/mockFiles/projectCoverPhoto.png`,
-    pitchProposal: `${__dirname}/mockFiles/projectPitchProposal.pdf`,
-    milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-    status: 1,
-    createdAt: '2019-03-13T03:00:00.000Z',
-    updatedAt: '2019-03-13T03:00:00.000Z',
-    id: 1
-  };
+  let mockProjects = testHelper.getMockProjects();
 
   beforeEach(() => {
-    projectModel = {
-      projects: [mockProject],
-      destroy({ id }) {
-        const project = _.find(this.projects, element => element.id === id);
-        _.remove(this.projects, element => element.id === id);
-        return {
-          fetch: () => project
-        };
+    projectDao = {
+      deleteProject({ projectId }) {
+        const project = mockProjects.find(project => project.id === projectId);
+        mockProjects = mockProjects.filter(project => project.id !== projectId);
+        return project;
       }
     };
-    projectDao = require('../rest/dao/projectDao')({ projectModel });
     projectService = projectServiceBuilder({
       fastify,
       projectDao
@@ -582,15 +454,17 @@ describe('Testing projectService deleteProject', () => {
   });
 
   it('should return deleted project if exists', async () => {
-    let deletedProject = await projectService.deleteProject({ projectId: 1 });
-    expect(deletedProject).toBe(mockProject);
+    const deletedProject = await projectService.deleteProject({ projectId: 1 });
+    expect(deletedProject.id).toBe(1);
 
-    deletedProject = await projectService.deleteProject({ projectId: 1 });
-    expect(deletedProject).toBeUndefined();
+    const undefinedDeletedProject = await projectService.deleteProject({
+      projectId: 1
+    });
+    expect(undefinedDeletedProject).toBeUndefined();
   });
 
   // eslint-disable-next-line prettier/prettier
-  it('should return undefined if the project doesn\'t exist', async () => {
+  it("should return undefined if the project doesn't exist", async () => {
     deletedProject = await projectService.deleteProject({ projectId: -1 });
     expect(deletedProject).toBeUndefined();
   });
@@ -602,69 +476,22 @@ describe('Testing projectService getProjectMilestones', () => {
   let projectStatusDao;
   let milestoneService;
 
+  let mockProjects = testHelper.getMockProjects();
+
   beforeEach(() => {
     projectStatusDao = {};
     milestoneService = {
       async getMilestoneActivities(milestone) {
-        const activities = [
-          {
-            tasks: 'tasks A',
-            impact: 'impact A',
-            impactCriterion: 'criterion A',
-            signsOfSuccess: 'success A',
-            signsOfSuccessCriterion: 'successcriterion A',
-            category: 'category A',
-            keyPersonnel: 'key A',
-            budget: 'budget A',
-            quarter: milestone.quarter,
-            type: 'Activity',
-            id: 1,
-            milestone: milestone.id
-          }
-        ];
-
-        const milestoneWithActivities = {
-          ...milestone,
-          activities
-        };
-
-        return milestoneWithActivities;
+        const milestones = mockProjects.find(project =>
+          project.milestones.includes(m => m.id === milestone.id)
+        ).milestones;
+        return milestones.find(m => m.id === milestone);
       }
     };
 
     projectDao = {
       async getProjectMilestones({ projectId }) {
-        if (projectId === 1) {
-          return [
-            {
-              tasks: 'tasks',
-              impact: 'impact',
-              impactCriterion: 'criterion',
-              signsOfSuccess: 'success',
-              signsOfSuccessCriterion: 'successcriterion',
-              category: 'category',
-              keyPersonnel: 'key',
-              budget: 'budget',
-              quarter: '1',
-              id: 1,
-              project: projectId
-            },
-            {
-              tasks: 'task2',
-              impact: 'impact2',
-              impactCriterion: 'crit2',
-              signsOfSuccess: 'succ2',
-              signsOfSuccessCriterion: 'sicccrit2',
-              category: 'cat2',
-              keyPersonnel: 'key2',
-              budget: 'budget2',
-              quarter: '2',
-              id: 2,
-              project: projectId
-            }
-          ];
-        }
-        return [];
+        return mockProjects.find(project => project.id === projectId);
       }
     };
 
@@ -679,69 +506,9 @@ describe('Testing projectService getProjectMilestones', () => {
   it('should return a list of milestones with activities for an existing project', async () => {
     const projectId = 1;
 
-    const mockMilestonesWithActivities = [
-      {
-        tasks: 'tasks',
-        impact: 'impact',
-        impactCriterion: 'criterion',
-        signsOfSuccess: 'success',
-        signsOfSuccessCriterion: 'successcriterion',
-        category: 'category',
-        keyPersonnel: 'key',
-        budget: 'budget',
-        quarter: '1',
-        id: 1,
-        project: projectId,
-        type: 'Milestone',
-        activities: [
-          {
-            tasks: 'tasks A',
-            impact: 'impact A',
-            impactCriterion: 'criterion A',
-            signsOfSuccess: 'success A',
-            signsOfSuccessCriterion: 'successcriterion A',
-            category: 'category A',
-            keyPersonnel: 'key A',
-            budget: 'budget A',
-            quarter: '1',
-            type: 'Activity',
-            id: 1,
-            milestone: 1
-          }
-        ]
-      },
-      {
-        tasks: 'task2',
-        impact: 'impact2',
-        impactCriterion: 'crit2',
-        signsOfSuccess: 'succ2',
-        signsOfSuccessCriterion: 'sicccrit2',
-        category: 'cat2',
-        keyPersonnel: 'key2',
-        budget: 'budget2',
-        quarter: '2',
-        id: 2,
-        project: projectId,
-        type: 'Milestone',
-        activities: [
-          {
-            tasks: 'tasks A',
-            impact: 'impact A',
-            impactCriterion: 'criterion A',
-            signsOfSuccess: 'success A',
-            signsOfSuccessCriterion: 'successcriterion A',
-            category: 'category A',
-            keyPersonnel: 'key A',
-            budget: 'budget A',
-            quarter: '2',
-            type: 'Activity',
-            id: 1,
-            milestone: 2
-          }
-        ]
-      }
-    ];
-
+    const mockMilestonesWithActivities = mockProjects.find(
+      project => project.id === projectId
+    ).milestones;
     const milestones = await projectService.getProjectMilestones(projectId);
 
     await expect(milestones).toEqual(mockMilestonesWithActivities);
@@ -812,7 +579,7 @@ describe('Testing projectService downloadMilestonesTemplate', () => {
   });
 
   // eslint-disable-next-line prettier/prettier
-  it('should return an error if the file doesn\'t exist', async () => {
+  it("should return an error if the file doesn't exist", async () => {
     fs.existsSync.mockReturnValueOnce(false);
 
     const mockError = {
@@ -874,7 +641,7 @@ describe('Testing projectService getProjectMilestonesPath', () => {
   );
 
   // eslint-disable-next-line prettier/prettier
-  it('should throw an error if the project doesn\'t exist', async () => {
+  it("should throw an error if the project doesn't exist", async () => {
     const missingProject = projectId + 1;
 
     await expect(
@@ -1044,7 +811,7 @@ describe('Testing projectService downloadAgreement', () => {
   it('should return an error if the project does not have an agreement', async () => {
     const mockError = {
       // eslint-disable-next-line prettier/prettier
-      error: 'ERROR: Project doesn\'t have an agreement uploaded',
+      error: "ERROR: Project doesn't have an agreement uploaded",
       status: 409
     };
 
@@ -1132,7 +899,7 @@ describe('Testing projectService downloadProposal', () => {
   it('should return an error if the project does not have an proposal', async () => {
     const mockError = {
       // eslint-disable-next-line prettier/prettier
-      error: 'ERROR: Project doesn\'t have a pitch proposal uploaded',
+      error: "ERROR: Project doesn't have a pitch proposal uploaded",
       status: 409
     };
 
