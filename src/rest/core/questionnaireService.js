@@ -17,7 +17,7 @@ const questionnaireService = ({
         });
       });
     });
-    answerQuestionDao.createQuestionnaireEntry(proccessedQuestionnaire);
+    await answerQuestionDao.createQuestionnaireEntry(proccessedQuestionnaire);
   },
 
   async getAnswersOfUser(user) {

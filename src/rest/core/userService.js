@@ -174,11 +174,10 @@ const userService = ({
           };
         }
 
-        questionnaireService.saveQuestionnaireOfUser(
+        await questionnaireService.saveQuestionnaireOfUser(
           savedUser.id,
           questionnaire
         );
-
         // sends welcome email
         const info = await transporter.sendMail({
           from: '"Circles of Angels Support" <coa@support.com>',
@@ -189,7 +188,6 @@ const userService = ({
           <p>We are reviewing your account details. You will be notified once we are done. </br></p>
           <p>Thank you for your support. </br></p>`
         });
-
         if (!isEmpty(info.rejected)) {
           fastify.log.info(
             '[User Service] :: Invalid email account',
