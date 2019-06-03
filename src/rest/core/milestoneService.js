@@ -721,20 +721,6 @@ const milestoneService = ({
       }
 
       if (
-        budgetStatusId === milestoneBudgetStatus.FUNDED &&
-        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMED
-      ) {
-        fastify.log.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} needs to be Completed 
-          in order to set the budget status to transferred`
-        );
-        return {
-          status: 409,
-          error: 'Budget transfer status needs to be Claimed'
-        };
-      }
-
-      if (
         budgetStatusId === milestoneBudgetStatus.CLAIMABLE &&
         milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED &&
         (previousMilestone &&
@@ -742,13 +728,13 @@ const milestoneService = ({
             milestoneBudgetStatus.FUNDED)
       ) {
         fastify.log.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} its blocked, 
-          need complete all previous milestones`
+          `[Milestone Service] :: Milestone ID ${milestoneId} is not blocked 
+          or previous milestones are not funded`
         );
         return {
           status: 409,
           error:
-            'Needs complete all previos milestones before claim this milestone!'
+            'All previous milestones need to be funded before making this milestone claimable.'
         };
       }
 
@@ -757,12 +743,26 @@ const milestoneService = ({
         milestone.budgetStatus !== milestoneBudgetStatus.CLAIMABLE
       ) {
         fastify.log.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} its blocked, 
-          need complete all previous milestones`
+          `[Milestone Service] :: Milestone ID ${milestoneId} is not claimable.`
         );
         return {
           status: 409,
-          error: 'Only Claimable Milestones can be Claim'
+          error: 'Only claimable milestones can be claimed'
+        };
+      }
+
+      if (
+        budgetStatusId === milestoneBudgetStatus.FUNDED &&
+        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMED
+      ) {
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} needs to be claimed 
+          in order to set the budget status to Funded`
+        );
+        return {
+          status: 409,
+          error:
+            'The milestone needs to be Claimed in order to set the budget status to Funded'
         };
       }
 
@@ -796,6 +796,30 @@ const milestoneService = ({
           status: 500,
           error: 'Milestone could not be updated on blockchain'
         };
+      }
+      // makes next milestones claimable
+      if (budgetStatusId === milestoneBudgetStatus.FUNDED && nextMilestone) {
+        fastify.log.info(
+          '[Milestone Service] :: Updating next milestone ID',
+          milestones[nextMilestone].id
+        );
+        const updatedNextMilestone = await milestoneDao.updateBudgetStatus(
+          milestones[nextMilestone].id,
+          milestoneBudgetStatus.CLAIMABLE
+        );
+
+        await fastify.eth.updateMilestonFundStatus(user.address, user.pwd, {
+          milestoneId: milestones[nextMilestone].id,
+          budgetStatusId: milestoneBudgetStatus.CLAIMABLE
+        });
+
+        if (!updatedNextMilestone || updatedNextMilestone == null) {
+          fastify.log.error(
+            `[Milestone Service] :: Next milestone ID ${
+              milestones[nextMilestone].id
+            } could not be updated`
+          );
+        }
       }
 
       return updatedMilestone;
