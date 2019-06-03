@@ -9,7 +9,7 @@ const {
   addPathToFilesProperties,
   addTimestampToFilename
 } = require('../util/files');
-const { projectStatus } = require('../util/constants');
+const { projectStatus, blockchainStatus } = require('../util/constants');
 
 const unlinkPromise = promisify(fs.unlink);
 
@@ -50,6 +50,7 @@ const projectService = ({
 
       newProject.ownerId = ownerId;
       newProject.status = projectStatus.PENDING_APPROVAL;
+      newProject.blockchainStatus = blockchainStatus.PENDING;
 
       fastify.log.info('[Project Service] :: Saving project:', newProject);
 
@@ -127,6 +128,7 @@ const projectService = ({
       );
 
       savedProject.creationTransactionHash = transactionHash;
+      savedProject.blockchainStatus = blockchainStatus.SENT;
 
       fastify.log.info(
         '[Project Service] :: transaction hash of project creation: ',
@@ -225,8 +227,6 @@ const projectService = ({
         '[Project Service] :: Creating Milestones for Project ID:',
         updatedProject.id
       );
-
-      // TODO: create milestones in the blockchain
 
       const milestones = await milestoneService.createMilestones(
         milestonesPath,
@@ -436,20 +436,18 @@ const projectService = ({
   },
 
   async updateProjectStatus({ projectId, status }) {
-    if (
-      status === projectStatus.IN_PROGRESS ||
-      status === projectStatus.PUBLISHED
-    ) {
-      const project = await this.getProjectWithId({ projectId });
-      const isConfirmedOnBlockchain = await fastify.eth.isTransactionConfirmed(
-        project.creationTransactionHash
-      );
+    const project = await this.getProjectWithId({ projectId });
+    const existsStatus = Object.values(projectStatus).includes(status);
+    if (status === projectStatus.IN_PROGRESS) {
+      const isConfirmedOnBlockchain =
+        project.blockchainStatus === blockchainStatus.CONFIRMED;
       if (!isConfirmedOnBlockchain)
-        throw Error(
-          `Project ${project.projectName} is not confirmed on blockchain yet`
-        );
+        return {
+          error: `Project ${
+            project.projectName
+          } is not confirmed on blockchain yet`
+        };
     }
-    const existsStatus = await projectStatusDao.existStatus({ status });
     if (existsStatus) {
       return projectDao.updateProjectStatus({ projectId, status });
     }
@@ -915,13 +913,11 @@ const projectService = ({
         userOwner.pwd,
         { projectId }
       );
-      const startedProject = await projectDao.updateProjectStatusWithTransaction(
-        {
-          projectId,
-          status: projectStatus.IN_PROGRESS,
-          transactionHash
-        }
-      );
+      const startedProject = await projectDao.updateProjectTransaction({
+        projectId,
+        status: projectStatus.PUBLISHED,
+        transactionHash
+      });
 
       await milestoneService.startMilestonesOfProject(
         startedProject,
@@ -1227,6 +1223,13 @@ const projectService = ({
       );
       throw Error('Error getting experiences');
     }
+  },
+
+  async updateBlockchainStatus(projectId, status) {
+    if (!Object.values(blockchainStatus).includes(status)) {
+      return { error: 'Invalid Blockchain status' };
+    }
+    return projectDao.updateBlockchainStatus(projectId, status);
   }
 });
 

@@ -49,6 +49,10 @@ module.exports = {
       collection: 'milestone',
       via: 'project'
     },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } }
+    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    blockchainStatus: {
+      columnName: 'blockchainStatus',
+      model: 'blockchain_status'
+    }
   }
 };

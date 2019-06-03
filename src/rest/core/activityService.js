@@ -7,7 +7,7 @@ const sha256 = require('sha256');
 const { promisify } = require('util');
 const { forEachPromise } = require('../util/promises');
 const { evidenceFileTypes, userRoles } = require('../util/constants');
-const { activityStatus } = require('../util/constants');
+const { activityStatus, blockchainStatus } = require('../util/constants');
 
 const readFile = promisify(fs.readFile);
 
@@ -155,7 +155,7 @@ const activityService = ({
    * @param {array} files
    * @returns success | errors
    */
-  async addEvidenceFiles(activityId, files) {
+  async addEvidenceFiles(activityId, files, user) {
     const errors = [];
     try {
       // creates the directory where this activities' evidence files will be saved if not exists
@@ -164,6 +164,7 @@ const activityService = ({
           fastify.configs.fileServer.filePath
         }/activities/${activityId}/evidence`
       );
+      const hashes = [];
       if (files.length && files.length > 0) {
         await Promise.all(
           files.map(async file => {
@@ -173,6 +174,8 @@ const activityService = ({
                 error: addedEvidence.error,
                 file: file.name
               });
+            } else {
+              hashes.push(addedEvidence.fileHash);
             }
           })
         );
@@ -183,8 +186,17 @@ const activityService = ({
             error: addedEvidence.error,
             file: files.name
           });
+        } else {
+          hashes.push(addedEvidence.fileHash);
         }
       }
+      const userInfo = await userService.getUserById(user.id);
+      await fastify.eth.uploadHashEvidenceToActivity(
+        userInfo.address,
+        userInfo.pwd,
+        activityId,
+        hashes
+      );
     } catch (error) {
       fastify.log.error(
         '[Activity Service] :: There was an error uploading the evidence:',
@@ -838,19 +850,13 @@ const activityService = ({
       throw Error('Error getting Activity details');
     }
   },
-  async completeActivity(activityId, getMilestone) {
+  async completeActivity(activityId) {
     try {
       const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
-      const activity = await activityDao.getActivityById(activityId);
-      const milestone = await getMilestone(activity.milestone);
       const transactionHash = await fastify.eth.validateActivity(
         oracle.user.address,
         oracle.user.pwd,
-        {
-          activityId,
-          milestoneId: milestone.id,
-          projectId: milestone.project
-        }
+        { activityId }
       );
       return activityDao.updateStatusWithTransaction(
         activityId,
@@ -908,6 +914,13 @@ const activityService = ({
       );
       throw Error('Error getting Activities');
     }
+  },
+
+  async updateBlockchainStatus(activityId, status) {
+    if (!Object.values(blockchainStatus).includes(status)) {
+      return { error: 'Invalid Blockchain status' };
+    }
+    return activityDao.updateBlockchainStatus(activityId, status);
   }
 });
 

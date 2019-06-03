@@ -32,14 +32,22 @@ const userRoles = {
 };
 
 const milestoneBudgetStatus = {
-  PENDING: 1,
-  TRANSFERRED: 2
+  CLAIMABLE: 1,
+  CLAIMED: 2,
+  FUNDED: 3,
+  BLOCKED: 4
 };
 
 const userRegistrationStatus = {
   PENDING_APPROVAL: 1,
   APPROVED: 2,
   REJECTED: 3
+};
+
+const blockchainStatus = {
+  PENDING: 1,
+  SENT: 2,
+  CONFIRMED: 3
 };
 
 module.exports = {
@@ -49,5 +57,6 @@ module.exports = {
   activityStatus,
   userRoles,
   milestoneBudgetStatus,
-  userRegistrationStatus
+  userRegistrationStatus,
+  blockchainStatus
 };

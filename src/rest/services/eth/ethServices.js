@@ -9,22 +9,45 @@ const ethConfig = require('../../../../config/configs')(
  */
 const ethServices = async (providerHost, { logger }) => {
   const web3 = new Web3(providerHost);
-  const COAContract = new web3.eth.Contract(
-    ethConfig.CONTRACT_ABI,
-    ethConfig.CONTRACT_ADDRESS,
+  const COAProjectAdmin = new web3.eth.Contract(
+    ethConfig.CONTRACT_ADMIN_ABI,
+    ethConfig.CONTRACT_ADMIN_ADDRESS,
     ethConfig.DEFAULT_CONFIG
   );
 
+  const COAOracle = new web3.eth.Contract(
+    ethConfig.CONTRACT_ORACLE_ABI,
+    ethConfig.CONTRACT_ORACLE_ADDRESS,
+    ethConfig.DEFAULT_CONFIG
+  );
+
+  const toBytes64Array = array => {
+    array = array.map(row =>
+      row.split('').map(c => web3.utils.asciiToHex(c).slice(0, 4))
+    );
+    return array;
+  };
+
+  const toStringArray = array => {
+    array = array.map(row => row.map(c => web3.utils.toAscii(c)).join(''));
+    return array;
+  };
+
+  const toChecksum = address => {
+    return web3.utils.toChecksumAddress(address);
+  };
+
   const makeTx = async (sender, pwd, method) => {
+    addressSender = toChecksum(sender);
     await web3.eth.personal.unlockAccount(
-      sender,
+      addressSender,
       pwd,
       ethConfig.UNLOCK_DURATION
     );
     return new Promise((resolve, reject) => {
       method.send(
         {
-          from: sender,
+          from: addressSender,
           gasLimit: 10000000000
         },
         (err, hash) => {
@@ -59,6 +82,13 @@ const ethServices = async (providerHost, { logger }) => {
     });
   };
 
+  const suscribeToEvent = async (event, callback) => {
+    event({}, (error, event) => {
+      if (error) return { error };
+      callback(event);
+    });
+  };
+
   return {
     async createAccount(pwd) {
       const account = await web3.eth.personal.newAccount(pwd);
@@ -71,7 +101,8 @@ const ethServices = async (providerHost, { logger }) => {
       logger.info(
         `[SC::Create Project] Creating Project: ${projectId} - ${projectName}`
       );
-      const create = COAContract.methods.createProject(
+      seAddress = toChecksum(seAddress);
+      const create = COAProjectAdmin.methods.createProject(
         projectId,
         seAddress,
         projectName
@@ -81,7 +112,7 @@ const ethServices = async (providerHost, { logger }) => {
 
     async startProject(sender, pwd, { projectId }) {
       logger.info(`[SC::Start Project] Starting Project: ${projectId}`);
-      const start = COAContract.methods.startProject(projectId);
+      const start = COAProjectAdmin.methods.startProject(projectId);
       return makeTx(sender, pwd, start);
     },
 
@@ -94,7 +125,7 @@ const ethServices = async (providerHost, { logger }) => {
         `[SC::Create Milestone] Creating Milestone: ${milestoneId} - ${description}`
       );
 
-      const createMilestone = COAContract.methods.createMilestone(
+      const createMilestone = COAProjectAdmin.methods.createMilestone(
         milestoneId,
         projectId,
         budget,
@@ -113,11 +144,11 @@ const ethServices = async (providerHost, { logger }) => {
         `[SC::Create Activity] Creating Activity: ${activityId} - ${description}`
       );
 
-      const createActivity = COAContract.methods.createActivity(
+      const createActivity = COAProjectAdmin.methods.createActivity(
         activityId,
         milestoneId,
         projectId,
-        oracleAddress,
+        toChecksum(oracleAddress),
         description
       );
 
@@ -128,25 +159,11 @@ const ethServices = async (providerHost, { logger }) => {
      * @param {*} onError error callback
      * @param {*} activity {activityId, projectId, milestoneId}
      */
-    async validateActivity(
-      sender,
-      pwd,
-      { activityId, milestoneId, projectId }
-    ) {
+    async validateActivity(sender, pwd, { activityId }) {
       logger.info(`[SC::Validate Activity] Validate Activity: ${activityId}`);
-      logger.info(
-        `[SC::Validate Activity] Validate Activity project: ${projectId}`
-      );
-      logger.info(
-        `[SC::Validate Activity] Validate Activity milestone: ${milestoneId}`
-      );
       logger.info(`[SC::Validate Activity] Validate Activity: ${sender}`);
 
-      const validateActivity = COAContract.methods.validateActivity(
-        activityId,
-        milestoneId,
-        projectId
-      );
+      const validateActivity = COAOracle.methods.validateActivity(activityId);
 
       return makeTx(sender, pwd, validateActivity);
     },
@@ -155,6 +172,50 @@ const ethServices = async (providerHost, { logger }) => {
       return Boolean(
         transaction && transaction.blockHash && transaction.blockNumber
       );
+    },
+
+    async suscribeNewProjectEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.NewProject, callback);
+    },
+
+    async suscribeNewMilestoneEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.NewMilestone, callback);
+    },
+
+    async suscribeNewActivityEvent(callback) {
+      suscribeToEvent(COAOracle.events.NewActivity, callback);
+    },
+
+    async suscribeActivityValidatedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.ActivityValidated, callback);
+    },
+
+    async suscribeMilestoneCompletedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.MilestoneCompleted, callback);
+    },
+
+    async suscribeProjectCompletedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
+    },
+
+    async uploadHashEvidenceToActivity(sender, pwd, activityId, hashes) {
+      try {
+        const uploadHashEvidence = COAOracle.methods.uploadHashEvidence(
+          activityId,
+          toBytes64Array(hashes)
+        );
+        return makeTx(sender, pwd, uploadHashEvidence);
+      } catch (error) {
+        return { error };
+      }
+    },
+
+    async updateMilestonFundStatus(sender, pwd, { milestoneId, status }) {
+      const updateMilestoneFundStatus = COAProjectAdmin.methods.updateMilestoneFundStatus(
+        milestoneId,
+        status
+      );
+      return makeTx(sender, pwd, updateMilestoneFundStatus);
     }
   };
 };

@@ -1,4 +1,5 @@
 const { forEachPromise } = require('../util/promises');
+const { projectStatus } = require('../util/constants');
 
 const ProjectDao = ({ projectModel, userDao }) => ({
   async saveProject(project) {
@@ -22,14 +23,10 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     return response;
   },
 
-  async updateProjectStatusWithTransaction({
-    projectId,
-    status,
-    transactionHash
-  }) {
+  async updateProjectTransaction({ projectId, transactionHash }) {
     const response = projectModel
       .updateOne({ id: projectId })
-      .set({ status, transactionHash });
+      .set({ transactionHash });
     return response;
   },
 
@@ -82,6 +79,7 @@ const ProjectDao = ({ projectModel, userDao }) => ({
 
     delete toUpdate.id;
     delete toUpdate.ownerId;
+    delete toUpdate.blockchainStatus;
 
     const savedProject = await projectModel
       .updateOne({ id })
@@ -108,11 +106,21 @@ const ProjectDao = ({ projectModel, userDao }) => ({
   },
 
   async getProjectsByOwner(ownerId) {
-    return projectModel.find({ ownerId });
+    return projectModel.find({
+      ownerId,
+      status: { '>=': projectStatus.PUBLISHED }
+    });
   },
 
   async getAllProjectsById(projectsId) {
-    return projectModel.find({ id: projectsId });
+    return projectModel.find({
+      id: projectsId,
+      status: { '>=': projectStatus.PUBLISHED }
+    });
+  },
+
+  async updateBlockchainStatus(id, blockchainStatus) {
+    return projectModel.updateOne({ id }).set({ blockchainStatus });
   }
 });
 

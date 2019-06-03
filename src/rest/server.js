@@ -2,6 +2,7 @@ const { isEmpty } = require('lodash');
 const ethService = require('./services/eth/ethServices');
 const ethServiceMock = require('./services/eth/ethServiceMock');
 const { helperBuilder } = require('./services/helper');
+const eventListener = require('./services/eth/eventListener');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -59,6 +60,7 @@ module.exports.start = async ({ db, logger, configs }) => {
 
     await fastify.listen(configs.server);
     await helperBuilder(fastify);
+    eventListener(fastify);
     module.exports.fastify = fastify;
   } catch (err) {
     process.exit(1);
@@ -127,6 +129,16 @@ const initJWT = fastify => {
         reply.status(500).send({ error: 'There was an error authenticating' });
       }
     });
+    fastify.decorate('withUser', async (request, reply) => {
+      try {
+        const token = getToken(request,reply);
+        if (token) request.user = await fastify.jwt.verify(token);
+      }
+      catch (error) {
+        fastify.log.error('[Server] :: There was an error authenticating', err);
+        reply.status(500).send({ error: 'There was an error authenticating' });
+      }
+    })
   });
   fastify.register(jwtPlugin);
 };

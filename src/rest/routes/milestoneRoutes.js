@@ -34,7 +34,7 @@ const routes = async fastify => {
   fastify.put(
     `${basePath}/:id/budgetStatus`,
     {
-      beforeHandler: [fastify.generalAuth],
+      beforeHandler: [fastify.generalAuth, fastify.withUser],
       schema: {
         params: {
           id: { type: 'number' }
@@ -53,7 +53,7 @@ const routes = async fastify => {
       }
     },
     async (req, reply) => {
-      const { milestoneService } = apiHelper.helper.services;
+      const { milestoneService, userService } = apiHelper.helper.services;
       fastify.log.info(
         `[Milestone Routes] :: PUT request at /${basePath}/${
           req.params.id
@@ -65,9 +65,11 @@ const routes = async fastify => {
       const { id } = req.params;
 
       try {
+        const user = await userService.getUserById(fastify.user.id);
         const response = await milestoneService.updateBudgetStatus(
           id,
-          budgetStatusId
+          budgetStatusId,
+          user
         );
 
         if (response.error) {

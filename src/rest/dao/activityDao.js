@@ -2,7 +2,8 @@ const saveActivity = activityModel => async (activity, milestoneId) => {
   const toSave = {
     ...activity,
     milestone: milestoneId,
-    status: 1
+    status: 1,
+    blockchainStatus: 1
   };
   const createdActivity = await activityModel.create(toSave);
   return createdActivity;
@@ -18,7 +19,10 @@ const updateActivity = activityModel => async (activity, activityId) => {
 
   delete toUpdate.id;
   delete toUpdate.milestone;
+  delete toUpdate.blockchainStatus;
+
   toUpdate.status = toUpdate.status || 1;
+  toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
 
   const savedActivity = await activityModel
     .updateOne({ id: activityId })
@@ -43,11 +47,19 @@ const updateStatusWithTransaction = activityModel => async (
   return activityModel.update(activityId).set({ status, transactionHash });
 };
 
+const updateBlockchainStatus = activityModel => async (
+  activityId,
+  blockchainStatus
+) => {
+  return activityModel.updateOne({ id: activityId }).set({ blockchainStatus });
+};
+
 module.exports = activityModel => ({
   saveActivity: saveActivity(activityModel),
   updateActivity: updateActivity(activityModel),
   getActivityById: getActivityById(activityModel),
   deleteActivity: deleteActivity(activityModel),
   updateStatus: updateStatus(activityModel),
-  updateStatusWithTransaction: updateStatusWithTransaction(activityModel)
+  updateStatusWithTransaction: updateStatusWithTransaction(activityModel),
+  updateBlockchainStatus: updateBlockchainStatus(activityModel)
 });

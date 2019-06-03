@@ -1,6 +1,10 @@
 const { values, isEmpty } = require('lodash');
 const { forEachPromise } = require('../util/promises');
-const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
+const {
+  activityStatus,
+  milestoneBudgetStatus,
+  blockchainStatus
+} = require('../util/constants');
 
 const milestoneService = ({
   fastify,
@@ -90,10 +94,16 @@ const milestoneService = ({
         new Promise(resolve => {
           process.nextTick(async () => {
             if (!this.isMilestoneEmpty(milestone)) {
+              const isFirstMilestone = isEmpty(
+                await milestoneDao.getMilestonesByProject(projectId)
+              );
               const activityList = milestone.activityList.slice(0);
               const savedMilestone = await milestoneDao.saveMilestone({
                 milestone,
-                projectId
+                projectId,
+                budgetStatus: isFirstMilestone
+                  ? milestoneBudgetStatus.CLAIMABLE
+                  : milestoneBudgetStatus.BLOCKED
               });
               fastify.log.info(
                 '[Milestone Service] :: Milestone created:',
@@ -181,7 +191,6 @@ const milestoneService = ({
     const milestoneActivities = await milestoneDao.getMilestoneActivities(
       milestoneId
     );
-    console.log(milestoneActivities.activities)
     return !isEmpty(milestoneActivities.activities);
   },
 
@@ -638,26 +647,16 @@ const milestoneService = ({
 
   async startMilestonesOfProject(project, owner) {
     const milestones = await this.getMilestonesByProject(project.id);
-    milestones.forEach(async milestone => {
+
+    for (let i = 0; i < milestones.length; i++) {
+      const milestone = milestones[i];
       await fastify.eth.createMilestone(owner.address, owner.pwd, {
         milestoneId: milestone.id,
         projectId: project.id,
         budget: milestone.budget,
         description: milestone.tasks
       });
-      const activities = await this.getMilestoneActivities(milestone);
-
-      activities.activities.forEach(async activity => {
-        const oracle = await activityService.getOracleFromActivity(activity.id);
-        await fastify.eth.createActivity(owner.address, owner.pwd, {
-          activityId: activity.id,
-          milestoneId: milestone.id,
-          projectId: project.id,
-          oracleAddress: oracle.user.address,
-          description: activity.tasks
-        });
-      });
-    });
+    }
   },
 
   async getMilestoneById(milestoneId) {
@@ -689,13 +688,17 @@ const milestoneService = ({
    * @param {number} budgetStatusId
    * @returns updated milestone | error
    */
-  async updateBudgetStatus(milestoneId, budgetStatusId) {
+  async updateBudgetStatus(milestoneId, budgetStatusId, user) {
     fastify.log.info(
       `[Milestone Service] :: Updating Milestone ID ${milestoneId} budget status. 
       New status ID: ${budgetStatusId}`
     );
     try {
       const milestone = await milestoneDao.getMilestoneById(milestoneId);
+      const actualStatus = await milestone.status.budgetStatus;
+      const milestones = await this.getMilestonesByProject(milestone.project);
+      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
+      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
 
       if (!milestone || milestone == null) {
         fastify.log.error(
@@ -707,10 +710,7 @@ const milestoneService = ({
         };
       }
 
-      if (
-        budgetStatusId !== milestoneBudgetStatus.TRANSFERRED &&
-        budgetStatusId !== milestoneBudgetStatus.PENDING
-      ) {
+      if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
         fastify.log.error(
           `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
         );
@@ -720,18 +720,49 @@ const milestoneService = ({
         };
       }
 
-      // the milestone needs to be completed in order to set the budget status to transferred
       if (
-        budgetStatusId === milestoneBudgetStatus.TRANSFERRED &&
-        milestone.status !== activityStatus.COMPLETED
+        budgetStatusId === milestoneBudgetStatus.CLAIMABLE &&
+        milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED &&
+        (previousMilestone &&
+          milestones[previousMilestone].budgetStatus !==
+            milestoneBudgetStatus.FUNDED)
       ) {
         fastify.log.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} needs to be Completed 
-          in order to set the budget status to transferred`
+          `[Milestone Service] :: Milestone ID ${milestoneId} is not blocked 
+          or previous milestones are not funded`
         );
         return {
           status: 409,
-          error: 'Milestone Status needs to be Completed'
+          error:
+            'All previous milestones need to be funded before making this milestone claimable.'
+        };
+      }
+
+      if (
+        budgetStatusId === milestoneBudgetStatus.CLAIMED &&
+        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMABLE
+      ) {
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} is not claimable.`
+        );
+        return {
+          status: 409,
+          error: 'Only claimable milestones can be claimed'
+        };
+      }
+
+      if (
+        budgetStatusId === milestoneBudgetStatus.FUNDED &&
+        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMED
+      ) {
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} needs to be claimed 
+          in order to set the budget status to Funded`
+        );
+        return {
+          status: 409,
+          error:
+            'The milestone needs to be Claimed in order to set the budget status to Funded'
         };
       }
 
@@ -748,6 +779,47 @@ const milestoneService = ({
           status: 500,
           error: 'Milestone could not be updated'
         };
+      }
+
+      const txHash = await fastify.eth.updateMilestonFundStatus(
+        user.address,
+        user.pwd,
+        { milestoneId, budgetStatusId }
+      );
+
+      if (!txHash) {
+        await milestoneDao.updateBudgetStatus(milestoneId, actualStatus);
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} could not be updated on blockchain`
+        );
+        return {
+          status: 500,
+          error: 'Milestone could not be updated on blockchain'
+        };
+      }
+      // makes next milestones claimable
+      if (budgetStatusId === milestoneBudgetStatus.FUNDED && nextMilestone) {
+        fastify.log.info(
+          '[Milestone Service] :: Updating next milestone ID',
+          milestones[nextMilestone].id
+        );
+        const updatedNextMilestone = await milestoneDao.updateBudgetStatus(
+          milestones[nextMilestone].id,
+          milestoneBudgetStatus.CLAIMABLE
+        );
+
+        await fastify.eth.updateMilestonFundStatus(user.address, user.pwd, {
+          milestoneId: milestones[nextMilestone].id,
+          budgetStatusId: milestoneBudgetStatus.CLAIMABLE
+        });
+
+        if (!updatedNextMilestone || updatedNextMilestone == null) {
+          fastify.log.error(
+            `[Milestone Service] :: Next milestone ID ${
+              milestones[nextMilestone].id
+            } could not be updated`
+          );
+        }
       }
 
       return updatedMilestone;
@@ -780,6 +852,13 @@ const milestoneService = ({
       );
       throw Error('Error getting all available budget transfer status');
     }
+  },
+
+  async updateBlockchainStatus(milestoneId, status) {
+    if (!Object.values(blockchainStatus).includes(status)) {
+      return { error: 'Invalid Blockchain status' };
+    }
+    return milestoneDao.updateBlockchainStatus(milestoneId, status);
   }
 });
 
