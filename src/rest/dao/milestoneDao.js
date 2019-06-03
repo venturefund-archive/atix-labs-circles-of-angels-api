@@ -55,7 +55,9 @@ const deleteMilestone = milestoneModel => async milestoneId => {
 };
 
 const getMilestonesByProject = milestoneModel => async projectId => {
-  const milestones = await milestoneModel.find({ project: projectId });
+  const milestones = await milestoneModel
+    .find({ project: projectId })
+    .sort('id ASC');
   return milestones;
 };
 
