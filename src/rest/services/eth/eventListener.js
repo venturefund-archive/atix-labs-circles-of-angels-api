@@ -9,7 +9,14 @@ const eventListener = async fastify => {
     userService
   } = helper.services;
 
-  fastify.eth.suscribeNewProjectEvent(async event => {
+  const { blockchainBlockDao } = helper.daos;
+
+  const updateLastBlock = async event => {
+    const { blockNumber, transactionHash } = event;
+    return blockchainBlockDao.updateLastBlock(blockNumber, transactionHash);
+  };
+
+  const onNewProjectEvent = async event => {
     fastify.log.info('[Event listener] :: received New Project event', event);
     try {
       let { id } = event.returnValues;
@@ -23,6 +30,7 @@ const eventListener = async fastify => {
         fastify.log.error('[Event listener] :: Error updating status: ', error);
         return;
       }
+      await updateLastBlock(event);
       fastify.log.info(
         '[Event listener] :: successfully updated blockchain status of project ',
         id
@@ -30,9 +38,9 @@ const eventListener = async fastify => {
     } catch (error) {
       fastify.log.error(error);
     }
-  });
+  };
 
-  fastify.eth.suscribeNewMilestoneEvent(async event => {
+  const onNewMilestoneEvent = async event => {
     fastify.log.info('[Event listener] :: received New Milestone event', event);
     try {
       let { id, projectId } = event.returnValues;
@@ -61,8 +69,6 @@ const eventListener = async fastify => {
         milestone
       )).activities;
 
-      
-
       for (let j = 0; j < activities.length; j++) {
         const activity = activities[j];
         const oracle = await activityService.getOracleFromActivity(activity.id);
@@ -74,7 +80,7 @@ const eventListener = async fastify => {
           description: activity.tasks
         });
       }
-
+      await updateLastBlock(event);
       fastify.log.info(
         '[Event listener] :: successfully updated blockchain status of milestone ',
         id
@@ -82,9 +88,9 @@ const eventListener = async fastify => {
     } catch (error) {
       fastify.log.error(error);
     }
-  });
+  };
 
-  fastify.eth.suscribeNewActivityEvent(async event => {
+  const onNewActivityEvent = async event => {
     fastify.log.info('[Event listener] :: received New Activity event', event);
     try {
       let { id, milestoneId, projectId } = event.returnValues;
@@ -140,6 +146,7 @@ const eventListener = async fastify => {
 
         fastify.log.info('[Event listener] :: Project started:', projectId);
       }
+      await updateLastBlock(event);
       fastify.log.info(
         '[Event listener] :: successfully updated blockchain status of activity',
         id
@@ -147,7 +154,37 @@ const eventListener = async fastify => {
     } catch (error) {
       fastify.log.error(error);
     }
-  });
+  };
+
+  const eventMethodMap = {
+    NewProject: onNewProjectEvent,
+    NewMilestone: onNewMilestoneEvent,
+    NewActivity: onNewActivityEvent
+  };
+
+  return {
+    async recoverPastEvents() {
+      try {
+        const lastBlock = await blockchainBlockDao.getLastBlock();
+        const events = await fastify.eth.getAllPastEvents({
+          fromBlock: lastBlock.blockNumber +1  || 0
+        });
+        for (eventKey in events) {
+          const event = events[eventKey];
+          if (eventMethodMap[event.event])
+            eventMethodMap[event.event](event);
+        }
+      } catch (error) {
+        fastify.log.error(error);
+      }
+    },
+
+    async initEventListener() {
+      fastify.eth.suscribeNewProjectEvent(onNewProjectEvent);
+      fastify.eth.suscribeNewMilestoneEvent(onNewMilestoneEvent);
+      fastify.eth.suscribeNewActivityEvent(onNewActivityEvent);
+    }
+  };
 };
 
 module.exports = eventListener;
