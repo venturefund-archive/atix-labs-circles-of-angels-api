@@ -19,6 +19,16 @@ const ethServices = async (providerHost, { logger }) => {
     ethConfig.DEFAULT_CONFIG
   );
 
+  const toBytes64Array = array => {
+    array = array.map(row => row.split("").map(c => web3.utils.asciiToHex(c).slice(0,4)));
+    return array;
+  };
+  
+  const toStringArray = array => {
+    array = array.map(row => row.map(c => web3.utils.toAscii(c)).join(""));
+    return array;
+  };
+
   const toChecksum = address => {
     return web3.utils.toChecksumAddress(address);
   };
@@ -182,6 +192,16 @@ const ethServices = async (providerHost, { logger }) => {
 
     async suscribeProjectCompletedEvent(callback) {
       suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
+    },
+
+    async uploadHashEvidenceToActivity(sender, pwd, activityId, hashes) {
+      try {
+        const uploadHashEvidence = COAOracle.methods.uploadHashEvidence(activityId, toBytes64Array(hashes));
+        return makeTx(sender, pwd, uploadHashEvidence);
+      } catch (error) {
+        return {error};
+      }
+
     }
   };
 };
