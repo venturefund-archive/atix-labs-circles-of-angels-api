@@ -688,13 +688,18 @@ const milestoneService = ({
    * @param {number} budgetStatusId
    * @returns updated milestone | error
    */
-  async updateBudgetStatus(milestoneId, budgetStatusId) {
+  async updateBudgetStatus(milestoneId, budgetStatusId, user) {
     fastify.log.info(
       `[Milestone Service] :: Updating Milestone ID ${milestoneId} budget status. 
       New status ID: ${budgetStatusId}`
     );
     try {
       const milestone = await milestoneDao.getMilestoneById(milestoneId);
+      const actualStatus = await milestone.status.budgetStatus;
+      const milestones = await this.getMilestonesByProject(milestone.project);
+      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
+      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
+
       if (!milestone || milestone == null) {
         fastify.log.error(
           `[Milestone Service] :: Milestone ID ${milestoneId} does not exist`
@@ -704,14 +709,6 @@ const milestoneService = ({
           error: 'Milestone does not exist'
         };
       }
-
-      const milestones = await this.getMilestonesByProject(milestone.project);
-      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
-      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
-      const nextMilestone =
-        milestoneIndex < milestones.length - 1 ? milestoneIndex + 1 : false;
-
-      console.log(milestoneIndex, previousMilestone, nextMilestone);
 
       if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
         fastify.log.error(
@@ -784,6 +781,22 @@ const milestoneService = ({
         };
       }
 
+      const txHash = await fastify.eth.updateMilestonFundStatus(
+        user.address,
+        user.pwd,
+        { milestoneId, budgetStatusId }
+      );
+
+      if (!txHash) {
+        await milestoneDao.updateBudgetStatus(milestoneId, actualStatus);
+        fastify.log.error(
+          `[Milestone Service] :: Milestone ID ${milestoneId} could not be updated on blockchain`
+        );
+        return {
+          status: 500,
+          error: 'Milestone could not be updated on blockchain'
+        };
+      }
       // makes next milestones claimable
       if (budgetStatusId === milestoneBudgetStatus.FUNDED && nextMilestone) {
         fastify.log.info(
@@ -794,6 +807,11 @@ const milestoneService = ({
           milestones[nextMilestone].id,
           milestoneBudgetStatus.CLAIMABLE
         );
+
+        await fastify.eth.updateMilestonFundStatus(user.address, user.pwd, {
+          milestoneId: milestones[nextMilestone].id,
+          budgetStatusId: milestoneBudgetStatus.CLAIMABLE
+        });
 
         if (!updatedNextMilestone || updatedNextMilestone == null) {
           fastify.log.error(
