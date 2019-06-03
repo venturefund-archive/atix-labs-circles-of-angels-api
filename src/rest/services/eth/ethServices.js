@@ -20,12 +20,14 @@ const ethServices = async (providerHost, { logger }) => {
   );
 
   const toBytes64Array = array => {
-    array = array.map(row => row.split("").map(c => web3.utils.asciiToHex(c).slice(0,4)));
+    array = array.map(row =>
+      row.split('').map(c => web3.utils.asciiToHex(c).slice(0, 4))
+    );
     return array;
   };
-  
+
   const toStringArray = array => {
-    array = array.map(row => row.map(c => web3.utils.toAscii(c)).join(""));
+    array = array.map(row => row.map(c => web3.utils.toAscii(c)).join(''));
     return array;
   };
 
@@ -79,7 +81,7 @@ const ethServices = async (providerHost, { logger }) => {
   };
 
   const suscribeToEvent = async (event, callback) => {
-    event({},(error, event) => {
+    event({}, (error, event) => {
       if (error) return { error };
       callback(event);
     });
@@ -196,12 +198,22 @@ const ethServices = async (providerHost, { logger }) => {
 
     async uploadHashEvidenceToActivity(sender, pwd, activityId, hashes) {
       try {
-        const uploadHashEvidence = COAOracle.methods.uploadHashEvidence(activityId, toBytes64Array(hashes));
+        const uploadHashEvidence = COAOracle.methods.uploadHashEvidence(
+          activityId,
+          toBytes64Array(hashes)
+        );
         return makeTx(sender, pwd, uploadHashEvidence);
       } catch (error) {
-        return {error};
+        return { error };
       }
+    },
 
+    async updateMilestonFundStatus(sender, pwd, { milestoneId, status }) {
+      const updateMilestoneFundStatus = COAProjectAdmin.methods.updateMilestoneFundStatus(
+        milestoneId,
+        status
+      );
+      return makeTx(sender, pwd, updateMilestoneFundStatus);
     }
   };
 };
