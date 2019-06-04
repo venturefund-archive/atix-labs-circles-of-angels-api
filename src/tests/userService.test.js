@@ -1,6 +1,9 @@
 const bcrypt = require('bcrypt');
 
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = {
+  log: { info: console.log, error: console.log },
+  configs: require('config')
+};
 
 describe('Testing userService login', () => {
   let userDao;

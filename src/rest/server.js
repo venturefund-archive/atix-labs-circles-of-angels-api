@@ -51,7 +51,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     await eventListener.initEventListener();
     module.exports.fastify = fastify;
   } catch (err) {
-    console.log(err)
+    console.log(err);
     process.exit(1);
   }
 };

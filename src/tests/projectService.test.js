@@ -1,14 +1,14 @@
 const _ = require('lodash');
 const fs = require('fs');
+const configs = require('config');
 const { promisify } = require('util');
 const { addPathToFilesProperties } = require('../rest/util/files');
-const configs = require('../../config/configs');
 const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus } = require('../rest/util/constants');
 
 const readFile = promisify(fs.readFile);
 
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = { log: { info: console.log, error: console.log }, configs };
 
 describe('Testing projectService createProject', () => {
   let projectDao;

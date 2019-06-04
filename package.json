@@ -16,6 +16,7 @@
     "bcrypt": "3.0.5",
     "bunyan": "1.8.12",
     "bunyan-format": "0.2.1",
+    "config": "3.1.0",
     "fast-water": "1.0.2",
     "fastify": "1.14.1",
     "fastify-cookie": "2.1.2",
