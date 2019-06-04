@@ -47,7 +47,7 @@ const routes = async fastify => ({
     handler: handlers.getUsers(fastify)
   },
 
-  create: {
+  createUserProject: {
     method: 'get',
     path: `${basePath}/:userId/:projectId/create`,
     options: {
@@ -67,7 +67,7 @@ const routes = async fastify => ({
         }
       }
     },
-    handler: handlers.create(fastify)
+    handler: handlers.createUserProject(fastify)
   }
 });
 
