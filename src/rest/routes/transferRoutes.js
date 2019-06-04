@@ -1,10 +1,11 @@
 const basePath = '/transfer';
-const apiHelper = require('../services/helper');
+const handlers = require('./handlers/transferHandlers');
 
-const routes = async (fastify, options) => {
-  fastify.post(
-    `${basePath}/:transferId/sendToVerification`,
-    {
+const routes = async (fastify, options) => ({
+  sendToVerification: {
+    method: 'post',
+    path: `${basePath}/:transferId/sendToVerification`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'application/json',
@@ -25,28 +26,13 @@ const routes = async (fastify, options) => {
         }
       }
     },
-    async (request, reply) => {
-      const { transferService } = apiHelper.helper.services;
-      fastify.log.info('[Transfer Routes] :: Send transfer to verification');
-      const verification = await transferService.sendTransferToVerification({
-        transferId: request.params.transferId,
-        amount: request.body.amount,
-        currency: request.body.currency,
-        senderId: request.body.senderId,
-        projectId: request.body.projectId,
-        destinationAccount: request.body.destinationAccount
-      });
-      if (!verification)
-        reply
-          .status(409)
-          .send({ error: 'Error when trying upload transfer information' });
-      reply.send({ sucess: 'Transfer information upload sucessfuly!' });
-    }
-  );
+    handler: handlers.sendToVerification(fastify)
+  },
 
-  fastify.post(
-    `${basePath}/updateState`,
-    {
+  updateState: {
+    method: 'post',
+    path: `${basePath}/updateState`,
+    options: {
       beforeHandler: [fastify.adminAuth],
       schema: {
         type: 'application/json',
@@ -64,22 +50,13 @@ const routes = async (fastify, options) => {
         }
       }
     },
-    async (request, reply) => {
-      const { transferService } = apiHelper.helper.services;
-      fastify.log.info('[Transfer Routes] :: Update transfer state');
-      const verification = await transferService.updateTransferState({
-        transferId: request.body.transferId,
-        state: request.body.state
-      });
-      if (!verification)
-        reply.send({ error: 'Error when trying upload transfer state' });
-      reply.send({ sucess: 'Transfer information upload sucessfuly!' });
-    }
-  );
+    handler: handlers.updateState(fastify)
+  },
 
-  fastify.get(
-    `${basePath}/:senderId/:projectId/getState`,
-    {
+  getState: {
+    method: 'get',
+    path: `${basePath}/:senderId/:projectId/getState`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
@@ -96,47 +73,13 @@ const routes = async (fastify, options) => {
         }
       }
     },
-    async (request, reply) => {
-      const { transferService } = apiHelper.helper.services;
-      fastify.log.info(
-        `[Transfer Routes] :: Getting state of user ${
-          request.params.senderId
-        } in project ${request.params.projectId}`
-      );
-      const status = await transferService.getTransferStatusByUserAndProject({
-        senderId: request.params.senderId,
-        projectId: request.params.projectId
-      });
+    handler: handlers.getState(fastify)
+  },
 
-      if (status) {
-        reply.send({
-          state: status
-        });
-      } else {
-        reply.code(400).send({ error: 'No transfer receipt found' });
-      }
-    },
-
-    async (request, reply) => {
-      const { transferService } = apiHelper.helper.services;
-      fastify.log.info(
-        `[Transfer Routes] :: Getting state of transaction with id ${
-          request.params.transferId
-        }`
-      );
-      const status = await transferService.getTransferStatusById({
-        transferId: request.params.transferId
-      });
-      reply.send({
-        transferId: request.params.transferId,
-        state: status
-      });
-    }
-  );
-
-  fastify.get(
-    `${basePath}/:projectId/getTransfers`,
-    {
+  getTransfers: {
+    method: 'get',
+    path: `${basePath}/:projectId/getTransfers`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
@@ -152,19 +95,8 @@ const routes = async (fastify, options) => {
         }
       }
     },
-    async (request, reply) => {
-      const { transferService } = apiHelper.helper.services;
-      fastify.log.info(
-        `[Transfer Routes] :: Getting transactions of project ${
-          request.params.projectId
-        }`
-      );
-      const transferList = await transferService.getTransferList({
-        projectId: request.params.projectId
-      });
-      reply.send(transferList);
-    }
-  );
-};
+    handler: handlers.getTransfers(fastify)
+  }
+});
 
 module.exports = routes;
