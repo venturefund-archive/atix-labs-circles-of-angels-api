@@ -23,6 +23,7 @@ module.exports.start = async ({ db, logger, serverConfigs }) => {
     });
 
     fastify.register(require('fastify-cookie'));
+    fastify.register(require('fastify-file-upload'));
     initJWT(fastify);
     // Init DB
     try {

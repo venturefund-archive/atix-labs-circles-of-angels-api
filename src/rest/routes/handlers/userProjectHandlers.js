@@ -32,7 +32,7 @@ const getUsers = fastify => async (request, reply) => {
   }
 };
 
-const create = fastify => async (request, reply) => {
+const createUserProject = fastify => async (request, reply) => {
   const { userProjectService } = apiHelper.helper.services;
   const { userId, projectId } = request.params;
 
@@ -74,5 +74,5 @@ const create = fastify => async (request, reply) => {
 module.exports = fastify => ({
   signAgreement: signAgreement(fastify),
   getUsers: getUsers(fastify),
-  create: create(fastify)
+  createUserProject: createUserProject(fastify)
 });

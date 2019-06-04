@@ -1,9 +1,7 @@
 const basePath = '/project';
-const fileUpload = require('fastify-file-upload');
 const apiHelper = require('../services/helper');
 
 const routes = async fastify => {
-  fastify.register(fileUpload);
   fastify.post(
     `${basePath}/create`,
     {
