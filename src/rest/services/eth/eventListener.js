@@ -1,4 +1,8 @@
-const { blockchainStatus, projectStatus } = require('../../util/constants');
+const {
+  blockchainStatus,
+  projectStatus,
+  milestoneBudgetStatus
+} = require('../../util/constants');
 
 const eventListener = async fastify => {
   const { helper } = require('../helper');
@@ -9,11 +13,50 @@ const eventListener = async fastify => {
     userService
   } = helper.services;
 
-  const { blockchainBlockDao } = helper.daos;
+  const { blockchainBlockDao, projectDao, milestoneDao } = helper.daos;
 
   const updateLastBlock = async event => {
     const { blockNumber, transactionHash } = event;
     return blockchainBlockDao.updateLastBlock(blockNumber, transactionHash);
+  };
+
+  const onMilestoneClaimableEvent = async event => {
+    fastify.log.info(
+      '[Event listener] :: received Milestone Claimable event',
+      event
+    );
+    let { id } = event.returnValues;
+    id = parseInt(id._hex);
+    const updatedMilestone = await milestoneDao.updateBudgetStatus(
+      id,
+      milestoneBudgetStatus.CLAIMABLE
+    );
+  };
+
+  const onMilestoneClaimedEvent = async event => {
+    fastify.log.info(
+      '[Event listener] :: received Milestone Claimed event',
+      event
+    );
+    let { id } = event.returnValues;
+    id = parseInt(id._hex);
+    const updatedMilestone = await milestoneDao.updateBudgetStatus(
+      id,
+      milestoneBudgetStatus.CLAIMED
+    );
+  };
+
+  const onMilestoneFundedEvent = async event => {
+    fastify.log.info(
+      '[Event listener] :: received Milestone Funded event',
+      event
+    );
+    let { id } = event.returnValues;
+    id = parseInt(id._hex);
+    const updatedMilestone = await milestoneDao.updateBudgetStatus(
+      id,
+      milestoneBudgetStatus.FUNDED
+    );
   };
 
   const onNewProjectEvent = async event => {
@@ -21,12 +64,12 @@ const eventListener = async fastify => {
     try {
       let { id } = event.returnValues;
       id = parseInt(id._hex);
-      const response = await projectService.updateBlockchainStatus(
+      const modifiedProject = await projectService.updateBlockchainStatus(
         id,
         blockchainStatus.CONFIRMED
       );
 
-      if (response.error) {
+      if (modifiedProject.error) {
         fastify.log.error('[Event listener] :: Error updating status: ', error);
         return;
       }
@@ -139,10 +182,29 @@ const eventListener = async fastify => {
       }
 
       if (projectComplete) {
-        projectService.updateProjectStatus({
+        const userOwner = await projectDao.getUserOwnerOfProject(projectId);
+        const transactionHash = await fastify.eth.startProject(
+          userOwner.address,
+          userOwner.pwd,
+          { projectId }
+        );
+        const startedProject = await projectDao.updateProjectTransaction({
+          projectId,
+          status: projectStatus.IN_PROGRESS,
+          transactionHash
+        });
+
+        await projectService.updateProjectStatus({
           projectId,
           status: projectStatus.IN_PROGRESS
         });
+
+        if (!startedProject || startedProject == null) {
+          fastify.log.error(
+            `[Project Service] :: Project ID ${projectId} could not be updated`
+          );
+          return { error: 'ERROR: Project could not be started', status: 500 };
+        }
 
         fastify.log.info('[Event listener] :: Project started:', projectId);
       }
@@ -159,7 +221,10 @@ const eventListener = async fastify => {
   const eventMethodMap = {
     NewProject: onNewProjectEvent,
     NewMilestone: onNewMilestoneEvent,
-    NewActivity: onNewActivityEvent
+    NewActivity: onNewActivityEvent,
+    MilestoneClaimable: onMilestoneClaimableEvent,
+    MilestoneClaimed: onMilestoneClaimedEvent,
+    MilestoneFunded: onMilestoneFundedEvent
   };
 
   return {
@@ -167,12 +232,11 @@ const eventListener = async fastify => {
       try {
         const lastBlock = await blockchainBlockDao.getLastBlock();
         const events = await fastify.eth.getAllPastEvents({
-          fromBlock: lastBlock.blockNumber +1  || 0
+          fromBlock: lastBlock.blockNumber + 1 || 0
         });
         for (eventKey in events) {
           const event = events[eventKey];
-          if (eventMethodMap[event.event])
-            eventMethodMap[event.event](event);
+          if (eventMethodMap[event.event]) eventMethodMap[event.event](event);
         }
       } catch (error) {
         fastify.log.error(error);
@@ -183,6 +247,9 @@ const eventListener = async fastify => {
       fastify.eth.suscribeNewProjectEvent(onNewProjectEvent);
       fastify.eth.suscribeNewMilestoneEvent(onNewMilestoneEvent);
       fastify.eth.suscribeNewActivityEvent(onNewActivityEvent);
+      fastify.eth.suscribeMilestoneClaimableEvent(onMilestoneClaimableEvent);
+      fastify.eth.suscribeMilestoneClaimedEvent(onMilestoneClaimedEvent);
+      fastify.eth.suscribeMilestoneFundedEvent(onMilestoneFundedEvent);
     }
   };
 };

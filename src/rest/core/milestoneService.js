@@ -695,7 +695,6 @@ const milestoneService = ({
     );
     try {
       const milestone = await milestoneDao.getMilestoneById(milestoneId);
-      const actualStatus = await milestone.status.budgetStatus;
       const milestones = await this.getMilestonesByProject(milestone.project);
       const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
       const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
@@ -766,63 +765,39 @@ const milestoneService = ({
         };
       }
 
-      const updatedMilestone = await milestoneDao.updateBudgetStatus(
-        milestoneId,
-        budgetStatusId
-      );
-
-      if (!updatedMilestone || updatedMilestone == null) {
-        fastify.log.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} could not be updated`
-        );
-        return {
-          status: 500,
-          error: 'Milestone could not be updated'
-        };
-      }
-
-      const txHash = await fastify.eth.updateMilestonFundStatus(
-        user.address,
-        user.pwd,
-        { milestoneId, budgetStatusId }
-      );
-
-      if (!txHash) {
-        await milestoneDao.updateBudgetStatus(milestoneId, actualStatus);
-        fastify.log.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} could not be updated on blockchain`
-        );
-        return {
-          status: 500,
-          error: 'Milestone could not be updated on blockchain'
-        };
-      }
-      // makes next milestones claimable
-      if (budgetStatusId === milestoneBudgetStatus.FUNDED && nextMilestone) {
+      if (budgetStatusId === milestoneBudgetStatus.CLAIMED) {
         fastify.log.info(
-          '[Milestone Service] :: Updating next milestone ID',
-          milestones[nextMilestone].id
+          `[Milestone Service] :: set claimed Milestone ID ${milestoneId} on Blockchain`
         );
-        const updatedNextMilestone = await milestoneDao.updateBudgetStatus(
-          milestones[nextMilestone].id,
-          milestoneBudgetStatus.CLAIMABLE
+        const txHash = await fastify.eth.claimMilestone(
+          user.address,
+          user.pwd,
+          { milestoneId, projectId: milestone.project }
         );
-
-        await fastify.eth.updateMilestonFundStatus(user.address, user.pwd, {
-          milestoneId: milestones[nextMilestone].id,
-          budgetStatusId: milestoneBudgetStatus.CLAIMABLE
-        });
-
-        if (!updatedNextMilestone || updatedNextMilestone == null) {
+        if (txHash.error) {
           fastify.log.error(
-            `[Milestone Service] :: Next milestone ID ${
-              milestones[nextMilestone].id
-            } could not be updated`
+            `[Milestone Service] :: error setting claimed Milestone ID ${milestoneId} on Blockchain`
           );
         }
       }
 
-      return updatedMilestone;
+      if (budgetStatusId === milestoneBudgetStatus.FUNDED) {
+        fastify.log.info(
+          `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
+        );
+        const txHash = await fastify.eth.setMilestoneFunded(
+          user.address,
+          user.pwd,
+          { milestoneId, projectId: milestone.project }
+        );
+        if (txHash.error) {
+          fastify.log.error(
+            `[Milestone Service] :: error setting funded Milestone ID ${milestoneId} on Blockchain`
+          );
+        }
+      }
+
+      return milestone;
     } catch (error) {
       fastify.log.error(
         '[Milestone Service] :: Error updating Milestone budget status:',
