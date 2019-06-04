@@ -1,11 +1,10 @@
 const basePath = '/questionnaire';
-const handlers = require('./handlers/fileHandlers');
+const apiHelper = require('../services/helper');
 
-const routes = async fastify => ({
-  getQuestionnaire: {
-    method: 'get',
-    path: `${basePath}/:roleId`,
-    options: {
+const routes = async (fastify, options) => {
+  fastify.get(
+    `${basePath}/:roleId`,
+    {
       schema: {
         params: {
           roleId: { type: 'integer' }
@@ -20,8 +19,23 @@ const routes = async fastify => ({
         }
       }
     },
-    handler: handlers.getQuestionnaire(fastify)
-  }
-});
+    async (request, reply) => {
+      const { questionnaireService } = apiHelper.helper.services;
+      try {
+        const { roleId } = request.params;
+        fastify.log.info(
+          `[Questionnaire Routes] :: Getting questionnaire for role ${roleId}`
+        );
+        const questions = await questionnaireService.getQuestionnaireOfRole(
+          roleId
+        );
+
+        reply.status(200).send({ questions });
+      } catch (error) {
+        reply.status(500).send({ error });
+      }
+    }
+  );
+};
 
 module.exports = routes;
