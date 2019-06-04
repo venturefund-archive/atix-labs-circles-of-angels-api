@@ -196,6 +196,18 @@ const ethServices = async (providerHost, { logger }) => {
       suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
     },
 
+    async suscribeMilestoneClaimableEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.MilestoneClaimable, callback);
+    },
+
+    async suscribeMilestoneClaimedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.MilestoneClaimed, callback);
+    },
+
+    async suscribeMilestoneFundedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.MilestoneFunded, callback);
+    },
+    
     async getAllPastEvents(options) {
       const CoaProjectAdminEvents = await COAProjectAdmin.getPastEvents(
         'allEvents',
@@ -224,12 +236,28 @@ const ethServices = async (providerHost, { logger }) => {
       }
     },
 
-    async updateMilestonFundStatus(sender, pwd, { milestoneId, status }) {
-      const updateMilestoneFundStatus = COAProjectAdmin.methods.updateMilestoneFundStatus(
-        milestoneId,
-        status
-      );
-      return makeTx(sender, pwd, updateMilestoneFundStatus);
+    async claimMilestone(sender, pwd, { milestoneId, projectId }) {
+      try {
+        const claimMilestone = COAProjectAdmin.methods.claimMilestone(
+          milestoneId,
+          projectId
+        );
+        return makeTx(sender, pwd, claimMilestone);
+      } catch (error) {
+        return { error };
+      }
+    },
+
+    async setMilestoneFunded(sender, pwd, { milestoneId, projectId }) {
+      try {
+        const setMilestoneFunded = COAProjectAdmin.methods.setMilestoneFunded(
+          milestoneId,
+          projectId
+        );
+        return makeTx(sender, pwd, setMilestoneFunded);
+      } catch (error) {
+        return { error };
+      }
     }
   };
 };

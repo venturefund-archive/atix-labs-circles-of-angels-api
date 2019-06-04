@@ -65,7 +65,7 @@ const routes = async fastify => {
       const { id } = req.params;
 
       try {
-        const user = await userService.getUserById(fastify.user.id);
+        const user = await userService.getUserById(req.user.id);
         const response = await milestoneService.updateBudgetStatus(
           id,
           budgetStatusId,

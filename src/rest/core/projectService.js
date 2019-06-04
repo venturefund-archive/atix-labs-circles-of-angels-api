@@ -116,25 +116,6 @@ const projectService = ({
       }
 
       const savedProject = await projectDao.saveProject(newProject);
-      const userOwner = await userDao.getUserById(ownerId);
-
-      const transactionHash = await fastify.eth.createProject(
-        userOwner.address,
-        userOwner.pwd,
-        {
-          projectId: savedProject.id,
-          seAddress: userOwner.address,
-          projectName: savedProject.projectName
-        }
-      );
-
-      savedProject.creationTransactionHash = transactionHash;
-      savedProject.blockchainStatus = blockchainStatus.SENT;
-
-      fastify.log.info(
-        '[Project Service] :: transaction hash of project creation: ',
-        transactionHash
-      );
 
       fastify.log.info('[Project Service] :: Project created:', savedProject);
 
@@ -215,22 +196,42 @@ const projectService = ({
       savedProject.milestonesFile = milestonesPath;
 
       // updates project to include its files' path
+
+      fastify.log.info(
+        '[Project Service] :: Creating Milestones for Project ID:',
+        savedProject.id
+      );
+
+      const milestones = await milestoneService.createMilestones(
+        milestonesPath,
+        savedProject.id
+      );
+
+      const userOwner = await userDao.getUserById(ownerId);
+
+      const transactionHash = await fastify.eth.createProject(
+        userOwner.address,
+        userOwner.pwd,
+        {
+          projectId: savedProject.id,
+          seAddress: userOwner.address,
+          projectName: savedProject.projectName
+        }
+      );
+      fastify.log.info(
+        '[Project Service] :: transaction hash of project creation: ',
+        transactionHash
+      );
+
+      savedProject.creationTransactionHash = transactionHash;
+      savedProject.blockchainStatus = blockchainStatus.SENT;
+
       fastify.log.info('[Project Service] :: Updating project:', savedProject);
       const updatedProject = await projectDao.updateProject(
         savedProject,
         savedProject.id
       );
       fastify.log.info('[Project Service] :: Project Updated:', updatedProject);
-
-      fastify.log.info(
-        '[Project Service] :: Creating Milestones for Project ID:',
-        updatedProject.id
-      );
-
-      const milestones = await milestoneService.createMilestones(
-        milestonesPath,
-        updatedProject.id
-      );
 
       response.project = updatedProject;
       response.milestones = milestones;
@@ -457,7 +458,7 @@ const projectService = ({
     return projectDeleted;
   },
 
-  async getProjectMilestones(projectId, oracleActivityDao) {
+  async getProjectMilestones(projectId) {
     const projectMilestones = await projectDao.getProjectMilestones({
       projectId
     });
@@ -870,25 +871,6 @@ const projectService = ({
         return { error: 'Project has already started', status: 409 };
       }
 
-      // const totalAmount = await transferService.getTotalFundedByProject(
-      //   projectId
-      // );
-
-      // fastify.log.info(
-      //   `[Project Service] :: Total funded amount for Project ID ${projectId} is ${totalAmount}`
-      // );
-
-      // // compare current funded amount to goal amount
-      // if (totalAmount < project.goalAmount) {
-      //   fastify.log.error(
-      //     `[Project Service] :: Goal Amount for Project ID ${projectId} not reached`
-      //   );
-      //   return {
-      //     error: 'Project cannot start. Goal amount has not been met yet',
-      //     status: 409
-      //   };
-      // }
-
       const projectWithOracles = await this.isFullyAssigned(projectId);
       if (!projectWithOracles) {
         fastify.log.error(
@@ -902,31 +884,15 @@ const projectService = ({
 
       const userOwner = await projectDao.getUserOwnerOfProject(projectId);
 
-      // TODO: check start project in the blockchain and save the tx id
-      const transactionHash = await fastify.eth.startProject(
-        userOwner.address,
-        userOwner.pwd,
-        { projectId }
+      fastify.log.info(
+        `[Project Service] :: Starting milestones on blockchain of project Project ID ${projectId}`
       );
-      const startedProject = await projectDao.updateProjectTransaction({
-        projectId,
-        status: projectStatus.PUBLISHED,
-        transactionHash
-      });
-
       await milestoneService.startMilestonesOfProject(
-        startedProject,
+        project,
         userOwner
       );
 
-      if (!startedProject && startedProject == null) {
-        fastify.log.error(
-          `[Project Service] :: Project ID ${projectId} could not be updated`
-        );
-        return { error: 'ERROR: Project could not be started', status: 500 };
-      }
-
-      return startedProject;
+      return project;
     } catch (error) {
       fastify.log.error('[Project Service] :: Error starting project:', error);
       throw Error('Error starting project');
