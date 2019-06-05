@@ -1,106 +1,102 @@
 const basePath = '/transfer';
-const handlersBuilder = require('./handlers/transferHandlers');
+const handlers = require('./handlers/transferHandlers');
 
-const routes = async (fastify, options) => {
-  const handlers = handlersBuilder(fastify);
-
-  return {
-    sendToVerification: {
-      method: 'post',
-      path: `${basePath}/:transferId/sendToVerification`,
-      options: {
-        beforeHandler: [fastify.generalAuth],
-        schema: {
-          type: 'application/json',
-          body: {
-            amount: { type: 'float' },
-            currency: { type: 'string' },
-            senderId: { type: 'string' },
-            projectId: { type: 'integer' },
-            destinationAccount: { type: 'string' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              response: { type: 'object' }
-            }
-          }
+const routes = {
+  sendToVerification: {
+    method: 'post',
+    path: `${basePath}/:transferId/sendToVerification`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        type: 'application/json',
+        body: {
+          amount: { type: 'float' },
+          currency: { type: 'string' },
+          senderId: { type: 'string' },
+          projectId: { type: 'integer' },
+          destinationAccount: { type: 'string' }
         }
       },
-      handler: handlers.sendToVerification
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
     },
+    handler: handlers.sendToVerification
+  },
 
-    updateState: {
-      method: 'post',
-      path: `${basePath}/updateState`,
-      options: {
-        beforeHandler: [fastify.adminAuth],
-        schema: {
-          type: 'application/json',
-          body: {
-            transferId: { type: 'string' },
-            state: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              response: { type: 'object' }
-            }
-          }
+  updateState: {
+    method: 'post',
+    path: `${basePath}/updateState`,
+    options: {
+      beforeHandler: ['adminAuth'],
+      schema: {
+        type: 'application/json',
+        body: {
+          transferId: { type: 'string' },
+          state: { type: 'integer' }
         }
       },
-      handler: handlers.updateState
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
     },
+    handler: handlers.updateState
+  },
 
-    getState: {
-      method: 'get',
-      path: `${basePath}/:senderId/:projectId/getState`,
-      options: {
-        beforeHandler: [fastify.generalAuth],
-        schema: {
-          params: {
-            senderId: { type: 'integer' },
-            projectId: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              response: { type: 'object' }
-            }
-          }
+  getState: {
+    method: 'get',
+    path: `${basePath}/:senderId/:projectId/getState`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        params: {
+          senderId: { type: 'integer' },
+          projectId: { type: 'integer' }
         }
       },
-      handler: handlers.getState
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
     },
+    handler: handlers.getState
+  },
 
-    getTransfers: {
-      method: 'get',
-      path: `${basePath}/:projectId/getTransfers`,
-      options: {
-        beforeHandler: [fastify.generalAuth],
-        schema: {
-          params: {
-            projectId: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              response: { type: 'object' }
-            }
-          }
+  getTransfers: {
+    method: 'get',
+    path: `${basePath}/:projectId/getTransfers`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        params: {
+          projectId: { type: 'integer' }
         }
       },
-      handler: handlers.getTransfers
-    }
-  };
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
+      }
+    },
+    handler: handlers.getTransfers
+  }
 };
 
 module.exports = routes;

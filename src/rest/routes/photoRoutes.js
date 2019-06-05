@@ -1,32 +1,28 @@
 const basePath = '/photos';
-const handlersBuilder = require('./handlers/photoHandlers');
+const handlers = require('./handlers/photoHandlers');
 
-const routes = async (fastify, options) => {
-  const handlers = handlersBuilder(fastify);
-
-  return {
-    getPhoto: {
-      method: 'get',
-      path: `${basePath}/:id`,
-      options: {
-        beforeHandler: [fastify.generalAuth],
-        schema: {
-          params: {
-            id: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'image',
-            properties: {
-              response: { type: 'image' }
-            }
-          }
+const routes = {
+  getPhoto: {
+    method: 'get',
+    path: `${basePath}/:id`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        params: {
+          id: { type: 'integer' }
         }
       },
-      handler: handlers.getPhoto
-    }
-  };
+      response: {
+        200: {
+          type: 'image',
+          properties: {
+            response: { type: 'image' }
+          }
+        }
+      }
+    },
+    handler: handlers.getPhoto
+  }
 };
 
 module.exports = routes;
