@@ -282,17 +282,30 @@ const milestoneService = ({
     const { milestones } = response;
     let milestone = {};
     let quarter = '';
-
     // parse the JSON array with the milestones data
     Object.values(milestonesJSON).forEach(row => {
       const rowNumber = row.__rowNum__ + 1;
       let activity = {};
 
-      if ('Timeline' in row) {
+      Object.keys(row).map(key => {
+        const trimmedKey = key.trim();
+        if (trimmedKey !== key) {
+          row[trimmedKey] = row[key];
+          delete row[key];
+          return { key: row[trimmedKey] };
+        }
+        return { key: row[key] };
+      });
+
+      if (
+        'Timeline' in row &&
+        typeof row.Timeline === 'string' &&
+        row.Timeline.includes('Quarter')
+      ) {
         // found a quarter
         quarter = row.Timeline;
         milestone = {};
-      } else if (row.__EMPTY.includes('Milestone')) {
+      } else if (row.__EMPTY && row.__EMPTY.includes('Milestone')) {
         // found a milestone
         milestone = {};
         milestone.quarter = quarter;
@@ -302,9 +315,7 @@ const milestoneService = ({
             ? row['Expected Changes/ Social Impact Targets']
             : '';
         milestone.impactCriterion =
-          row['Review Criterion '] !== undefined
-            ? row['Review Criterion ']
-            : '';
+          row['Review Criterion'] !== undefined ? row['Review Criterion'] : '';
         milestone.signsOfSuccess =
           row['Signs of Success'] !== undefined ? row['Signs of Success'] : '';
         milestone.signsOfSuccessCriterion =
@@ -354,7 +365,7 @@ const milestoneService = ({
             msg: 'Found a milestone without an specified quarter'
           });
         }
-      } else if (row.__EMPTY.includes('Activity')) {
+      } else if (row.__EMPTY && row.__EMPTY.includes('Activity')) {
         // found an activity
         activity = {};
         activity.tasks = row.Tasks !== undefined ? row.Tasks : '';
@@ -363,9 +374,7 @@ const milestoneService = ({
             ? row['Expected Changes/ Social Impact Targets']
             : '';
         activity.impactCriterion =
-          row['Review Criterion '] !== undefined
-            ? row['Review Criterion ']
-            : '';
+          row['Review Criterion'] !== undefined ? row['Review Criterion'] : '';
         activity.signsOfSuccess =
           row['Signs of Success'] !== undefined ? row['Signs of Success'] : '';
         activity.signsOfSuccessCriterion =
