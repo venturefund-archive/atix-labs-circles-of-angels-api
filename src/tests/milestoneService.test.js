@@ -1,18 +1,17 @@
-const configs = require('../../config/configs')(
-  process.env.NODE_ENV || 'development'
-);
-
 const fastify = {
   log: { info: console.log, error: console.log },
-  configs
+  configs: require('config')
 };
+
+const testHelper = require('./testHelper');
 
 describe('Testing milestoneService createMilestones', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
-
+  let mockProjects;
   beforeAll(() => {
+    mockProjects = testHelper.getMockProjects();
     milestoneDao = {
       async saveMilestone({ milestone, projectId }) {
         const toSave = {
@@ -21,6 +20,11 @@ describe('Testing milestoneService createMilestones', () => {
         };
         delete toSave.activityList;
         return toSave;
+      },
+
+      async getMilestonesByProject(projectId) {
+        const project = mockProjects.find(project => projectId === project.id);
+        return project.milestones;
       }
     };
 

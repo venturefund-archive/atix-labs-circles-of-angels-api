@@ -27,7 +27,7 @@ exports.buildActivity = ({ id, blockchainStatus, oracle }) => {
 
   return newActivity;
 };
-exports.buildMilestone = (cantActivities, { id, blockchainStatus }) => {
+exports.buildMilestone = (cantActivities, {projectId, id, blockchainStatus }) => {
   let newMilestone = JSON.parse(JSON.stringify(milestone));
   newMilestone.id = id ? id : newMilestone.id;
   newMilestone.blockchaixnStatus = blockchainStatus
