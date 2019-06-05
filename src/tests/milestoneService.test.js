@@ -1,11 +1,17 @@
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = {
+  log: { info: console.log, error: console.log },
+  configs: require('config')
+};
+
+const testHelper = require('./testHelper');
 
 describe('Testing milestoneService createMilestones', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
-
+  let mockProjects;
   beforeAll(() => {
+    mockProjects = testHelper.getMockProjects();
     milestoneDao = {
       async saveMilestone({ milestone, projectId }) {
         const toSave = {
@@ -14,6 +20,11 @@ describe('Testing milestoneService createMilestones', () => {
         };
         delete toSave.activityList;
         return toSave;
+      },
+
+      async getMilestonesByProject(projectId) {
+        const project = mockProjects.find(project => projectId === project.id);
+        return project.milestones;
       }
     };
 
@@ -108,7 +119,12 @@ describe('Testing milestoneService createMilestones', () => {
             msg:
               'Found a milestone without Expected Changes/ Social Impact Targets'
           },
-          { rowNumber: 11, msg: 'Found a milestone without Tasks' }
+          { rowNumber: 11, msg: 'Found a milestone without Tasks' },
+          {
+            rowNumber: 1,
+            msg:
+              'Could not find any valid activities. There should be at least one.'
+          }
         ],
         milestones: []
       };
