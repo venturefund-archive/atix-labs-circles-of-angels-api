@@ -74,8 +74,12 @@ module.exports.start = async ({ db, logger, configs }) => {
 const loadRoutes = fastify => {
   const fs = require('fs');
   const routesDir = `${__dirname}/routes`;
-  const routes = fs.readdirSync(routesDir);
-  routes.forEach(route => fastify.register(require(`${routesDir}/${route}`)));
+  const dirents = fs.readdirSync(routesDir, { withFileTypes: true });
+  const routeNames = dirents
+    .filter(dirent => !dirent.isDirectory())
+    .map(dirent => dirent.name);
+  const routes = routeNames.map(route => require(`${routesDir}/${route}`));
+  routes.forEach(route => Object.values(route).forEach(m => console.log(m)));
 };
 
 const initJWT = fastify => {
@@ -135,14 +139,13 @@ const initJWT = fastify => {
     });
     fastify.decorate('withUser', async (request, reply) => {
       try {
-        const token = getToken(request,reply);
+        const token = getToken(request, reply);
         if (token) request.user = await fastify.jwt.verify(token);
-      }
-      catch (error) {
+      } catch (error) {
         fastify.log.error('[Server] :: There was an error authenticating', err);
         reply.status(500).send({ error: 'There was an error authenticating' });
       }
-    })
+    });
   });
   fastify.register(jwtPlugin);
 };
