@@ -292,7 +292,7 @@ const milestoneService = ({
         if (trimmedKey !== key) {
           row[trimmedKey] = row[key];
           delete row[key];
-          return { trimmedKey: row[trimmedKey] };
+          return { key: row[trimmedKey] };
         }
         return { key: row[key] };
       });
