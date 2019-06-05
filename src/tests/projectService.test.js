@@ -1,13 +1,11 @@
 const { find } = require('lodash');
 const fs = require('fs');
+const configs = require('config');
 const { promisify } = require('util');
 
 const { addPathToFilesProperties } = require('../rest/util/files');
 const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus, blockchainStatus } = require('../rest/util/constants');
-const configs = require('../../config/configs')(
-  process.env.NODE_ENV || 'development'
-);
 
 const fastify = {
   log: { info: console.log, error: console.log },

@@ -1,7 +1,5 @@
 const Web3 = require('web3');
-const ethConfig = require('../../../../config/configs')(
-  process.env.NODE_ENV || 'development'
-).eth;
+const ethConfig = require('config').eth;
 
 /**
  * Init a ethereum services, receiving the provider host and returns and object
@@ -196,6 +194,22 @@ const ethServices = async (providerHost, { logger }) => {
 
     async suscribeProjectCompletedEvent(callback) {
       suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
+    },
+
+    async getAllPastEvents(options) {
+      const CoaProjectAdminEvents = await COAProjectAdmin.getPastEvents(
+        'allEvents',
+        options
+      );
+      const CoaOracleEvents = await COAOracle.getPastEvents(
+        'allEvents',
+        options
+      );
+
+      const events = CoaProjectAdminEvents.concat(CoaOracleEvents);
+      events.sort((event1, event2) => event1.blockNumber - event2.blockNumber);
+
+      return events;
     },
 
     async uploadHashEvidenceToActivity(sender, pwd, activityId, hashes) {

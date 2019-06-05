@@ -794,14 +794,14 @@ const activityService = ({
       const fileEvidence = [];
       if (activityFiles && activityFiles != null) {
         // add type to each
-        activityFiles.map(activityFile => {
-          return fileEvidence.push({
+        activityFiles.map(activityFile =>
+          fileEvidence.push({
             ...activityFile,
             fileType: 'File',
             file: activityFile.file.id,
             fileName: path.basename(activityFile.file.path)
-          });
-        });
+          })
+        );
       } else {
         fastify.log.info(
           `[Activity Service] :: Activity ID: ${activityId} does not have file evidence`
