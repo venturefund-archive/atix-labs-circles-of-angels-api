@@ -1,12 +1,13 @@
 const basePath = '/activities';
 const restBasePath = '/activity';
 
-const apiHelper = require('../services/helper');
+const handlers = require('./handlers/activityHandlers');
 
-const routes = async fastify => {
-  fastify.post(
-    `${basePath}`,
-    {
+const routes = async fastify => ({
+  createActivity: {
+    method: 'post',
+    path: `${basePath}`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'application/json',
@@ -24,43 +25,13 @@ const routes = async fastify => {
         }
       }
     },
-    async (req, reply) => {
-      const { activityService } = apiHelper.helper.services;
-      fastify.log.info(
-        '[Activity Routes] :: POST request at /activities:',
-        req.body
-      );
+    handler: handlers.createActivity(fastify)
+  },
 
-      const { activity, milestoneId } = req.body;
-
-      try {
-        const response = await activityService.createActivity(
-          activity,
-          milestoneId
-        );
-
-        if (response.error) {
-          fastify.log.error(
-            '[Activity Routes] :: Error creating activity: ',
-            response.error
-          );
-          reply.status(response.status).send(response.error);
-        } else {
-          reply.send({ success: 'Activity created successfully!' });
-        }
-      } catch (error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error creating activity: ',
-          error
-        );
-        reply.status(500).send({ error: 'Error creating activity' });
-      }
-    }
-  );
-
-  fastify.put(
-    `${basePath}/:id`,
-    {
+  updateActivity: {
+    method: 'put',
+    path: `${basePath}/:id`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         type: 'application/json',
@@ -80,41 +51,13 @@ const routes = async fastify => {
         }
       }
     },
-    async (req, reply) => {
-      const { activityService } = apiHelper.helper.services;
-      fastify.log.info(
-        `[Activity Routes] :: PUT request at /activities/${req.params.id}:`,
-        req.body
-      );
+    handler: handlers.updateActivity(fastify)
+  },
 
-      const { activity } = req.body;
-      const { id } = req.params;
-
-      try {
-        const response = await activityService.updateActivity(activity, id);
-
-        if (response.error) {
-          fastify.log.error(
-            '[Activity Routes] :: Error updating activity: ',
-            response.error
-          );
-          reply.status(response.status).send(response.error);
-        } else {
-          reply.send({ success: 'Activity updated successfully!' });
-        }
-      } catch (error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error updating activity: ',
-          error
-        );
-        reply.status(500).send({ error: 'Error updating activity' });
-      }
-    }
-  );
-
-  fastify.delete(
-    `${restBasePath}/:id`,
-    {
+  deleteActivity: {
+    method: 'delete',
+    path: `${restBasePath}/:id`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
@@ -130,26 +73,13 @@ const routes = async fastify => {
         }
       }
     },
-    async (request, reply) => {
-      const { activityService, milestoneService } = apiHelper.helper.services;
-      const { id } = request.params;
-      fastify.log.info(`[Activity Routes] Deleting activity with id: ${id}`);
-      try {
-        const deleted = await activityService.deleteActivity(
-          id,
-          milestoneService
-        );
-        reply.status(200).send(deleted);
-      } catch (error) {
-        fastify.log.error(error);
-        reply.status(500).send('Error deleting activity');
-      }
-    }
-  );
+    handler: handlers.deleteActivity(fastify)
+  },
 
-  fastify.post(
-    `${basePath}/:id/evidences`,
-    {
+  updloadEvidence: {
+    method: 'post',
+    path: `${basePath}/:id/evidences`,
+    options: {
       beforeHandler: [fastify.generalAuth, fastify.withUser],
       schema: {
         type: 'multipart/form-data',
@@ -169,85 +99,13 @@ const routes = async fastify => {
         }
       }
     },
-    async (req, reply) => {
-      const { activityService } = apiHelper.helper.services;
-      const { id } = req.params;
-      fastify.log.info(
-        `[Activity Routes] :: POST request at /activities/${id}/evidences:`,
-        req
-      );
-      const { evidenceFiles } = req.raw.files;
+    handler: handlers.updloadEvidence(fastify)
+  },
 
-      try {
-        const response = await activityService.addEvidenceFiles(
-          id,
-          evidenceFiles,
-          req.user
-        );
-
-        reply.status(200).send(response);
-      } catch (error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error uploading evidences:',
-          error
-        );
-        reply.status(500).send({ error: 'Error uploading evidences' });
-      }
-    }
-  );
-
-  fastify.delete(
-    `${basePath}/:activityId/evidences/:evidenceId/:fileType`,
-    {
-      beforeHandler: [fastify.generalAuth],
-      schema: {
-        params: {
-          activityId: { type: 'number' },
-          evidenceId: { type: 'number' },
-          fileType: { type: 'string' }
-        }
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
-          }
-        }
-      }
-    },
-    async (request, reply) => {
-      const { activityService } = apiHelper.helper.services;
-      const { activityId, evidenceId, fileType } = request.params;
-      fastify.log.info(
-        `[Activity Routes] :: DELETE request atctivities/${activityId}/evidences/${evidenceId}/${fileType}`
-      );
-
-      try {
-        const deletedEvidence = await activityService.deleteEvidence(
-          activityId,
-          evidenceId,
-          fileType
-        );
-
-        if (deletedEvidence.error) {
-          reply.status(deletedEvidence.status).send(deletedEvidence);
-        } else {
-          reply.status(200).send({ success: 'Evidence deleted successfully!' });
-        }
-      } catch (error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error deleting evidence:',
-          error
-        );
-        reply.status(500).send({ error: 'Error deleting evidence' });
-      }
-    }
-  );
-
-  fastify.get(
-    `${basePath}/:id`,
-    {
+  deleteEvidence: {
+    method: 'delete',
+    path: `${basePath}/:activityId/evidences/:evidenceId/:fileType`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
@@ -263,34 +121,35 @@ const routes = async fastify => {
         }
       }
     },
-    async (request, reply) => {
-      const { activityService } = apiHelper.helper.services;
-      const { id } = request.params;
+    handler: handlers.deleteEvidence(fastify)
+  },
 
-      fastify.log.info(`[Activity Routes] :: GET request at /activities/${id}`);
-
-      try {
-        const activity = await activityService.getActivityDetails(id);
-
-        if (activity.error) {
-          reply.status(activity.status).send(activity);
-        } else {
-          fastify.log.info('[Activity Routes] :: Activity found:', activity);
-          reply.status(200).send(activity);
+  getActivity: {
+    method: 'get',
+    path: `${basePath}/:id`,
+    options: {
+      beforeHandler: [fastify.generalAuth],
+      schema: {
+        params: {
+          id: { type: 'number' }
         }
-      } catch (error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error getting activity:',
-          error
-        );
-        reply.status(500).send({ error: 'Error getting activity' });
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            response: { type: 'object' }
+          }
+        }
       }
-    }
-  );
+    },
+    handler: handlers.getActivity(fastify)
+  },
 
-  fastify.put(
-    `${basePath}/:id/assignOracle/:userId`,
-    {
+  assignOracle: {
+    method: 'put',
+    path: `${basePath}/:id/assignOracle/:userId`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
@@ -307,34 +166,13 @@ const routes = async fastify => {
         }
       }
     },
-    async (request, reply) => {
-      const { activityService } = apiHelper.helper.services;
-      const { id, userId } = request.params;
-      fastify.log.info(
-        `[Activity Routes] :: PUT request at /activities/${id}/assignOracle/${userId}`
-      );
+    handler: handlers.assignOracle(fastify)
+  },
 
-      try {
-        const assign = await activityService.assignOracleToActivity(userId, id);
-
-        if (assign.error) {
-          reply.status(assign.status).send(assign);
-        } else {
-          reply.status(200).send({ success: 'Oracle assigned successfully!' });
-        }
-      } catch (error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error assigning user to activity:',
-          error
-        );
-        reply.status(500).send({ error: 'Error assigning user to activity' });
-      }
-    }
-  );
-
-  fastify.delete(
-    `${basePath}/:id/unassignOracle`,
-    {
+  unassignOracle: {
+    method: 'delete',
+    path: `${basePath}/:id/unassignOracle`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
@@ -350,34 +188,13 @@ const routes = async fastify => {
         }
       }
     },
-    async (request, reply) => {
-      const { activityService } = apiHelper.helper.services;
-      const { id } = request.params;
-      fastify.log.info(
-        `[Activity Routes] :: DELETE request at /activities/${id}/unassignOracle`
-      );
-      try {
-        const assign = await activityService.unassignOracleToActivity(id);
-        if (assign.error) {
-          reply.status(assign.status).send(assign);
-        } else {
-          reply
-            .status(200)
-            .send({ success: 'Oracles successfully unassigned!' });
-        }
-      } catch (error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error unassigning oracles from activity:',
-          error
-        );
-        reply.status(500).send('Error unassigning oracles from activity');
-      }
-    }
-  );
+    handler: handlers.unassignOracle(fastify)
+  },
 
-  fastify.get(
-    `${basePath}/:activityId/evidences/:evidenceId/download/:fileType`,
-    {
+  downloadEvidence: {
+    method: 'get',
+    path: `${basePath}/:activityId/evidences/:evidenceId/download/:fileType`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
@@ -395,47 +212,13 @@ const routes = async fastify => {
         }
       }
     },
-    async (request, reply) => {
-      const { activityService } = apiHelper.helper.services;
-      const { activityId, evidenceId, fileType } = request.params;
-      fastify.log.info(
-        `[Activity Routes] :: GET request at /activities/${activityId}/evidence/${evidenceId}/download/${fileType}`
-      );
-      try {
-        const res = await activityService.downloadEvidence(
-          activityId,
-          evidenceId,
-          fileType
-        );
+    handler: handlers.downloadEvidence(fastify)
+  },
 
-        if (res && res.error) {
-          fastify.log.error(
-            '[Activity Routes] :: Error getting evidence:',
-            res.error
-          );
-          reply.status(res.status).send(res.error);
-        } else {
-          fastify.log.info(
-            '[Activity Routes] :: Activity evidence downloaded:',
-            res
-          );
-          reply.header('file', res.filename);
-          reply.header('Access-Control-Expose-Headers', 'file');
-          reply.send(res.filestream);
-        }
-      } catch (error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error getting evidence:',
-          error
-        );
-        reply.status(500).send({ error: 'Error getting evidence' });
-      }
-    }
-  );
-
-  fastify.post(
-    `${basePath}/:activityId/complete`,
-    {
+  completeActivity: {
+    method: 'post',
+    path: `${basePath}/:activityId/complete`,
+    options: {
       beforeHandler: [fastify.generalAuth],
       schema: {
         params: {
@@ -451,23 +234,8 @@ const routes = async fastify => {
         }
       }
     },
-    async (request, reply) => {
-      const { activityService, milestoneService } = apiHelper.helper.services;
-      const { activityId } = request.params;
-      fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
-      try {
-        const activity = (await activityService.completeActivity(
-          activityId,
-          milestoneService.getMilestoneById
-        ))[0];
-        await milestoneService.tryCompleteMilestone(activity.milestone);
-        reply.status(200).send(Boolean(activity));
-      } catch (error) {
-        fastify.log.error(error);
-        reply.status(500).send('Error assigning user on activity');
-      }
-    }
-  );
-};
+    handler: handlers.completeActivity(fastify)
+  }
+});
 
 module.exports = routes;
