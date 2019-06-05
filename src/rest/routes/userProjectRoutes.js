@@ -1,74 +1,78 @@
 const basePath = '/userProject';
-const handlers = require('./handlers/userProjectHandlers');
+const handlersBuilder = require('./handlers/userProjectHandlers');
 
-const routes = async fastify => ({
-  signAgreement: {
-    method: 'get',
-    path: `${basePath}/:userId/:projectId/signAgreement`,
-    options: {
-      beforeHandler: [fastify.generalAuth],
-      schema: {
-        params: {
-          userId: { type: 'integer' },
-          projectId: { type: 'integer' }
-        }
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
+const routes = async fastify => {
+  const handlers = handlersBuilder(fastify);
+
+  return {
+    signAgreement: {
+      method: 'get',
+      path: `${basePath}/:userId/:projectId/signAgreement`,
+      options: {
+        beforeHandler: [fastify.generalAuth],
+        schema: {
+          params: {
+            userId: { type: 'integer' },
+            projectId: { type: 'integer' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              response: { type: 'object' }
+            }
           }
         }
-      }
-    },
-    handler: handlers.signAgreement(fastify)
-  },
-
-  getUsers: {
-    method: 'get',
-    path: `${basePath}/:projectId/getUsers`,
-    options: {
-      beforeHandler: [fastify.generalAuth],
-      schema: {
-        params: {
-          projectId: { type: 'integer' }
-        }
       },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
+      handler: handlers.signAgreement
+    },
+
+    getUsers: {
+      method: 'get',
+      path: `${basePath}/:projectId/getUsers`,
+      options: {
+        beforeHandler: [fastify.generalAuth],
+        schema: {
+          params: {
+            projectId: { type: 'integer' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              response: { type: 'object' }
+            }
           }
         }
-      }
-    },
-    handler: handlers.getUsers(fastify)
-  },
-
-  createUserProject: {
-    method: 'get',
-    path: `${basePath}/:userId/:projectId/create`,
-    options: {
-      beforeHandler: [fastify.generalAuth],
-      schema: {
-        params: {
-          userId: { type: 'integer' },
-          projectId: { type: 'integer' }
-        }
       },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
+      handler: handlers.getUsers
+    },
+
+    createUserProject: {
+      method: 'get',
+      path: `${basePath}/:userId/:projectId/create`,
+      options: {
+        beforeHandler: [fastify.generalAuth],
+        schema: {
+          params: {
+            userId: { type: 'integer' },
+            projectId: { type: 'integer' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              response: { type: 'object' }
+            }
           }
         }
-      }
-    },
-    handler: handlers.createUserProject(fastify)
-  }
-});
+      },
+      handler: handlers.createUserProject
+    }
+  };
+};
 
 module.exports = routes;
