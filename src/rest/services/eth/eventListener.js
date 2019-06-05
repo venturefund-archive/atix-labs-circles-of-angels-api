@@ -21,42 +21,57 @@ const eventListener = async fastify => {
   };
 
   const onMilestoneClaimableEvent = async event => {
-    fastify.log.info(
-      '[Event listener] :: received Milestone Claimable event',
-      event
-    );
-    let { id } = event.returnValues;
-    id = parseInt(id._hex);
-    const updatedMilestone = await milestoneDao.updateBudgetStatus(
-      id,
-      milestoneBudgetStatus.CLAIMABLE
-    );
+    try {
+      fastify.log.info(
+        '[Event listener] :: received Milestone Claimable event',
+        event
+      );
+      let { id } = event.returnValues;
+      id = parseInt(id._hex);
+      const updatedMilestone = await milestoneDao.updateBudgetStatus(
+        id,
+        milestoneBudgetStatus.CLAIMABLE
+      );
+      updatedMilestone && (await updateLastBlock(event));
+    } catch (error) {
+      fastify.log.error(error);
+    }
   };
 
   const onMilestoneClaimedEvent = async event => {
-    fastify.log.info(
-      '[Event listener] :: received Milestone Claimed event',
-      event
-    );
-    let { id } = event.returnValues;
-    id = parseInt(id._hex);
-    const updatedMilestone = await milestoneDao.updateBudgetStatus(
-      id,
-      milestoneBudgetStatus.CLAIMED
-    );
+    try {
+      fastify.log.info(
+        '[Event listener] :: received Milestone Claimed event',
+        event
+      );
+      let { id } = event.returnValues;
+      id = parseInt(id._hex);
+      const updatedMilestone = await milestoneDao.updateBudgetStatus(
+        id,
+        milestoneBudgetStatus.CLAIMED
+      );
+      updatedMilestone && (await updateLastBlock(event));
+    } catch (error) {
+      fastify.log.error(error);
+    }
   };
 
   const onMilestoneFundedEvent = async event => {
-    fastify.log.info(
-      '[Event listener] :: received Milestone Funded event',
-      event
-    );
-    let { id } = event.returnValues;
-    id = parseInt(id._hex);
-    const updatedMilestone = await milestoneDao.updateBudgetStatus(
-      id,
-      milestoneBudgetStatus.FUNDED
-    );
+    try {
+      fastify.log.info(
+        '[Event listener] :: received Milestone Funded event',
+        event
+      );
+      let { id } = event.returnValues;
+      id = parseInt(id._hex);
+      const updatedMilestone = await milestoneDao.updateBudgetStatus(
+        id,
+        milestoneBudgetStatus.FUNDED
+      );
+      updatedMilestone && (await updateLastBlock(event));
+    } catch (error) {
+      fastify.log.error(error);
+    }
   };
 
   const onNewProjectEvent = async event => {
