@@ -9,6 +9,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description:
+          'Creates a new activity for an existing Milestone especified in the body request',
+        summary: 'Create new activity',
         type: 'application/json',
         body: {
           activity: { type: 'object' },
@@ -33,6 +36,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Modifies an existing activity',
+        summary: 'Update activity',
         type: 'application/json',
         params: {
           id: { type: 'number' }
@@ -59,6 +64,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Deletes an existing activity',
+        summary: 'Delete activity',
         params: {
           id: { type: 'number' }
         }
@@ -81,6 +88,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
+        description:
+          'Uploads one or more evidence files to an existing activity',
+        summary: 'Upload evidence',
         type: 'multipart/form-data',
         params: {
           id: { type: 'number' }
@@ -107,6 +117,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Deletes an evidence file from an activity',
+        summary: 'Delete evidence',
         params: {
           id: { type: 'number' }
         }
@@ -129,6 +141,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the information of an existing activity',
+        summary: 'Get activity',
         params: {
           id: { type: 'number' }
         }
@@ -151,6 +165,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Assigns an existing oracle user to an existing activity',
+        summary: 'Assign oracle to activity',
         params: {
           id: { type: 'number' },
           userId: { type: 'number' }
@@ -174,6 +190,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description:
+          'Unassigns an oracle user previously assigned to an activity',
+        summary: 'Unassign oracle from activity',
         params: {
           id: { type: 'number' }
         }
@@ -196,6 +215,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Downloads an evidence file of an activity',
+        summary: 'Download evidence',
         params: {
           activityId: { type: 'number' },
           evidenceId: { type: 'number' },
@@ -220,6 +241,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Completes an existing activity',
+        summary: 'Complete activity',
         params: {
           activityId: { type: 'number' }
         }

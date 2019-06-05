@@ -8,6 +8,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Deletes an existing file',
+        summary: 'Delete file',
         params: {
           id: { type: 'integer' }
         }

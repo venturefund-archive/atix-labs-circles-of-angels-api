@@ -7,6 +7,10 @@ const routes = {
     path: `${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
+      schema: {
+        description: 'Returns all existing milestones',
+        summary: 'Get all milestones'
+      },
       response: {
         200: {
           type: 'object',
@@ -25,6 +29,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
+        description: 'Modifies the budget status of an existing milestone',
+        summary: 'Update milestone budget status',
         params: {
           id: { type: 'number' }
         },
@@ -50,6 +56,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the budget status of a milestone',
+        summary: 'Get milestone budget status',
         response: {
           200: {
             type: 'object',
@@ -78,6 +86,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Deletes an existing milestone',
+        summary: 'Delete milestone',
         params: {
           id: { type: 'number' }
         }
@@ -100,6 +110,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description:
+          'Creates a new milestone for an existing project specified in the body request',
+        summary: 'Create new milestone',
         type: 'application/json',
         body: {
           milestone: { type: 'object' },
@@ -124,6 +137,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Modifies an existing milestone',
+        summary: 'Update milestone',
         type: 'application/json',
         params: {
           id: { type: 'number' }
