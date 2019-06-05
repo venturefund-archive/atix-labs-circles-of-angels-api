@@ -79,7 +79,26 @@ const loadRoutes = fastify => {
     .filter(dirent => !dirent.isDirectory())
     .map(dirent => dirent.name);
   const routes = routeNames.map(route => require(`${routesDir}/${route}`));
-  routes.forEach(route => Object.values(route).forEach(m => console.log(m)));
+
+  routes.forEach(route =>
+    Object.values(route).forEach(async ({ method, path, options, handler }) => {
+      if (options.beforeHandler) {
+        const decorators = await Promise.all(
+          options.beforeHandler.map(decorator => {
+            return fastify[decorator];
+          })
+        );
+        options.beforeHandler = decorators;
+      }
+
+      fastify.route({
+        method: method.toUpperCase(),
+        url: path,
+        ...options,
+        handler: handler(fastify)
+      });
+    })
+  );
 };
 
 const initJWT = fastify => {

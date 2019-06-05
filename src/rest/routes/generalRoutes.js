@@ -16,7 +16,7 @@ const routes = {
         }
       }
     },
-    hanlder: handlers.getAccountDestination
+    handler: handlers.getAccountDestination
   }
 };
 
