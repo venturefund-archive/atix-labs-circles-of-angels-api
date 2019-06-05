@@ -52,7 +52,7 @@
     "prefer-const": "warn",
     "object-curly-spacing": "warn",
     "spaced-comment": "warn",
-    "quotes": ["error", "single"],
+    "quotes": ["error", "single", { "avoidEscape": true }],
     "import/imports-first": "warn",
     "no-multi-spaces": "warn",
     "no-multiple-empty-lines": "warn",
