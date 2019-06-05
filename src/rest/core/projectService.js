@@ -473,7 +473,6 @@ const projectService = ({
             const milestoneActivities = await milestoneService.getMilestoneActivities(
               milestone
             );
-
             const milestoneWithType = {
               ...milestoneActivities,
               type: 'Milestone'
@@ -857,7 +856,6 @@ const projectService = ({
         );
         return { error: 'ERROR: Project not found', status: 404 };
       }
-
       if (
         project.status !== projectStatus.PUBLISHED &&
         project.status !== projectStatus.IN_PROGRESS

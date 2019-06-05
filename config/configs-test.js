@@ -42,7 +42,7 @@ exports.database = {
 };
 
 exports.fileServer = {
-  filePath: '/home/federico/files/server'
+  filePath: require('path').join(__dirname, '../src/tests/mockFiles')
 };
 
 exports.swagger = {

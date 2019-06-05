@@ -2,6 +2,7 @@ const {
   project,
   milestone,
   activity,
+  photos,
   userAdmin,
   userOracle,
   userFunder,
@@ -44,20 +45,37 @@ exports.buildMilestone = (cantActivities, { id, blockchainStatus }) => {
 exports.buildProject = (
   cantMilestones,
   cantActivities,
-  { id, blockchainStatus, status }
+  {
+    id,
+    blockchainStatus,
+    status,
+    ownerId,
+    projectName,
+    pitchProposal,
+    milestonesFile,
+    projectAgreement
+  }
 ) => {
-  let newProject = JSON.parse(JSON.stringify(project));
-
+  const newProject = JSON.parse(JSON.stringify(project));
+  newProject.pitchProposal = pitchProposal ? pitchProposal : newProject.pitchProposal;
+  newProject.milestonesFile = milestonesFile ? milestonesFile : newProject.milestonesFile;
+  newProject.projectAgreement = projectAgreement ? projectAgreement : newProject.projectAgreement;
+  newProject.projectName = projectName ? projectName : newProject.projectName;
   newProject.id = id ? id : newProject.id;
-  newProject.status = status ? status : newProject.status;
+  newProject.status = status !== undefined ? status : newProject.status;
   newProject.blockchainStatus = blockchainStatus
     ? blockchainStatus
     : newProject.blockchainStatus;
+  newProject.ownerId = ownerId ? ownerId : newProject.ownerId;
   for (let i = 1; i <= cantMilestones; i++) {
     const newMilestone = this.buildMilestone(cantActivities, { id: i });
     newProject.milestones.push(newMilestone);
   }
   return newProject;
+};
+
+exports.getPhoto = id => {
+  return photos.find(photo => photo.id === id);
 };
 
 //do not modify, only can extend list of projects
@@ -72,7 +90,8 @@ exports.getMockProjects = () => {
     this.buildProject(1, 1, { id: 4, status: projectStatus.PUBLISHED }),
     this.buildProject(1, 1, {
       id: 5,
-      blockchainStatus: blockchainStatus.CONFIRMED
+      blockchainStatus: blockchainStatus.CONFIRMED,
+      status: projectStatus.PUBLISHED
     }),
     this.buildProject(1, 1, {
       id: 6,

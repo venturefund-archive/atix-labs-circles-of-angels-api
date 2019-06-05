@@ -92,26 +92,31 @@ exports.milestone = {
 
 exports.project = {
     blockchainStatus: blockchainStatus.CONFIRMED,
-    cardPhoto: "data:image/jpg;base64, /9j/4AAQSkZJRgABAQAAAQABAAD",
-    coverPhoto: 42,
+    cardPhoto: 2,
+    coverPhoto: 1,
     createdAt: "2019-05-31T03:00:00.000Z",
     creationTransactionHash: "0xe2f683a54780cbf79186c8ed692e9df8ae165b9f3f302ab85ffeed2308ce9c75",
-    faqLink: "sddf",
-    goalAmount: 21341,
+    faqLink: "http://www.google.com/",
+    goalAmount: 9000,
     id: 11,
-    location: "sdfs",
+    location: "Location",
     milestones: [],
     milestonesFile: `${__dirname}/mockFiles/projectMilestones.xlsx`,
-    mission: "sdf",
+    mission: "Project Mission",
     ownerEmail: "user@test.com",
     ownerId: 2,
     ownerName: "Patrick Steward",
     pitchProposal: `${__dirname}/mockFiles/projectProposal.pdf`,
-    problemAddressed: "sdf",
+    problemAddressed: "Problem",
     projectAgreement: `${__dirname}/mockFiles/projectAgreement.pdf`,
     projectName: "nuevo",
     status: projectStatus.PUBLISHED,
-    timeframe: "sdfs",
+    timeframe: "Project Timeframe",
     transactionHash: "0xb7dd94ebfd03aa21712d90a4a6bfd82336917e3e6e3127958bbeda3cedc8cbce",
     updatedAt: "2019-05-31T03:00:00.000Z"
 };
+
+exports.photos = [
+    {id: 1, path: `${__dirname}/mockFiles/projectCoverPhoto.png`},
+    {id: 2, path: `${__dirname}/mockFiles/projectCardPhoto.png`}
+]
