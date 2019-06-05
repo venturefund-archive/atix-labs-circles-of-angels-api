@@ -22,20 +22,6 @@ module.exports.start = async ({ db, logger, configs }) => {
       origin: true
     });
 
-    fastify.register(require('fastify-env'), {
-      confKey: 'config',
-      schema: {
-        type: 'object',
-        properties: {
-          ENVIRONMENT: {
-            type: 'string',
-            default: 'develop'
-          }
-        }
-      },
-      dotenv: true
-    });
-
     fastify.register(require('fastify-cookie'));
     fastify.configs = configs;
     fastify.register(require('fastify-file-upload'));
