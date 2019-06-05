@@ -1,4 +1,8 @@
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = {
+  log: { info: console.log, error: console.log },
+  configs: require('config')
+};
+
 const { getBase64htmlFromPath } = require('../rest/util/images');
 
 describe('Testing photoService getBase64Photo', () => {
@@ -80,12 +84,12 @@ describe('Testing photoService savePhoto', () => {
 
   beforeAll(() => {
     photoDao = {
-      async savePhoto(path) {
-        if (path === '') {
+      async savePhoto(photo) {
+        if (photo.path === '') {
           throw Error('Error saving photo');
         }
 
-        return { id: photoId, path };
+        return { id: photoId, ...photo };
       }
     };
 
@@ -96,9 +100,10 @@ describe('Testing photoService savePhoto', () => {
   });
 
   it('should return the saved photo', async () => {
-    const response = await photoService.savePhoto(filepath);
+    const projectExperience = 1;
+    const response = await photoService.savePhoto(filepath, projectExperience);
 
-    const expected = { id: photoId, path: filepath };
+    const expected = { id: photoId, path: filepath, projectExperience };
 
     return expect(response).toEqual(expected);
   });
