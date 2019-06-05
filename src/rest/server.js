@@ -63,20 +63,21 @@ const loadRoutes = fastify => {
 
   routes.forEach(route =>
     Object.values(route).forEach(async ({ method, path, options, handler }) => {
-      if (options.beforeHandler) {
-        const decorators = await Promise.all(
-          options.beforeHandler.map(decorator => {
-            return fastify[decorator];
-          })
-        );
-        options.beforeHandler = decorators;
-      }
+      fastify.register(async () => {
+        const routeOptions = { ...options };
+        if (options.beforeHandler) {
+          const decorators = options.beforeHandler.map(
+            decorator => fastify[decorator]
+          );
+          routeOptions.beforeHandler = decorators;
+        }
 
-      fastify.route({
-        method: method.toUpperCase(),
-        url: path,
-        ...options,
-        handler: handler(fastify)
+        fastify.route({
+          method: method.toUpperCase(),
+          url: path,
+          ...routeOptions,
+          handler: handler(fastify)
+        });
       });
     })
   );
