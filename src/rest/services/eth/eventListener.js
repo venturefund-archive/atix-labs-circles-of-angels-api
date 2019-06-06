@@ -130,18 +130,11 @@ const eventListener = async fastify => {
       for (let j = 0; j < activities.length; j++) {
         const activity = activities[j];
         const oracle = await activityService.getOracleFromActivity(activity.id);
-        await fastify.eth.createActivity(
-          owner.address,
-          owner.pwd,
-          {
-            activityId: activity.id,
-            milestoneId: id,
-            projectId,
-            oracleAddress: oracle.user.address,
-            description: activity.tasks
-          }
-        );
+        activities[j].oracle = oracle.user;
+        activities[j].projectId = projectId;
+        activities[j].milestoneId = id;
       }
+      await fastify.eth.createActivities(owner.address, owner.pwd, activities);
       await updateLastBlock(event);
       fastify.log.info(
         '[Event listener] :: successfully updated blockchain status of milestone ',
