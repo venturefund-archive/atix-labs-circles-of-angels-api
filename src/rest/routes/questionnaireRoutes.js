@@ -1,10 +1,11 @@
 const basePath = '/questionnaire';
-const apiHelper = require('../services/helper');
+const handlers = require('./handlers/questionnaireHandlers');
 
-const routes = async (fastify, options) => {
-  fastify.get(
-    `${basePath}/:roleId`,
-    {
+const routes = {
+  getQuestionnaire: {
+    method: 'get',
+    path: `${basePath}/:roleId`,
+    options: {
       schema: {
         params: {
           roleId: { type: 'integer' }
@@ -19,23 +20,8 @@ const routes = async (fastify, options) => {
         }
       }
     },
-    async (request, reply) => {
-      const { questionnaireService } = apiHelper.helper.services;
-      try {
-        const { roleId } = request.params;
-        fastify.log.info(
-          `[Questionnaire Routes] :: Getting questionnaire for role ${roleId}`
-        );
-        const questions = await questionnaireService.getQuestionnaireOfRole(
-          roleId
-        );
-
-        reply.status(200).send({ questions });
-      } catch (error) {
-        reply.status(500).send({ error });
-      }
-    }
-  );
+    handler: handlers.getQuestionnaire
+  }
 };
 
 module.exports = routes;
