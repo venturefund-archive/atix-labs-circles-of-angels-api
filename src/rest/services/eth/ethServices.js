@@ -207,7 +207,11 @@ const ethServices = async (providerHost, { logger }) => {
     async suscribeMilestoneFundedEvent(callback) {
       suscribeToEvent(COAProjectAdmin.events.MilestoneFunded, callback);
     },
-    
+
+    async suscribeProjectStartedEvent(callback) {
+      suscribeToEvent(COAProjectAdmin.events.ProjectStarted, callback);
+    },
+
     async getAllPastEvents(options) {
       const CoaProjectAdminEvents = await COAProjectAdmin.getPastEvents(
         'allEvents',
