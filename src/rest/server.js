@@ -22,22 +22,9 @@ module.exports.start = async ({ db, logger, configs }) => {
       origin: true
     });
 
-    fastify.register(require('fastify-env'), {
-      confKey: 'config',
-      schema: {
-        type: 'object',
-        properties: {
-          ENVIRONMENT: {
-            type: 'string',
-            default: 'develop'
-          }
-        }
-      },
-      dotenv: true
-    });
-
     fastify.register(require('fastify-cookie'));
     fastify.configs = configs;
+    fastify.register(require('fastify-file-upload'));
     initJWT(fastify);
     // Init DB
     try {
@@ -73,8 +60,32 @@ module.exports.start = async ({ db, logger, configs }) => {
 const loadRoutes = fastify => {
   const fs = require('fs');
   const routesDir = `${__dirname}/routes`;
-  const routes = fs.readdirSync(routesDir);
-  routes.forEach(route => fastify.register(require(`${routesDir}/${route}`)));
+  const dirents = fs.readdirSync(routesDir, { withFileTypes: true });
+  const routeNames = dirents
+    .filter(dirent => !dirent.isDirectory())
+    .map(dirent => dirent.name);
+  const routes = routeNames.map(route => require(`${routesDir}/${route}`));
+
+  routes.forEach(route =>
+    Object.values(route).forEach(async ({ method, path, options, handler }) => {
+      fastify.register(async () => {
+        const routeOptions = { ...options };
+        if (options.beforeHandler) {
+          const decorators = options.beforeHandler.map(
+            decorator => fastify[decorator]
+          );
+          routeOptions.beforeHandler = decorators;
+        }
+
+        fastify.route({
+          method: method.toUpperCase(),
+          url: path,
+          ...routeOptions,
+          handler: handler(fastify)
+        });
+      });
+    })
+  );
 };
 
 const initJWT = fastify => {
@@ -134,14 +145,13 @@ const initJWT = fastify => {
     });
     fastify.decorate('withUser', async (request, reply) => {
       try {
-        const token = getToken(request,reply);
+        const token = getToken(request, reply);
         if (token) request.user = await fastify.jwt.verify(token);
-      }
-      catch (error) {
+      } catch (error) {
         fastify.log.error('[Server] :: There was an error authenticating', err);
         reply.status(500).send({ error: 'There was an error authenticating' });
       }
-    })
+    });
   });
   fastify.register(jwtPlugin);
 };
