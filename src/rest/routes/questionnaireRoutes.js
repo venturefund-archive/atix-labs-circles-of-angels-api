@@ -7,6 +7,10 @@ const routes = {
     path: `${basePath}/:roleId`,
     options: {
       schema: {
+        description:
+          'Returns the onboarding questions and their corresponding ' +
+          'answers for the specified role',
+        summary: 'Get onboarding Q&A',
         params: {
           roleId: { type: 'integer' }
         }
