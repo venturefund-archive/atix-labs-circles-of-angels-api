@@ -646,17 +646,28 @@ const milestoneService = ({
   },
 
   async startMilestonesOfProject(project, owner) {
+    const sleep = ms => {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    };
     const milestones = await this.getMilestonesByProject(project.id);
-
-    for (let i = 0; i < milestones.length; i++) {
-      const milestone = milestones[i];
+    for await (let milestone of milestones) {
       await fastify.eth.createMilestone(owner.address, owner.pwd, {
         milestoneId: milestone.id,
         projectId: project.id,
         budget: milestone.budget,
         description: milestone.tasks
       });
+      await sleep(500);
     }
+    // for (let i = 0; i < milestones.length; i++) {
+    //   const milestone = milestones[i];
+    //   await fastify.eth.createMilestone(owner.address, owner.pwd, {
+    //     milestoneId: milestone.id,
+    //     projectId: project.id,
+    //     budget: milestone.budget,
+    //     description: milestone.tasks
+    //   });
+    // }
   },
 
   async getMilestoneById(milestoneId) {

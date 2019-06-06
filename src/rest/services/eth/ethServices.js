@@ -129,7 +129,6 @@ const ethServices = async (providerHost, { logger }) => {
         budget,
         description
       );
-
       return makeTx(sender, pwd, createMilestone);
     },
 
@@ -141,7 +140,7 @@ const ethServices = async (providerHost, { logger }) => {
       logger.info(
         `[SC::Create Activity] Creating Activity: ${activityId} - ${description}`
       );
-
+        
       const createActivity = COAProjectAdmin.methods.createActivity(
         activityId,
         milestoneId,
@@ -149,7 +148,8 @@ const ethServices = async (providerHost, { logger }) => {
         toChecksum(oracleAddress),
         description
       );
-
+      console.log({ activityId, milestoneId, projectId, oracleAddress, description });
+      
       return makeTx(sender, pwd, createActivity);
     },
     /**

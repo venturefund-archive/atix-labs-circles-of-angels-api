@@ -130,13 +130,17 @@ const eventListener = async fastify => {
       for (let j = 0; j < activities.length; j++) {
         const activity = activities[j];
         const oracle = await activityService.getOracleFromActivity(activity.id);
-        await fastify.eth.createActivity(owner.address, owner.pwd, {
-          activityId: activity.id,
-          milestoneId: id,
-          projectId,
-          oracleAddress: oracle.user.address,
-          description: activity.tasks
-        });
+        await fastify.eth.createActivity(
+          owner.address,
+          owner.pwd,
+          {
+            activityId: activity.id,
+            milestoneId: id,
+            projectId,
+            oracleAddress: oracle.user.address,
+            description: activity.tasks
+          }
+        );
       }
       await updateLastBlock(event);
       fastify.log.info(
@@ -178,11 +182,16 @@ const eventListener = async fastify => {
         blockchainStatus.CONFIRMED
       );
 
+      if (!response) {
+        fastify.log.error('[Event listener] :: Error updating status ');
+        return;
+      }
+
       const activities = (await milestoneService.getMilestoneActivities(
         milestone
       )).activities;
 
-      const projectComplete = true;
+      let projectComplete = true;
       for (activityIndex in activities) {
         const activity = activities[activityIndex];
         if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
@@ -192,7 +201,10 @@ const eventListener = async fastify => {
       }
 
       if (response.error) {
-        fastify.log.error('[Event listener] :: Error updating status: ', error);
+        fastify.log.error(
+          '[Event listener] :: Error updating status: ',
+          response.error
+        );
         return;
       }
 
