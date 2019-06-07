@@ -276,3 +276,140 @@ describe('Testing userService getUserRole', () => {
     return expect(response).toEqual({ error: "User doesn't have a role" });
   });
 });
+
+describe('Testing userService updateUser', () => {
+  let userDao;
+  let userRegistrationStatusDao;
+  let userService;
+
+  const mockUser = testHelper.buildUserSe({ id: 1 });
+
+  beforeAll(() => {
+    userDao = {
+      async getUserById(id) {
+        if (id === 0) {
+          return undefined;
+        }
+
+        return mockUser;
+      },
+
+      async getUserByEmail(email) {
+        if (email === 'existing@test.com') {
+          return { id: 15, email };
+        }
+
+        return undefined;
+      },
+
+      async updateUser(id, user) {
+        if (id === '') {
+          throw Error('Error updating');
+        }
+
+        const updatedUser = { ...mockUser, ...user };
+        return updatedUser;
+      }
+    };
+
+    userRegistrationStatusDao = {
+      async getUserRegistrationStatusById(registrationStatus) {
+        if (
+          Object.values(userRegistrationStatus).indexOf(registrationStatus) !==
+          -1
+        ) {
+          return registrationStatus;
+        }
+        return undefined;
+      }
+    };
+
+    userService = require('../rest/core/userService')({
+      fastify,
+      userDao,
+      userRegistrationStatusDao
+    });
+
+    bcrypt.hash = jest.fn();
+  });
+
+  it('should return the updated user', async () => {
+    const toUpdateUser = {
+      pwd: 'atix2019',
+      email: 'updated@test.com',
+      registrationStatus: userRegistrationStatus.APPROVED
+    };
+
+    const hashedPwd = '$2b$ae321f';
+    bcrypt.hash.mockReturnValueOnce(hashedPwd);
+
+    const expected = {
+      ...mockUser,
+      ...toUpdateUser,
+      pwd: hashedPwd
+    };
+
+    const response = await userService.updateUser(mockUser.id, toUpdateUser);
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the user does not exist', async () => {
+    const toUpdateUser = {
+      pwd: 'atix2019',
+      email: 'updated@test.com',
+      registrationStatus: userRegistrationStatus.APPROVED
+    };
+
+    const expected = {
+      status: 404,
+      error: 'User does not exist'
+    };
+
+    const response = await userService.updateUser(0, toUpdateUser);
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if another user with the same email exists', async () => {
+    const toUpdateUser = {
+      pwd: 'atix2019',
+      email: 'existing@test.com',
+      registrationStatus: userRegistrationStatus.APPROVED
+    };
+
+    const expected = {
+      status: 409,
+      error: 'A user with that email already exists'
+    };
+
+    const response = await userService.updateUser(mockUser.id, toUpdateUser);
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the registration status is not valid', async () => {
+    const toUpdateUser = {
+      pwd: 'atix2019',
+      email: 'updated@test.com',
+      registrationStatus: 5
+    };
+
+    const expected = {
+      status: 404,
+      error: 'Registration status is not valid'
+    };
+
+    const response = await userService.updateUser(mockUser.id, toUpdateUser);
+    return expect(response).toEqual(expected);
+  });
+
+  it('should throw an error if the user could not be updated', async () => {
+    const toUpdateUser = {
+      pwd: 'atix2019',
+      email: 'updated@test.com',
+      registrationStatus: userRegistrationStatus.APPROVED
+    };
+
+    return expect(userService.updateUser('', toUpdateUser)).rejects.toEqual(
+      Error('Error updating User')
+    );
+  });
+});
