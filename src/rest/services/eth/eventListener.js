@@ -20,6 +20,17 @@ const eventListener = async fastify => {
     return blockchainBlockDao.updateLastBlock(blockNumber, transactionHash);
   };
 
+  const onProjectStarted = async event => {
+    fastify.log.info(
+      '[Event listener] :: received Project started event',
+      event
+    );
+    let { id } = event.returnValues;
+    id = parseInt(id._hex);
+
+    projectDao.updateStartBlockchainStatus(id, blockchainStatus.CONFIRMED);
+  };
+
   const onMilestoneClaimableEvent = async event => {
     fastify.log.info(
       '[Event listener] :: received Milestone Claimable event',
@@ -259,6 +270,7 @@ const eventListener = async fastify => {
       fastify.eth.suscribeMilestoneClaimableEvent(onMilestoneClaimableEvent);
       fastify.eth.suscribeMilestoneClaimedEvent(onMilestoneClaimedEvent);
       fastify.eth.suscribeMilestoneFundedEvent(onMilestoneFundedEvent);
+      fastify.eth.suscribeProjectStartedEvent(onProjectStarted);
     }
   };
 };

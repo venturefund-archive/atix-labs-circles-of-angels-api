@@ -1053,6 +1053,15 @@ describe('Testing projectService startProject', () => {
     return expect(response).toEqual(expected);
   });
 
+  it.skip('should return an error if the project could not be updated', async () => {
+    const response = await projectService.startProject(5);
+    const expected = {
+      error: 'ERROR: Project could not be started',
+      status: 500
+    };
+    return expect(response).toEqual(expected);
+  });
+
   it('should throw an error if it fails to get the project', async () => {
     expect(projectService.startProject()).rejects.toEqual(
       Error('Error starting project')
