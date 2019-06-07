@@ -1,4 +1,5 @@
 const configs = require('config');
+const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 
 const {
   userRegistrationStatus,
@@ -9,7 +10,7 @@ const {
 } = require('../rest/util/constants');
 
 exports.userOracle = {
-  address: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
+  address: ethServicesMock.createAccount(),
   createdAt: '2019-04-16T03:00:00.000Z',
   email: 'oracle@test.com',
   id: 4,
@@ -20,7 +21,7 @@ exports.userOracle = {
   username: 'Oracle 1'
 };
 exports.userSE = {
-  address: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
+  address: ethServicesMock.createAccount(),
   createdAt: '2019-04-16T03:00:00.000Z',
   email: 'user@test.com',
   id: 2,
@@ -32,7 +33,7 @@ exports.userSE = {
 };
 
 exports.userAdmin = {
-  address: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
+  address: ethServicesMock.createAccount(),
   createdAt: '2019-04-16T03:00:00.000Z',
   email: 'admin@test.com',
   id: 1,
@@ -44,7 +45,7 @@ exports.userAdmin = {
 };
 
 exports.userFunder = {
-  address: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
+  address: ethServicesMock.createAccount(),
   createdAt: '2019-04-16T03:00:00.000Z',
   email: 'funder@test.com',
   id: 3,
@@ -106,8 +107,7 @@ exports.project = {
   cardPhoto: 2,
   coverPhoto: 1,
   createdAt: '2019-05-31T03:00:00.000Z',
-  creationTransactionHash:
-    '0xe2f683a54780cbf79186c8ed692e9df8ae165b9f3f302ab85ffeed2308ce9c75',
+  creationTransactionHash: ethServicesMock.createProject(),
   faqLink: 'http://www.google.com/',
   goalAmount: 9000,
   id: projectId,
@@ -130,8 +130,7 @@ exports.project = {
   projectName: 'nuevo',
   status: projectStatus.PUBLISHED,
   timeframe: 'Project Timeframe',
-  transactionHash:
-    '0xb7dd94ebfd03aa21712d90a4a6bfd82336917e3e6e3127958bbeda3cedc8cbce',
+  transactionHash: ethServicesMock.createProject(),
   updatedAt: '2019-05-31T03:00:00.000Z'
 };
 

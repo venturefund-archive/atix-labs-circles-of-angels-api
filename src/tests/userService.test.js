@@ -6,8 +6,7 @@ const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
   eth: {
-    createAccount: () =>
-      '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
+    createAccount: ethServicesMock.createAccount
   },
   configs: require('config')
 };
@@ -91,10 +90,15 @@ describe('Testing userService createUser', () => {
   let questionnaireService;
 
   const mockUser = testHelper.buildUserSe({ id: 1 });
+  const existingMail = 'existing@test.com';
 
   beforeAll(() => {
     userDao = {
       async createUser(user) {
+        if (user.email === '') {
+          return undefined;
+        }
+
         if (user.username === '') {
           throw Error('Error creating user');
         }
@@ -104,7 +108,7 @@ describe('Testing userService createUser', () => {
       },
 
       getUserByEmail(email) {
-        if (email === 'existing@test.com') {
+        if (email === existingMail) {
           return { id: 1, email };
         }
       }
@@ -141,7 +145,7 @@ describe('Testing userService createUser', () => {
       email: mockUser.email,
       pwd: mockUser.pwd,
       role: mockUser.role,
-      address: ethServicesMock.createAccount(),
+      address: mockUser.address,
       registrationStatus: userRegistrationStatus.PENDING_APPROVAL
     };
 
@@ -155,17 +159,63 @@ describe('Testing userService createUser', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should return an error if the creation fails', async () => {
-    const pwd = '$2b$hashed';
+  it('should throw an error if the creation fails', async () => {
+    const { pwd, email, role } = mockUser;
     const username = '';
-    const email = 'user@coa.com';
-    const role = 1;
 
     bcrypt.hash.mockReturnValueOnce(pwd);
 
     return expect(
       userService.createUser(username, email, pwd, role)
     ).rejects.toEqual(Error('Error creating User'));
+  });
+
+  it('should return an error if another user with the same email exists', async () => {
+    const expected = {
+      status: 409,
+      error: 'A user with that email already exists'
+    };
+
+    const response = await userService.createUser(
+      mockUser.username,
+      existingMail,
+      mockUser.pwd,
+      mockUser.role
+    );
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the specified role is not valid', async () => {
+    const expected = {
+      status: 404,
+      error: 'User role does not exist'
+    };
+
+    const response = await userService.createUser(
+      mockUser.username,
+      mockUser.email,
+      mockUser.pwd,
+      5
+    );
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the creation returns undefined', async () => {
+    const expected = {
+      status: 500,
+      error: 'There was an unexpected error creating the user'
+    };
+
+    const response = await userService.createUser(
+      mockUser.username,
+      '',
+      mockUser.pwd,
+      mockUser.role
+    );
+
+    return expect(response).toEqual(expected);
   });
 });
 
