@@ -1,6 +1,5 @@
 const { find } = require('lodash');
 const fs = require('fs');
-const util = require('util');
 const configs = require('config');
 const testHelper = require('./testHelper');
 
@@ -98,7 +97,7 @@ describe('Testing projectService createProject', () => {
       const mockFiles = testHelper.getMockFiles();
 
       const savedProject = testHelper.buildProject(0, 0, {
-        blockchainStatus: blockchainStatus.SENT,
+        bcStatus: blockchainStatus.SENT,
         status: projectStatus.PENDING_APPROVAL
       });
 

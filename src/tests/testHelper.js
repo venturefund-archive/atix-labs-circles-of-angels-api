@@ -4,9 +4,6 @@ const {
   milestone,
   activity,
   photos,
-  userAdmin,
-  userOracle,
-  userFunder,
   userSE
 } = require('./mockModels');
 
@@ -18,23 +15,19 @@ exports.buildUserSe = ({ id }) => {
   return user;
 };
 
-exports.buildActivity = ({ id, blockchainStatus, oracle }) => {
+exports.buildActivity = ({ id, bcStatus, oracle }) => {
   const newActivity = JSON.parse(JSON.stringify(activity));
   newActivity.id = id || newActivity.id;
-  newActivity.blockchainStatus =
-    blockchainStatus || newActivity.blockchainStatus;
+  newActivity.blockchainStatus = bcStatus || newActivity.blockchainStatus;
   newActivity.oracle = oracle || newActivity.oracle;
 
   return newActivity;
 };
-exports.buildMilestone = (
-  cantActivities,
-  { projectId, id, blockchainStatus }
-) => {
+exports.buildMilestone = (cantActivities, { projectId, id, bcStatus }) => {
   const newMilestone = JSON.parse(JSON.stringify(milestone));
   newMilestone.id = id || newMilestone.id;
-  newMilestone.blockchainStatus =
-    blockchainStatus || newMilestone.blockchainStatus;
+  newMilestone.project = projectId || newMilestone.project;
+  newMilestone.blockchainStatus = bcStatus || newMilestone.blockchainStatus;
 
   for (let j = 1; j <= cantActivities; j++) {
     const newActivity = this.buildActivity({ id: j });
@@ -49,7 +42,7 @@ exports.buildProject = (
   cantActivities,
   {
     id,
-    blockchainStatus,
+    bcStatus,
     status,
     ownerId,
     projectName,
@@ -65,7 +58,7 @@ exports.buildProject = (
   newProject.projectName = projectName || newProject.projectName;
   newProject.id = id || newProject.id;
   newProject.status = status !== undefined ? status : newProject.status;
-  newProject.blockchainStatus = blockchainStatus || newProject.blockchainStatus;
+  newProject.blockchainStatus = bcStatus || newProject.blockchainStatus;
   newProject.ownerId = ownerId || newProject.ownerId;
   for (let i = 1; i <= cantMilestones; i++) {
     const newMilestone = this.buildMilestone(cantActivities, { id: i });
@@ -87,14 +80,14 @@ exports.getMockProjects = () => [
   this.buildProject(1, 1, { id: 4, status: projectStatus.PUBLISHED }),
   this.buildProject(1, 1, {
     id: 5,
-    blockchainStatus: blockchainStatus.CONFIRMED,
+    bcStatus: blockchainStatus.CONFIRMED,
     status: projectStatus.PUBLISHED
   }),
   this.buildProject(1, 1, {
     id: 6,
-    blockchainStatus: blockchainStatus.PENDING
+    bcStatus: blockchainStatus.PENDING
   }),
-  this.buildProject(1, 1, { id: 7, blockchainStatus: blockchainStatus.SENT })
+  this.buildProject(1, 1, { id: 7, bcStatus: blockchainStatus.SENT })
 ];
 
 exports.getMockFiles = () => ({
