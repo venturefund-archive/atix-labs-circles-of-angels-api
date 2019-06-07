@@ -1,6 +1,5 @@
-const create = userSocialEntrepreneurModel => async userFunder => {
-  return userSocialEntrepreneurModel.create(userFunder);
-};
+const create = userSocialEntrepreneurModel => async userFunder =>
+  userSocialEntrepreneurModel.create(userFunder);
 
 const getById = userSocialEntrepreneurModel => async id => {
   const userSocialEntrepreneur = userSocialEntrepreneurModel.findOne({
