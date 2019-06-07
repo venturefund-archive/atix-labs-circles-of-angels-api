@@ -821,14 +821,14 @@ const activityService = ({
       const photoEvidence = [];
       if (activityPhotos && activityPhotos != null) {
         // add type to each
-        activityPhotos.map(activityPhoto => {
-          return photoEvidence.push({
+        activityPhotos.map(activityPhoto =>
+          photoEvidence.push({
             ...activityPhoto,
             fileType: 'Photo',
             photo: activityPhoto.photo.id,
             fileName: path.basename(activityPhoto.photo.path)
-          });
-        });
+          })
+        );
       } else {
         fastify.log.info(
           `[Activity Service] :: Activity ID: ${activityId} does not have photo evidence`

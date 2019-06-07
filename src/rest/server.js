@@ -148,7 +148,10 @@ const initJWT = fastify => {
         const token = getToken(request, reply);
         if (token) request.user = await fastify.jwt.verify(token);
       } catch (error) {
-        fastify.log.error('[Server] :: There was an error authenticating', err);
+        fastify.log.error(
+          '[Server] :: There was an error authenticating',
+          error
+        );
         reply.status(500).send({ error: 'There was an error authenticating' });
       }
     });

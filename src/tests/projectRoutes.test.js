@@ -1,7 +1,6 @@
-const projectRoutes = require('../rest/routes/projectRoutes');
-
 describe.skip('Testing projectRoutes', () => {
   it('should return status code 200 when doing a post request to /project/upload', async () => {
+    const projectRoutes = require('../rest/routes/projectRoutes');
     const fastify = require('fastify')();
     fastify.register(projectRoutes);
 

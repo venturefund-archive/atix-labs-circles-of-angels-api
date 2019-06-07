@@ -7,35 +7,30 @@ exports.getFileFromPath = filepath => {
   return file;
 };
 
-const getCoverPhotoPath = (projectId, photoName) => {
-  return `${
+const getCoverPhotoPath = (projectId, photoName) =>
+  `${
     configs.fileServer.filePath
   }/projects/${projectId}/coverPhoto${path.extname(photoName)}`;
-};
 
-const getCardPhotoPath = (projectId, photoName) => {
-  return `${
-    configs.fileServer.filePath
-  }/projects/${projectId}/cardPhoto${path.extname(photoName)}`;
-};
+const getCardPhotoPath = (projectId, photoName) =>
+  `${configs.fileServer.filePath}/projects/${projectId}/cardPhoto${path.extname(
+    photoName
+  )}`;
 
-const getPitchProposalPath = (projectId, proposalName) => {
-  return `${
+const getPitchProposalPath = (projectId, proposalName) =>
+  `${
     configs.fileServer.filePath
   }/projects/${projectId}/pitchProposal${path.extname(proposalName)}`;
-};
 
-const getProjectAgreementPath = (projectId, agreementName) => {
-  return `${
-    configs.fileServer.filePath
-  }/projects/${projectId}/agreement${path.extname(agreementName)}`;
-};
+const getProjectAgreementPath = (projectId, agreementName) =>
+  `${configs.fileServer.filePath}/projects/${projectId}/agreement${path.extname(
+    agreementName
+  )}`;
 
-const getMilestonesPath = (projectId, milestoneName) => {
-  return `${
+const getMilestonesPath = (projectId, milestoneName) =>
+  `${
     configs.fileServer.filePath
   }/projects/${projectId}/milestones${path.extname(milestoneName)}`;
-};
 
 exports.addPathToFilesProperties = ({
   projectId,

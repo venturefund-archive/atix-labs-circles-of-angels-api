@@ -52,9 +52,7 @@ const ethServices = async (providerHost, { logger }) => {
     return array;
   };
 
-  const toChecksum = address => {
-    return web3.utils.toChecksumAddress(address);
-  };
+  const toChecksum = address => web3.utils.toChecksumAddress(address);
 
   const unlockAccount = async (account, pwd) => {
     await web3.eth.personal.unlockAccount(
@@ -119,7 +117,6 @@ const ethServices = async (providerHost, { logger }) => {
         }
       );
     });
-  };
 
   const suscribeToEvent = async (event, callback) => {
     event({}, (error, event) => {
