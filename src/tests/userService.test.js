@@ -4,7 +4,7 @@ const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 
 const fastify = {
-  log: { info: console.log, error: console.log },
+  log: { info: jest.fn(), error: jest.fn() },
   eth: {
     createAccount: () =>
       '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
