@@ -117,6 +117,7 @@ const ethServices = async (providerHost, { logger }) => {
         }
       );
     });
+  }
 
   const suscribeToEvent = async (event, callback) => {
     event({}, (error, event) => {
