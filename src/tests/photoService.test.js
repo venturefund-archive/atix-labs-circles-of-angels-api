@@ -1,3 +1,5 @@
+const testHelper = require('./testHelper');
+
 const fastify = {
   log: { info: console.log, error: console.log },
   configs: require('config')
@@ -8,10 +10,7 @@ const { getBase64htmlFromPath } = require('../rest/util/images');
 describe('Testing photoService getBase64Photo', () => {
   let photoDao;
   let photoService;
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectCardPhoto.png'
-  );
+  const filepath = testHelper.getMockFiles().projectCardPhoto.path;
 
   const photoId = 1;
 
@@ -77,10 +76,7 @@ describe('Testing photoService savePhoto', () => {
   let photoService;
 
   const photoId = 12;
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectCardPhoto.png'
-  );
+  const filepath = testHelper.getMockFiles().projectCardPhoto.path;
 
   beforeAll(() => {
     photoDao = {
@@ -124,10 +120,7 @@ describe('Testing photoService updatePhoto', () => {
   let photoService;
 
   const photoId = 1;
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectCardPhoto.png'
-  );
+  const filepath = testHelper.getMockFiles().projectCardPhoto.path;
 
   beforeAll(() => {
     photoDao = {
