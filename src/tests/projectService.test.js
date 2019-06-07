@@ -1,7 +1,6 @@
 const { find } = require('lodash');
 const fs = require('fs');
 const configs = require('config');
-const { promisify } = require('util');
 const testHelper = require('./testHelper');
 
 const projectServiceBuilder = require('../rest/core/projectService');
@@ -19,8 +18,6 @@ const fastify = {
   },
   configs
 };
-
-const readFile = promisify(fs.readFile);
 
 describe('Testing projectService createProject', () => {
   let projectDao;
@@ -437,9 +434,8 @@ describe('Testing projectService updateProjectStatus', () => {
       projectStatusDao
     });
 
-    projectService.getProjectWithId = async ({ projectId }) => {
-      return find(mockProjects, project => project.id === projectId);
-    };
+    projectService.getProjectWithId = async ({ projectId }) =>
+      find(mockProjects, project => project.id === projectId);
   });
 
   it('should return the updated project', async () => {
@@ -478,8 +474,13 @@ describe('Testing projectService deleteProject', () => {
   beforeEach(() => {
     projectDao = {
       deleteProject({ projectId }) {
-        const project = find(mockProjects, project => project.id === projectId);
-        mockProjects = mockProjects.filter(project => project.id !== projectId);
+        const project = find(
+          mockProjects,
+          mockProject => mockProject.id === projectId
+        );
+        mockProjects = mockProjects.filter(
+          mockProject => mockProject.id !== projectId
+        );
         return project;
       }
     };
@@ -525,7 +526,10 @@ describe('Testing projectService getProjectMilestones', () => {
 
     projectDao = {
       async getProjectMilestones({ projectId }) {
-        const project = find(mockProjects, project => project.id === projectId);
+        const project = find(
+          mockProjects,
+          mockProject => mockProject.id === projectId
+        );
         if (!project) return [];
         return project.milestones;
       }
@@ -972,7 +976,6 @@ describe('Testing projectService startProject', () => {
   let transferService;
   let milestoneService;
 
-  const projId = 1;
   const goalAmount = 1000;
   const mockProjects = testHelper.getMockProjects();
 
@@ -1414,9 +1417,8 @@ describe('Testing projectService getExperiences', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should throw an error if the database query fails', async () => {
-    return expect(projectService.getExperiences()).rejects.toEqual(
+  it('should throw an error if the database query fails', async () =>
+    expect(projectService.getExperiences()).rejects.toEqual(
       Error('Error getting experiences')
-    );
-  });
+    ));
 });

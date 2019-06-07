@@ -21,7 +21,10 @@ module.exports = {
         reply.send(res);
       }
     } catch (error) {
-      fastify.log.error(`[File Routes] :: Error deleting file ID ${id}:`, error);
+      fastify.log.error(
+        `[File Routes] :: Error deleting file ID ${id}:`,
+        error
+      );
       reply.status(500).send({ error: 'Error deleting file' });
     }
   }

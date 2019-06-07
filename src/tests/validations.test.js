@@ -15,9 +15,7 @@ describe('Project validations tests', () => {
       timeframe: '11/12/2018',
       row: 5
     };
-    projectDao.availableName = jest.fn(name => {
-      return true;
-    });
+    projectDao.availableName = jest.fn(() => true);
   });
 
   test('a project with empty fields must add an error for each empty fields', () => {
@@ -36,7 +34,7 @@ describe('Project validations tests', () => {
   });
 
   test('project name with existent name must add an error', () => {
-    projectDao.availableName = jest.fn(name => {
+    projectDao.availableName = jest.fn(() => {
       throw Error('Project name already in use');
     });
 

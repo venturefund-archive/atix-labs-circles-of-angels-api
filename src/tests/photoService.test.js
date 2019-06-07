@@ -64,11 +64,10 @@ describe('Testing photoService getBase64Photo', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should throw an error if the database query fails', async () => {
-    return expect(photoService.getBase64Photo('')).rejects.toEqual(
+  it('should throw an error if the database query fails', async () =>
+    expect(photoService.getBase64Photo('')).rejects.toEqual(
       Error('Error getting photo')
-    );
-  });
+    ));
 });
 
 describe('Testing photoService savePhoto', () => {
@@ -107,11 +106,10 @@ describe('Testing photoService savePhoto', () => {
   it(
     'should throw an error if there was an error ' +
       'saving the photo to database',
-    async () => {
-      return expect(photoService.savePhoto('')).rejects.toEqual(
+    async () =>
+      expect(photoService.savePhoto('')).rejects.toEqual(
         Error('Error saving photo')
-      );
-    }
+      )
   );
 });
 
@@ -165,10 +163,9 @@ describe('Testing photoService updatePhoto', () => {
   it(
     'should throw an error if there was an error ' +
       'updating the photo in database',
-    async () => {
-      return expect(photoService.updatePhoto('', filepath)).rejects.toEqual(
+    async () =>
+      expect(photoService.updatePhoto('', filepath)).rejects.toEqual(
         Error('Error updating photo')
-      );
-    }
+      )
   );
 });

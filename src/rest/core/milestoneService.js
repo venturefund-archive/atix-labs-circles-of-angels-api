@@ -208,8 +208,8 @@ const milestoneService = ({
 
     await forEachPromise(
       milestoneActivities.activities,
-      (activity, context) => {
-        return new Promise(resolve => {
+      (activity, context) =>
+        new Promise(resolve => {
           process.nextTick(async () => {
             const oracle = await activityService.getOracleFromActivity(
               activity.id
@@ -224,8 +224,7 @@ const milestoneService = ({
             context.push(activityWithType);
             resolve();
           });
-        });
-      },
+        }),
       activities
     );
 
@@ -649,8 +648,7 @@ const milestoneService = ({
         activityStatus.COMPLETED
       );
     } catch (error) {
-      console.error(error);
-      fastify.log.error('Error trying complete milestone');
+      fastify.log.error('Error trying complete milestone', error);
     }
   },
 

@@ -36,23 +36,18 @@ const deleteActivity = activityModel => async activityId => {
   return deleted;
 };
 
-const updateStatus = activityModel => async (activityId, status) => {
-  return activityModel.update(activityId).set({ status });
-};
+const updateStatus = activityModel => async (activityId, status) =>
+  activityModel.update(activityId).set({ status });
 const updateStatusWithTransaction = activityModel => async (
   activityId,
   status,
   transactionHash
-) => {
-  return activityModel.update(activityId).set({ status, transactionHash });
-};
+) => activityModel.update(activityId).set({ status, transactionHash });
 
 const updateBlockchainStatus = activityModel => async (
   activityId,
   blockchainStatus
-) => {
-  return activityModel.updateOne({ id: activityId }).set({ blockchainStatus });
-};
+) => activityModel.updateOne({ id: activityId }).set({ blockchainStatus });
 
 module.exports = activityModel => ({
   saveActivity: saveActivity(activityModel),
