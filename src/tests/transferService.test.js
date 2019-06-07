@@ -1,4 +1,5 @@
 const transferServiceBuilder = require('../rest/core/transferService');
+
 const fastify = {
   log: { info: console.log, error: console.log },
   configs: require('config')
@@ -9,7 +10,6 @@ describe('Testing projectService getTotalFundedByProject', () => {
   let transferService;
 
   const project = 1;
-  const transferStatus = 2;
 
   beforeAll(() => {
     transferDao = {

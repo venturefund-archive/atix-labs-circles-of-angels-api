@@ -14,7 +14,7 @@ module.exports = {
     service: 'Gmail',
     email: 'circlesofangelshelp@gmail.com',
     password: 'coasupport1',
-    recoveryTime: 1 //in hours
+    recoveryTime: 1 // in hours
   },
 
   jwt: {

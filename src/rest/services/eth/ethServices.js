@@ -31,12 +31,10 @@ const ethServices = async (providerHost, { logger }) => {
     return array;
   };
 
-  const toChecksum = address => {
-    return web3.utils.toChecksumAddress(address);
-  };
+  const toChecksum = address => web3.utils.toChecksumAddress(address);
 
   const makeTx = async (sender, pwd, method) => {
-    addressSender = toChecksum(sender);
+    const addressSender = toChecksum(sender);
     await web3.eth.personal.unlockAccount(
       addressSender,
       pwd,
@@ -60,8 +58,8 @@ const ethServices = async (providerHost, { logger }) => {
     });
   };
 
-  const transfer = async (sender, receiver, value) => {
-    return new Promise((resolve, reject) => {
+  const transfer = async (sender, receiver, value) =>
+    new Promise((resolve, reject) => {
       web3.eth.sendTransaction(
         {
           from: sender,
@@ -78,7 +76,6 @@ const ethServices = async (providerHost, { logger }) => {
         }
       );
     });
-  };
 
   const suscribeToEvent = async (event, callback) => {
     event({}, (error, event) => {

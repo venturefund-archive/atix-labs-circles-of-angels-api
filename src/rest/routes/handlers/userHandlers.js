@@ -135,7 +135,14 @@ module.exports = {
   signupUser: fastify => async (request, reply) => {
     const { userService } = apiHelper.helper.services;
     try {
-      const { email, pwd, username, role, detail, questionnaire } = request.body;
+      const {
+        email,
+        pwd,
+        username,
+        role,
+        detail,
+        questionnaire
+      } = request.body;
 
       fastify.log.info('[User Routes] :: Creating new user:', request.body);
       const user = await userService.createUser(
@@ -199,7 +206,9 @@ module.exports = {
       const { passRecoveryService } = apiHelper.helper.services;
       fastify.log.info('[User Routes] :: Starting pass recovery proccess');
       const { email } = request.body;
-      const response = await passRecoveryService.startPassRecoveryProcess(email);
+      const response = await passRecoveryService.startPassRecoveryProcess(
+        email
+      );
       if (response.error) {
         fastify.log.error(
           '[User Routes] :: Recovery password procces failed',
@@ -226,7 +235,10 @@ module.exports = {
       const { passRecoveryService } = apiHelper.helper.services;
       fastify.log.info('[User Routes] :: Updating password');
       const { token, password } = request.body;
-      const response = await passRecoveryService.updatePassword(token, password);
+      const response = await passRecoveryService.updatePassword(
+        token,
+        password
+      );
       if (response.error) {
         fastify.log.error('[User Routes] :: Update password failed', response);
         reply.status(response.status).send(response);
