@@ -1,5 +1,22 @@
 const Web3 = require('web3');
 const ethConfig = require('config').eth;
+const workerBuilder = require('./ethWorker');
+
+const mockAddresses = [
+  '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
+  '0x6704fbfcd5ef766b287262fa2281c105d57246a6',
+  '0x9e1ef1ec212f5dffb41d35d9e5c14054f26c6560',
+  '0xce42bdb34189a93c55de250e011c68faee374dd3',
+  '0x97a3fc5ee46852c1cf92a97b7bad42f2622267cc',
+  '0xb9dcbf8a52edc0c8dd9983fcc1d97b1f5d975ed7',
+  '0x26064a2e2b568d9a6d01b93d039d1da9cf2a58cd',
+  '0xe84da28128a48dd5585d1abb1ba67276fdd70776',
+  '0xcc036143c68a7a9a41558eae739b428ecde5ef66',
+  '0xe2b3204f29ab45d5fd074ff02ade098fbc381d42',
+  '0xd51128f302755666c42e3920d72ff2fe632856a9'
+];
+
+
 
 /**
  * Init a ethereum services, receiving the provider host and returns and object
@@ -7,6 +24,10 @@ const ethConfig = require('config').eth;
  */
 const ethServices = async (providerHost, { logger }) => {
   const web3 = new Web3(providerHost);
+  const worker = workerBuilder(web3, mockAddresses, {
+    maxTransactionsPerAccount: 4,
+    logger
+  });
   const COAProjectAdmin = new web3.eth.Contract(
     ethConfig.CONTRACT_ADMIN_ABI,
     ethConfig.CONTRACT_ADMIN_ADDRESS,
@@ -35,13 +56,17 @@ const ethServices = async (providerHost, { logger }) => {
     return web3.utils.toChecksumAddress(address);
   };
 
-  const makeTx = async (sender, pwd, method) => {
-    addressSender = toChecksum(sender);
+  const unlockAccount = async (account, pwd) => {
     await web3.eth.personal.unlockAccount(
-      addressSender,
+      account,
       pwd,
       ethConfig.UNLOCK_DURATION
     );
+  };
+
+  const makeTx = async (sender, pwd, method) => {
+    addressSender = toChecksum(sender);
+    await unlockAccount(addressSender, pwd);
     return new Promise((resolve, reject) => {
       method.send(
         {
@@ -58,6 +83,22 @@ const ethServices = async (providerHost, { logger }) => {
         }
       );
     });
+  };
+
+  const makeTxRequest = (sender, method) => {
+    addressSender = toChecksum(sender);
+    return method.send.request(
+      {
+        from: addressSender,
+        gasLimit: 10000000000
+      },
+      (err, hash) => {
+        if (err) {
+          logger.error(err);
+        }
+        logger.info(`TxHash: ${hash}`);
+      }
+    );
   };
 
   const transfer = async (sender, receiver, value) => {
@@ -105,7 +146,8 @@ const ethServices = async (providerHost, { logger }) => {
         seAddress,
         projectName
       );
-      return makeTx(sender, pwd, create);
+      //return makeTx(sender, pwd, create);
+      return worker.pushTransaction(create, { gasLimit: 10000000000 });
     },
 
     async startProject(sender, pwd, { projectId }) {
@@ -129,7 +171,6 @@ const ethServices = async (providerHost, { logger }) => {
         budget,
         description
       );
-
       return makeTx(sender, pwd, createMilestone);
     },
 
@@ -152,6 +193,70 @@ const ethServices = async (providerHost, { logger }) => {
 
       return makeTx(sender, pwd, createActivity);
     },
+
+    async createActivities(sender, pwd, activities) {
+      try {
+        const methods = [];
+        activities.forEach(activity => {
+          const createActivity = COAProjectAdmin.methods.createActivity(
+            activity.id,
+            activity.milestoneId,
+            activity.projectId,
+            toChecksum(activity.oracle.address),
+            activity.tasks
+          );
+          console.log('creating activity method: ', activity.id);
+          methods.push(createActivity);
+        });
+        await worker.pushAllTransactions(methods, { gasLimit: 1000000000000 });
+        // for await (activity of activities) {
+        //   const createActivity = COAProjectAdmin.methods.createActivity(
+        //     activity.id,
+        //     activity.milestoneId,
+        //     activity.projectId,
+        //     toChecksum(activity.oracle.address),
+        //     activity.tasks
+        //   );
+        //   await worker.pushTransaction(createActivity, {
+        //     gasLimit: 100000000000
+        //   });        }
+      } catch (error) {
+        logger.error(error);
+      }
+    },
+
+    async createMilestones(sender, pwd, milestones) {
+      try {
+        const methods = [];
+        // for await (milestone of milestones) {
+        //   const createMilestone = COAProjectAdmin.methods.createMilestone(
+        //     milestone.id,
+        //     milestone.project,
+        //     milestone.budget,
+        //     milestone.tasks
+        //   );
+        //   console.log('creating milestone method: ', milestone.id);
+        //   await worker.pushTransaction(createMilestone, {
+        //     gasLimit: 100000000000
+        //   });
+        //   methods.push(createMilestone);
+        // }
+        milestones.forEach(milestone => {
+          const createMilestone = COAProjectAdmin.methods.createMilestone(
+            milestone.id,
+            milestone.project,
+            milestone.budget,
+            milestone.tasks
+          );
+          console.log('creating milestone method: ', milestone.id);
+          methods.push(createMilestone);
+        });
+        await worker.pushAllTransactions(methods, { gasLimit: 100000000000 });
+      } catch (error) {
+        logger.error(error);
+      }
+    },
+
     /**
      * @param {*} sender The oracle address assigned to this activity
      * @param {*} onError error callback
