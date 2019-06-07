@@ -7,7 +7,7 @@ const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus, blockchainStatus } = require('../rest/util/constants');
 
 const fastify = {
-  log: { info: console.log, error: console.log },
+  log: { info: jest.fn(), error: jest.fn() },
   eth: {
     createProject: () =>
       '0xe2f683a54780cbf79186c8ed692e9df8ae165b9f3f302ab85ffeed2308ce9c75',
@@ -281,7 +281,7 @@ describe('Testing projectService updateProject', () => {
     return expect(response).toEqual(expected);
   });
 
-  it.skip('should throw an error if it fails to update the project', async () => {
+  it('should throw an error if it fails to update the project', async () => {
     const projectId = 5;
     const project = {
       problemAddressed: 'problem',
