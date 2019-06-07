@@ -1,6 +1,5 @@
-const create = userFunderModel => async userFunder => {
-  return userFunderModel.create(userFunder);
-};
+const create = userFunderModel => async userFunder =>
+  userFunderModel.create(userFunder);
 
 const getById = userFunderModel => async id => {
   const userFunder = userFunderModel.findOne({

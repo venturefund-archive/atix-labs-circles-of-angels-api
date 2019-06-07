@@ -890,10 +890,7 @@ const projectService = ({
       fastify.log.info(
         `[Project Service] :: Starting milestones on blockchain of project Project ID ${projectId}`
       );
-      await milestoneService.startMilestonesOfProject(
-        project,
-        userOwner
-      );
+      await milestoneService.startMilestonesOfProject(project, userOwner);
 
       return project;
     } catch (error) {

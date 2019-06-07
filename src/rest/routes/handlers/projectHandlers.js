@@ -85,7 +85,9 @@ module.exports = {
   getProject: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
     const { projectId } = request.params;
-    fastify.log.info(`[Project Routes] :: Getting project with id ${projectId}`);
+    fastify.log.info(
+      `[Project Routes] :: Getting project with id ${projectId}`
+    );
 
     const project = await projectService.getProjectWithId({
       projectId
@@ -147,7 +149,9 @@ module.exports = {
 
   downloadMilestonesTemplate: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
-    fastify.log.info('[Project Routes] :: Downloading milestones template file');
+    fastify.log.info(
+      '[Project Routes] :: Downloading milestones template file'
+    );
     try {
       const res = await projectService.downloadMilestonesTemplate();
 
@@ -257,13 +261,19 @@ module.exports = {
         );
         reply.status(res.status).send(res.error);
       } else {
-        fastify.log.info('[Project Routes] :: Project agreement uploaded:', res);
+        fastify.log.info(
+          '[Project Routes] :: Project agreement uploaded:',
+          res
+        );
         reply
           .status(200)
           .send({ success: 'Project agreement successfully uploaded!' });
       }
     } catch (error) {
-      fastify.log.error('[Project Routes] :: Error uploading agreement:', error);
+      fastify.log.error(
+        '[Project Routes] :: Error uploading agreement:',
+        error
+      );
       reply.status(500).send({ error: 'Error uploading agreement' });
     }
   },
@@ -301,7 +311,9 @@ module.exports = {
     const { projectService } = apiHelper.helper.services;
     fastify.log.info('[Project Routes] :: Downloading proposal file');
     try {
-      const res = await projectService.downloadProposal(request.params.projectId);
+      const res = await projectService.downloadProposal(
+        request.params.projectId
+      );
 
       if (res && res.error) {
         fastify.log.error(
@@ -310,7 +322,10 @@ module.exports = {
         );
         reply.status(res.status).send(res.error);
       } else {
-        fastify.log.info('[Project Routes] :: Project proposal downloaded:', res);
+        fastify.log.info(
+          '[Project Routes] :: Project proposal downloaded:',
+          res
+        );
         reply.header('file', res.filename);
         reply.header('Access-Control-Expose-Headers', 'file');
         reply.send(res.filestream);
@@ -401,7 +416,9 @@ module.exports = {
           '[Project Routes] :: Error starting project:',
           startedProject.error
         );
-        reply.status(startedProject.status).send({ error: startedProject.error });
+        reply
+          .status(startedProject.status)
+          .send({ error: startedProject.error });
       } else {
         reply.status(200).send({ success: 'Project started successfully!' });
       }
@@ -414,7 +431,9 @@ module.exports = {
   getProjectsByOracle: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
     const { id } = request.params;
-    fastify.log.info(`[Project Routes] :: GET request at /project/oracle/${id}`);
+    fastify.log.info(
+      `[Project Routes] :: GET request at /project/oracle/${id}`
+    );
     try {
       const projects = await projectService.getProjectsAsOracle(id);
 

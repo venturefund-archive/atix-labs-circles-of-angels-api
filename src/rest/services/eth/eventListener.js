@@ -70,7 +70,10 @@ const eventListener = async fastify => {
       );
 
       if (modifiedProject.error) {
-        fastify.log.error('[Event listener] :: Error updating status: ', error);
+        fastify.log.error(
+          '[Event listener] :: Error updating status: ',
+          modifiedProject.error
+        );
         return;
       }
       await updateLastBlock(event);
@@ -89,8 +92,8 @@ const eventListener = async fastify => {
       let { id, projectId } = event.returnValues;
       id = parseInt(id._hex);
       projectId = parseInt(projectId._hex);
-      project = await projectService.getProjectWithId({ projectId });
-      owner = await userService.getUserById(project.ownerId);
+      const project = await projectService.getProjectWithId({ projectId });
+      const owner = await userService.getUserById(project.ownerId);
       if (project.blockchainStatus !== blockchainStatus.CONFIRMED) {
         fastify.log.error(
           '[Event listener] :: Must be confirmed in blockchain first the project ',
@@ -104,13 +107,16 @@ const eventListener = async fastify => {
       );
 
       if (milestone.error) {
-        fastify.log.error('[Event listener] :: Error updating status: ', error);
+        fastify.log.error(
+          '[Event listener] :: Error updating status: ',
+          milestone.error
+        );
         return;
       }
 
-      const activities = (await milestoneService.getMilestoneActivities(
+      const { activities } = await milestoneService.getMilestoneActivities(
         milestone
-      )).activities;
+      );
 
       for (let j = 0; j < activities.length; j++) {
         const activity = activities[j];
@@ -163,12 +169,12 @@ const eventListener = async fastify => {
         blockchainStatus.CONFIRMED
       );
 
-      const activities = (await milestoneService.getMilestoneActivities(
+      const { activities } = await milestoneService.getMilestoneActivities(
         milestone
-      )).activities;
+      );
 
-      const projectComplete = true;
-      for (activityIndex in activities) {
+      let projectComplete = true;
+      for (const activityIndex in activities) {
         const activity = activities[activityIndex];
         if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
           projectComplete = false;
@@ -177,7 +183,10 @@ const eventListener = async fastify => {
       }
 
       if (response.error) {
-        fastify.log.error('[Event listener] :: Error updating status: ', error);
+        fastify.log.error(
+          '[Event listener] :: Error updating status: ',
+          response.error
+        );
         return;
       }
 
@@ -234,7 +243,7 @@ const eventListener = async fastify => {
         const events = await fastify.eth.getAllPastEvents({
           fromBlock: lastBlock.blockNumber + 1 || 0
         });
-        for (eventKey in events) {
+        for (const eventKey in events) {
           const event = events[eventKey];
           if (eventMethodMap[event.event]) eventMethodMap[event.event](event);
         }
