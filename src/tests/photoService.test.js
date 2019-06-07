@@ -1,13 +1,16 @@
-const fastify = { log: { info: console.log, error: console.log } };
+const testHelper = require('./testHelper');
+
+const fastify = {
+  log: { info: jest.fn(), error: jest.fn() },
+  configs: require('config')
+};
+
 const { getBase64htmlFromPath } = require('../rest/util/images');
 
 describe('Testing photoService getBase64Photo', () => {
   let photoDao;
   let photoService;
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectCardPhoto.png'
-  );
+  const filepath = testHelper.getMockFiles().projectCardPhoto.path;
 
   const photoId = 1;
 
@@ -61,11 +64,10 @@ describe('Testing photoService getBase64Photo', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should throw an error if the database query fails', async () => {
-    return expect(photoService.getBase64Photo('')).rejects.toEqual(
+  it('should throw an error if the database query fails', async () =>
+    expect(photoService.getBase64Photo('')).rejects.toEqual(
       Error('Error getting photo')
-    );
-  });
+    ));
 });
 
 describe('Testing photoService savePhoto', () => {
@@ -73,19 +75,16 @@ describe('Testing photoService savePhoto', () => {
   let photoService;
 
   const photoId = 12;
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectCardPhoto.png'
-  );
+  const filepath = testHelper.getMockFiles().projectCardPhoto.path;
 
   beforeAll(() => {
     photoDao = {
-      async savePhoto(path) {
-        if (path === '') {
+      async savePhoto(photo) {
+        if (photo.path === '') {
           throw Error('Error saving photo');
         }
 
-        return { id: photoId, path };
+        return { id: photoId, ...photo };
       }
     };
 
@@ -96,9 +95,10 @@ describe('Testing photoService savePhoto', () => {
   });
 
   it('should return the saved photo', async () => {
-    const response = await photoService.savePhoto(filepath);
+    const projectExperience = 1;
+    const response = await photoService.savePhoto(filepath, projectExperience);
 
-    const expected = { id: photoId, path: filepath };
+    const expected = { id: photoId, path: filepath, projectExperience };
 
     return expect(response).toEqual(expected);
   });
@@ -106,11 +106,10 @@ describe('Testing photoService savePhoto', () => {
   it(
     'should throw an error if there was an error ' +
       'saving the photo to database',
-    async () => {
-      return expect(photoService.savePhoto('')).rejects.toEqual(
+    async () =>
+      expect(photoService.savePhoto('')).rejects.toEqual(
         Error('Error saving photo')
-      );
-    }
+      )
   );
 });
 
@@ -119,10 +118,7 @@ describe('Testing photoService updatePhoto', () => {
   let photoService;
 
   const photoId = 1;
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectCardPhoto.png'
-  );
+  const filepath = testHelper.getMockFiles().projectCardPhoto.path;
 
   beforeAll(() => {
     photoDao = {
@@ -167,10 +163,9 @@ describe('Testing photoService updatePhoto', () => {
   it(
     'should throw an error if there was an error ' +
       'updating the photo in database',
-    async () => {
-      return expect(photoService.updatePhoto('', filepath)).rejects.toEqual(
+    async () =>
+      expect(photoService.updatePhoto('', filepath)).rejects.toEqual(
         Error('Error updating photo')
-      );
-    }
+      )
   );
 });

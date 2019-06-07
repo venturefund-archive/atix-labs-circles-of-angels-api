@@ -1,11 +1,117 @@
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = {
+  log: { info: jest.fn(), error: jest.fn() },
+  configs: require('config')
+};
+
+const testHelper = require('./testHelper');
+
+describe('Testing milestoneService createMilestone', () => {
+  let milestoneDao;
+  let activityService;
+  let milestoneService;
+
+  const project = 12;
+  const newMilestoneId = 1;
+
+  const mockMilestone = {
+    quarter: 'Quarter 1',
+    tasks: 'Milestone Tasks',
+    impact: 'Impact Milestone',
+    impactCriterion: 'Criterion Milestone',
+    signsOfSuccess: 'Success M1',
+    signsOfSuccessCriterion: 'Success Criterion M1',
+    category: 'Category M1',
+    keyPersonnel: 'Key Personnel M1',
+    budget: 123
+  };
+
+  const incompleteMilestone = {
+    quarter: 'Quarter 1',
+    impact: 'Impact Milestone',
+    impactCriterion: 'Criterion Milestone',
+    signsOfSuccess: 'Success M1',
+    signsOfSuccessCriterion: 'Success Criterion M1',
+    category: 'Category M1',
+    keyPersonnel: 'Key Personnel M1',
+    budget: 123
+  };
+
+  beforeAll(() => {
+    milestoneDao = {
+      async saveMilestone({ milestone, projectId }) {
+        if (projectId === 0) {
+          throw Error('Error saving milestone');
+        }
+        const toSave = {
+          ...milestone,
+          project: projectId,
+          id: newMilestoneId
+        };
+        return toSave;
+      }
+    };
+
+    activityService = {};
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao,
+      activityService
+    });
+  });
+
+  it('should return a new created milestone', async () => {
+    const expected = { ...mockMilestone, project, id: newMilestoneId };
+
+    const response = await milestoneService.createMilestone(
+      mockMilestone,
+      project
+    );
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the milestone is empty', async () => {
+    const response = await milestoneService.createMilestone({}, project);
+
+    const expected = {
+      status: 409,
+      error: 'Milestone is missing mandatory fields'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the milestone is missing mandatory fields', async () => {
+    const response = await milestoneService.createMilestone(
+      incompleteMilestone,
+      project
+    );
+
+    const expected = {
+      status: 409,
+      error: 'Milestone is missing mandatory fields'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if it fails to create the milestone', async () => {
+    const response = await milestoneService.createMilestone(mockMilestone, 0);
+
+    const expected = { status: 500, error: 'Error creating Milestone' };
+
+    return expect(response).toEqual(expected);
+  });
+});
 
 describe('Testing milestoneService createMilestones', () => {
   let milestoneDao;
   let activityService;
   let milestoneService;
-
+  let mockProjects;
   beforeAll(() => {
+    mockProjects = testHelper.getMockProjects();
     milestoneDao = {
       async saveMilestone({ milestone, projectId }) {
         const toSave = {
@@ -14,6 +120,13 @@ describe('Testing milestoneService createMilestones', () => {
         };
         delete toSave.activityList;
         return toSave;
+      },
+
+      async getMilestonesByProject(projectId) {
+        const project = mockProjects.find(
+          mockProject => projectId === mockProject.id
+        );
+        return project.milestones;
       }
     };
 
@@ -63,10 +176,7 @@ describe('Testing milestoneService createMilestones', () => {
       }
     ];
 
-    const filePath = require('path').join(
-      __dirname,
-      './mockFiles/projectMilestones.xlsx'
-    );
+    const filePath = testHelper.getMockFiles().projectMilestones.path;
 
     milestoneService.readMilestones.mockImplementation = jest.fn(() =>
       milestoneService.readMilestones(filePath)
@@ -108,15 +218,17 @@ describe('Testing milestoneService createMilestones', () => {
             msg:
               'Found a milestone without Expected Changes/ Social Impact Targets'
           },
-          { rowNumber: 11, msg: 'Found a milestone without Tasks' }
+          { rowNumber: 11, msg: 'Found a milestone without Tasks' },
+          {
+            rowNumber: 1,
+            msg:
+              'Could not find any valid activities. There should be at least one.'
+          }
         ],
         milestones: []
       };
 
-      const filePath = require('path').join(
-        __dirname,
-        './mockFiles/milestonesErrors.xlsx'
-      );
+      const filePath = testHelper.getMockFiles().milestonesErrors.path;
 
       milestoneService.readMilestones.mockImplementation = jest.fn(() =>
         milestoneService.readMilestones(filePath)
@@ -130,6 +242,114 @@ describe('Testing milestoneService createMilestones', () => {
       await expect(milestones).toEqual(errors);
     }
   );
+});
+
+describe('Testing milestoneService updateMilestone', () => {
+  let milestoneDao;
+  let milestoneService;
+
+  const milestoneId = 15;
+
+  const mockMilestone = {
+    quarter: 'Quarter 1',
+    tasks: 'Milestone Tasks',
+    impact: 'Impact Milestone',
+    impactCriterion: 'Criterion Milestone',
+    signsOfSuccess: 'Success M1',
+    signsOfSuccessCriterion: 'Success Criterion M1',
+    category: 'Category M1',
+    keyPersonnel: 'Key Personnel M1',
+    budget: 123,
+    id: milestoneId,
+    project: 12
+  };
+
+  const incompleteMilestone = {
+    quarter: 'Quarter 1',
+    impact: 'Impact Milestone',
+    impactCriterion: 'Criterion Milestone',
+    signsOfSuccess: 'Success M1',
+    signsOfSuccessCriterion: 'Success Criterion M1',
+    category: 'Category M1',
+    keyPersonnel: 'Key Personnel M1',
+    budget: 123,
+    id: milestoneId,
+    project: 12
+  };
+
+  beforeAll(() => {
+    milestoneDao = {
+      async updateMilestone(milestone, id) {
+        if (id === '') {
+          throw Error('Error updating milestone');
+        }
+        if (id === 0) {
+          return undefined;
+        }
+        return milestone;
+      }
+    };
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao
+    });
+  });
+
+  it('should return the updated milestone', async () => {
+    const expected = mockMilestone;
+
+    const response = await milestoneService.updateMilestone(
+      mockMilestone,
+      milestoneId
+    );
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the milestone is empty', async () => {
+    const response = await milestoneService.updateMilestone({}, milestoneId);
+
+    const expected = {
+      status: 409,
+      error: 'Milestone is missing mandatory fields'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the milestone is missing mandatory fields', async () => {
+    const response = await milestoneService.updateMilestone(
+      incompleteMilestone,
+      milestoneId
+    );
+
+    const expected = {
+      status: 409,
+      error: 'Milestone is missing mandatory fields'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the milestone does not exist', async () => {
+    const response = await milestoneService.updateMilestone(mockMilestone, 0);
+
+    const expected = {
+      status: 404,
+      error: 'Milestone does not exist'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the milestone could not be updated', async () => {
+    const response = await milestoneService.updateMilestone(mockMilestone, '');
+
+    const expected = { status: 500, error: 'Error updating Milestone' };
+
+    return expect(response).toEqual(expected);
+  });
 });
 
 describe('Testing milestoneService getMilestoneActivities', () => {
@@ -270,19 +490,12 @@ describe('Testing milestoneService getMilestoneActivities', () => {
   );
 });
 
-describe('Testing milestoneService readMilestone', () => {
-  let milestoneDao;
-  let activityService;
+describe('Testing milestoneService readMilestones', () => {
   let milestoneService;
 
   beforeAll(() => {
-    milestoneDao = {};
-    activityService = {};
-
     milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
+      fastify
     });
   });
 
@@ -353,10 +566,7 @@ describe('Testing milestoneService readMilestone', () => {
         ]
       };
 
-      const mockXls = require('path').join(
-        __dirname,
-        './mockFiles/projectMilestones.xlsx'
-      );
+      const mockXls = testHelper.getMockFiles().projectMilestones.path;
       const milestones = await milestoneService.readMilestones(mockXls);
 
       await expect(milestones).toEqual(mockMilestones);
@@ -371,18 +581,11 @@ describe('Testing milestoneService readMilestone', () => {
 });
 
 describe('Testing milestoneService isMilestoneEmpty', () => {
-  let milestoneDao;
-  let activityService;
   let milestoneService;
 
   beforeAll(() => {
-    milestoneDao = {};
-    activityService = {};
-
     milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
+      fastify
     });
   });
 
@@ -510,18 +713,11 @@ describe('Testing milestoneService isMilestoneValid', () => {
 });
 
 describe('Testing milestoneService verifyActivity', () => {
-  let milestoneDao;
-  let activityService;
   let milestoneService;
 
   beforeAll(() => {
-    milestoneDao = {};
-    activityService = {};
-
     milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
+      fastify
     });
   });
 
@@ -561,218 +757,6 @@ describe('Testing milestoneService verifyActivity', () => {
     await expect(
       milestoneService.verifyActivity(mockActivity, response, rowNumber)
     ).toBe(false);
-  });
-});
-
-describe('Testing milestoneService createMilestone', () => {
-  let milestoneDao;
-  let activityService;
-  let milestoneService;
-
-  const project = 12;
-  const newMilestoneId = 1;
-
-  const mockMilestone = {
-    quarter: 'Quarter 1',
-    tasks: 'Milestone Tasks',
-    impact: 'Impact Milestone',
-    impactCriterion: 'Criterion Milestone',
-    signsOfSuccess: 'Success M1',
-    signsOfSuccessCriterion: 'Success Criterion M1',
-    category: 'Category M1',
-    keyPersonnel: 'Key Personnel M1',
-    budget: 123
-  };
-
-  const incompleteMilestone = {
-    quarter: 'Quarter 1',
-    impact: 'Impact Milestone',
-    impactCriterion: 'Criterion Milestone',
-    signsOfSuccess: 'Success M1',
-    signsOfSuccessCriterion: 'Success Criterion M1',
-    category: 'Category M1',
-    keyPersonnel: 'Key Personnel M1',
-    budget: 123
-  };
-
-  beforeAll(() => {
-    milestoneDao = {
-      async saveMilestone({ milestone, projectId }) {
-        if (projectId === 0) {
-          throw Error('Error saving milestone');
-        }
-        const toSave = {
-          ...milestone,
-          project: projectId,
-          id: newMilestoneId
-        };
-        return toSave;
-      }
-    };
-
-    activityService = {};
-
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
-    });
-  });
-
-  it('should return a new created milestone', async () => {
-    const expected = { ...mockMilestone, project, id: newMilestoneId };
-
-    const response = await milestoneService.createMilestone(
-      mockMilestone,
-      project
-    );
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the milestone is empty', async () => {
-    const response = await milestoneService.createMilestone({}, project);
-
-    const expected = {
-      status: 409,
-      error: 'Milestone is missing mandatory fields'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the milestone is missing mandatory fields', async () => {
-    const response = await milestoneService.createMilestone(
-      incompleteMilestone,
-      project
-    );
-
-    const expected = {
-      status: 409,
-      error: 'Milestone is missing mandatory fields'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if it fails to create the milestone', async () => {
-    const response = await milestoneService.createMilestone(mockMilestone, 0);
-
-    const expected = { status: 500, error: 'Error creating Milestone' };
-
-    return expect(response).toEqual(expected);
-  });
-});
-
-describe('Testing milestoneService updateMilestone', () => {
-  let milestoneDao;
-  let activityService;
-  let milestoneService;
-
-  const milestoneId = 15;
-
-  const mockMilestone = {
-    quarter: 'Quarter 1',
-    tasks: 'Milestone Tasks',
-    impact: 'Impact Milestone',
-    impactCriterion: 'Criterion Milestone',
-    signsOfSuccess: 'Success M1',
-    signsOfSuccessCriterion: 'Success Criterion M1',
-    category: 'Category M1',
-    keyPersonnel: 'Key Personnel M1',
-    budget: 123,
-    id: milestoneId,
-    project: 12
-  };
-
-  const incompleteMilestone = {
-    quarter: 'Quarter 1',
-    impact: 'Impact Milestone',
-    impactCriterion: 'Criterion Milestone',
-    signsOfSuccess: 'Success M1',
-    signsOfSuccessCriterion: 'Success Criterion M1',
-    category: 'Category M1',
-    keyPersonnel: 'Key Personnel M1',
-    budget: 123,
-    id: milestoneId,
-    project: 12
-  };
-
-  beforeAll(() => {
-    milestoneDao = {
-      async updateMilestone(milestone, id) {
-        if (id === '') {
-          throw Error('Error updating milestone');
-        }
-        if (id === 0) {
-          return undefined;
-        }
-        return milestone;
-      }
-    };
-
-    activityService = {};
-
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
-    });
-  });
-
-  it('should return the updated milestone', async () => {
-    const expected = mockMilestone;
-
-    const response = await milestoneService.updateMilestone(
-      mockMilestone,
-      milestoneId
-    );
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the milestone is empty', async () => {
-    const response = await milestoneService.updateMilestone({}, milestoneId);
-
-    const expected = {
-      status: 409,
-      error: 'Milestone is missing mandatory fields'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the milestone is missing mandatory fields', async () => {
-    const response = await milestoneService.updateMilestone(
-      incompleteMilestone,
-      milestoneId
-    );
-
-    const expected = {
-      status: 409,
-      error: 'Milestone is missing mandatory fields'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the milestone does not exist', async () => {
-    const response = await milestoneService.updateMilestone(mockMilestone, 0);
-
-    const expected = {
-      status: 404,
-      error: 'Milestone does not exist'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the milestone could not be updated', async () => {
-    const response = await milestoneService.updateMilestone(mockMilestone, '');
-
-    const expected = { status: 500, error: 'Error updating Milestone' };
-
-    return expect(response).toEqual(expected);
   });
 });
 

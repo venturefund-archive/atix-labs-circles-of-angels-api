@@ -1,4 +1,7 @@
-const fastify = { log: { info: console.log, error: console.log } };
+const fastify = {
+  log: { info: jest.fn(), error: jest.fn() },
+  configs: require('config')
+};
 
 describe('Testing userProjectService signAgreement', () => {
   let userProjectDao;

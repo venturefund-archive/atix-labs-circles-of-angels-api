@@ -3,12 +3,11 @@ const createQuestionnaireEntry = answerQuestionModel => async questionnaire => {
   return createdEntry;
 };
 
-const getByUserId = answerQuestionModel => async userId => {
-  return answerQuestionModel
+const getByUserId = answerQuestionModel => async userId =>
+  answerQuestionModel
     .find({ user: userId })
     .populate('answer')
     .populate('question');
-};
 
 module.exports = answerQuestionModel => ({
   createQuestionnaireEntry: createQuestionnaireEntry(answerQuestionModel),
