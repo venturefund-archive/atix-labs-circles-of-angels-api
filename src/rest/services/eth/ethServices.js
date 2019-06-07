@@ -33,13 +33,17 @@ const ethServices = async (providerHost, { logger }) => {
 
   const toChecksum = address => web3.utils.toChecksumAddress(address);
 
-  const makeTx = async (sender, pwd, method) => {
-    const addressSender = toChecksum(sender);
+  const unlockAccount = async (account, pwd) => {
     await web3.eth.personal.unlockAccount(
-      addressSender,
+      account,
       pwd,
       ethConfig.UNLOCK_DURATION
     );
+  };
+
+  const makeTx = async (sender, pwd, method) => {
+    addressSender = toChecksum(sender);
+    await unlockAccount(addressSender, pwd);
     return new Promise((resolve, reject) => {
       method.send(
         {
@@ -58,8 +62,24 @@ const ethServices = async (providerHost, { logger }) => {
     });
   };
 
-  const transfer = async (sender, receiver, value) =>
-    new Promise((resolve, reject) => {
+  const makeTxRequest = (sender, method) => {
+    addressSender = toChecksum(sender);
+    return method.send.request(
+      {
+        from: addressSender,
+        gasLimit: 10000000000
+      },
+      (err, hash) => {
+        if (err) {
+          logger.error(err);
+        }
+        logger.info(`TxHash: ${hash}`);
+      }
+    );
+  };
+
+  const transfer = async (sender, receiver, value) => {
+    return new Promise((resolve, reject) => {
       web3.eth.sendTransaction(
         {
           from: sender,
@@ -76,6 +96,7 @@ const ethServices = async (providerHost, { logger }) => {
         }
       );
     });
+  };
 
   const suscribeToEvent = async (event, callback) => {
     event({}, (error, event) => {
@@ -126,7 +147,6 @@ const ethServices = async (providerHost, { logger }) => {
         budget,
         description
       );
-
       return makeTx(sender, pwd, createMilestone);
     },
 
@@ -149,6 +169,56 @@ const ethServices = async (providerHost, { logger }) => {
 
       return makeTx(sender, pwd, createActivity);
     },
+
+    async createActivities(sender, pwd, activities) {
+      try {
+        const batch = web3.eth.BatchRequest();
+        activities.forEach(activity => {
+          const createActivity = COAProjectAdmin.methods.createActivity(
+            activity.id,
+            activity.milestoneId,
+            activity.projectId,
+            toChecksum(activity.oracle.address),
+            activity.tasks
+          );
+          const request = makeTxRequest(sender, createActivity);
+          batch.add(request);
+        });
+        await unlockAccount(sender, pwd);
+        const response = await batch.execute();
+        logger.info(
+          '[SC::Create Activities] Creating Activities - Hashes: ',
+          response.response
+        );
+      } catch (error) {
+        logger.error(error);
+      }
+    },
+
+    async createMilestones(sender, pwd, milestones) {
+      try {
+        const batch = web3.eth.BatchRequest();
+        milestones.forEach(milestone => {
+          const createMilestone = COAProjectAdmin.methods.createMilestone(
+            milestone.id,
+            milestone.project,
+            milestone.budget,
+            milestone.tasks
+          );
+          const request = makeTxRequest(sender, createMilestone);
+          batch.add(request);
+        });
+        await unlockAccount(sender, pwd);
+        const response = await batch.execute();
+        logger.info(
+          '[SC::Create Activities] Creating Milestones - Hashes: ',
+          response.response
+        );
+      } catch (error) {
+        logger.error(error);
+      }
+    },
+
     /**
      * @param {*} sender The oracle address assigned to this activity
      * @param {*} onError error callback
@@ -203,10 +273,6 @@ const ethServices = async (providerHost, { logger }) => {
 
     async suscribeMilestoneFundedEvent(callback) {
       suscribeToEvent(COAProjectAdmin.events.MilestoneFunded, callback);
-    },
-
-    async suscribeProjectStartedEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.ProjectStarted, callback);
     },
 
     async getAllPastEvents(options) {
