@@ -302,6 +302,13 @@ exports.project = {
   updatedAt: '2019-05-31T03:00:00.000Z'
 };
 
+exports.userProject = {
+  id: 20,
+  user: userFunderId,
+  project: projectId,
+  status: 1
+};
+
 exports.photos = [
   { id: 1, path: `${configs.fileServer.filePath}/projectCoverPhoto.png` },
   { id: 2, path: `${configs.fileServer.filePath}/projectCardPhoto.png` }
