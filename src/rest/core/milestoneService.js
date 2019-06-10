@@ -652,9 +652,9 @@ const milestoneService = ({
     }
   },
 
-  async startMilestonesOfProject(project, owner) {
+  async startMilestonesOfProject(project) {
     const milestones = await this.getMilestonesByProject(project.id);
-    await fastify.eth.createMilestones(owner.address, owner.pwd, milestones);
+    await fastify.eth.createMilestones(milestones);
   },
 
   async getMilestoneById(milestoneId) {
@@ -784,8 +784,6 @@ const milestoneService = ({
           `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
         );
         const txHash = await fastify.eth.setMilestoneFunded(
-          user.address,
-          user.pwd,
           { milestoneId, projectId: milestone.project }
         );
         if (txHash.error) {

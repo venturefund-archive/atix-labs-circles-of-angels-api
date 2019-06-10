@@ -12,7 +12,8 @@ module.exports = {
       defaultGas: 50000,
       defaultGasPrice: 1000000
     },
-    UNLOCK_DURATION: 10000,
-    INITIAL_FUNDS: 10000000000000000
+    UNLOCK_DURATION: 1000000,
+    INITIAL_FUNDS: 10000000000000000,
+    GAS_LIMIT: 10000000000
   }
 };
