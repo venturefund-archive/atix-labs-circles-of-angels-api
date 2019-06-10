@@ -686,7 +686,7 @@ const milestoneService = ({
    * @param {number} budgetStatusId
    * @returns updated milestone | error
    */
-  async updateBudgetStatus(milestoneId, budgetStatusId) {
+  async updateBudgetStatus(milestoneId, budgetStatusId, user) {
     fastify.log.info(
       `[Milestone Service] :: Updating Milestone ID ${milestoneId} budget status. 
       New status ID: ${budgetStatusId}`
@@ -768,6 +768,8 @@ const milestoneService = ({
           `[Milestone Service] :: set claimed Milestone ID ${milestoneId} on Blockchain`
         );
         const txHash = await fastify.eth.claimMilestone(
+          user.address,
+          user.pwd,
           { milestoneId, projectId: milestone.project }
         );
         if (txHash.error) {

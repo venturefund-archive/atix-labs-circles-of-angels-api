@@ -38,6 +38,18 @@ const ethServices = async (providerHost, { logger }) => {
     ethConfig.DEFAULT_CONFIG
   );
 
+  const unlockAccount = async (account, pwd) => {
+    await web3.eth.personal.unlockAccount(
+      account,
+      pwd,
+      ethConfig.UNLOCK_DURATION
+    );
+  };
+
+  const lockAccount = async account => {
+    await web3.eth.personal.lockAccount(account);
+  };
+
   const toBytes64Array = array => {
     array = array.map(row =>
       row.split('').map(c => web3.utils.asciiToHex(c).slice(0, 4))
@@ -168,18 +180,21 @@ const ethServices = async (providerHost, { logger }) => {
      * @param {*} onError error callback
      * @param {*} activity {activityId, projectId, milestoneId}
      */
-    async validateActivity({ activityId }) {
+    async validateActivity(sender, pwd, { activityId }) {
       logger.info(`[SC::Validate Activity] Validate Activity: ${activityId}`);
 
       const encodedMethod = COAOracle.methods
         .validateActivity(activityId)
         .encodeABI();
 
-      return worker.pushTransaction(
+      await unlockAccount(sender, pwd);
+      const txHash = await worker.pushTransaction(
         COAOracle.address,
         encodedMethod,
         ethConfig.GAS_LIMIT
       );
+      await lockAccount(sender);
+      return txHash;
     },
     async isTransactionConfirmed(transactionHash) {
       const transaction = await web3.eth.getTransaction(transactionHash);
@@ -244,31 +259,41 @@ const ethServices = async (providerHost, { logger }) => {
       return events;
     },
 
-    async uploadHashEvidenceToActivity(activityId, hashes) {
+    async uploadHashEvidenceToActivity(sender, pwd, { activityId, hashes }) {
       try {
         const encodedMethod = COAOracle.methods
           .uploadHashEvidence(activityId, toBytes64Array(hashes))
           .encodeABI();
-        return worker.pushTransaction(
+
+        await unlockAccount(sender, pwd);
+        const txHash = await worker.pushTransaction(
           COAOracle.address,
           encodedMethod,
-          ethConfig.GAS_LIMIT
+          ethConfig.GAS_LIMIT,
+          sender
         );
+        await lockAccount(sender);
+        return txHash;
       } catch (error) {
         return { error };
       }
     },
 
-    async claimMilestone({ milestoneId, projectId }) {
+    async claimMilestone(sender, pwd, { milestoneId, projectId }) {
       try {
         const encodedMethod = COAProjectAdmin.methods
           .claimMilestone(milestoneId, projectId)
           .encodeABI();
-        return worker.pushTransaction(
+
+        await unlockAccount(sender, pwd);
+        const txHash = await worker.pushTransaction(
           COAProjectAdmin.address,
           encodedMethod,
-          ethConfig.GAS_LIMIT
+          ethConfig.GAS_LIMIT,
+          sender
         );
+        await lockAccount(sender);
+        return txHash;
       } catch (error) {
         return { error };
       }

@@ -29,10 +29,13 @@ module.exports = {
     const { budgetStatusId } = req.body;
     const { id } = req.params;
 
+    const user = await userService.getUserById(req.user.id);
+
     try {
       const response = await milestoneService.updateBudgetStatus(
         id,
-        budgetStatusId
+        budgetStatusId,
+        user
       );
 
       if (response.error) {
