@@ -1,7 +1,7 @@
 const testHelper = require('./testHelper');
 
 const fastify = {
-  log: { info: console.log, error: console.log },
+  log: { info: jest.fn(), error: jest.fn() },
   configs: require('config')
 };
 

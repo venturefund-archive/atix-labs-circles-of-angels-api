@@ -198,6 +198,7 @@ const eventListener = async fastify => {
 
       if (!response) {
         fastify.log.error('[Event listener] :: Error updating status ');
+        return;
       }
       const { activities } = await milestoneService.getMilestoneActivities(
         milestone
