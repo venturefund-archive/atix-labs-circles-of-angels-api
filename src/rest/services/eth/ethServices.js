@@ -16,8 +16,6 @@ const mockAddresses = [
   '0xd51128f302755666c42e3920d72ff2fe632856a9'
 ];
 
-
-
 /**
  * Init a ethereum services, receiving the provider host and returns and object
  * @param {string} providerHost
@@ -54,51 +52,6 @@ const ethServices = async (providerHost, { logger }) => {
 
   const toChecksum = address => web3.utils.toChecksumAddress(address);
 
-  const unlockAccount = async (account, pwd) => {
-    await web3.eth.personal.unlockAccount(
-      account,
-      pwd,
-      ethConfig.UNLOCK_DURATION
-    );
-  };
-
-  const makeTx = async (sender, pwd, method) => {
-    addressSender = toChecksum(sender);
-    await unlockAccount(addressSender, pwd);
-    return new Promise((resolve, reject) => {
-      method.send(
-        {
-          from: addressSender,
-          gasLimit: 10000000000
-        },
-        (err, hash) => {
-          if (err) {
-            logger.error(err);
-            reject(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-          resolve(hash);
-        }
-      );
-    });
-  };
-
-  const makeTxRequest = (sender, method) => {
-    addressSender = toChecksum(sender);
-    return method.send.request(
-      {
-        from: addressSender,
-        gasLimit: 10000000000
-      },
-      (err, hash) => {
-        if (err) {
-          logger.error(err);
-        }
-        logger.info(`TxHash: ${hash}`);
-      }
-    );
-  };
-
   const transfer = async (sender, receiver, value) => {
     return new Promise((resolve, reject) => {
       web3.eth.sendTransaction(
@@ -117,7 +70,7 @@ const ethServices = async (providerHost, { logger }) => {
         }
       );
     });
-  }
+  };
 
   const suscribeToEvent = async (event, callback) => {
     event({}, (error, event) => {
@@ -134,122 +87,77 @@ const ethServices = async (providerHost, { logger }) => {
       return account;
     },
 
-    async createProject(sender, pwd, { projectId, seAddress, projectName }) {
+    async createProject({ projectId, seAddress, projectName }) {
       logger.info(
         `[SC::Create Project] Creating Project: ${projectId} - ${projectName}`
       );
       seAddress = toChecksum(seAddress);
-      const create = COAProjectAdmin.methods.createProject(
-        projectId,
-        seAddress,
-        projectName
+      const encodedMethod = COAProjectAdmin.methods
+        .createProject(projectId, seAddress, projectName)
+        .encodeABI();
+
+      return worker.pushTransaction(
+        COAProjectAdmin.address,
+        encodedMethod,
+        ethConfig.GAS_LIMIT
       );
-      //return makeTx(sender, pwd, create);
-      return worker.pushTransaction(create, { gasLimit: 10000000000 });
     },
 
-    async startProject(sender, pwd, { projectId }) {
+    async startProject({ projectId }) {
       logger.info(`[SC::Start Project] Starting Project: ${projectId}`);
-      const start = COAProjectAdmin.methods.startProject(projectId);
-      return makeTx(sender, pwd, start);
+      const encodedMethod = COAProjectAdmin.methods
+        .startProject(projectId)
+        .encodeABI();
+      return worker.pushTransaction(
+        COAProjectAdmin.address,
+        encodedMethod,
+        ethConfig.GAS_LIMIT
+      );
     },
 
-    async createMilestone(
-      sender,
-      pwd,
-      { milestoneId, projectId, budget, description }
-    ) {
-      logger.info(
-        `[SC::Create Milestone] Creating Milestone: ${milestoneId} - ${description}`
-      );
-
-      const createMilestone = COAProjectAdmin.methods.createMilestone(
-        milestoneId,
-        projectId,
-        budget,
-        description
-      );
-      return makeTx(sender, pwd, createMilestone);
-    },
-
-    async createActivity(
-      sender,
-      pwd,
-      { activityId, milestoneId, projectId, oracleAddress, description }
-    ) {
-      logger.info(
-        `[SC::Create Activity] Creating Activity: ${activityId} - ${description}`
-      );
-
-      const createActivity = COAProjectAdmin.methods.createActivity(
-        activityId,
-        milestoneId,
-        projectId,
-        toChecksum(oracleAddress),
-        description
-      );
-
-      return makeTx(sender, pwd, createActivity);
-    },
-
-    async createActivities(sender, pwd, activities) {
+    async createActivities(activities) {
       try {
-        const methods = [];
-        activities.forEach(activity => {
-          const createActivity = COAProjectAdmin.methods.createActivity(
-            activity.id,
-            activity.milestoneId,
-            activity.projectId,
-            toChecksum(activity.oracle.address),
-            activity.tasks
-          );
-          console.log('creating activity method: ', activity.id);
-          methods.push(createActivity);
-        });
-        await worker.pushAllTransactions(methods, { gasLimit: 1000000000000 });
-        // for await (activity of activities) {
-        //   const createActivity = COAProjectAdmin.methods.createActivity(
-        //     activity.id,
-        //     activity.milestoneId,
-        //     activity.projectId,
-        //     toChecksum(activity.oracle.address),
-        //     activity.tasks
-        //   );
-        //   await worker.pushTransaction(createActivity, {
-        //     gasLimit: 100000000000
-        //   });        }
+        const encodedMethods = activities.map(activity =>
+          COAProjectAdmin.methods
+            .createActivity(
+              activity.id,
+              activity.milestoneId,
+              activity.projectId,
+              toChecksum(activity.oracle.address),
+              activity.tasks
+            )
+            .encodeABI()
+        );
+
+        await worker.pushAllTransactions(
+          COAProjectAdmin.address,
+          encodedMethods,
+          ethConfig.GAS_LIMIT
+        );
       } catch (error) {
         logger.error(error);
       }
     },
 
-    async createMilestones(sender, pwd, milestones) {
+    async createMilestones(milestones) {
       try {
-        const methods = [];
-        // for await (milestone of milestones) {
-        //   const createMilestone = COAProjectAdmin.methods.createMilestone(
-        //     milestone.id,
-        //     milestone.project,
-        //     milestone.budget,
-        //     milestone.tasks
-        //   );
-        //   console.log('creating milestone method: ', milestone.id);
-        //   await worker.pushTransaction(createMilestone, {
-        //     gasLimit: 100000000000
-        //   });
-        //   methods.push(createMilestone);
-        // }
-        milestones.forEach(milestone => {
-          const createMilestone = COAProjectAdmin.methods.createMilestone(
-            milestone.id,
-            milestone.project,
-            milestone.budget,
-            milestone.tasks
-          );
-          console.log('creating milestone method: ', milestone.id);
-          methods.push(createMilestone);
-        });
-        await worker.pushAllTransactions(methods, { gasLimit: 100000000000 });
+        const encodedMethods = milestones.map(milestone =>
+          COAProjectAdmin.methods
+            .createMilestone(
+              milestone.id,
+              milestone.project,
+              milestone.budget,
+              milestone.tasks
+            )
+            .encodeABI()
+        );
+        console.log(encodedMethods);
+
+        await worker.pushAllTransactions(
+          COAProjectAdmin.address,
+          encodedMethods,
+          ethConfig.GAS_LIMIT
+        );
       } catch (error) {
         logger.error(error);
       }
@@ -260,13 +168,18 @@ const ethServices = async (providerHost, { logger }) => {
      * @param {*} onError error callback
      * @param {*} activity {activityId, projectId, milestoneId}
      */
-    async validateActivity(sender, pwd, { activityId }) {
+    async validateActivity({ activityId }) {
       logger.info(`[SC::Validate Activity] Validate Activity: ${activityId}`);
-      logger.info(`[SC::Validate Activity] Validate Activity: ${sender}`);
 
-      const validateActivity = COAOracle.methods.validateActivity(activityId);
+      const encodedMethod = COAOracle.methods
+        .validateActivity(activityId)
+        .encodeABI();
 
-      return makeTx(sender, pwd, validateActivity);
+      return worker.pushTransaction(
+        COAOracle.address,
+        encodedMethod,
+        ethConfig.GAS_LIMIT
+      );
     },
     async isTransactionConfirmed(transactionHash) {
       const transaction = await web3.eth.getTransaction(transactionHash);
@@ -331,37 +244,46 @@ const ethServices = async (providerHost, { logger }) => {
       return events;
     },
 
-    async uploadHashEvidenceToActivity(sender, pwd, activityId, hashes) {
+    async uploadHashEvidenceToActivity(activityId, hashes) {
       try {
-        const uploadHashEvidence = COAOracle.methods.uploadHashEvidence(
-          activityId,
-          toBytes64Array(hashes)
+        const encodedMethod = COAOracle.methods
+          .uploadHashEvidence(activityId, toBytes64Array(hashes))
+          .encodeABI();
+        return worker.pushTransaction(
+          COAOracle.address,
+          encodedMethod,
+          ethConfig.GAS_LIMIT
         );
-        return makeTx(sender, pwd, uploadHashEvidence);
       } catch (error) {
         return { error };
       }
     },
 
-    async claimMilestone(sender, pwd, { milestoneId, projectId }) {
+    async claimMilestone({ milestoneId, projectId }) {
       try {
-        const claimMilestone = COAProjectAdmin.methods.claimMilestone(
-          milestoneId,
-          projectId
+        const encodedMethod = COAProjectAdmin.methods
+          .claimMilestone(milestoneId, projectId)
+          .encodeABI();
+        return worker.pushTransaction(
+          COAProjectAdmin.address,
+          encodedMethod,
+          ethConfig.GAS_LIMIT
         );
-        return makeTx(sender, pwd, claimMilestone);
       } catch (error) {
         return { error };
       }
     },
 
-    async setMilestoneFunded(sender, pwd, { milestoneId, projectId }) {
+    async setMilestoneFunded({ milestoneId, projectId }) {
       try {
-        const setMilestoneFunded = COAProjectAdmin.methods.setMilestoneFunded(
-          milestoneId,
-          projectId
+        const encodedMethod = COAProjectAdmin.methods
+          .setMilestoneFunded(milestoneId, projectId)
+          .encodeABI();
+        return worker.pushTransaction(
+          COAProjectAdmin.address,
+          encodedMethod,
+          ethConfig.GAS_LIMIT
         );
-        return makeTx(sender, pwd, setMilestoneFunded);
       } catch (error) {
         return { error };
       }

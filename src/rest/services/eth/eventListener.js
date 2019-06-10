@@ -124,7 +124,6 @@ const eventListener = async fastify => {
       id = parseInt(id._hex);
       projectId = parseInt(projectId._hex);
       const project = await projectService.getProjectWithId({ projectId });
-      const owner = await userService.getUserById(project.ownerId);
       if (project.blockchainStatus !== blockchainStatus.CONFIRMED) {
         fastify.log.error(
           '[Event listener] :: Must be confirmed in blockchain first the project ',
@@ -156,7 +155,7 @@ const eventListener = async fastify => {
         activities[j].projectId = projectId;
         activities[j].milestoneId = id;
       }
-      await fastify.eth.createActivities(owner.address, owner.pwd, activities);
+      await fastify.eth.createActivities(activities);
       await updateLastBlock(event);
       fastify.log.info(
         '[Event listener] :: successfully updated blockchain status of milestone ',
@@ -204,7 +203,6 @@ const eventListener = async fastify => {
         milestone
       );
 
-      let projectComplete = true;
       for (const activityIndex in activities) {
         const activity = activities[activityIndex];
         if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
@@ -240,8 +238,6 @@ const eventListener = async fastify => {
         if (projectComplete) {
           const userOwner = await projectDao.getUserOwnerOfProject(projectId);
           const transactionHash = await fastify.eth.startProject(
-            userOwner.address,
-            userOwner.pwd,
             { projectId }
           );
           await projectDao.updateProjectTransaction({

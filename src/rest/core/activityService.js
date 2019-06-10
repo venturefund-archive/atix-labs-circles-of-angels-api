@@ -190,10 +190,7 @@ const activityService = ({
           hashes.push(addedEvidence.fileHash);
         }
       }
-      const userInfo = await userService.getUserById(user.id);
       await fastify.eth.uploadHashEvidenceToActivity(
-        userInfo.address,
-        userInfo.pwd,
         activityId,
         hashes
       );
@@ -852,10 +849,7 @@ const activityService = ({
   },
   async completeActivity(activityId) {
     try {
-      const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
       const transactionHash = await fastify.eth.validateActivity(
-        oracle.user.address,
-        oracle.user.pwd,
         { activityId }
       );
       return activityDao.updateStatusWithTransaction(

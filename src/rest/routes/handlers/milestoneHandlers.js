@@ -30,11 +30,9 @@ module.exports = {
     const { id } = req.params;
 
     try {
-      const user = await userService.getUserById(req.user.id);
       const response = await milestoneService.updateBudgetStatus(
         id,
-        budgetStatusId,
-        user
+        budgetStatusId
       );
 
       if (response.error) {
