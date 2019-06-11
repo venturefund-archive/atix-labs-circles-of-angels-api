@@ -21,61 +21,61 @@ const {
   userRoles
 } = require('../rest/util/constants');
 
-exports.buildUserOracle = ({ id }) => {
+exports.buildUserOracle = id => {
   const user = JSON.parse(JSON.stringify(userOracle));
   user.id = id || user.id;
   return user;
 };
 
-exports.buildUserFunder = ({ id }) => {
+exports.buildUserFunder = id => {
   const user = JSON.parse(JSON.stringify(userFunder));
   user.id = id || user.id;
   return user;
 };
 
-exports.buildUserAdmin = ({ id }) => {
+exports.buildUserAdmin = id => {
   const user = JSON.parse(JSON.stringify(userAdmin));
   user.id = id || user.id;
   return user;
 };
 
-exports.buildUserSe = ({ id }) => {
+exports.buildUserSe = id => {
   const user = JSON.parse(JSON.stringify(userSE));
   user.id = id || user.id;
   return user;
 };
 
-exports.buildUserSeDetails = ({ id }) => {
+exports.buildUserSeDetails = id => {
   const { detail } = userSeDetails(id);
   return detail;
 };
 
-exports.buildUserFunderDetails = ({ id }) => {
+exports.buildUserFunderDetails = id => {
   const { detail } = userFunderDetails(id);
   return detail;
 };
 
-exports.buildUserSeAnswers = ({ id }) => {
+exports.buildUserSeAnswers = id => {
   const { answers } = userSeAnswers(id);
   return answers;
 };
 
-exports.buildUserFunderAnswers = ({ id }) => {
+exports.buildUserFunderAnswers = id => {
   const { answers } = userFunderAnswers(id);
   return answers;
 };
 
-exports.buildUserSeWithDetails = ({ id }) => {
-  const user = this.buildUserSe({ id });
-  const answers = this.buildUserSeAnswers({ id: user.id });
-  const detail = this.buildUserSeDetails({ id: user.id });
+exports.buildUserSeWithDetails = id => {
+  const user = this.buildUserSe(id);
+  const answers = this.buildUserSeAnswers(user.id);
+  const detail = this.buildUserSeDetails(user.id);
   return { ...user, answers, detail };
 };
 
-exports.buildUserFunderWithDetails = ({ id }) => {
-  const user = this.buildUserFunder({ id });
-  const answers = this.buildUserFunderAnswers({ id: user.id });
-  const detail = this.buildUserFunderDetails({ id: user.id });
+exports.buildUserFunderWithDetails = id => {
+  const user = this.buildUserFunder(id);
+  const answers = this.buildUserFunderAnswers(user.id);
+  const detail = this.buildUserFunderDetails(user.id);
   return { ...user, answers, detail };
 };
 

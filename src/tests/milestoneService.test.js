@@ -7,64 +7,41 @@ const testHelper = require('./testHelper');
 
 describe('Testing milestoneService createMilestone', () => {
   let milestoneDao;
-  let activityService;
   let milestoneService;
 
   const project = 12;
   const newMilestoneId = 1;
 
-  const mockMilestone = {
-    quarter: 'Quarter 1',
-    tasks: 'Milestone Tasks',
-    impact: 'Impact Milestone',
-    impactCriterion: 'Criterion Milestone',
-    signsOfSuccess: 'Success M1',
-    signsOfSuccessCriterion: 'Success Criterion M1',
-    category: 'Category M1',
-    keyPersonnel: 'Key Personnel M1',
-    budget: 123
-  };
+  const mockMilestone = testHelper.buildMilestone(0, {
+    projectId: project,
+    id: newMilestoneId
+  });
 
-  const incompleteMilestone = {
-    quarter: 'Quarter 1',
-    impact: 'Impact Milestone',
-    impactCriterion: 'Criterion Milestone',
-    signsOfSuccess: 'Success M1',
-    signsOfSuccessCriterion: 'Success Criterion M1',
-    category: 'Category M1',
-    keyPersonnel: 'Key Personnel M1',
-    budget: 123
-  };
+  const toCreateMilestone = { ...mockMilestone };
+  delete toCreateMilestone.id;
+  delete toCreateMilestone.project;
 
   beforeAll(() => {
     milestoneDao = {
-      async saveMilestone({ milestone, projectId }) {
+      async saveMilestone({ projectId }) {
         if (projectId === 0) {
           throw Error('Error saving milestone');
         }
-        const toSave = {
-          ...milestone,
-          project: projectId,
-          id: newMilestoneId
-        };
-        return toSave;
+        return mockMilestone;
       }
     };
 
-    activityService = {};
-
     milestoneService = require('../rest/core/milestoneService')({
       fastify,
-      milestoneDao,
-      activityService
+      milestoneDao
     });
   });
 
   it('should return a new created milestone', async () => {
-    const expected = { ...mockMilestone, project, id: newMilestoneId };
+    const expected = mockMilestone;
 
     const response = await milestoneService.createMilestone(
-      mockMilestone,
+      toCreateMilestone,
       project
     );
 
@@ -83,6 +60,9 @@ describe('Testing milestoneService createMilestone', () => {
   });
 
   it('should return an error if the milestone is missing mandatory fields', async () => {
+    const incompleteMilestone = { ...toCreateMilestone };
+    delete incompleteMilestone.tasks;
+
     const response = await milestoneService.createMilestone(
       incompleteMilestone,
       project
@@ -97,7 +77,10 @@ describe('Testing milestoneService createMilestone', () => {
   });
 
   it('should return an error if it fails to create the milestone', async () => {
-    const response = await milestoneService.createMilestone(mockMilestone, 0);
+    const response = await milestoneService.createMilestone(
+      toCreateMilestone,
+      0
+    );
 
     const expected = { status: 500, error: 'Error creating Milestone' };
 
@@ -110,23 +93,33 @@ describe('Testing milestoneService createMilestones', () => {
   let activityService;
   let milestoneService;
   let mockProjects;
+
+  const project = 2;
+  let milestoneCount = 1;
+
+  const mockMilestones = [
+    testHelper.buildMilestone(0, { projectId: project, id: 1 }),
+    testHelper.buildMilestone(0, { projectId: project, id: 2 })
+  ];
+
   beforeAll(() => {
     mockProjects = testHelper.getMockProjects();
     milestoneDao = {
       async saveMilestone({ milestone, projectId }) {
         const toSave = {
           ...milestone,
-          project: projectId
+          project: projectId,
+          id: milestoneCount++
         };
         delete toSave.activityList;
         return toSave;
       },
 
       async getMilestonesByProject(projectId) {
-        const project = mockProjects.find(
+        const getProject = mockProjects.find(
           mockProject => projectId === mockProject.id
         );
-        return project.milestones;
+        return getProject.milestones;
       }
     };
 
@@ -141,107 +134,31 @@ describe('Testing milestoneService createMilestones', () => {
       milestoneDao,
       activityService
     });
-
-    jest.mock(milestoneService, () => ({
-      readMilestones: jest.fn()
-    }));
   });
 
   it('should return an array of created milestones associated to a project', async () => {
-    const projectId = 2;
-    const mockMilestones = [
-      {
-        quarter: 'Quarter 1',
-        tasks: 'Task M1',
-        impact: 'Impact M1',
-        impactCriterion: 'Impact Criterion M1',
-        signsOfSuccess: 'Success M1',
-        signsOfSuccessCriterion: 'Success Criterion M1',
-        category: 'Category M1',
-        keyPersonnel: 'Key Personnel M1',
-        budget: 'Budget M1',
-        project: projectId
-      },
-      {
-        quarter: 'Quarter 1',
-        tasks: 'Task M2',
-        impact: 'Impact M2',
-        impactCriterion: 'Impact Criterion M2',
-        signsOfSuccess: 'Success M2',
-        signsOfSuccessCriterion: 'Success Criterion M2',
-        category: 'Category M2',
-        keyPersonnel: 'Key Personnel M2',
-        budget: 'Budget M2',
-        project: projectId
-      }
-    ];
-
     const filePath = testHelper.getMockFiles().projectMilestones.path;
 
-    milestoneService.readMilestones.mockImplementation = jest.fn(() =>
-      milestoneService.readMilestones(filePath)
-    );
+    milestoneService.readMilestones = jest.fn(() => {
+      const firstMilestone = { ...mockMilestones[0], activityList: [] };
+      delete firstMilestone.id;
+      delete firstMilestone.project;
+
+      const secondMilestone = { ...mockMilestones[1], activityList: [] };
+      delete secondMilestone.id;
+      delete secondMilestone.project;
+
+      const toCreateMilestones = [firstMilestone, secondMilestone];
+      return { errors: [], milestones: toCreateMilestones };
+    });
 
     const milestones = await milestoneService.createMilestones(
       filePath,
-      projectId
+      project
     );
 
     await expect(milestones).toEqual(mockMilestones);
   });
-
-  it(
-    'should return an array of errors and an empty array of milestones ' +
-      'if the milestones are invalid',
-    async () => {
-      const projectId = 2;
-      const errors = {
-        errors: [
-          { rowNumber: 6, msg: 'Found a milestone without Tasks' },
-          {
-            rowNumber: 6,
-            msg:
-              'Found a milestone without Expected Changes/ Social Impact Targets'
-          },
-          {
-            rowNumber: 7,
-            msg:
-              'Found an activity without an specified milestone or inside an invalid milestone'
-          },
-          {
-            rowNumber: 8,
-            msg:
-              'Found an activity without an specified milestone or inside an invalid milestone'
-          },
-          {
-            rowNumber: 10,
-            msg:
-              'Found a milestone without Expected Changes/ Social Impact Targets'
-          },
-          { rowNumber: 11, msg: 'Found a milestone without Tasks' },
-          {
-            rowNumber: 1,
-            msg:
-              'Could not find any valid activities. There should be at least one.'
-          }
-        ],
-        milestones: []
-      };
-
-      const filePath = testHelper.getMockFiles().milestonesErrors.path;
-
-      milestoneService.readMilestones.mockImplementation = jest.fn(() =>
-        milestoneService.readMilestones(filePath)
-      );
-
-      const milestones = await milestoneService.createMilestones(
-        filePath,
-        projectId
-      );
-
-      await expect(milestones).toEqual(errors);
-    }
-  );
 });
 
 describe('Testing milestoneService updateMilestone', () => {
@@ -250,32 +167,10 @@ describe('Testing milestoneService updateMilestone', () => {
 
   const milestoneId = 15;
 
-  const mockMilestone = {
-    quarter: 'Quarter 1',
-    tasks: 'Milestone Tasks',
-    impact: 'Impact Milestone',
-    impactCriterion: 'Criterion Milestone',
-    signsOfSuccess: 'Success M1',
-    signsOfSuccessCriterion: 'Success Criterion M1',
-    category: 'Category M1',
-    keyPersonnel: 'Key Personnel M1',
-    budget: 123,
-    id: milestoneId,
-    project: 12
-  };
+  const mockMilestone = testHelper.buildMilestone(0, { id: milestoneId });
 
-  const incompleteMilestone = {
-    quarter: 'Quarter 1',
-    impact: 'Impact Milestone',
-    impactCriterion: 'Criterion Milestone',
-    signsOfSuccess: 'Success M1',
-    signsOfSuccessCriterion: 'Success Criterion M1',
-    category: 'Category M1',
-    keyPersonnel: 'Key Personnel M1',
-    budget: 123,
-    id: milestoneId,
-    project: 12
-  };
+  const incompleteMilestone = testHelper.buildMilestone(0, { id: milestoneId });
+  delete incompleteMilestone.tasks;
 
   beforeAll(() => {
     milestoneDao = {
@@ -283,7 +178,7 @@ describe('Testing milestoneService updateMilestone', () => {
         if (id === '') {
           throw Error('Error updating milestone');
         }
-        if (id === 0) {
+        if (id !== milestoneId) {
           return undefined;
         }
         return milestone;
@@ -357,54 +252,22 @@ describe('Testing milestoneService getMilestoneActivities', () => {
   let activityService;
   let milestoneService;
 
+  const milestoneId = 11;
+  const projectId = 12;
+
   beforeAll(() => {
     milestoneDao = {
-      async getMilestoneActivities(milestoneId) {
-        const mockMilestone = {
-          id: milestoneId,
-          project: 1,
-          quarter: 'Quarter 1',
-          tasks: 'Task M1',
-          impact: 'Impact M1',
-          impactCriterion: 'Impact Criterion M1',
-          signsOfSuccess: 'Success M1',
-          signsOfSuccessCriterion: 'Success Criterion M1',
-          category: 'Category M1',
-          keyPersonnel: 'Key Personnel M1',
-          budget: 'Budget M1',
-          activities: [
-            {
-              id: 1,
-              tasks: 'Task A1',
-              impact: 'Impact A1',
-              impactCriterion: 'Impact Criterion A1',
-              signsOfSuccess: 'Success A1',
-              signsOfSuccessCriterion: 'Success Criterion A1',
-              category: 'Category A1',
-              keyPersonnel: 'Key Personnel A1',
-              budget: 'Budget A1',
-              milestone: milestoneId
-            },
-            {
-              id: 2,
-              tasks: 'Task A2',
-              impact: 'Impact A2',
-              impactCriterion: 'Impact Criterion A2',
-              signsOfSuccess: 'Success A2',
-              signsOfSuccessCriterion: 'Success Criterion A2',
-              category: 'Category A2',
-              keyPersonnel: 'Key Personnel A2',
-              budget: 'Budget A2',
-              milestone: milestoneId
-            }
-          ]
-        };
-        return mockMilestone;
+      async getMilestoneActivities(milestone) {
+        const milestoneWithActivities = testHelper.buildMilestone(2, {
+          id: milestone,
+          projectId
+        });
+        return milestoneWithActivities;
       }
     };
     activityService = {
       getOracleFromActivity() {
-        return [];
+        return { user: testHelper.buildUserOracle() };
       }
     };
 
@@ -419,73 +282,24 @@ describe('Testing milestoneService getMilestoneActivities', () => {
     'should return a milestone with its activities ' +
       'with quarter and type fields added to them',
     async () => {
-      const milestoneId = 1;
-      const projectId = 1;
-
       const mockMilestone = {
-        id: milestoneId,
-        project: projectId,
-        quarter: 'Quarter 1',
-        tasks: 'Task M1',
-        impact: 'Impact M1',
-        impactCriterion: 'Impact Criterion M1',
-        signsOfSuccess: 'Success M1',
-        signsOfSuccessCriterion: 'Success Criterion M1',
-        category: 'Category M1',
-        keyPersonnel: 'Key Personnel M1',
-        budget: 'Budget M1',
+        ...testHelper.buildMilestone(0, {
+          id: milestoneId,
+          projectId
+        }),
         activities: [{}, {}]
       };
 
-      const mockMilestoneWithActivity = {
-        id: milestoneId,
-        project: projectId,
-        quarter: 'Quarter 1',
-        tasks: 'Task M1',
-        impact: 'Impact M1',
-        impactCriterion: 'Impact Criterion M1',
-        signsOfSuccess: 'Success M1',
-        signsOfSuccessCriterion: 'Success Criterion M1',
-        category: 'Category M1',
-        keyPersonnel: 'Key Personnel M1',
-        budget: 'Budget M1',
-        activities: [
-          {
-            id: 1,
-            tasks: 'Task A1',
-            impact: 'Impact A1',
-            impactCriterion: 'Impact Criterion A1',
-            signsOfSuccess: 'Success A1',
-            signsOfSuccessCriterion: 'Success Criterion A1',
-            category: 'Category A1',
-            keyPersonnel: 'Key Personnel A1',
-            budget: 'Budget A1',
-            milestone: milestoneId,
-            type: 'Activity',
-            quarter: 'Quarter 1'
-          },
-          {
-            id: 2,
-            tasks: 'Task A2',
-            impact: 'Impact A2',
-            impactCriterion: 'Impact Criterion A2',
-            signsOfSuccess: 'Success A2',
-            signsOfSuccessCriterion: 'Success Criterion A2',
-            category: 'Category A2',
-            keyPersonnel: 'Key Personnel A2',
-            budget: 'Budget A2',
-            milestone: milestoneId,
-            type: 'Activity',
-            quarter: 'Quarter 1'
-          }
-        ]
-      };
+      const expected = testHelper.buildMilestone(2, {
+        id: mockMilestone.id,
+        projectId
+      });
 
-      const milestoneWithActivity = await milestoneService.getMilestoneActivities(
+      const response = await milestoneService.getMilestoneActivities(
         mockMilestone
       );
 
-      await expect(milestoneWithActivity).toEqual(mockMilestoneWithActivity);
+      await expect(response).toEqual(expected);
     }
   );
 });
@@ -628,18 +442,11 @@ describe('Testing milestoneService isMilestoneEmpty', () => {
 });
 
 describe('Testing milestoneService isMilestoneValid', () => {
-  let milestoneDao;
-  let activityService;
   let milestoneService;
 
   beforeAll(() => {
-    milestoneDao = {};
-    activityService = {};
-
     milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
+      fastify
     });
   });
 
@@ -715,6 +522,8 @@ describe('Testing milestoneService isMilestoneValid', () => {
 describe('Testing milestoneService verifyActivity', () => {
   let milestoneService;
 
+  const mockActivity = testHelper.buildActivity({ id: 1 });
+
   beforeAll(() => {
     milestoneService = require('../rest/core/milestoneService')({
       fastify
@@ -722,16 +531,6 @@ describe('Testing milestoneService verifyActivity', () => {
   });
 
   it('should return true if activity has all fields not empty', async () => {
-    const mockActivity = {
-      tasks: 'Task A1',
-      impact: 'Impact A1',
-      impactCriterion: 'Impact Criterion A1',
-      signsOfSuccess: 'Success A1',
-      signsOfSuccessCriterion: 'Success Criterion A1',
-      category: 'Category A1',
-      keyPersonnel: 'Key Personnel A1',
-      budget: 'Budget A1'
-    };
     const response = { milestones: [], errors: [] };
     const rowNumber = 6;
 
@@ -741,108 +540,39 @@ describe('Testing milestoneService verifyActivity', () => {
   });
 
   it('should return false if activity has at least one field empty', async () => {
-    const mockActivity = {
-      tasks: 'Task A1',
-      impact: 'Impact A1',
-      impactCriterion: 'Impact Criterion A1',
-      signsOfSuccess: 'Success A1',
-      signsOfSuccessCriterion: '',
-      category: 'Category A1',
-      keyPersonnel: 'Key Personnel A1',
-      budget: 'Budget A1'
-    };
+    const incompleteActivity = { ...mockActivity, signsOfSuccess: '' };
     const response = { milestones: [], errors: [] };
     const rowNumber = 6;
 
     await expect(
-      milestoneService.verifyActivity(mockActivity, response, rowNumber)
+      milestoneService.verifyActivity(incompleteActivity, response, rowNumber)
     ).toBe(false);
   });
 });
 
 describe('Testing milestonesService delete milestone', () => {
   let milestoneDao;
-  let activityService;
   let milestoneService;
-  const mockMilestone = [
-    {
-      id: 1,
-      quarter: 'Quarter 1',
-      tasks: 'Task M1',
-      impact: 'Impact M1',
-      impactCriterion: 'Impact Criterion M1',
-      signsOfSuccess: 'Success M1',
-      signsOfSuccessCriterion: 'Success Criterion M1',
-      category: 'Category M1',
-      keyPersonnel: 'Key Personnel M1',
-      budget: 'Budget M1',
-      activityList: [
-        {
-          tasks: 'Task A1',
-          impact: '',
-          impactCriterion: '',
-          signsOfSuccess: '',
-          signsOfSuccessCriterion: '',
-          category: 'Category A1',
-          keyPersonnel: 'Key Personnel A1',
-          budget: ''
-        },
-        {
-          tasks: 'Task A2',
-          impact: 'Impact A2',
-          impactCriterion: 'Impact Criterion A2',
-          signsOfSuccess: 'Success A2',
-          signsOfSuccessCriterion: 'Success Criterion A2',
-          category: 'Category A2',
-          keyPersonnel: 'Key Personnel A2',
-          budget: 'Budget A2'
-        }
-      ]
-    },
-    {
-      quarter: 'Quarter 1',
-      tasks: 'Task M2',
-      impact: '',
-      impactCriterion: '',
-      signsOfSuccess: 'Success M2',
-      signsOfSuccessCriterion: 'Success Criterion M2',
-      category: 'Category M2',
-      keyPersonnel: 'Key Personnel M2',
-      budget: '',
-      activityList: []
-    },
-    {
-      quarter: 'Quarter 1',
-      tasks: '',
-      impact: '',
-      impactCriterion: '',
-      signsOfSuccess: '',
-      signsOfSuccessCriterion: '',
-      category: '',
-      keyPersonnel: '',
-      budget: '',
-      activityList: []
-    }
-  ];
+
+  const milestoneId = 1;
+  const mockMilestone = testHelper.buildMilestone(1, { id: milestoneId });
 
   beforeAll(() => {
     milestoneDao = {
-      async deleteMilestone(milestoneId) {
-        if (milestoneId === 1) return mockMilestone;
+      async deleteMilestone(id) {
+        if (id === milestoneId) return mockMilestone;
         return [];
       }
     };
-    activityService = {};
 
     milestoneService = require('../rest/core/milestoneService')({
       fastify,
-      milestoneDao,
-      activityService
+      milestoneDao
     });
   });
 
   it('should return the deleted milestone', async () => {
-    const milestone = await milestoneService.deleteMilestone(1);
+    const milestone = await milestoneService.deleteMilestone(milestoneId);
     await expect(milestone).toBe(mockMilestone);
   });
 
