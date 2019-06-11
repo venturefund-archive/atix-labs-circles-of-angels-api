@@ -996,7 +996,7 @@ describe('Testing projectService startProject', () => {
     milestoneService = {
       startMilestonesOfProject: () => true,
       getMilestonesByProject: projectId => {
-        const project = mockProjects.find(project => project.id === projectId);
+        const project = mockProjects.find(p => p.id === projectId);
         return project.milestones;
       }
     };
@@ -1057,9 +1057,11 @@ describe('Testing projectService startProject', () => {
   it('should return an error if project is not fully assigned', async () => {
     const projectId = 4;
     mockProjects.map(project => {
+      const newProject = { ...project };
       if (project.id === projectId) {
-        project.milestones[0].activities[0].oracle = false;
+        newProject.milestones[0].activities[0].oracle = false;
       }
+      return newProject;
     });
     const response = await projectService.startProject(projectId);
     const expected = {
@@ -1079,7 +1081,7 @@ describe('Testing projectService startProject', () => {
   });
 
   it('should throw an error if it fails to get the project', async () => {
-    expect(projectService.startProject()).rejects.toEqual(
+    return expect(projectService.startProject()).rejects.toEqual(
       Error('Error starting project')
     );
   });
@@ -1462,7 +1464,7 @@ describe('testing ProjectService isFullyAssigned', () => {
 
     milestoneService = {
       getMilestonesByProject: projectId => {
-        const project = mockProjects.find(project => project.id === projectId);
+        const project = mockProjects.find(p => p.id === projectId);
         return project.milestones;
       }
     };
@@ -1670,9 +1672,7 @@ describe('Testing ProjectService updateBlockchainStatus', () => {
       fastify,
       projectDao: {
         updateBlockchainStatus: (projectId, status) => {
-          const project = mockProjects.find(
-            project => project.id === projectId
-          );
+          const project = mockProjects.find(p => p.id === projectId);
           project.blockchainStatus = status;
           return project;
         }
