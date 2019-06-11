@@ -980,9 +980,10 @@ describe('Testing projectService startProject', () => {
   let milestoneService;
 
   const goalAmount = 1000;
-  const mockProjects = testHelper.getMockProjects();
+  let mockProjects;
 
   beforeEach(() => {
+    mockProjects = testHelper.getMockProjects();
     transferService = {
       getTotalFundedByProject: projectId => {
         if (projectId === 999) {
@@ -993,7 +994,11 @@ describe('Testing projectService startProject', () => {
     };
 
     milestoneService = {
-      startMilestonesOfProject: () => true
+      startMilestonesOfProject: () => true,
+      getMilestonesByProject: projectId => {
+        const project = mockProjects.find(project => project.id === projectId);
+        return project.milestones;
+      }
     };
 
     projectDao = {
@@ -1022,8 +1027,6 @@ describe('Testing projectService startProject', () => {
       transferService,
       milestoneService
     });
-
-    projectService.isFullyAssigned = projectId => projectId !== 0;
   });
 
   it('should return the updated project with status In Progress', async () => {
@@ -1048,6 +1051,21 @@ describe('Testing projectService startProject', () => {
   it('should return an error if the project is already In Progress', async () => {
     const response = await projectService.startProject(1);
     const expected = { error: 'Project has already started', status: 409 };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if project is not fully assigned', async () => {
+    const projectId = 4;
+    mockProjects.map(project => {
+      if (project.id === projectId) {
+        project.milestones[0].activities[0].oracle = false;
+      }
+    });
+    const response = await projectService.startProject(projectId);
+    const expected = {
+      error: 'Project has activities with no oracles assigned',
+      status: 409
+    };
     return expect(response).toEqual(expected);
   });
 
@@ -1433,4 +1451,257 @@ describe('Testing projectService getExperiences', () => {
     expect(projectService.getExperiences()).rejects.toEqual(
       Error('Error getting experiences')
     ));
+});
+
+describe('testing ProjectService isFullyAssigned', () => {
+  let mockProjects;
+  let milestoneService;
+  let projectService;
+  beforeEach(() => {
+    mockProjects = testHelper.getMockProjects();
+
+    milestoneService = {
+      getMilestonesByProject: projectId => {
+        const project = mockProjects.find(project => project.id === projectId);
+        return project.milestones;
+      }
+    };
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao: {},
+      transferService: {},
+      milestoneService
+    });
+  });
+
+  it('should return a true if all activities of a project is assigned with oracle', async () => {
+    const projectId = 1;
+    const response = await projectService.isFullyAssigned(projectId);
+    expect(response).toBeTruthy();
+  });
+
+  it('should return false if have at least one non asigned activity', async () => {
+    const projectId = 1;
+    mockProjects.find(
+      project => project.id === projectId
+    ).milestones[0].activities[0].oracle = {};
+    const response = await projectService.isFullyAssigned(projectId);
+    expect(response).toBeFalsy();
+  });
+
+  it('should return false if not have milestones', async () => {
+    const projectId = 1;
+    mockProjects.find(project => project.id === projectId).milestones = [];
+    const response = await projectService.isFullyAssigned(projectId);
+    expect(response).toBeFalsy();
+  });
+});
+
+describe('Testing ProjectService getProjectsAsOracle', () => {
+  let mockProjects;
+  let milestoneService;
+  let projectService;
+  let oracle = testHelper.buildUserOracle(1);
+
+  beforeEach(() => {
+    mockProjects = testHelper.getMockProjects();
+    mockProjects[0].milestones[0].activities[0].oracle = oracle;
+    mockProjects[2].milestones[0].activities[0].oracle = oracle;
+    milestoneService = {
+      getProjectsAsOracle: oracleId => {
+        const projects = [];
+        if (oracleId === -1) {
+          throw Error();
+        }
+
+        mockProjects.forEach(project => {
+          project.milestones.forEach(milestone => {
+            milestone.activities.forEach(activity => {
+              if (activity.oracle.id === oracleId) {
+                projects.push(project.id);
+              }
+            });
+          });
+        });
+        return projects;
+      }
+    };
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao: {},
+      transferService: {},
+      milestoneService
+    });
+  });
+
+  it('must return an array of unique project ids', async () => {
+    const expected = { oracle: oracle.id, projects: [1, 3] };
+    let response = await projectService.getProjectsAsOracle(oracle.id);
+    expect(response).toEqual(expected);
+
+    mockProjects[0].milestones.push(testHelper.buildMilestone(1, {}));
+    response = await projectService.getProjectsAsOracle(oracle.id);
+    expect(response).toEqual(expected);
+  });
+
+  it('must throw error if crash execution', async () => {
+    expect(projectService.getProjectsAsOracle(-1)).rejects.toEqual(
+      Error('Error getting Projects')
+    );
+  });
+});
+
+describe('Testing ProjectService getProjectOwner', () => {
+  let mockProjects;
+  let projectService;
+  let user = testHelper.buildUserSe(2);
+
+  beforeEach(() => {
+    mockProjects = testHelper.getMockProjects();
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao: {
+        getProjectById: ({ projectId }) => {
+          return mockProjects.find(project => project.id === projectId);
+        }
+      },
+      userDao: {
+        getUserById: id => {
+          if (id === user.id) return user;
+        }
+      },
+      transferService: {},
+      milestoneService: {}
+    });
+  });
+
+  it('should return a user owner object', async () => {
+    const userId = user.id;
+    const owner = await projectService.getProjectOwner(userId);
+    expect(owner).toEqual(user);
+  });
+});
+
+describe('Testing ProjectService getProjectsOfOwner', () => {
+  let mockProjects;
+  let projectService;
+  let user = testHelper.buildUserSe(3);
+
+  beforeEach(() => {
+    mockProjects = testHelper.getMockProjects();
+
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao: {
+        getProjectsByOwner: ownerId => {
+          return mockProjects.filter(project => project.ownerId === ownerId);
+        }
+      },
+      transferService: {},
+      milestoneService: {}
+    });
+  });
+
+  it('should return an array of projects with specific owner', async () => {
+    mockProjects[1].ownerId = user.id;
+    mockProjects[2].ownerId = user.id;
+    mockProjects[3].ownerId = user.id;
+    const expected = [mockProjects[1], mockProjects[2], mockProjects[3]];
+    const response = await projectService.getProjectsOfOwner(user.id);
+    expect(response.map(entry => entry.ownerId)).toEqual(
+      expected.map(entry => entry.ownerId)
+    );
+  });
+
+  it('should return an empty array if user provide is not owner', async () => {
+    const expected = [];
+    const response = await projectService.getProjectsOfOwner(1000);
+    expect(response).toEqual(expected);
+  });
+});
+
+describe('Testing ProjectService saveExperienceFile', () => {
+  let mockFiles;
+  let projectService;
+  let photoService;
+  let photoId = 22;
+
+  beforeEach(() => {
+    mockFiles = testHelper.getMockFiles();
+    photoService = {
+      savePhoto: filepath => {
+        if (filepath.includes('error')) {
+          throw Error('Error saving photo');
+        }
+        return { id: photoId };
+      }
+    };
+
+    projectService = projectServiceBuilder({
+      fastify,
+      photoService
+    });
+  });
+
+  it('should save a experience photo on directory and entry on photo table', async () => {
+    const file = mockFiles.projectCoverPhoto;
+    const projectId = 2;
+    const projectExperienceId = 1;
+    const response = await projectService.saveExperienceFile(
+      file,
+      projectId,
+      projectExperienceId,
+      1
+    );
+    expect(response).toEqual({ id: photoId });
+  });
+});
+
+describe('Testing ProjectService updateBlockchainStatus', () => {
+  let projectService;
+  let mockProjects;
+
+  beforeEach(() => {
+    mockProjects = testHelper.getMockProjects();
+    projectService = projectServiceBuilder({
+      fastify,
+      projectDao: {
+        updateBlockchainStatus: (projectId, status) => {
+          const project = mockProjects.find(
+            project => project.id === projectId
+          );
+          project.blockchainStatus = status;
+          return project;
+        }
+      }
+    });
+  });
+
+  it('should fail if provide a invalid blockchain status', async () => {
+    const status = -1;
+    const projectId = 6;
+    const response = await projectService.updateBlockchainStatus(
+      projectId,
+      status
+    );
+    expect(response).toEqual({ error: 'Invalid Blockchain status' });
+  });
+
+  it('should update blockchain status of project and return the project object', async () => {
+    const status = blockchainStatus.CONFIRMED;
+    const projectId = 6;
+
+    expect(
+      mockProjects.find(project => project.id === projectId).blockchainStatus
+    ).toEqual(blockchainStatus.PENDING);
+
+    const response = await projectService.updateBlockchainStatus(
+      projectId,
+      status
+    );
+    expect(response.blockchainStatus).toEqual(blockchainStatus.CONFIRMED);
+  });
 });

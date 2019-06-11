@@ -21,7 +21,7 @@ const {
   userRoles
 } = require('../rest/util/constants');
 
-exports.buildUserOracle = ({ id }) => {
+exports.buildUserOracle = id => {
   const user = JSON.parse(JSON.stringify(userOracle));
   user.id = id || user.id;
   return user;
@@ -39,7 +39,7 @@ exports.buildUserAdmin = ({ id }) => {
   return user;
 };
 
-exports.buildUserSe = ({ id }) => {
+exports.buildUserSe = id => {
   const user = JSON.parse(JSON.stringify(userSE));
   user.id = id || user.id;
   return user;

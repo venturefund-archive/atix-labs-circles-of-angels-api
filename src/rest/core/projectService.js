@@ -899,11 +899,16 @@ const projectService = ({
     }
   },
 
+  /**
+   * Receive a project id and return a boolean if all activities of that project
+   * has an oracle assigned
+   * @param {number} projectId 
+   */
   async isFullyAssigned(projectId) {
     let isFullyAssigned = true;
     const milestones = await milestoneService.getMilestonesByProject(projectId);
 
-    if (!milestones || milestones == null) {
+    if (!milestones || milestones == null || isEmpty(milestones)) {
       return false;
     }
 
@@ -947,6 +952,11 @@ const projectService = ({
     }
   },
 
+  /**
+   * Receive a project id and return a user object who is owner of
+   * that project
+   * @param {number} projectId 
+   */
   async getProjectOwner(projectId) {
     try {
       const project = await projectDao.getProjectById({ projectId });
@@ -957,6 +967,12 @@ const projectService = ({
     }
   },
 
+  /**
+   * Receive id of a project and return a boolean if project is already
+   * confirmed on blockchain
+   * [Only for project creation transaction]
+   * @param {number} projectId 
+   */
   async isProjectTransactionConfirmed(projectId) {
     try {
       const project = await projectDao.getProjectById({ projectId });
@@ -966,6 +982,12 @@ const projectService = ({
     }
   },
 
+
+  /**
+   * Receive id of a user and return an array of project objects
+   * created by that user
+   * @param {number} ownerId 
+   */
   async getProjectsOfOwner(ownerId) {
     try {
       const projects = await projectDao.getProjectsByOwner(ownerId);
@@ -978,6 +1000,11 @@ const projectService = ({
     }
   },
 
+  /**
+   * Receive an array of project ids and return an array of project 
+   * objects corresponding to these ids
+   * @param {array} projectsId 
+   */
   async getAllProjectsById(projectsId) {
     return projectDao.getAllProjectsById(projectsId);
   },
