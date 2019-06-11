@@ -194,8 +194,10 @@ const activityService = ({
       await fastify.eth.uploadHashEvidenceToActivity(
         userInfo.address,
         userInfo.pwd,
-        activityId,
-        hashes
+        {
+          activityId,
+          hashes
+        }
       );
     } catch (error) {
       fastify.log.error(
