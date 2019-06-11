@@ -95,11 +95,12 @@ exports.populateUserRole = user => {
   return userWithRole;
 };
 
-exports.buildActivity = ({ id, bcStatus, oracle }) => {
+exports.buildActivity = ({ id, bcStatus, oracle, milestoneId }) => {
   const newActivity = JSON.parse(JSON.stringify(activity));
   newActivity.id = id || newActivity.id;
   newActivity.blockchainStatus = bcStatus || newActivity.blockchainStatus;
   newActivity.oracle = oracle || newActivity.oracle;
+  newActivity.milestone = milestoneId || newActivity.milestone;
 
   return newActivity;
 };

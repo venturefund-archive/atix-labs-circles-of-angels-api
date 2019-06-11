@@ -1,9 +1,12 @@
+const testHelper = require('./testHelper');
+const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
+const { activityStatus } = require('../rest/util/constants');
+
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
-  configs: require('config')
+  configs: require('config'),
+  eth: { isTransactionConfirmed: ethServicesMock.isTransactionConfirmed }
 };
-
-const testHelper = require('./testHelper');
 
 describe('Testing milestoneService createMilestone', () => {
   let milestoneDao;
@@ -550,7 +553,7 @@ describe('Testing milestoneService verifyActivity', () => {
   });
 });
 
-describe('Testing milestonesService delete milestone', () => {
+describe('Testing milestonesService deleteMilestone', () => {
   let milestoneDao;
   let milestoneService;
 
@@ -579,5 +582,238 @@ describe('Testing milestonesService delete milestone', () => {
   it('should return empty list when try delete a non-existent milestone', async () => {
     const milestone = await milestoneService.deleteMilestone(2);
     await expect(milestone).toEqual([]);
+  });
+});
+
+describe('Testing milestoneService getProjectsAsOracle', () => {
+  let milestoneDao;
+  let activityService;
+  let milestoneService;
+
+  const oracleId = 4;
+  const milestoneIdList = [11, 12];
+  const projectIdList = [52, 54];
+  const mockErrorMessage = {
+    error: 'Error at getMilestonesAsOracle',
+    status: 409
+  };
+  const mockMilestones = [
+    testHelper.buildMilestone(0, {
+      id: milestoneIdList[0],
+      projectId: projectIdList[0]
+    }),
+    testHelper.buildMilestone(1, {
+      id: milestoneIdList[1],
+      projectId: projectIdList[1]
+    })
+  ];
+
+  beforeAll(() => {
+    milestoneDao = {
+      async getMilestoneById(id) {
+        return mockMilestones.find(mockMilestone => mockMilestone.id === id);
+      }
+    };
+
+    activityService = {
+      async getMilestonesAsOracle(oracle) {
+        if (!oracle) {
+          throw Error('DB Error');
+        }
+        if (oracle !== oracleId) {
+          return mockErrorMessage;
+        }
+        return milestoneIdList;
+      }
+    };
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao,
+      activityService
+    });
+  });
+
+  it('should return a list of project ids', async () => {
+    const expected = projectIdList;
+
+    const response = await milestoneService.getProjectsAsOracle(oracleId);
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if it fails to get milestones for an oracle', async () => {
+    const expected = mockErrorMessage;
+
+    const response = await milestoneService.getProjectsAsOracle(oracleId + 1);
+    return expect(response).toEqual(expected);
+  });
+
+  it('should throw an error if an exception is caught', async () => {
+    return expect(milestoneService.getProjectsAsOracle()).rejects.toEqual(
+      Error('Error getting Milestones')
+    );
+  });
+});
+
+describe('Testing milestoneService getMilestonesByProject', () => {
+  let milestoneDao;
+  let milestoneService;
+
+  const projectId = 52;
+  const mockMilestones = [
+    testHelper.buildMilestone(0, {
+      id: 11,
+      projectId
+    }),
+    testHelper.buildMilestone(1, {
+      id: 12,
+      projectId
+    })
+  ];
+
+  const mockActivities = milestone => [
+    testHelper.buildActivity({ id: 1, milestoneId: milestone }),
+    testHelper.buildActivity({ id: 2, milestoneId: milestone })
+  ];
+
+  beforeAll(() => {
+    milestoneDao = {
+      async getMilestonesByProject(project) {
+        if (!project) {
+          throw Error('DB Error');
+        }
+        if (project !== projectId) {
+          return undefined;
+        }
+        return mockMilestones;
+      }
+    };
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao
+    });
+
+    milestoneService.getMilestoneActivities = milestone => {
+      const milestoneWithActivities = {
+        ...milestone,
+        activities: mockActivities(milestone.id)
+      };
+      return milestoneWithActivities;
+    };
+  });
+
+  it("should return a list of the project's milestones with their activities", async () => {
+    const expected = [
+      {
+        ...mockMilestones[0],
+        activities: mockActivities(mockMilestones[0].id)
+      },
+      { ...mockMilestones[1], activities: mockActivities(mockMilestones[1].id) }
+    ];
+
+    const response = await milestoneService.getMilestonesByProject(projectId);
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return undefined if no milestones were retrieved from database', async () => {
+    const response = await milestoneService.getMilestonesByProject(
+      projectId + 1
+    );
+    return expect(response).toBeUndefined();
+  });
+
+  it('should throw an error if an error was caugth getting the milestones', () =>
+    expect(milestoneService.getMilestonesByProject()).rejects.toEqual(
+      Error('Error getting Milestones')
+    ));
+});
+
+describe.only('Testing milestoneService tryCompleteMilestone', () => {
+  let milestoneDao;
+  let milestoneService;
+
+  const milestoneId = 12;
+  const mockMilestone = testHelper.buildMilestone(0, {
+    id: milestoneId
+  });
+  const mockActivitiesCompleted = [
+    {
+      ...testHelper.buildActivity({
+        id: 1,
+        milestoneId
+      }),
+      status: activityStatus.COMPLETED,
+      transactionHash: ethServicesMock.validateActivity()
+    },
+    {
+      ...testHelper.buildActivity({
+        id: 2,
+        milestoneId
+      }),
+      status: activityStatus.COMPLETED,
+      transactionHash: ethServicesMock.validateActivity()
+    }
+  ];
+
+  const mockActivitiesIncompleted = [
+    {
+      ...testHelper.buildActivity({ id: 1 }),
+      status: activityStatus.PENDING,
+      transactionHash: ethServicesMock.validateActivity()
+    },
+    {
+      ...testHelper.buildActivity({ id: 2 }),
+      status: activityStatus.COMPLETED
+    }
+  ];
+
+  beforeAll(() => {
+    milestoneDao = {
+      async getMilestoneActivities(milestone) {
+        if (!milestone) {
+          throw Error('DB Error');
+        }
+
+        const activities =
+          milestone === milestoneId
+            ? mockActivitiesCompleted
+            : mockActivitiesIncompleted;
+
+        const mockMilestoneWithActivities = {
+          ...mockMilestone,
+          activities
+        };
+        return mockMilestoneWithActivities;
+      },
+
+      async updateMilestoneStatus(id, status) {
+        if (!id) {
+          throw Error('DB Error');
+        }
+
+        if (id !== milestoneId) {
+          return undefined;
+        }
+
+        return { ...mockMilestone, status };
+      }
+    };
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao
+    });
+  });
+
+  it('should return the updated milestone with status = COMPLETE', async () => {
+    const response = await milestoneService.tryCompleteMilestone(milestoneId);
+    const expected = { ...mockMilestone, status: activityStatus.COMPLETED };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return false if an activity is not completed or confirmed', async () => {
+    const response = await milestoneService.tryCompleteMilestone(1);
+    return expect(response).toBe(false);
   });
 });
