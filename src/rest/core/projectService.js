@@ -210,9 +210,8 @@ const projectService = ({
 
       const userOwner = await userDao.getUserById(ownerId);
 
+      //MODIFICAR: que el sender sea el admin
       const transactionHash = await fastify.eth.createProject(
-        userOwner.address,
-        userOwner.pwd,
         {
           projectId: savedProject.id,
           seAddress: userOwner.address,
@@ -449,6 +448,11 @@ const projectService = ({
           } is not confirmed on blockchain yet`
         };
     }
+    if (
+      project.status === projectStatus.IN_PROGRESS &&
+      status === projectStatus.IN_PROGRESS
+    )
+      throw Error('Already started proyect');
     if (existsStatus) {
       return projectDao.updateProjectStatus({ projectId, status });
     }
@@ -885,12 +889,10 @@ const projectService = ({
         };
       }
 
-      const userOwner = await projectDao.getUserOwnerOfProject(projectId);
-
       fastify.log.info(
         `[Project Service] :: Starting milestones on blockchain of project Project ID ${projectId}`
       );
-      await milestoneService.startMilestonesOfProject(project, userOwner);
+      await milestoneService.startMilestonesOfProject(project);
 
       return project;
     } catch (error) {
@@ -1191,6 +1193,24 @@ const projectService = ({
       return { error: 'Invalid Blockchain status' };
     }
     return projectDao.updateBlockchainStatus(projectId, status);
+  },
+
+  async allActivitiesAreConfirmed(projectId, activityDao) {
+    try {
+      const milestones = await this.getProjectMilestones(projectId);
+      const activitiesIds = [];
+      milestones.forEach(milestone => {
+        milestone.activities.forEach(activity => {
+          activitiesIds.push(activity.id);
+        });
+      });
+      const activities = await activityDao.whichUnconfirmedActivities(
+        activitiesIds
+      );
+      return isEmpty(activities);
+    } catch (error) {
+      return { error };
+    }
   }
 });
 

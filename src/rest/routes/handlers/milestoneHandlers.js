@@ -29,8 +29,9 @@ module.exports = {
     const { budgetStatusId } = req.body;
     const { id } = req.params;
 
+    const user = await userService.getUserById(req.user.id);
+
     try {
-      const user = await userService.getUserById(req.user.id);
       const response = await milestoneService.updateBudgetStatus(
         id,
         budgetStatusId,

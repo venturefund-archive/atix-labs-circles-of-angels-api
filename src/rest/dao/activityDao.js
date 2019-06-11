@@ -1,3 +1,4 @@
+const { blockchainStatus } = require('../util/constants');
 const saveActivity = activityModel => async (activity, milestoneId) => {
   const toSave = {
     ...activity,
@@ -49,6 +50,15 @@ const updateBlockchainStatus = activityModel => async (
   blockchainStatus
 ) => activityModel.updateOne({ id: activityId }).set({ blockchainStatus });
 
+const whichUnconfirmedActivities = activityModel => async activitiesIds => {
+  return activityModel.find({
+    where: {
+      id: activitiesIds,
+      blockchainStatus: { '!=': blockchainStatus.CONFIRMED }
+    }
+  });
+};
+
 module.exports = activityModel => ({
   saveActivity: saveActivity(activityModel),
   updateActivity: updateActivity(activityModel),
@@ -56,5 +66,6 @@ module.exports = activityModel => ({
   deleteActivity: deleteActivity(activityModel),
   updateStatus: updateStatus(activityModel),
   updateStatusWithTransaction: updateStatusWithTransaction(activityModel),
-  updateBlockchainStatus: updateBlockchainStatus(activityModel)
+  updateBlockchainStatus: updateBlockchainStatus(activityModel),
+  whichUnconfirmedActivities: whichUnconfirmedActivities(activityModel)
 });
