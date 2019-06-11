@@ -11,7 +11,8 @@ const {
   userSeDetails,
   userFunderDetails,
   userFunderAnswers,
-  userSeAnswers
+  userSeAnswers,
+  userProject
 } = require('./mockModels');
 
 const {
@@ -80,10 +81,10 @@ exports.buildUserFunderWithDetails = ({ id }) => {
 
 exports.populateUserRole = user => {
   const roleNames = {
-    1: 'BO Admin',
-    2: 'Social Entrepreneur',
-    3: 'Impact Funder',
-    4: 'Oracle'
+    [userRoles.BO_ADMIN]: 'BO Admin',
+    [userRoles.SOCIAL_ENTREPRENEUR]: 'Social Entrepreneur',
+    [userRoles.IMPACT_FUNDER]: 'Impact Funder',
+    [userRoles.ORACLE]: 'Oracle'
   };
 
   const userWithRole = {
@@ -145,6 +146,15 @@ exports.buildProject = (
     newProject.milestones.push(newMilestone);
   }
   return newProject;
+};
+
+exports.buildUserProject = ({ id, userId, projectId, status }) => {
+  const newUserProject = { ...userProject };
+  newUserProject.id = id || userProject.id;
+  newUserProject.user = userId || userProject.user;
+  newUserProject.project = projectId || userProject.project;
+  newUserProject.status = status !== undefined ? status : userProject.status;
+  return newUserProject;
 };
 
 exports.getPhoto = id => photos.find(photo => photo.id === id);
