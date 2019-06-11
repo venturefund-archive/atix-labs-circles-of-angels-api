@@ -702,9 +702,6 @@ const milestoneService = ({
     );
     try {
       const milestone = await milestoneDao.getMilestoneById(milestoneId);
-      const milestones = await this.getMilestonesByProject(milestone.project);
-      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
-      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
 
       if (!milestone || milestone == null) {
         fastify.log.error(
@@ -715,6 +712,10 @@ const milestoneService = ({
           error: 'Milestone does not exist'
         };
       }
+
+      const milestones = await this.getMilestonesByProject(milestone.project);
+      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
+      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
 
       if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
         fastify.log.error(
@@ -728,10 +729,10 @@ const milestoneService = ({
 
       if (
         budgetStatusId === milestoneBudgetStatus.CLAIMABLE &&
-        milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED &&
-        (previousMilestone &&
-          milestones[previousMilestone].budgetStatus !==
-            milestoneBudgetStatus.FUNDED)
+        (milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED ||
+          (previousMilestone &&
+            milestones[previousMilestone].budgetStatus !==
+              milestoneBudgetStatus.FUNDED))
       ) {
         fastify.log.error(
           `[Milestone Service] :: Milestone ID ${milestoneId} is not blocked 

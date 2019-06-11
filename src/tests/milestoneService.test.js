@@ -1,11 +1,16 @@
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
-const { activityStatus } = require('../rest/util/constants');
+const {
+  activityStatus,
+  milestoneBudgetStatus
+} = require('../rest/util/constants');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
   configs: require('config'),
-  eth: { isTransactionConfirmed: ethServicesMock.isTransactionConfirmed }
+  eth: {
+    isTransactionConfirmed: ethServicesMock.isTransactionConfirmed
+  }
 };
 
 describe('Testing milestoneService createMilestone', () => {
@@ -729,7 +734,7 @@ describe('Testing milestoneService getMilestonesByProject', () => {
     ));
 });
 
-describe.only('Testing milestoneService tryCompleteMilestone', () => {
+describe('Testing milestoneService tryCompleteMilestone', () => {
   let milestoneDao;
   let milestoneService;
 
@@ -815,5 +820,189 @@ describe.only('Testing milestoneService tryCompleteMilestone', () => {
   it('should return false if an activity is not completed or confirmed', async () => {
     const response = await milestoneService.tryCompleteMilestone(1);
     return expect(response).toBe(false);
+  });
+});
+
+describe('Testing milestoneService updateBudgetStatus', () => {
+  let milestoneDao;
+  let milestoneService;
+
+  const claimableMilestoneId = milestoneBudgetStatus.CLAIMABLE;
+  const claimedMilestoneId = milestoneBudgetStatus.CLAIMED;
+  const fundedMilestoneId = milestoneBudgetStatus.FUNDED;
+  const blockedMilestoneId = milestoneBudgetStatus.BLOCKED;
+
+  const user = testHelper.buildUserSe();
+
+  const mockMilestone = budgetStatus => ({
+    ...testHelper.buildMilestone(0, {
+      id: budgetStatus,
+      projectId: budgetStatus
+    }),
+    budgetStatus
+  });
+
+  beforeAll(() => {
+    milestoneDao = {
+      async getMilestoneById(id) {
+        if (
+          id !== claimableMilestoneId &&
+          id !== claimedMilestoneId &&
+          id !== fundedMilestoneId &&
+          id !== blockedMilestoneId
+        ) {
+          return undefined;
+        }
+        return mockMilestone(id);
+      }
+    };
+
+    milestoneService = require('../rest/core/milestoneService')({
+      fastify,
+      milestoneDao
+    });
+
+    milestoneService.getMilestonesByProject = id => {
+      switch (id) {
+        case claimableMilestoneId:
+          return [
+            { ...mockMilestone(milestoneBudgetStatus.FUNDED) },
+            { ...mockMilestone(id) },
+            { ...mockMilestone(milestoneBudgetStatus.BLOCKED) }
+          ];
+        case claimedMilestoneId:
+          return [
+            { ...mockMilestone(milestoneBudgetStatus.FUNDED) },
+            { ...mockMilestone(id) },
+            { ...mockMilestone(milestoneBudgetStatus.BLOCKED) }
+          ];
+        case fundedMilestoneId:
+          return [
+            { ...mockMilestone(milestoneBudgetStatus.FUNDED) },
+            { ...mockMilestone(id) },
+            { ...mockMilestone(milestoneBudgetStatus.CLAIMABLE) }
+          ];
+        case blockedMilestoneId:
+          return [
+            { ...mockMilestone(milestoneBudgetStatus.CLAIMABLE) },
+            { ...mockMilestone(id) },
+            { ...mockMilestone(milestoneBudgetStatus.BLOCKED) }
+          ];
+        default:
+          return undefined;
+      }
+    };
+  });
+
+  beforeEach(() => {
+    fastify.eth.claimMilestone = jest.fn(() =>
+      ethServicesMock.claimMilestone()
+    );
+    fastify.eth.setMilestoneFunded = jest.fn(() =>
+      ethServicesMock.setMilestoneFunded()
+    );
+  });
+
+  it('should call claimMilestone if the new status is CLAIMED', async () => {
+    await milestoneService.updateBudgetStatus(
+      claimableMilestoneId,
+      milestoneBudgetStatus.CLAIMED,
+      user
+    );
+
+    await expect(fastify.eth.claimMilestone).toBeCalled();
+    return expect(fastify.eth.setMilestoneFunded).not.toBeCalled();
+  });
+
+  it('should call setMilestoneFunded if the new status is FUNDED', async () => {
+    await milestoneService.updateBudgetStatus(
+      claimedMilestoneId,
+      milestoneBudgetStatus.FUNDED,
+      user
+    );
+
+    await expect(fastify.eth.setMilestoneFunded).toBeCalled();
+    return expect(fastify.eth.claimMilestone).not.toBeCalled();
+  });
+
+  it('should return an error if the milestone could not be found', async () => {
+    const response = await milestoneService.updateBudgetStatus(
+      0,
+      milestoneBudgetStatus.CLAIMED,
+      user
+    );
+
+    const expected = {
+      status: 404,
+      error: 'Milestone does not exist'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the budget status is not valid', async () => {
+    const response = await milestoneService.updateBudgetStatus(
+      claimableMilestoneId,
+      0,
+      user
+    );
+
+    const expected = {
+      status: 404,
+      error: 'Budget transfer status is not valid'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it(
+    'should return an error if the milestone cannot be set to CLAIMABLE ' +
+      'because it is not BLOCKED',
+    async () => {
+      const response = await milestoneService.updateBudgetStatus(
+        claimableMilestoneId,
+        milestoneBudgetStatus.CLAIMABLE,
+        user
+      );
+
+      const expected = {
+        status: 409,
+        error:
+          'All previous milestones need to be funded before making this milestone claimable.'
+      };
+
+      return expect(response).toEqual(expected);
+    }
+  );
+
+  it('should return an error if the milestone cannot be set to CLAIMED', async () => {
+    const response = await milestoneService.updateBudgetStatus(
+      blockedMilestoneId,
+      milestoneBudgetStatus.CLAIMED,
+      user
+    );
+
+    const expected = {
+      status: 409,
+      error: 'Only claimable milestones can be claimed'
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the milestone cannot be set to FUNDED', async () => {
+    const response = await milestoneService.updateBudgetStatus(
+      blockedMilestoneId,
+      milestoneBudgetStatus.FUNDED,
+      user
+    );
+
+    const expected = {
+      status: 409,
+      error:
+        'The milestone needs to be Claimed in order to set the budget status to Funded'
+    };
+
+    return expect(response).toEqual(expected);
   });
 });
