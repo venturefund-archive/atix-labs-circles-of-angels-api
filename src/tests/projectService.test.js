@@ -2,6 +2,7 @@ const { find } = require('lodash');
 const fs = require('fs');
 const configs = require('config');
 const testHelper = require('./testHelper');
+const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 
 const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus, blockchainStatus } = require('../rest/util/constants');
@@ -9,12 +10,9 @@ const { projectStatus, blockchainStatus } = require('../rest/util/constants');
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
   eth: {
-    createProject: () =>
-      '0xe2f683a54780cbf79186c8ed692e9df8ae165b9f3f302ab85ffeed2308ce9c75',
-    isTransactionConfirmed: creationTransactionHash =>
-      !!creationTransactionHash,
-    startProject: () =>
-      '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
+    createProject: ethServicesMock.createProject,
+    isTransactionConfirmed: ethServicesMock.isTransactionConfirmed,
+    startProject: ethServicesMock.startProject
   },
   configs
 };

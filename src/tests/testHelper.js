@@ -4,15 +4,94 @@ const {
   milestone,
   activity,
   photos,
-  userSE
+  userOracle,
+  userFunder,
+  userAdmin,
+  userSE,
+  userSeDetails,
+  userFunderDetails,
+  userFunderAnswers,
+  userSeAnswers
 } = require('./mockModels');
 
-const { projectStatus, blockchainStatus } = require('../rest/util/constants');
+const {
+  projectStatus,
+  blockchainStatus,
+  userRoles
+} = require('../rest/util/constants');
+
+exports.buildUserOracle = ({ id }) => {
+  const user = JSON.parse(JSON.stringify(userOracle));
+  user.id = id || user.id;
+  return user;
+};
+
+exports.buildUserFunder = ({ id }) => {
+  const user = JSON.parse(JSON.stringify(userFunder));
+  user.id = id || user.id;
+  return user;
+};
+
+exports.buildUserAdmin = ({ id }) => {
+  const user = JSON.parse(JSON.stringify(userAdmin));
+  user.id = id || user.id;
+  return user;
+};
 
 exports.buildUserSe = ({ id }) => {
   const user = JSON.parse(JSON.stringify(userSE));
   user.id = id || user.id;
   return user;
+};
+
+exports.buildUserSeDetails = ({ id }) => {
+  const { detail } = userSeDetails(id);
+  return detail;
+};
+
+exports.buildUserFunderDetails = ({ id }) => {
+  const { detail } = userFunderDetails(id);
+  return detail;
+};
+
+exports.buildUserSeAnswers = ({ id }) => {
+  const { answers } = userSeAnswers(id);
+  return answers;
+};
+
+exports.buildUserFunderAnswers = ({ id }) => {
+  const { answers } = userFunderAnswers(id);
+  return answers;
+};
+
+exports.buildUserSeWithDetails = ({ id }) => {
+  const user = this.buildUserSe({ id });
+  const answers = this.buildUserSeAnswers({ id: user.id });
+  const detail = this.buildUserSeDetails({ id: user.id });
+  return { ...user, answers, detail };
+};
+
+exports.buildUserFunderWithDetails = ({ id }) => {
+  const user = this.buildUserFunder({ id });
+  const answers = this.buildUserFunderAnswers({ id: user.id });
+  const detail = this.buildUserFunderDetails({ id: user.id });
+  return { ...user, answers, detail };
+};
+
+exports.populateUserRole = user => {
+  const roleNames = {
+    1: 'BO Admin',
+    2: 'Social Entrepreneur',
+    3: 'Impact Funder',
+    4: 'Oracle'
+  };
+
+  const userWithRole = {
+    ...user,
+    role: { id: user.role, name: roleNames[user.role] }
+  };
+
+  return userWithRole;
 };
 
 exports.buildActivity = ({ id, bcStatus, oracle }) => {
@@ -23,6 +102,7 @@ exports.buildActivity = ({ id, bcStatus, oracle }) => {
 
   return newActivity;
 };
+
 exports.buildMilestone = (cantActivities, { projectId, id, bcStatus }) => {
   const newMilestone = JSON.parse(JSON.stringify(milestone));
   newMilestone.id = id || newMilestone.id;
