@@ -210,9 +210,8 @@ const projectService = ({
 
       const userOwner = await userDao.getUserById(ownerId);
 
+      //MODIFICAR: que el sender sea el admin
       const transactionHash = await fastify.eth.createProject(
-        userOwner.address,
-        userOwner.pwd,
         {
           projectId: savedProject.id,
           seAddress: userOwner.address,
@@ -890,12 +889,10 @@ const projectService = ({
         };
       }
 
-      const userOwner = await projectDao.getUserOwnerOfProject(projectId);
-
       fastify.log.info(
         `[Project Service] :: Starting milestones on blockchain of project Project ID ${projectId}`
       );
-      await milestoneService.startMilestonesOfProject(project, userOwner);
+      await milestoneService.startMilestonesOfProject(project);
 
       return project;
     } catch (error) {
