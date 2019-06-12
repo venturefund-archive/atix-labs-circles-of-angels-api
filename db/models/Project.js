@@ -1,4 +1,12 @@
 /**
+ * COA PUBLIC LICENSE
+ * Circle of Angels aims to democratize social impact financing.
+ * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ *
+ * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
+ */
+
+/**
  * @description Represents a project of Circles Of Angels
  *@attribute `id`: id of the project in the business domain
  *@attribute `projectName`: name with which the user will be shown
