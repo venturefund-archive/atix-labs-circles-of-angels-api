@@ -8,6 +8,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Creates a new transfer to be verified by the admin',
+        summary: 'Create new transfer',
         type: 'application/json',
         body: {
           amount: { type: 'float' },
@@ -35,6 +37,8 @@ const routes = {
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
+        description: 'Updates the state of an existing transfer',
+        summary: 'Update transfer state',
         type: 'application/json',
         body: {
           transferId: { type: 'string' },
@@ -59,6 +63,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the state of an existing transfer',
+        summary: 'Get transfer state',
         params: {
           senderId: { type: 'integer' },
           projectId: { type: 'integer' }
@@ -82,6 +88,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns all the transfers related to a project',
+        summary: 'Get all transfers by project',
         params: {
           projectId: { type: 'integer' }
         }

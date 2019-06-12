@@ -8,6 +8,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description:
+          'Sign the agreement of an existing project by an existing funder',
+        summary: 'Funder sign project agreement',
         params: {
           userId: { type: 'integer' },
           projectId: { type: 'integer' }
@@ -31,6 +34,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns all funders related to a project',
+        summary: 'Get all funders by project',
         params: {
           projectId: { type: 'integer' }
         }
@@ -53,6 +58,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description:
+          'Creates a new relation between an existing funder and an existing project',
+        summary: 'Associate a funder to a project',
         params: {
           userId: { type: 'integer' },
           projectId: { type: 'integer' }

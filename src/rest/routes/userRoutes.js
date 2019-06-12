@@ -8,6 +8,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns an object the information of an existing user',
+        summary: 'Get existing user',
         params: {
           id: { type: 'integer' }
         }
@@ -29,6 +31,10 @@ const routes = {
     path: `${basePath}`,
     options: {
       beforeHandler: ['adminAuth'],
+      schema: {
+        description: 'Returns the information of all the existing COA users',
+        summary: 'Get all existing users'
+      },
       response: {
         200: {
           type: 'object',
@@ -47,6 +53,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the role of an existing user',
+        summary: "Get user's role",
         params: {
           id: { type: 'integer' }
         }
@@ -68,6 +76,8 @@ const routes = {
     path: `${basePath}/registrationStatus`,
     options: {
       schema: {
+        description: 'Returns the registration status of an existing user',
+        summary: 'Get user registration status',
         response: {
           200: {
             type: 'object',
@@ -96,6 +106,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns all available user roles in COA',
+        summary: 'Get all user roles',
         response: {
           200: {
             type: 'object',
@@ -123,6 +135,8 @@ const routes = {
     path: `${basePath}/login`,
     options: {
       schema: {
+        description: 'User login by email and password',
+        summary: 'User login',
         type: 'application/json',
         body: {
           email: { type: 'string' },
@@ -146,6 +160,8 @@ const routes = {
     path: `${basePath}/signup`,
     options: {
       schema: {
+        description: 'Registers a new user in COA',
+        summary: 'User sign up',
         body: {
           type: 'object',
           properties: {
@@ -196,6 +212,8 @@ const routes = {
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
+        description: 'Modifies an existing user information',
+        summary: 'Update COA user',
         body: {
           type: 'object',
           properties: {
@@ -244,6 +262,10 @@ const routes = {
     path: `${basePath}/oracle`,
     options: {
       beforeHandler: ['generalAuth'],
+      schema: {
+        description: 'Returns all existing COA Oracles',
+        summary: 'Get all COA Oracles'
+      },
       response: {
         200: {
           type: 'application/json',
@@ -261,6 +283,11 @@ const routes = {
     path: `${basePath}/recoverPassword`,
     options: {
       schema: {
+        description:
+          'Receives an email account and starts the password recovery process ' +
+          'for the corresponding user, sending them an email with the instructions ' +
+          'on how to proceed',
+        summary: 'Start password recovery process',
         body: {
           type: 'object',
           properties: {
@@ -300,6 +327,9 @@ const routes = {
     path: `${basePath}/updatePassword`,
     options: {
       schema: {
+        description:
+          'Modifies the password of an existing user validating the token sent by email',
+        summary: 'Update user password',
         body: {
           type: 'object',
           properties: {
@@ -339,6 +369,10 @@ const routes = {
     method: 'get',
     path: `${basePath}/:id/projects`,
     options: {
+      schema: {
+        description: 'Returns all projects related to an existing user',
+        summary: 'Get all projects by user'
+      },
       response: {
         200: {
           type: 'application/json',
