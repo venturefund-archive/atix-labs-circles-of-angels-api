@@ -20,14 +20,44 @@ const routes = {
           'answers for the specified role',
         summary: 'Get onboarding Q&A',
         params: {
-          roleId: { type: 'integer' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            roleId: { type: 'number' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              questions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    question: { type: 'string' },
+                    role: { type: 'number' },
+                    answerLimit: { type: 'number' },
+                    answers: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          answer: { type: 'string' },
+                          id: { type: 'number' },
+                          question: { type: 'number' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
