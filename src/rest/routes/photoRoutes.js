@@ -19,14 +19,19 @@ const routes = {
         description: 'Returns an existing image encoded in base64',
         summary: 'Get photo',
         params: {
-          id: { type: 'integer' }
-        }
-      },
-      response: {
-        200: {
-          type: 'image',
+          type: 'object',
           properties: {
-            response: { type: 'image' }
+            id: { type: 'number' }
+          }
+        },
+        response: {
+          200: { type: 'string' },
+          '40x': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
           }
         }
       }
