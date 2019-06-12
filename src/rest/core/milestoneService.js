@@ -304,17 +304,14 @@ const milestoneService = ({
     let actualQuarter;
 
     while (!isEmpty(cellKeys)) {
-      const rowNum = cellKeys[0].slice(1);
+      let rowNum = cellKeys[0].slice(1);
       const row = remove(cellKeys, k => k.slice(1) === rowNum);
+      rowNum = parseInt(rowNum, 10);
       const quarter = worksheet[`${nameMap.quarter}${rowNum}`]
         ? worksheet[`${nameMap.quarter}${rowNum}`].v
         : false;
 
       if (quarter) {
-        if (milestone && !this.isMilestoneEmpty(milestone)) {
-          this.verifyMilestone(milestone, response, rowNum);
-          response.milestones.push(milestone);
-        }
         milestone = {};
         milestone.activityList = [];
         actualQuarter = quarter;
@@ -335,14 +332,21 @@ const milestoneService = ({
         if (type.includes('Milestone')) {
           if (!actualQuarter) {
             response.errors.push({
-              rowNum,
+              rowNumber: rowNum,
               msg: 'Found a milestone without quarter'
             });
           }
+
           if (!this.isMilestoneEmpty(milestone)) {
-            this.verifyMilestone(milestone, response, rowNum);
+            if (milestone.activityList.length === 0) {
+              response.errors.push({
+                rowNumber: rowNum,
+                msg: 'Found a milestone without activities'
+              });
+            }
             response.milestones.push(milestone);
           }
+
           milestone = {};
           milestone.activityList = [];
 
@@ -353,6 +357,7 @@ const milestoneService = ({
             milestone[milestoneAtributeKey] = value;
           }
           milestone.quarter = actualQuarter;
+          this.verifyMilestone(milestone, response, rowNum);
         } else if (type.includes('Activity')) {
           const activity = {};
 
@@ -363,9 +368,12 @@ const milestoneService = ({
             activity[milestoneAtributeKey] = value;
           }
 
-          if (this.isMilestoneEmpty(milestone)) {
+          if (
+            !this.isMilestoneValid(milestone) ||
+            this.isMilestoneEmpty(milestone)
+          ) {
             response.errors.push({
-              rowNum,
+              rowNumber: rowNum,
               msg:
                 'Found an activity without an specified milestone or inside an invalid milestone'
             });
@@ -377,168 +385,6 @@ const milestoneService = ({
       }
     }
     return response;
-    // const milestonesJSON = (await XLSX.utils.sheet_to_json(worksheet)).slice(1);
-
-    // response.milestones = [];
-    // const { milestones } = response;
-    // let milestone = {};
-    // let quarter = '';
-    // // parse the JSON array with the milestones data
-    // Object.values(milestonesJSON).forEach(row => {
-    //   const rowNumber = row.__rowNum__ + 1;
-    //   let activity = {};
-
-    //   Object.keys(row).map(key => {
-    //     const trimmedKey = key.trim();
-    //     if (trimmedKey !== key) {
-    //       row[trimmedKey] = row[key];
-    //       delete row[key];
-    //       return { key: row[trimmedKey] };
-    //     }
-    //     return { key: row[key] };
-    //   });
-
-    //   if (
-    //     'Timeline' in row &&
-    //     typeof row.Timeline === 'string' &&
-    //     row.Timeline.includes('Quarter')
-    //   ) {
-    //     // found a quarter
-    //     quarter = row.Timeline;
-    //     milestone = {};
-    //   } else if (row.__EMPTY && row.__EMPTY.includes('Milestone')) {
-    //     // found a milestone
-    //     milestone = {};
-    //     milestone.quarter = quarter;
-    //     milestone.tasks = row.Tasks !== undefined ? row.Tasks : '';
-    //     milestone.impact =
-    //       row['Expected Changes/ Social Impact Targets'] !== undefined
-    //         ? row['Expected Changes/ Social Impact Targets']
-    //         : '';
-    //     milestone.impactCriterion =
-    //       row['Review Criterion'] !== undefined ? row['Review Criterion'] : '';
-    //     milestone.signsOfSuccess =
-    //       row['Signs of Success'] !== undefined ? row['Signs of Success'] : '';
-    //     milestone.signsOfSuccessCriterion =
-    //       row['Review Criterion _1'] !== undefined
-    //         ? row['Review Criterion _1']
-    //         : '';
-    //     milestone.category =
-    //       row['Expenditure Category'] !== undefined
-    //         ? row['Expenditure Category']
-    //         : '';
-    //     milestone.keyPersonnel =
-    //       row['Key Personnel Responsible'] !== undefined
-    //         ? row['Key Personnel Responsible']
-    //         : '';
-    //     milestone.budget =
-    //       row['Budget needed'] !== undefined ? row['Budget needed'] : '';
-
-    //     milestone.activityList = [];
-
-    //     if (quarter !== '') {
-    //       let error = false;
-
-    //       if (!this.isMilestoneEmpty(milestone)) {
-    //         if (milestone.tasks === '') {
-    //           error = true;
-    //           response.errors.push({
-    //             rowNumber,
-    //             msg: 'Found a milestone without Tasks'
-    //           });
-    //         }
-    //         if (milestone.impact === '') {
-    //           error = true;
-    //           response.errors.push({
-    //             rowNumber,
-    //             msg:
-    //               'Found a milestone without Expected Changes/ Social Impact Targets'
-    //           });
-    //         }
-    //       }
-
-    //       if (!error) {
-    //         milestones.push(milestone);
-    //       }
-    //     } else {
-    //       response.errors.push({
-    //         rowNumber,
-    //         msg: 'Found a milestone without an specified quarter'
-    //       });
-    //     }
-    //   } else if (row.__EMPTY && row.__EMPTY.includes('Activity')) {
-    //     // found an activity
-    //     activity = {};
-    //     activity.tasks = row.Tasks !== undefined ? row.Tasks : '';
-    //     activity.impact =
-    //       row['Expected Changes/ Social Impact Targets'] !== undefined
-    //         ? row['Expected Changes/ Social Impact Targets']
-    //         : '';
-    //     activity.impactCriterion =
-    //       row['Review Criterion'] !== undefined ? row['Review Criterion'] : '';
-    //     activity.signsOfSuccess =
-    //       row['Signs of Success'] !== undefined ? row['Signs of Success'] : '';
-    //     activity.signsOfSuccessCriterion =
-    //       row['Review Criterion _1'] !== undefined
-    //         ? row['Review Criterion _1']
-    //         : '';
-    //     activity.category =
-    //       row['Expenditure Category'] !== undefined
-    //         ? row['Expenditure Category']
-    //         : '';
-    //     activity.keyPersonnel =
-    //       row['Key Personnel Responsible'] !== undefined
-    //         ? row['Key Personnel Responsible']
-    //         : '';
-    //     activity.budget =
-    //       row['Budget needed'] !== undefined ? row['Budget needed'] : '';
-
-    //     if (!values(activity).every(isEmpty)) {
-    //       const validActivity = this.verifyActivity(
-    //         activity,
-    //         response,
-    //         rowNumber
-    //       );
-    //       if (
-    //         !this.isMilestoneEmpty(milestone) &&
-    //         this.isMilestoneValid(milestone)
-    //       ) {
-    //         if (validActivity) {
-    //           milestone.activityList.push(activity);
-    //         }
-    //       } else {
-    //         response.errors.push({
-    //           rowNumber,
-    //           msg:
-    //             'Found an activity without an specified milestone or inside an invalid milestone'
-    //         });
-    //       }
-    //     }
-    //   }
-    // });
-
-    // fastify.log.info(
-    //   '[Milestone Service] :: Milestones data retrieved from file:',
-    //   milestones
-    // );
-
-    // let valid = false;
-    // await milestones.forEach(m => {
-    //   if (!this.isMilestoneEmpty(m)) {
-    //     if (!isEmpty(m.activityList)) {
-    //       valid = true;
-    //     }
-    //   }
-    // });
-    // if (!valid) {
-    //   response.errors.push({
-    //     rowNumber: 1,
-    //     msg:
-    //       'Could not find any valid activities. There should be at least one.'
-    //   });
-    // }
-
-    // return response;
   },
 
   isMilestoneEmpty(milestone) {
@@ -563,28 +409,19 @@ const milestoneService = ({
 
   verifyMilestone(milestone, response, rowNumber) {
     let valid = true;
-
-    if (milestone.tasks === '') {
+    if (!milestone.tasks || milestone.tasks === '') {
       valid = false;
       response.errors.push({
         rowNumber,
-        msg: 'Found an milestone without Tasks'
+        msg: 'Found a milestone without Tasks'
       });
     }
 
-    if (milestone.impact === '') {
+    if (!milestone.impact || milestone.impact === '') {
       valid = false;
       response.errors.push({
         rowNumber,
-        msg: 'Found an activity without Expected Changes/ Social Impact Targets'
-      });
-    }
-
-    if (milestone.activityList.length === 0) {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found a milestone without activities'
+        msg: 'Found a milestone without Expected Changes/ Social Impact Targets'
       });
     }
 
