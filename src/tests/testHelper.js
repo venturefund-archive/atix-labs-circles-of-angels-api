@@ -1,3 +1,11 @@
+/**
+ * COA PUBLIC LICENSE
+ * Circle of Angels aims to democratize social impact financing.
+ * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ *
+ * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
+ */
+
 const configs = require('config');
 const {
   project,
@@ -27,13 +35,13 @@ exports.buildUserOracle = id => {
   return user;
 };
 
-exports.buildUserFunder = ({ id }) => {
+exports.buildUserFunder = id => {
   const user = JSON.parse(JSON.stringify(userFunder));
   user.id = id || user.id;
   return user;
 };
 
-exports.buildUserAdmin = ({ id }) => {
+exports.buildUserAdmin = id => {
   const user = JSON.parse(JSON.stringify(userAdmin));
   user.id = id || user.id;
   return user;
@@ -45,37 +53,37 @@ exports.buildUserSe = id => {
   return user;
 };
 
-exports.buildUserSeDetails = ({ id }) => {
+exports.buildUserSeDetails = id => {
   const { detail } = userSeDetails(id);
   return detail;
 };
 
-exports.buildUserFunderDetails = ({ id }) => {
+exports.buildUserFunderDetails = id => {
   const { detail } = userFunderDetails(id);
   return detail;
 };
 
-exports.buildUserSeAnswers = ({ id }) => {
+exports.buildUserSeAnswers = id => {
   const { answers } = userSeAnswers(id);
   return answers;
 };
 
-exports.buildUserFunderAnswers = ({ id }) => {
+exports.buildUserFunderAnswers = id => {
   const { answers } = userFunderAnswers(id);
   return answers;
 };
 
-exports.buildUserSeWithDetails = ({ id }) => {
-  const user = this.buildUserSe({ id });
-  const answers = this.buildUserSeAnswers({ id: user.id });
-  const detail = this.buildUserSeDetails({ id: user.id });
+exports.buildUserSeWithDetails = id => {
+  const user = this.buildUserSe(id);
+  const answers = this.buildUserSeAnswers(user.id);
+  const detail = this.buildUserSeDetails(user.id);
   return { ...user, answers, detail };
 };
 
-exports.buildUserFunderWithDetails = ({ id }) => {
-  const user = this.buildUserFunder({ id });
-  const answers = this.buildUserFunderAnswers({ id: user.id });
-  const detail = this.buildUserFunderDetails({ id: user.id });
+exports.buildUserFunderWithDetails = id => {
+  const user = this.buildUserFunder(id);
+  const answers = this.buildUserFunderAnswers(user.id);
+  const detail = this.buildUserFunderDetails(user.id);
   return { ...user, answers, detail };
 };
 
@@ -95,11 +103,12 @@ exports.populateUserRole = user => {
   return userWithRole;
 };
 
-exports.buildActivity = ({ id, bcStatus, oracle }) => {
+exports.buildActivity = ({ id, bcStatus, oracle, milestoneId }) => {
   const newActivity = JSON.parse(JSON.stringify(activity));
   newActivity.id = id || newActivity.id;
   newActivity.blockchainStatus = bcStatus || newActivity.blockchainStatus;
   newActivity.oracle = oracle || newActivity.oracle;
+  newActivity.milestone = milestoneId || newActivity.milestone;
 
   return newActivity;
 };

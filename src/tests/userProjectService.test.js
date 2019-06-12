@@ -1,3 +1,11 @@
+/**
+ * COA PUBLIC LICENSE
+ * Circle of Angels aims to democratize social impact financing.
+ * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ *
+ * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
+ */
+
 const userProjectServiceBuilder = require('../rest/core/userProjectService');
 
 const fastify = {
@@ -89,8 +97,8 @@ describe('Testing userProjectService getUsers', () => {
 
   const projectId = 15;
   const funderList = [
-    testHelper.buildUserFunder({ id: 10 }),
-    testHelper.buildUserFunder({ id: 8 })
+    testHelper.buildUserFunder(10),
+    testHelper.buildUserFunder(8)
   ];
   const userProjects = [
     testHelper.buildUserProject({
