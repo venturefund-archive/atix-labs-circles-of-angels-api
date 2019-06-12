@@ -11,14 +11,32 @@ const routes = {
         description: 'Deletes an existing file',
         summary: 'Delete file',
         params: {
-          id: { type: 'integer' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            id: { type: 'number' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              createdAt: { type: 'string' },
+              updatedAt: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }

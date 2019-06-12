@@ -69,8 +69,6 @@ const fileService = ({ fastify, fileDao }) => ({
     try {
       const deletedFile = await fileDao.deleteFile(fileId);
 
-      await unlinkPromise(deletedFile.path);
-
       if (!deletedFile || deletedFile == null) {
         fastify.log.error(
           `[File Service] :: File ID ${fileId} not found in database:`
@@ -80,6 +78,8 @@ const fileService = ({ fastify, fileDao }) => ({
           status: 404
         };
       }
+
+      await unlinkPromise(deletedFile.path);
 
       fastify.log.info('[File Service] :: File deleted:', deletedFile);
       return deletedFile;
