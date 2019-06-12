@@ -311,6 +311,10 @@ const milestoneService = ({
         : false;
 
       if (quarter) {
+        if (milestone && !this.isMilestoneEmpty(milestone)) {
+          this.verifyMilestone(milestone, response, rowNum);
+          response.milestones.push(milestone);
+        }
         milestone = {};
         milestone.activityList = [];
         actualQuarter = quarter;
@@ -319,43 +323,59 @@ const milestoneService = ({
       const type = worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`]
         ? worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`].v
         : false;
-      if (!type) continue; //its not a milestone/activity row
+      if (type) {
+        //if is a milestone/activity row
 
-      remove(
-        row,
-        col =>
-          col[0] === nameMap.quarter || col[0] === xlsxConfigs.typeColumnKey
-      ); //remove timeline
+        remove(
+          row,
+          col =>
+            col[0] === nameMap.quarter || col[0] === xlsxConfigs.typeColumnKey
+        ); //remove timeline
 
-      if (type.includes('Milestone')) {
-        milestone = {};
-        milestone.activityList = [];
-      }
+        if (type.includes('Milestone')) {
+          if (!actualQuarter) {
+            response.errors.push({
+              rowNum,
+              msg: 'Found a milestone without quarter'
+            });
+          }
+          if (!this.isMilestoneEmpty(milestone)) {
+            this.verifyMilestone(milestone, response, rowNum);
+            response.milestones.push(milestone);
+          }
+          milestone = {};
+          milestone.activityList = [];
 
-      if (type.includes('Activity')) {
-        response.errors.push({
-          rowNumber,
-          msg:
-            'Found an activity without an specified milestone or inside an invalid milestone'
-        });
-      }
+          while (!isEmpty(row)) {
+            const cell = row.shift();
+            const value = worksheet[cell].v;
+            const milestoneAtributeKey = xlsxConfigs.keysMap[cell[0]];
+            milestone[milestoneAtributeKey] = value;
+          }
+          milestone.quarter = actualQuarter;
+        } else if (type.includes('Activity')) {
+          const activity = {};
 
-      while (!isEmpty(row)) {
-        const cell = row.shift();
-        const value = worksheet[cell].v;
-        const milestoneAtributeKey = xlsxConfigs.keysMap[cell[0]];
-        milestone[milestoneAtributeKey] = value;
-      }
-      milestone.quarter = actualQuarter;
-      if (type.includes('Activity')) {
-        this.verifyActivity(milestone, response, rowNum);
-        milestone.activityList.push(milestone);
-      } else {
-        this.verifyMilestone(milestone, response, rowNum);
-        response.milestones.push({ ...milestone });
+          while (!isEmpty(row)) {
+            const cell = row.shift();
+            const value = worksheet[cell].v;
+            const milestoneAtributeKey = xlsxConfigs.keysMap[cell[0]];
+            activity[milestoneAtributeKey] = value;
+          }
+
+          if (this.isMilestoneEmpty(milestone)) {
+            response.errors.push({
+              rowNum,
+              msg:
+                'Found an activity without an specified milestone or inside an invalid milestone'
+            });
+          }
+
+          this.verifyActivity(activity, response, rowNum);
+          milestone.activityList.push(activity);
+        }
       }
     }
-
     return response;
     // const milestonesJSON = (await XLSX.utils.sheet_to_json(worksheet)).slice(1);
 
@@ -522,17 +542,7 @@ const milestoneService = ({
   },
 
   isMilestoneEmpty(milestone) {
-    let empty = true;
-    Object.entries(milestone).forEach(entry => {
-      if (
-        entry[0] !== 'activityList' &&
-        entry[0] !== 'quarter' &&
-        entry[1] !== ''
-      ) {
-        empty = false;
-      }
-    });
-    return empty;
+    return milestone.activityList && Object.keys(milestone).length === 1;
   },
 
   isMilestoneValid(milestone) {
@@ -567,6 +577,14 @@ const milestoneService = ({
       response.errors.push({
         rowNumber,
         msg: 'Found an activity without Expected Changes/ Social Impact Targets'
+      });
+    }
+
+    if (milestone.activityList.length === 0) {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found a milestone without activities'
       });
     }
 
