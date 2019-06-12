@@ -1,5 +1,6 @@
 /**
- * @description Represent a user social entrepreneur, specific information for users with Funder role
+ * @description Represent a user social entrepreneur,
+ *              specific information for users with Funder role
  * @attribute `id`: user_social_entrepreneur id in the business domain
  * @attribute `user`: reference to user owner of this information
  * @attribute `company`: company name

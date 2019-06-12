@@ -6,11 +6,8 @@ const path = require('path');
 const sha256 = require('sha256');
 const { promisify } = require('util');
 const { forEachPromise } = require('../util/promises');
-const configs = require('../../../config/configs');
 const { evidenceFileTypes, userRoles } = require('../util/constants');
 const { activityStatus, blockchainStatus } = require('../util/constants');
-
-const readFile = promisify(fs.readFile);
 
 const activityService = ({
   fastify,
@@ -22,6 +19,7 @@ const activityService = ({
   oracleActivityDao,
   userService
 }) => ({
+  readFile: promisify(fs.readFile),
   /**
    * Creates an Activity for an existing Milestone
    *
@@ -161,7 +159,9 @@ const activityService = ({
     try {
       // creates the directory where this activities' evidence files will be saved if not exists
       await mkdirp(
-        `${configs.fileServer.filePath}/activities/${activityId}/evidence`
+        `${
+          fastify.configs.fileServer.filePath
+        }/activities/${activityId}/evidence`
       );
       const hashes = [];
       if (files.length && files.length > 0) {
@@ -193,8 +193,10 @@ const activityService = ({
       await fastify.eth.uploadHashEvidenceToActivity(
         userInfo.address,
         userInfo.pwd,
-        activityId,
-        hashes
+        {
+          activityId,
+          hashes
+        }
       );
     } catch (error) {
       fastify.log.error(
@@ -252,22 +254,23 @@ const activityService = ({
 
       // creates the directory where this activities' evidence files will be saved if not exists
       await mkdirp(
-        `${configs.fileServer.filePath}/activities/${activityId}/evidence`
+        `${
+          fastify.configs.fileServer.filePath
+        }/activities/${activityId}/evidence`
       );
 
       // uploading file
-      const filepath = `${configs.fileServer.filePath}/activities/${
+      const filepath = `${fastify.configs.fileServer.filePath}/activities/${
         activity.id
       }/evidence/${file.name}`;
       await file.mv(filepath);
 
       // getting file hash
-      const fileBuffer = await readFile(filepath);
+      const fileBuffer = await this.readFile(filepath);
       const fileHash = sha256(fileBuffer);
 
       // check file type
       const filetype = mime.lookup(filepath);
-
       if (!filetype) {
         fastify.log.error(
           '[Activity Service] :: Error getting mime type of file:',
@@ -791,14 +794,14 @@ const activityService = ({
       const fileEvidence = [];
       if (activityFiles && activityFiles != null) {
         // add type to each
-        activityFiles.map(activityFile => {
-          return fileEvidence.push({
+        activityFiles.map(activityFile =>
+          fileEvidence.push({
             ...activityFile,
             fileType: 'File',
             file: activityFile.file.id,
             fileName: path.basename(activityFile.file.path)
-          });
-        });
+          })
+        );
       } else {
         fastify.log.info(
           `[Activity Service] :: Activity ID: ${activityId} does not have file evidence`
@@ -818,14 +821,14 @@ const activityService = ({
       const photoEvidence = [];
       if (activityPhotos && activityPhotos != null) {
         // add type to each
-        activityPhotos.map(activityPhoto => {
-          return photoEvidence.push({
+        activityPhotos.map(activityPhoto =>
+          photoEvidence.push({
             ...activityPhoto,
             fileType: 'Photo',
             photo: activityPhoto.photo.id,
             fileName: path.basename(activityPhoto.photo.path)
-          });
-        });
+          })
+        );
       } else {
         fastify.log.info(
           `[Activity Service] :: Activity ID: ${activityId} does not have photo evidence`

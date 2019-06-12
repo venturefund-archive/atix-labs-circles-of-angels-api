@@ -53,6 +53,10 @@ module.exports = {
     blockchainStatus: {
       columnName: 'blockchainStatus',
       model: 'blockchain_status'
+    },
+    startBlockchainStatus: {
+      type: 'number',
+      defaultsTo: 1
     }
   }
 };

@@ -1,3 +1,4 @@
+const { blockchainStatus } = require('../util/constants');
 const saveActivity = activityModel => async (activity, milestoneId) => {
   const toSave = {
     ...activity,
@@ -36,22 +37,26 @@ const deleteActivity = activityModel => async activityId => {
   return deleted;
 };
 
-const updateStatus = activityModel => async (activityId, status) => {
-  return activityModel.update(activityId).set({ status });
-};
+const updateStatus = activityModel => async (activityId, status) =>
+  activityModel.update(activityId).set({ status });
 const updateStatusWithTransaction = activityModel => async (
   activityId,
   status,
   transactionHash
-) => {
-  return activityModel.update(activityId).set({ status, transactionHash });
-};
+) => activityModel.update(activityId).set({ status, transactionHash });
 
 const updateBlockchainStatus = activityModel => async (
   activityId,
   blockchainStatus
-) => {
-  return activityModel.updateOne({ id: activityId }).set({ blockchainStatus });
+) => activityModel.updateOne({ id: activityId }).set({ blockchainStatus });
+
+const whichUnconfirmedActivities = activityModel => async activitiesIds => {
+  return activityModel.find({
+    where: {
+      id: activitiesIds,
+      blockchainStatus: { '!=': blockchainStatus.CONFIRMED }
+    }
+  });
 };
 
 module.exports = activityModel => ({
@@ -61,5 +66,6 @@ module.exports = activityModel => ({
   deleteActivity: deleteActivity(activityModel),
   updateStatus: updateStatus(activityModel),
   updateStatusWithTransaction: updateStatusWithTransaction(activityModel),
-  updateBlockchainStatus: updateBlockchainStatus(activityModel)
+  updateBlockchainStatus: updateBlockchainStatus(activityModel),
+  whichUnconfirmedActivities: whichUnconfirmedActivities(activityModel)
 });

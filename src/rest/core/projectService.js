@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const mime = require('mime');
 const { isEmpty, uniq } = require('lodash');
-const configs = require('../../../config/configs');
 const { forEachPromise } = require('../util/promises');
 const {
   addPathToFilesProperties,
@@ -136,9 +135,11 @@ const projectService = ({
         : '';
       const milestonesPath = projectMilestones.path;
 
+      fastify.log.info('[Project Service] :: Saving project files');
+
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(
-        `${configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
       );
 
       // saves the project's pictures and proposal
@@ -178,7 +179,7 @@ const projectService = ({
 
       fastify.log.info(
         '[Project Service] :: All files saved to:',
-        `${configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
       );
 
       const savedCoverPhoto = await photoService.savePhoto(coverPhotoPath);
@@ -209,9 +210,8 @@ const projectService = ({
 
       const userOwner = await userDao.getUserById(ownerId);
 
+      //MODIFICAR: que el sender sea el admin
       const transactionHash = await fastify.eth.createProject(
-        userOwner.address,
-        userOwner.pwd,
         {
           projectId: savedProject.id,
           seAddress: userOwner.address,
@@ -328,7 +328,7 @@ const projectService = ({
         });
 
         // creates the directory where this project's files will be saved if not exists
-        await mkdirp(`${configs.fileServer.filePath}/projects/${id}`);
+        await mkdirp(`${fastify.configs.fileServer.filePath}/projects/${id}`);
 
         // saves the project's pictures
         if (projectCoverPhoto) {
@@ -385,7 +385,7 @@ const projectService = ({
 
         fastify.log.info(
           '[Project Service] :: All files saved to:',
-          `${configs.fileServer.filePath}/projects/${id}`
+          `${fastify.configs.fileServer.filePath}/projects/${id}`
         );
       }
 
@@ -448,6 +448,11 @@ const projectService = ({
           } is not confirmed on blockchain yet`
         };
     }
+    if (
+      project.status === projectStatus.IN_PROGRESS &&
+      status === projectStatus.IN_PROGRESS
+    )
+      throw Error('Already started proyect');
     if (existsStatus) {
       return projectDao.updateProjectStatus({ projectId, status });
     }
@@ -473,7 +478,6 @@ const projectService = ({
             const milestoneActivities = await milestoneService.getMilestoneActivities(
               milestone
             );
-
             const milestoneWithType = {
               ...milestoneActivities,
               type: 'Milestone'
@@ -634,23 +638,27 @@ const projectService = ({
 
       // creates the directory where this project's agreement will be saved if not exists
       // (it should've been created during the project creation though)
-      mkdirp(`${configs.fileServer.filePath}/projects/${project.id}`);
+      mkdirp(`${fastify.configs.fileServer.filePath}/projects/${project.id}`);
 
       const filename = `agreement${path.extname(projectAgreement.name)}`;
 
       // saves the project's agreement
       fastify.log.info(
         '[Project Service] :: Saving Project agreement to:',
-        `${configs.fileServer.filePath}/projects/${project.id}/${filename}`
+        `${fastify.configs.fileServer.filePath}/projects/${
+          project.id
+        }/${filename}`
       );
       await projectAgreement.mv(
-        `${configs.fileServer.filePath}/projects/${project.id}/${filename}`
+        `${fastify.configs.fileServer.filePath}/projects/${
+          project.id
+        }/${filename}`
       );
 
       // update database
-      const projectAgreementPath = `${configs.fileServer.filePath}/projects/${
-        project.id
-      }/${filename}`;
+      const projectAgreementPath = `${
+        fastify.configs.fileServer.filePath
+      }/projects/${project.id}/${filename}`;
 
       const updatedProject = await projectDao.updateProjectAgreement({
         projectAgreement: projectAgreementPath,
@@ -853,7 +861,6 @@ const projectService = ({
         );
         return { error: 'ERROR: Project not found', status: 404 };
       }
-
       if (
         project.status !== projectStatus.PUBLISHED &&
         project.status !== projectStatus.IN_PROGRESS
@@ -882,15 +889,10 @@ const projectService = ({
         };
       }
 
-      const userOwner = await projectDao.getUserOwnerOfProject(projectId);
-
       fastify.log.info(
         `[Project Service] :: Starting milestones on blockchain of project Project ID ${projectId}`
       );
-      await milestoneService.startMilestonesOfProject(
-        project,
-        userOwner
-      );
+      await milestoneService.startMilestonesOfProject(project);
 
       return project;
     } catch (error) {
@@ -899,11 +901,16 @@ const projectService = ({
     }
   },
 
+  /**
+   * Receive a project id and return a boolean if all activities of that project
+   * has an oracle assigned
+   * @param {number} projectId 
+   */
   async isFullyAssigned(projectId) {
     let isFullyAssigned = true;
     const milestones = await milestoneService.getMilestonesByProject(projectId);
 
-    if (!milestones || milestones == null) {
+    if (!milestones || milestones == null || isEmpty(milestones)) {
       return false;
     }
 
@@ -947,6 +954,11 @@ const projectService = ({
     }
   },
 
+  /**
+   * Receive a project id and return a user object who is owner of
+   * that project
+   * @param {number} projectId 
+   */
   async getProjectOwner(projectId) {
     try {
       const project = await projectDao.getProjectById({ projectId });
@@ -957,6 +969,12 @@ const projectService = ({
     }
   },
 
+  /**
+   * Receive id of a project and return a boolean if project is already
+   * confirmed on blockchain
+   * [Only for project creation transaction]
+   * @param {number} projectId 
+   */
   async isProjectTransactionConfirmed(projectId) {
     try {
       const project = await projectDao.getProjectById({ projectId });
@@ -966,6 +984,12 @@ const projectService = ({
     }
   },
 
+
+  /**
+   * Receive id of a user and return an array of project objects
+   * created by that user
+   * @param {number} ownerId 
+   */
   async getProjectsOfOwner(ownerId) {
     try {
       const projects = await projectDao.getProjectsByOwner(ownerId);
@@ -978,6 +1002,11 @@ const projectService = ({
     }
   },
 
+  /**
+   * Receive an array of project ids and return an array of project 
+   * objects corresponding to these ids
+   * @param {array} projectsId 
+   */
   async getAllProjectsById(projectsId) {
     return projectDao.getAllProjectsById(projectsId);
   },
@@ -1098,7 +1127,7 @@ const projectService = ({
     const filename = addTimestampToFilename(file.name);
 
     const filepath = `${
-      configs.fileServer.filePath
+      fastify.configs.fileServer.filePath
     }/projects/${projectId}/experiences/${filename}`;
 
     if (fs.existsSync(filepath)) {
@@ -1106,7 +1135,7 @@ const projectService = ({
     }
 
     await mkdirp(
-      `${configs.fileServer.filePath}/projects/${projectId}/experiences`
+      `${fastify.configs.fileServer.filePath}/projects/${projectId}/experiences`
     );
     await file.mv(filepath);
 
@@ -1191,6 +1220,24 @@ const projectService = ({
       return { error: 'Invalid Blockchain status' };
     }
     return projectDao.updateBlockchainStatus(projectId, status);
+  },
+
+  async allActivitiesAreConfirmed(projectId, activityDao) {
+    try {
+      const milestones = await this.getProjectMilestones(projectId);
+      const activitiesIds = [];
+      milestones.forEach(milestone => {
+        milestone.activities.forEach(activity => {
+          activitiesIds.push(activity.id);
+        });
+      });
+      const activities = await activityDao.whichUnconfirmedActivities(
+        activitiesIds
+      );
+      return isEmpty(activities);
+    } catch (error) {
+      return { error };
+    }
   }
 });
 

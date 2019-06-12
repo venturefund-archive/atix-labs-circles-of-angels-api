@@ -80,6 +80,7 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     delete toUpdate.id;
     delete toUpdate.ownerId;
     delete toUpdate.blockchainStatus;
+    delete toUpdate.startBlockchainStatus;
 
     const savedProject = await projectModel
       .updateOne({ id })
@@ -121,6 +122,10 @@ const ProjectDao = ({ projectModel, userDao }) => ({
 
   async updateBlockchainStatus(id, blockchainStatus) {
     return projectModel.updateOne({ id }).set({ blockchainStatus });
+  },
+
+  async updateStartBlockchainStatus(id, startBlockchainStatus) {
+    return projectModel.updateOne({ id }).set({ startBlockchainStatus });
   }
 });
 

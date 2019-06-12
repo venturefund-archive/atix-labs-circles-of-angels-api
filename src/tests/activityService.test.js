@@ -1,4 +1,16 @@
-const fastify = { log: { info: console.log, error: console.log } };
+jest.mock('sha256');
+const fs = require('fs');
+let sha256 = require('sha256');
+const testHelper = require('./testHelper');
+const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
+
+const fastify = {
+  log: { info: jest.fn(), error: jest.fn() },
+  configs: require('config'),
+  eth: {
+    uploadHashEvidenceToActivity: ethServicesMock.uploadHashEvidenceToActivity
+  }
+};
 
 describe('Testing activityService createActivities', () => {
   let activityDao;
@@ -23,69 +35,41 @@ describe('Testing activityService createActivities', () => {
     const milestoneId = 2;
 
     const mockActivities = [
-      {
-        tasks: 'Task A1',
-        impact: 'Impact A1',
-        impactCriterion: 'Impact Criterion A1',
-        signsOfSuccess: 'Success A1',
-        signsOfSuccessCriterion: 'Success Criterion A1',
-        category: 'Category A1',
-        keyPersonnel: 'Key Personnel A1',
-        budget: 'Budget A1'
-      },
-      {
-        tasks: 'Task A2',
-        impact: 'Impact A2',
-        impactCriterion: 'Impact Criterion A2',
-        signsOfSuccess: 'Success A2',
-        signsOfSuccessCriterion: 'Success Criterion A2',
-        category: 'Category A2',
-        keyPersonnel: 'Key Personnel A2',
-        budget: 'Budget A2'
-      },
-      {
-        tasks: '',
-        impact: '',
-        impactCriterion: '',
-        signsOfSuccess: '',
-        signsOfSuccessCriterion: '',
-        category: '',
-        keyPersonnel: '',
-        budget: ''
-      }
+      testHelper.buildActivity({}),
+      testHelper.buildActivity({}),
+      testHelper.buildActivity({}),
+      testHelper.buildEmptyActivity({})
     ];
 
-    const compareActivities = [
-      {
-        tasks: 'Task A1',
-        impact: 'Impact A1',
-        impactCriterion: 'Impact Criterion A1',
-        signsOfSuccess: 'Success A1',
-        signsOfSuccessCriterion: 'Success Criterion A1',
-        category: 'Category A1',
-        keyPersonnel: 'Key Personnel A1',
-        budget: 'Budget A1',
-        milestone: milestoneId
-      },
-      {
-        tasks: 'Task A2',
-        impact: 'Impact A2',
-        impactCriterion: 'Impact Criterion A2',
-        signsOfSuccess: 'Success A2',
-        signsOfSuccessCriterion: 'Success Criterion A2',
-        category: 'Category A2',
-        keyPersonnel: 'Key Personnel A2',
-        budget: 'Budget A2',
-        milestone: milestoneId
-      }
-    ];
+    const toSend = mockActivities.map(activity => ({
+      tasks: activity.tasks,
+      impact: activity.impact,
+      impactCriterion: activity.impactCriterion,
+      signsOfSuccess: activity.signsOfSuccess,
+      signsOfSuccessCriterion: activity.signsOfSuccessCriterion,
+      category: activity.category,
+      keyPersonnel: activity.keyPersonnel,
+      budget: activity.budget
+    }));
 
+    const expected = mockActivities
+      .filter(a => a.id !== undefined)
+      .map(activity => ({
+        tasks: activity.tasks,
+        impact: activity.impact,
+        impactCriterion: activity.impactCriterion,
+        signsOfSuccess: activity.signsOfSuccess,
+        signsOfSuccessCriterion: activity.signsOfSuccessCriterion,
+        category: activity.category,
+        keyPersonnel: activity.keyPersonnel,
+        budget: activity.budget,
+        milestone: milestoneId
+      }));
     const activities = await activityService.createActivities(
-      mockActivities,
+      toSend,
       milestoneId
     );
-
-    expect(activities).toEqual(compareActivities);
+    expect(activities).toEqual(expected);
   });
 });
 
@@ -96,26 +80,41 @@ describe('Testing activityService createActivity', () => {
   const newActivityId = 1;
   const milestoneId = 12;
 
-  const mockActivity = {
-    tasks: 'Activity Tasks',
-    impact: 'Impact Activity',
-    impactCriterion: 'Criterion Activity',
-    signsOfSuccess: 'Success A1',
-    signsOfSuccessCriterion: 'Success Criterion A1',
-    category: 'Category A1',
-    keyPersonnel: 'Key Personnel A1',
-    budget: 123
-  };
+  let mockActivity;
+  let incompleteActivity;
 
-  const incompleteActivity = {
-    tasks: 'Activity Tasks',
-    impact: 'Impact Activity',
-    impactCriterion: 'Criterion Activity',
-    signsOfSuccess: 'Success A1',
-    signsOfSuccessCriterion: 'Success Criterion A1',
-    category: 'Category A1',
-    keyPersonnel: 'Key Personnel A1'
-  };
+  beforeEach(() => {
+    const {
+      tasks,
+      impact,
+      impactCriterion,
+      signsOfSuccess,
+      signsOfSuccessCriterion,
+      category,
+      keyPersonnel,
+      budget
+    } = testHelper.buildActivity({});
+    mockActivity = {
+      tasks,
+      impact,
+      impactCriterion,
+      signsOfSuccess,
+      signsOfSuccessCriterion,
+      category,
+      keyPersonnel,
+      budget
+    };
+
+    incompleteActivity = {
+      tasks,
+      impact,
+      impactCriterion,
+      signsOfSuccess,
+      signsOfSuccessCriterion,
+      category,
+      keyPersonnel
+    };
+  });
 
   beforeAll(() => {
     activityDao = {
@@ -175,30 +174,41 @@ describe('Testing activityService updateActivity', () => {
 
   const activityId = 12;
 
-  const mockActivity = {
-    tasks: 'Activity Tasks',
-    impact: 'Impact Activity',
-    impactCriterion: 'Criterion Activity',
-    signsOfSuccess: 'Success A1',
-    signsOfSuccessCriterion: 'Success Criterion A1',
-    category: 'Category A1',
-    keyPersonnel: 'Key Personnel A1',
-    budget: 123,
-    id: activityId,
-    milestone: 12
-  };
+  let mockActivity;
+  let incompleteActivity;
 
-  const incompleteActivity = {
-    tasks: 'Activity Tasks',
-    impact: 'Impact Activity',
-    impactCriterion: 'Criterion Activity',
-    signsOfSuccess: 'Success A1',
-    signsOfSuccessCriterion: 'Success Criterion A1',
-    category: 'Category A1',
-    keyPersonnel: 'Key Personnel A1',
-    id: activityId,
-    milestone: 12
-  };
+  beforeEach(() => {
+    const {
+      tasks,
+      impact,
+      impactCriterion,
+      signsOfSuccess,
+      signsOfSuccessCriterion,
+      category,
+      keyPersonnel,
+      budget
+    } = testHelper.buildActivity({});
+    mockActivity = {
+      tasks,
+      impact,
+      impactCriterion,
+      signsOfSuccess,
+      signsOfSuccessCriterion,
+      category,
+      keyPersonnel,
+      budget
+    };
+
+    incompleteActivity = {
+      tasks,
+      impact,
+      impactCriterion,
+      signsOfSuccess,
+      signsOfSuccessCriterion,
+      category,
+      keyPersonnel
+    };
+  });
 
   beforeAll(() => {
     activityDao = {
@@ -216,17 +226,6 @@ describe('Testing activityService updateActivity', () => {
       fastify,
       activityDao
     });
-  });
-
-  it('should return the updated activity', async () => {
-    const expected = mockActivity;
-
-    const response = await activityService.updateActivity(
-      mockActivity,
-      activityId
-    );
-
-    return expect(response).toEqual(expected);
   });
 
   it('should return an error if the activity is incomplete', async () => {
@@ -257,42 +256,185 @@ describe('Testing activityService updateActivity', () => {
   });
 });
 
-describe('Testing activityService delete activity', async () => {
-  let activityDao;
+describe('Testing ActivityService addEvidenceFiles', () => {
   let activityService;
-  const mockActivity = {
-    id: 1,
-    tasks: 'Task A1',
-    impact: '',
-    impactCriterion: '',
-    signsOfSuccess: '',
-    signsOfSuccessCriterion: '',
-    category: 'Category A1',
-    keyPersonnel: 'Key Personnel A1',
-    budget: ''
-  };
+  let user = testHelper.buildUserOracle({});
 
-  beforeAll(() => {
-    activityService = {};
-    activityDao = {
-      async deleteActivity(activityId) {
-        if (activityId === 1) return mockActivity;
-        return [];
-      }
-    };
+  beforeEach(() => {
     activityService = require('../rest/core/activityService')({
       fastify,
-      activityDao
+      userService: {
+        getUserById: () => {
+          return user;
+        }
+      }
+    });
+    activityService.addEvidence = () => {
+      return {
+        fileHash: '23kfek32kek3edd'
+      };
+    };
+  });
+
+  it('user oracle add evidences files should update database and blockchain', async () => {
+    const files = [
+      testHelper.getMockFiles.projectCoverPhoto,
+      testHelper.getMockFiles.projectCardPhoto
+    ];
+    const activityId = 1;
+
+    const response = await activityService.addEvidenceFiles(
+      activityId,
+      files,
+      user
+    );
+
+    expect(response).toEqual({
+      success: 'The evidence was successfully uploaded!'
+    });
+  });
+});
+
+describe('Testing ActivityService addEvidence', () => {
+  let activityService;
+  let activity;
+  let fileId = 1;
+  let photoId = 2;
+  let activityPhotoId = 1;
+  let activityFileId = 1;
+  const image = testHelper.getMockFiles().projectCoverPhoto;
+  const file = testHelper.getMockFiles().projectAgreement;
+
+  beforeEach(() => {
+    activity = testHelper.buildActivity({ id: 1 });
+    activityService = require('../rest/core/activityService')({
+      fastify,
+      activityDao: {
+        getActivityById: activityId => {
+          return activity;
+        }
+      },
+      fileService: {
+        saveFile: filePath => {
+          return { id: fileId };
+        },
+        checkEvidenceFileType: f => {
+          const type = f.name.split('.')[1];
+          return type !== 'error';
+        }
+      },
+      photoService: {
+        savePhoto: filePath => {
+          return { id: photoId };
+        },
+        checkEvidencePhotoType: f => {
+          const type = f.name.split('.')[1];
+          return type !== 'error';
+        }
+      },
+      activityPhotoDao: {
+        saveActivityPhoto: (activityId, savedPhotoId, fileHash) => {
+          return {
+            activity: activityId,
+            photo: savedPhotoId,
+            id: activityPhotoId,
+            fileHash
+          };
+        }
+      },
+      activityFileDao: {
+        saveActivityFile: (activityId, savedFileId, fileHash) => {
+          return {
+            activity: activityId,
+            file: savedFileId,
+            id: activityFileId,
+            fileHash
+          };
+        }
+      }
+    });
+    activityService.readFile = jest.fn();
+    sha256.mockReturnValue('sha256mockreturnvalue');
+  });
+
+  it('should return activityPhoto object if send image', async () => {
+    const response = await activityService.addEvidence(activity.id, image);
+    expect(response).toEqual({
+      activity: 1,
+      photo: 2,
+      id: 1,
+      fileHash: 'sha256mockreturnvalue'
     });
   });
 
-  it('should return the deleted activity', async () => {
-    const activity = await activityService.deleteActivity(1);
-    await expect(activity).toBe(mockActivity);
+  it('should return activityFile object if send file', async () => {
+    const response = await activityService.addEvidence(activity.id, file);
+    expect(response).toEqual({
+      activity: 1,
+      file: 1,
+      id: 1,
+      fileHash: 'sha256mockreturnvalue'
+    });
+  });
+});
+
+describe('Testing ActivityService assignOracleToActivity', () => {
+  const oracle = testHelper.buildUserOracle({ id: 3 });
+  oracle.role = { id: oracle.role };
+
+  const user = testHelper.buildUserSe({ id: 2 });
+  user.role = { id: user.role };
+  let activityService;
+  let activity;
+
+  beforeEach(() => {
+    activity = testHelper.buildActivity({ id: 1 });
+    activityService = require('../rest/core/activityService')({
+      fastify,
+      activityDao: {
+        getActivityById: activityId => {
+          return activity;
+        }
+      },
+      userService: {
+        getUserById: id => {
+          if (id === oracle.id) return oracle;
+          if (id === user.id) return user;
+          return null;
+        }
+      },
+      oracleActivityDao: {
+        getOracleFromActivity: activityId => {
+          return { user: activity.oracle };
+        },
+        assignOracleToActivity: (userId, activityId) => {
+          return oracle;
+        }
+      }
+    });
+    activityService.unassignOracleToActivity = activityId => true;
+  });
+  it('must return oracle user object when assign a valid oracle to an activity', async () => {
+    const response = await activityService.assignOracleToActivity(
+      oracle.id,
+      activity.id
+    );
+    expect(response).toEqual(oracle);
   });
 
-  it('should return empty list when try delete a non-existent activity', async () => {
-    const activity = await activityService.deleteActivity(2);
-    await expect(activity).toEqual([]);
+  it('must return error when assign a non oracle user to an activity', async () => {
+    const response = await activityService.assignOracleToActivity(
+      user.id,
+      activity.id
+    );
+    expect(response).toEqual({ error: 'User is not an oracle', status: 409 });
+  });
+
+  it('must return error when assign a non existent user to an activity', async () => {
+    const response = await activityService.assignOracleToActivity(
+      -1,
+      activity.id
+    );
+    expect(response).toEqual({ error: 'User not found', status: 404 });
   });
 });

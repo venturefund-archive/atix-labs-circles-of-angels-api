@@ -14,7 +14,6 @@ exports.getBase64htmlFromPath = path => {
     const res = `data:image/${format};base64, ${base64}`;
     return res;
   } catch (error) {
-    console.error(error);
     return '';
   }
 };

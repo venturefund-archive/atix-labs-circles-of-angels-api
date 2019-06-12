@@ -1,4 +1,5 @@
 const { values, isEmpty } = require('lodash');
+const XLSX = require('xlsx');
 const { forEachPromise } = require('../util/promises');
 const {
   activityStatus,
@@ -208,8 +209,8 @@ const milestoneService = ({
 
     await forEachPromise(
       milestoneActivities.activities,
-      (activity, context) => {
-        return new Promise(resolve => {
+      (activity, context) =>
+        new Promise(resolve => {
           process.nextTick(async () => {
             const oracle = await activityService.getOracleFromActivity(
               activity.id
@@ -224,8 +225,7 @@ const milestoneService = ({
             context.push(activityWithType);
             resolve();
           });
-        });
-      },
+        }),
       activities
     );
 
@@ -244,7 +244,6 @@ const milestoneService = ({
    * @param {string} file path
    */
   async readMilestones(file) {
-    const XLSX = require('xlsx');
     const response = {};
     response.errors = [];
 
@@ -282,17 +281,30 @@ const milestoneService = ({
     const { milestones } = response;
     let milestone = {};
     let quarter = '';
-
     // parse the JSON array with the milestones data
     Object.values(milestonesJSON).forEach(row => {
       const rowNumber = row.__rowNum__ + 1;
       let activity = {};
 
-      if ('Timeline' in row) {
+      Object.keys(row).map(key => {
+        const trimmedKey = key.trim();
+        if (trimmedKey !== key) {
+          row[trimmedKey] = row[key];
+          delete row[key];
+          return { key: row[trimmedKey] };
+        }
+        return { key: row[key] };
+      });
+
+      if (
+        'Timeline' in row &&
+        typeof row.Timeline === 'string' &&
+        row.Timeline.includes('Quarter')
+      ) {
         // found a quarter
         quarter = row.Timeline;
         milestone = {};
-      } else if (row.__EMPTY.includes('Milestone')) {
+      } else if (row.__EMPTY && row.__EMPTY.includes('Milestone')) {
         // found a milestone
         milestone = {};
         milestone.quarter = quarter;
@@ -302,9 +314,7 @@ const milestoneService = ({
             ? row['Expected Changes/ Social Impact Targets']
             : '';
         milestone.impactCriterion =
-          row['Review Criterion '] !== undefined
-            ? row['Review Criterion ']
-            : '';
+          row['Review Criterion'] !== undefined ? row['Review Criterion'] : '';
         milestone.signsOfSuccess =
           row['Signs of Success'] !== undefined ? row['Signs of Success'] : '';
         milestone.signsOfSuccessCriterion =
@@ -354,7 +364,7 @@ const milestoneService = ({
             msg: 'Found a milestone without an specified quarter'
           });
         }
-      } else if (row.__EMPTY.includes('Activity')) {
+      } else if (row.__EMPTY && row.__EMPTY.includes('Activity')) {
         // found an activity
         activity = {};
         activity.tasks = row.Tasks !== undefined ? row.Tasks : '';
@@ -363,9 +373,7 @@ const milestoneService = ({
             ? row['Expected Changes/ Social Impact Targets']
             : '';
         activity.impactCriterion =
-          row['Review Criterion '] !== undefined
-            ? row['Review Criterion ']
-            : '';
+          row['Review Criterion'] !== undefined ? row['Review Criterion'] : '';
         activity.signsOfSuccess =
           row['Signs of Success'] !== undefined ? row['Signs of Success'] : '';
         activity.signsOfSuccessCriterion =
@@ -624,39 +632,37 @@ const milestoneService = ({
           : false;
 
         if (
-          !transactionConfirmed &&
+          !transactionConfirmed ||
           activity.status !== activityStatus.COMPLETED
         ) {
           isCompleted = false;
         }
       });
-      if (isCompleted)
+
+      if (!isCompleted) {
         fastify.log.info(
-          '[Milestone Service] :: milestone complete: ',
+          '[Milestone Service] :: Milestone not completed. ID: ',
           milestoneId
         );
+        return false;
+      }
+
+      fastify.log.info(
+        '[Milestone Service] :: milestone complete: ',
+        milestoneId
+      );
       return milestoneDao.updateMilestoneStatus(
         milestoneId,
         activityStatus.COMPLETED
       );
     } catch (error) {
-      console.error(error);
-      fastify.log.error('Error trying complete milestone');
+      fastify.log.error('Error trying complete milestone', error);
     }
   },
 
-  async startMilestonesOfProject(project, owner) {
+  async startMilestonesOfProject(project) {
     const milestones = await this.getMilestonesByProject(project.id);
-
-    for (let i = 0; i < milestones.length; i++) {
-      const milestone = milestones[i];
-      await fastify.eth.createMilestone(owner.address, owner.pwd, {
-        milestoneId: milestone.id,
-        projectId: project.id,
-        budget: milestone.budget,
-        description: milestone.tasks
-      });
-    }
+    await fastify.eth.createMilestones(milestones);
   },
 
   async getMilestoneById(milestoneId) {
@@ -785,11 +791,10 @@ const milestoneService = ({
         fastify.log.info(
           `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
         );
-        const txHash = await fastify.eth.setMilestoneFunded(
-          user.address,
-          user.pwd,
-          { milestoneId, projectId: milestone.project }
-        );
+        const txHash = await fastify.eth.setMilestoneFunded({
+          milestoneId,
+          projectId: milestone.project
+        });
         if (txHash.error) {
           fastify.log.error(
             `[Milestone Service] :: error setting funded Milestone ID ${milestoneId} on Blockchain`

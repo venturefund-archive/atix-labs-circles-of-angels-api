@@ -1,5 +1,3 @@
-const { assert, expect } = require('chai');
-
 describe.skip('General routes tests', () => {
   it('shoud fetch the correct address when request', async () => {
     const fastify = require('fastify')();

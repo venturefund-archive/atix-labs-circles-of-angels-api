@@ -22,13 +22,11 @@ const getUserProjects = userProjectModel => async projectId => {
   return userProjects;
 };
 
-const createUserProject = userProjectModel => async userProject => {
-  return userProjectModel.create(userProject);
-};
+const createUserProject = userProjectModel => async userProject =>
+  userProjectModel.create(userProject);
 
-const getProjectsOfUser = userProjectModel => async userId => {
-  return userProjectModel.find({ user: userId }).populate('project');
-};
+const getProjectsOfUser = userProjectModel => async userId =>
+  userProjectModel.find({ user: userId }).populate('project');
 
 module.exports = userProjectModel => ({
   findUserProject: findUserProject(userProjectModel),
