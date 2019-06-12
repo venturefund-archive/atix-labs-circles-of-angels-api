@@ -89,8 +89,8 @@ describe('Testing userProjectService getUsers', () => {
 
   const projectId = 15;
   const funderList = [
-    testHelper.buildUserFunder({ id: 10 }),
-    testHelper.buildUserFunder({ id: 8 })
+    testHelper.buildUserFunder(10),
+    testHelper.buildUserFunder(8)
   ];
   const userProjects = [
     testHelper.buildUserProject({

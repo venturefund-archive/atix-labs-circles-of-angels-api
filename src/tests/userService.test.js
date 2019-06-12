@@ -89,7 +89,7 @@ describe('Testing userService createUser', () => {
   let roleDao;
   let questionnaireService;
 
-  const mockUser = testHelper.buildUserSe({ id: 1 });
+  const mockUser = testHelper.buildUserSe(1);
   const existingMail = 'existing@test.com';
 
   beforeAll(() => {
@@ -223,7 +223,7 @@ describe('Testing userService getUserRole', () => {
   let userDao;
   let userService;
 
-  const mockUser = testHelper.buildUserSe({ id: 1 });
+  const mockUser = testHelper.buildUserSe(1);
 
   beforeAll(() => {
     userDao = {
@@ -282,7 +282,7 @@ describe('Testing userService updateUser', () => {
   let userRegistrationStatusDao;
   let userService;
 
-  const mockUser = testHelper.buildUserSe({ id: 1 });
+  const mockUser = testHelper.buildUserSe(1);
 
   beforeAll(() => {
     userDao = {
@@ -426,13 +426,11 @@ describe('Testing userService getUsers', () => {
   const oracleId = 3;
 
   const mockUserFunder = testHelper.populateUserRole(
-    testHelper.buildUserFunder({ id: funderId })
+    testHelper.buildUserFunder(funderId)
   );
-  const mockUserSe = testHelper.populateUserRole(
-    testHelper.buildUserSe({ id: seId })
-  );
+  const mockUserSe = testHelper.populateUserRole(testHelper.buildUserSe(seId));
   const mockUserOracle = testHelper.populateUserRole(
-    testHelper.buildUserOracle({ id: oracleId })
+    testHelper.buildUserOracle(oracleId)
   );
 
   beforeAll(() => {
@@ -445,24 +443,24 @@ describe('Testing userService getUsers', () => {
 
     userFunderDao = {
       async getByUserId(userId) {
-        return testHelper.buildUserFunderDetails({ id: userId });
+        return testHelper.buildUserFunderDetails(userId);
       }
     };
 
     userSocialEntrepreneurDao = {
       async getByUserId(userId) {
-        return testHelper.buildUserSeDetails({ id: userId });
+        return testHelper.buildUserSeDetails(userId);
       }
     };
 
     questionnaireService = {
       async getAnswersOfUser(user) {
         if (user.role.id === userRoles.IMPACT_FUNDER) {
-          return testHelper.buildUserFunderAnswers({ id: user.id });
+          return testHelper.buildUserFunderAnswers(user.id);
         }
 
         if (user.role.id === userRoles.SOCIAL_ENTREPRENEUR) {
-          return testHelper.buildUserSeAnswers({ id: user.id });
+          return testHelper.buildUserSeAnswers(user.id);
         }
 
         return [];
@@ -482,13 +480,11 @@ describe('Testing userService getUsers', () => {
     const expected = [];
     expected.push(
       testHelper.populateUserRole(
-        testHelper.buildUserFunderWithDetails({ id: funderId })
+        testHelper.buildUserFunderWithDetails(funderId)
       )
     );
     expected.push(
-      testHelper.populateUserRole(
-        testHelper.buildUserSeWithDetails({ id: seId })
-      )
+      testHelper.populateUserRole(testHelper.buildUserSeWithDetails(seId))
     );
     expected.push(mockUserOracle);
 
@@ -568,21 +564,17 @@ describe('Testing userService getProjectsOfUser', () => {
     userService.getUserById = userId => {
       switch (userId) {
         case seId:
-          return testHelper.populateUserRole(
-            testHelper.buildUserSe({ id: userId })
-          );
+          return testHelper.populateUserRole(testHelper.buildUserSe(userId));
         case funderId:
           return testHelper.populateUserRole(
-            testHelper.buildUserFunder({ id: userId })
+            testHelper.buildUserFunder(userId)
           );
         case oracleId:
           return testHelper.populateUserRole(
-            testHelper.buildUserOracle({ id: userId })
+            testHelper.buildUserOracle(userId)
           );
         case adminId:
-          return testHelper.populateUserRole(
-            testHelper.buildUserAdmin({ id: userId })
-          );
+          return testHelper.populateUserRole(testHelper.buildUserAdmin(userId));
         default:
           return undefined;
       }
