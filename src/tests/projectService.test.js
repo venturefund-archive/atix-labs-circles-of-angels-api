@@ -1016,7 +1016,7 @@ describe('Testing projectService startProject', () => {
           mockProjects,
           mockProject => mockProject.id === projectId
         );
-        const user = testHelper.buildUserSe({ id: project.ownerId });
+        const user = testHelper.buildUserSe(project.ownerId);
         return user;
       }
     };

@@ -67,7 +67,7 @@ const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
     async pushTransaction(contractAddress, encodedMethod, gasLimit, sender) {
       if (!encodedMethod) return;
       let address = sender;
-      if (!sender){
+      if (!sender) {
         const addressIndex = getRndInteger(0, addresses.length - 1);
         address = addresses[addressIndex];
       }
@@ -81,7 +81,7 @@ const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
     async pushAllTransactions(contractAddress, encodedMethods, gasLimit) {
       const addressIndex = getRndInteger(0, addresses.length - 1);
       const address = addresses[addressIndex];
-      if (encodedMethods.length == 0) return;
+      if (encodedMethods.length === 0) return;
       const allowedTransactions = await getAllowedTransactions(address);
 
       if (allowedTransactions <= 0)
