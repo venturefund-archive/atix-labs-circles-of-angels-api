@@ -152,6 +152,54 @@ describe('Testing milestoneService createMilestones', () => {
     });
   });
 
+  it(
+    'should return an array of errors and an empty array of milestones ' +
+      'if the milestones are invalid',
+    async () => {
+      const projectId = 2;
+      const errors = [
+        { rowNumber: 6, msg: 'Found a milestone without Tasks' },
+        {
+          rowNumber: 6,
+          msg:
+            'Found a milestone without Expected Changes/ Social Impact Targets'
+        },
+        {
+          rowNumber: 7,
+          msg:
+            'Found an activity without an specified milestone or inside an invalid milestone'
+        },
+        {
+          rowNumber: 8,
+          msg:
+            'Found an activity without an specified milestone or inside an invalid milestone'
+        },
+        {
+          rowNumber: 10,
+          msg:
+            'Found a milestone without Expected Changes/ Social Impact Targets'
+        },
+        {
+          rowNumber: 11,
+          msg: 'Found a milestone without activities'
+        },
+        { rowNumber: 11, msg: 'Found a milestone without Tasks' }
+      ];
+
+      const filePath = testHelper.getMockFiles().milestonesErrors.path;
+
+      // milestoneService.readMilestones.mockImplementation = jest.fn(() =>
+      //   milestoneService.readMilestones(filePath)
+      // );
+
+      const milestones = await milestoneService.createMilestones(
+        filePath,
+        projectId
+      );
+
+      await expect(milestones.errors).toEqual(errors);
+    }
+  );
   it('should return an array of created milestones associated to a project', async () => {
     const filePath = testHelper.getMockFiles().projectMilestones.path;
 
@@ -320,96 +368,6 @@ describe('Testing milestoneService getMilestoneActivities', () => {
   );
 });
 
-describe('Testing milestoneService readMilestones', () => {
-  let milestoneService;
-
-  beforeAll(() => {
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify
-    });
-  });
-
-  it(
-    'should return an array of milestones and ' +
-      'an empty array of errors from an excel file',
-    async () => {
-      const mockMilestones = {
-        errors: [],
-        milestones: [
-          {
-            quarter: 'Quarter 1',
-            tasks: 'Task M1',
-            impact: 'Impact M1',
-            impactCriterion: 'Impact Criterion M1',
-            signsOfSuccess: 'Success M1',
-            signsOfSuccessCriterion: 'Success Criterion M1',
-            category: 'Category M1',
-            keyPersonnel: 'Key Personnel M1',
-            budget: 'Budget M1',
-            activityList: [
-              {
-                tasks: 'Task A1',
-                impact: 'Impact A1',
-                impactCriterion: 'Impact Criterion A1',
-                signsOfSuccess: 'Success A1',
-                signsOfSuccessCriterion: 'Success Criterion A1',
-                category: 'Category A1',
-                keyPersonnel: 'Key Personnel A1',
-                budget: 'Budget A1'
-              },
-              {
-                tasks: 'Task A2',
-                impact: 'Impact A2',
-                impactCriterion: 'Impact Criterion A2',
-                signsOfSuccess: 'Success A2',
-                signsOfSuccessCriterion: 'Success Criterion A2',
-                category: 'Category A2',
-                keyPersonnel: 'Key Personnel A2',
-                budget: 'Budget A2'
-              }
-            ]
-          },
-          {
-            quarter: 'Quarter 1',
-            tasks: 'Task M2',
-            impact: 'Impact M2',
-            impactCriterion: 'Impact Criterion M2',
-            signsOfSuccess: 'Success M2',
-            signsOfSuccessCriterion: 'Success Criterion M2',
-            category: 'Category M2',
-            keyPersonnel: 'Key Personnel M2',
-            budget: 'Budget M2',
-            activityList: []
-          },
-          {
-            quarter: 'Quarter 1',
-            tasks: '',
-            impact: '',
-            impactCriterion: '',
-            signsOfSuccess: '',
-            signsOfSuccessCriterion: '',
-            category: '',
-            keyPersonnel: '',
-            budget: '',
-            activityList: []
-          }
-        ]
-      };
-
-      const mockXls = testHelper.getMockFiles().projectMilestones.path;
-      const milestones = await milestoneService.readMilestones(mockXls);
-
-      await expect(milestones).toEqual(mockMilestones);
-    }
-  );
-
-  it('should throw an error when file not found', async () => {
-    await expect(milestoneService.readMilestones('')).rejects.toEqual(
-      Error('Error reading excel file')
-    );
-  });
-});
-
 describe('Testing milestoneService isMilestoneEmpty', () => {
   let milestoneService;
 
@@ -438,18 +396,9 @@ describe('Testing milestoneService isMilestoneEmpty', () => {
 
   it(
     'should return true if milestone does not have any fields with data ' +
-      'except Quarter or activityList',
+      'except activityList',
     async () => {
       const mockMilestone = {
-        quarter: 'Quarter 1',
-        tasks: '',
-        impact: '',
-        impactCriterion: '',
-        signsOfSuccess: '',
-        signsOfSuccessCriterion: '',
-        category: '',
-        keyPersonnel: '',
-        budget: '',
         activityList: []
       };
       await expect(milestoneService.isMilestoneEmpty(mockMilestone)).toBe(true);

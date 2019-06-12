@@ -6,7 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { values, isEmpty } = require('lodash');
+const { values, isEmpty, remove, invert } = require('lodash');
 const XLSX = require('xlsx');
 const { forEachPromise } = require('../util/promises');
 const {
@@ -252,13 +252,15 @@ const milestoneService = ({
    * @param {string} file path
    */
   async readMilestones(file) {
-    const response = {};
-    response.errors = [];
+    const response = {
+      milestones: [],
+      errors: []
+    };
 
     let workbook = null;
     try {
       fastify.log.info('[Milestone Service] :: Reading Milestone excel:', file);
-      workbook = XLSX.readFile(file);
+      workbook = XLSX.readFile(file, { raw: true });
     } catch (err) {
       fastify.log.error(
         '[Milestone Service] :: Error reading excel file:',
@@ -275,190 +277,126 @@ const milestoneService = ({
     }
 
     const sheetNameList = workbook.SheetNames;
-
     // get first worksheet
     const worksheet = workbook.Sheets[sheetNameList[0]];
+
+    const xlsxConfigs = {
+      keysMap: {
+        A: 'quarter',
+        C: 'tasks',
+        D: 'impact',
+        E: 'impactCriterion',
+        F: 'signsOfSuccess',
+        G: 'signsOfSuccessCriterion',
+        H: 'budget',
+        I: 'category',
+        J: 'keyPersonnel'
+      },
+      typeColumnKey: 'B'
+    };
+
+    const nameMap = invert({ ...xlsxConfigs.keysMap });
 
     const range = XLSX.utils.decode_range(worksheet['!ref']);
     range.s.r = 2; // skip first two rows
     worksheet['!ref'] = XLSX.utils.encode_range(range);
 
-    const milestonesJSON = XLSX.utils.sheet_to_json(worksheet).slice(1);
+    delete worksheet['!autofilter'];
+    delete worksheet['!merges'];
+    delete worksheet['!margins'];
+    delete worksheet['!ref'];
 
-    response.milestones = [];
-    const { milestones } = response;
-    let milestone = {};
-    let quarter = '';
-    // parse the JSON array with the milestones data
-    Object.values(milestonesJSON).forEach(row => {
-      const rowNumber = row.__rowNum__ + 1;
-      let activity = {};
+    const cellKeys = Object.keys(worksheet);
+    remove(cellKeys, k => k.slice(1) <= 4);
+    let milestone;
+    let actualQuarter;
 
-      Object.keys(row).map(key => {
-        const trimmedKey = key.trim();
-        if (trimmedKey !== key) {
-          row[trimmedKey] = row[key];
-          delete row[key];
-          return { key: row[trimmedKey] };
-        }
-        return { key: row[key] };
-      });
+    while (!isEmpty(cellKeys)) {
+      let rowNum = cellKeys[0].slice(1);
+      const row = remove(cellKeys, k => k.slice(1) === rowNum);
+      rowNum = parseInt(rowNum, 10);
+      const quarter = worksheet[`${nameMap.quarter}${rowNum}`]
+        ? worksheet[`${nameMap.quarter}${rowNum}`].v
+        : false;
 
-      if (
-        'Timeline' in row &&
-        typeof row.Timeline === 'string' &&
-        row.Timeline.includes('Quarter')
-      ) {
-        // found a quarter
-        quarter = row.Timeline;
+      if (quarter) {
         milestone = {};
-      } else if (row.__EMPTY && row.__EMPTY.includes('Milestone')) {
-        // found a milestone
-        milestone = {};
-        milestone.quarter = quarter;
-        milestone.tasks = row.Tasks !== undefined ? row.Tasks : '';
-        milestone.impact =
-          row['Expected Changes/ Social Impact Targets'] !== undefined
-            ? row['Expected Changes/ Social Impact Targets']
-            : '';
-        milestone.impactCriterion =
-          row['Review Criterion'] !== undefined ? row['Review Criterion'] : '';
-        milestone.signsOfSuccess =
-          row['Signs of Success'] !== undefined ? row['Signs of Success'] : '';
-        milestone.signsOfSuccessCriterion =
-          row['Review Criterion _1'] !== undefined
-            ? row['Review Criterion _1']
-            : '';
-        milestone.category =
-          row['Expenditure Category'] !== undefined
-            ? row['Expenditure Category']
-            : '';
-        milestone.keyPersonnel =
-          row['Key Personnel Responsible'] !== undefined
-            ? row['Key Personnel Responsible']
-            : '';
-        milestone.budget =
-          row['Budget needed'] !== undefined ? row['Budget needed'] : '';
-
         milestone.activityList = [];
+        actualQuarter = quarter;
+      }
 
-        if (quarter !== '') {
-          let error = false;
+      const type = worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`]
+        ? worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`].v
+        : false;
+      if (type) {
+        //if is a milestone/activity row
+
+        remove(
+          row,
+          col =>
+            col[0] === nameMap.quarter || col[0] === xlsxConfigs.typeColumnKey
+        ); //remove timeline
+
+        if (type.includes('Milestone')) {
+          if (!actualQuarter) {
+            response.errors.push({
+              rowNumber: rowNum,
+              msg: 'Found a milestone without quarter'
+            });
+          }
 
           if (!this.isMilestoneEmpty(milestone)) {
-            if (milestone.tasks === '') {
-              error = true;
+            if (milestone.activityList.length === 0) {
               response.errors.push({
-                rowNumber,
-                msg: 'Found a milestone without Tasks'
+                rowNumber: rowNum,
+                msg: 'Found a milestone without activities'
               });
             }
-            if (milestone.impact === '') {
-              error = true;
-              response.errors.push({
-                rowNumber,
-                msg:
-                  'Found a milestone without Expected Changes/ Social Impact Targets'
-              });
-            }
+            response.milestones.push(milestone);
           }
 
-          if (!error) {
-            milestones.push(milestone);
-          }
-        } else {
-          response.errors.push({
-            rowNumber,
-            msg: 'Found a milestone without an specified quarter'
-          });
-        }
-      } else if (row.__EMPTY && row.__EMPTY.includes('Activity')) {
-        // found an activity
-        activity = {};
-        activity.tasks = row.Tasks !== undefined ? row.Tasks : '';
-        activity.impact =
-          row['Expected Changes/ Social Impact Targets'] !== undefined
-            ? row['Expected Changes/ Social Impact Targets']
-            : '';
-        activity.impactCriterion =
-          row['Review Criterion'] !== undefined ? row['Review Criterion'] : '';
-        activity.signsOfSuccess =
-          row['Signs of Success'] !== undefined ? row['Signs of Success'] : '';
-        activity.signsOfSuccessCriterion =
-          row['Review Criterion _1'] !== undefined
-            ? row['Review Criterion _1']
-            : '';
-        activity.category =
-          row['Expenditure Category'] !== undefined
-            ? row['Expenditure Category']
-            : '';
-        activity.keyPersonnel =
-          row['Key Personnel Responsible'] !== undefined
-            ? row['Key Personnel Responsible']
-            : '';
-        activity.budget =
-          row['Budget needed'] !== undefined ? row['Budget needed'] : '';
+          milestone = {};
+          milestone.activityList = [];
 
-        if (!values(activity).every(isEmpty)) {
-          const validActivity = this.verifyActivity(
-            activity,
-            response,
-            rowNumber
-          );
+          while (!isEmpty(row)) {
+            const cell = row.shift();
+            const value = worksheet[cell].v;
+            const milestoneAtributeKey = xlsxConfigs.keysMap[cell[0]];
+            milestone[milestoneAtributeKey] = value;
+          }
+          milestone.quarter = actualQuarter;
+          this.verifyMilestone(milestone, response, rowNum);
+        } else if (type.includes('Activity')) {
+          const activity = {};
+
+          while (!isEmpty(row)) {
+            const cell = row.shift();
+            const value = worksheet[cell].v;
+            const milestoneAtributeKey = xlsxConfigs.keysMap[cell[0]];
+            activity[milestoneAtributeKey] = value;
+          }
+
           if (
-            !this.isMilestoneEmpty(milestone) &&
-            this.isMilestoneValid(milestone)
+            !this.isMilestoneValid(milestone) ||
+            this.isMilestoneEmpty(milestone)
           ) {
-            if (validActivity) {
-              milestone.activityList.push(activity);
-            }
-          } else {
             response.errors.push({
-              rowNumber,
+              rowNumber: rowNum,
               msg:
                 'Found an activity without an specified milestone or inside an invalid milestone'
             });
           }
+
+          this.verifyActivity(activity, response, rowNum);
+          milestone.activityList.push(activity);
         }
       }
-    });
-
-    fastify.log.info(
-      '[Milestone Service] :: Milestones data retrieved from file:',
-      milestones
-    );
-
-    let valid = false;
-    await milestones.forEach(m => {
-      if (!this.isMilestoneEmpty(m)) {
-        if (!isEmpty(m.activityList)) {
-          valid = true;
-        }
-      }
-    });
-    if (!valid) {
-      response.errors.push({
-        rowNumber: 1,
-        msg:
-          'Could not find any valid activities. There should be at least one.'
-      });
     }
-
     return response;
   },
 
   isMilestoneEmpty(milestone) {
-    let empty = true;
-    Object.entries(milestone).forEach(entry => {
-      if (
-        entry[0] !== 'activityList' &&
-        entry[0] !== 'quarter' &&
-        entry[1] !== ''
-      ) {
-        empty = false;
-      }
-    });
-    return empty;
+    return milestone.activityList && Object.keys(milestone).length === 1;
   },
 
   isMilestoneValid(milestone) {
@@ -475,6 +413,27 @@ const milestoneService = ({
     }
 
     return true;
+  },
+
+  verifyMilestone(milestone, response, rowNumber) {
+    let valid = true;
+    if (!milestone.tasks || milestone.tasks === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found a milestone without Tasks'
+      });
+    }
+
+    if (!milestone.impact || milestone.impact === '') {
+      valid = false;
+      response.errors.push({
+        rowNumber,
+        msg: 'Found a milestone without Expected Changes/ Social Impact Targets'
+      });
+    }
+
+    return valid;
   },
 
   verifyActivity(activity, response, rowNumber) {
