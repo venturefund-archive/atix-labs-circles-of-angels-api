@@ -8,7 +8,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        description: 'Serves an existing image encoded in base64',
+        description: 'Returns an existing image encoded in base64',
         summary: 'Get photo',
         params: {
           id: { type: 'integer' }

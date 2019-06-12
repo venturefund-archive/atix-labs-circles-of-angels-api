@@ -8,6 +8,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Creates an new project in COA pending for approval',
+        summary: 'Create new project',
         type: 'multipart/form-data',
         raw: {
           files: { type: 'object' },
@@ -31,6 +33,10 @@ const routes = {
     path: `${basePath}/getProjects`,
     options: {
       beforeHandler: ['adminAuth'],
+      schema: {
+        description: 'Returns all existing projects in COA',
+        summary: 'Get all projects'
+      },
       response: {
         200: {
           type: 'object',
@@ -48,6 +54,10 @@ const routes = {
     path: `${basePath}/getActiveProjects`,
     options: {
       beforeHandler: ['generalAuth'],
+      schema: {
+        description: 'Returns all existing active COA projects',
+        summary: 'Get all active projects'
+      },
       response: {
         200: {
           type: 'object',
@@ -66,6 +76,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the specified project',
+        summary: 'Get a project',
         params: {
           projectId: { type: 'integer' }
         }
@@ -88,6 +100,8 @@ const routes = {
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
+        description: 'Modifies the status of an existing project',
+        summary: 'Update project status',
         type: 'application/json',
         body: {
           status: { type: 'int' }
@@ -111,6 +125,8 @@ const routes = {
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
+        description: 'Deletes the specified project',
+        summary: 'Delete project',
         params: {
           projectId: { type: 'integer' }
         },
@@ -134,6 +150,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the milestones of the specified project',
+        summary: 'Get project milestones',
         params: {
           projectId: { type: 'integer' }
         }
@@ -156,6 +174,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the project milestones template file',
+        summary: 'Get milestones template file',
         params: {
           projectId: { type: 'number' }
         }
@@ -178,6 +198,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the project proposal template file',
+        summary: 'Get proposal template file',
         response: {
           200: {
             type: 'object',
@@ -197,6 +219,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: "Returns the specified project's milestones file",
+        summary: 'Get a project milestones file',
         params: {
           projectId: { type: 'integer' }
         }
@@ -219,6 +243,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Uploads agreement file to the specified project',
+        summary: 'Upload agreement file',
         type: 'multipart/form-data',
         params: {
           projectId: { type: 'number' }
@@ -245,6 +271,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Downloads the agreement file of the specified project',
+        summary: 'Download agreement',
         type: 'multipart/form-data',
         params: {
           projectId: { type: 'number' }
@@ -268,6 +296,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Returns the pitch proposal file of the specified project',
+        summary: 'Download project pitch proposal',
         params: {
           projectId: { type: 'number' }
         }
@@ -290,6 +320,8 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description: 'Modifies the specified project information',
+        summary: 'Update project information',
         params: {
           type: 'object',
           properties: {
@@ -360,6 +392,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description:
+          'Returns the total amount of pledged funds for the specified project',
+        summary: 'Get total funded amount',
         params: {
           id: { type: 'number' }
         }
@@ -377,6 +412,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description:
+          'Mark an existing project as in progress when it is ready to start',
+        summary: 'Start project',
         params: {
           id: { type: 'number' }
         }
@@ -394,6 +432,9 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        description:
+          'Returns a list of all projects that the specified oracle has activities assigned to',
+        summary: 'Get all projects of an oracle',
         params: {
           id: { type: 'number' }
         }
@@ -410,6 +451,8 @@ const routes = {
     path: `${basePath}/:id/experience`,
     options: {
       schema: {
+        description: 'Uploads an experience to the specified project',
+        summary: 'Upload experience to project',
         params: {
           type: 'object',
           properties: {
@@ -458,6 +501,8 @@ const routes = {
     path: `${basePath}/:id/experiences`,
     options: {
       schema: {
+        description: 'Returns all the experiences of the specified project',
+        summary: 'Get project experiences',
         params: {
           type: 'object',
           properties: {
