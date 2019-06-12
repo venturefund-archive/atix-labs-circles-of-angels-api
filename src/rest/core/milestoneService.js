@@ -1,4 +1,5 @@
 const { values, isEmpty } = require('lodash');
+const XLSX = require('xlsx');
 const { forEachPromise } = require('../util/promises');
 const {
   activityStatus,
@@ -243,7 +244,6 @@ const milestoneService = ({
    * @param {string} file path
    */
   async readMilestones(file) {
-    const XLSX = require('xlsx');
     const response = {};
     response.errors = [];
 
@@ -632,17 +632,25 @@ const milestoneService = ({
           : false;
 
         if (
-          !transactionConfirmed &&
+          !transactionConfirmed ||
           activity.status !== activityStatus.COMPLETED
         ) {
           isCompleted = false;
         }
       });
-      if (isCompleted)
+
+      if (!isCompleted) {
         fastify.log.info(
-          '[Milestone Service] :: milestone complete: ',
+          '[Milestone Service] :: Milestone not completed. ID: ',
           milestoneId
         );
+        return false;
+      }
+
+      fastify.log.info(
+        '[Milestone Service] :: milestone complete: ',
+        milestoneId
+      );
       return milestoneDao.updateMilestoneStatus(
         milestoneId,
         activityStatus.COMPLETED
@@ -784,9 +792,10 @@ const milestoneService = ({
         fastify.log.info(
           `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
         );
-        const txHash = await fastify.eth.setMilestoneFunded(
-          { milestoneId, projectId: milestone.project }
-        );
+        const txHash = await fastify.eth.setMilestoneFunded({
+          milestoneId,
+          projectId: milestone.project
+        });
         if (txHash.error) {
           fastify.log.error(
             `[Milestone Service] :: error setting funded Milestone ID ${milestoneId} on Blockchain`

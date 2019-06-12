@@ -9,8 +9,6 @@ const { forEachPromise } = require('../util/promises');
 const { evidenceFileTypes, userRoles } = require('../util/constants');
 const { activityStatus, blockchainStatus } = require('../util/constants');
 
-const readFile = promisify(fs.readFile);
-
 const activityService = ({
   fastify,
   activityDao,
@@ -21,6 +19,7 @@ const activityService = ({
   oracleActivityDao,
   userService
 }) => ({
+  readFile: promisify(fs.readFile),
   /**
    * Creates an Activity for an existing Milestone
    *
@@ -267,12 +266,11 @@ const activityService = ({
       await file.mv(filepath);
 
       // getting file hash
-      const fileBuffer = await readFile(filepath);
+      const fileBuffer = await this.readFile(filepath);
       const fileHash = sha256(fileBuffer);
 
       // check file type
       const filetype = mime.lookup(filepath);
-
       if (!filetype) {
         fastify.log.error(
           '[Activity Service] :: Error getting mime type of file:',

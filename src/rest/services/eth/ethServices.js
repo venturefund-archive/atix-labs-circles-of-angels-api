@@ -191,7 +191,8 @@ const ethServices = async (providerHost, { logger }) => {
       const txHash = await worker.pushTransaction(
         COAOracle.address,
         encodedMethod,
-        ethConfig.GAS_LIMIT
+        ethConfig.GAS_LIMIT,
+        sender
       );
       await lockAccount(sender);
       return txHash;

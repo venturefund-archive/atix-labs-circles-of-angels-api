@@ -105,6 +105,14 @@ exports.buildActivity = ({ id, bcStatus, oracle, milestoneId }) => {
   return newActivity;
 };
 
+exports.buildEmptyActivity = () => {
+  const newActivity = JSON.parse(JSON.stringify(activity));
+  Object.keys(newActivity).forEach(key => {
+    newActivity[key] = undefined;
+  });
+  return newActivity;
+};
+
 exports.buildMilestone = (cantActivities, { projectId, id, bcStatus }) => {
   const newMilestone = JSON.parse(JSON.stringify(milestone));
   newMilestone.id = id || newMilestone.id;
