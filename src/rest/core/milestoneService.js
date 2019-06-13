@@ -1,18 +1,19 @@
 /**
- * COA PUBLIC LICENSE
+ * AGPL License
  * Circle of Angels aims to democratize social impact financing.
  * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { values, isEmpty, remove, invert } = require('lodash');
+const { isEmpty, remove, invert } = require('lodash');
 const XLSX = require('xlsx');
 const { forEachPromise } = require('../util/promises');
 const {
   activityStatus,
   milestoneBudgetStatus,
-  blockchainStatus
+  blockchainStatus,
+  xlsxConfigs
 } = require('../util/constants');
 
 const milestoneService = ({
@@ -277,29 +278,9 @@ const milestoneService = ({
     }
 
     const sheetNameList = workbook.SheetNames;
-    // get first worksheet
     const worksheet = workbook.Sheets[sheetNameList[0]];
 
-    const xlsxConfigs = {
-      keysMap: {
-        A: 'quarter',
-        C: 'tasks',
-        D: 'impact',
-        E: 'impactCriterion',
-        F: 'signsOfSuccess',
-        G: 'signsOfSuccessCriterion',
-        H: 'budget',
-        I: 'category',
-        J: 'keyPersonnel'
-      },
-      typeColumnKey: 'B'
-    };
-
     const nameMap = invert({ ...xlsxConfigs.keysMap });
-
-    const range = XLSX.utils.decode_range(worksheet['!ref']);
-    range.s.r = 2; // skip first two rows
-    worksheet['!ref'] = XLSX.utils.encode_range(range);
 
     delete worksheet['!autofilter'];
     delete worksheet['!merges'];
@@ -307,14 +288,33 @@ const milestoneService = ({
     delete worksheet['!ref'];
 
     const cellKeys = Object.keys(worksheet);
-    remove(cellKeys, k => k.slice(1) <= 4);
+    remove(cellKeys, k => k.slice(1) <= xlsxConfigs.startRow);
     let milestone;
     let actualQuarter;
+    const COLUMN_KEY = 0;
+
+    const getStandardAttributes = row => {
+      const entry = {};
+      while (!isEmpty(row)) {
+        const cell = row.shift();
+        const value = worksheet[cell].v;
+        const AtributeKey = xlsxConfigs.keysMap[cell[COLUMN_KEY]];
+        entry[AtributeKey] = value;
+      }
+      return entry;
+    };
+
+    const pushErrorBuilder = rowNumber => msg => {
+      response.errors.push({ rowNumber, msg });
+    };
 
     while (!isEmpty(cellKeys)) {
       let rowNum = cellKeys[0].slice(1);
       const row = remove(cellKeys, k => k.slice(1) === rowNum);
       rowNum = parseInt(rowNum, 10);
+
+      const pushError = pushErrorBuilder(rowNum);
+
       const quarter = worksheet[`${nameMap.quarter}${rowNum}`]
         ? worksheet[`${nameMap.quarter}${rowNum}`].v
         : false;
@@ -329,28 +329,22 @@ const milestoneService = ({
         ? worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`].v
         : false;
       if (type) {
-        //if is a milestone/activity row
-
+        //  if is a milestone/activity row
         remove(
           row,
           col =>
-            col[0] === nameMap.quarter || col[0] === xlsxConfigs.typeColumnKey
-        ); //remove timeline
+            col[COLUMN_KEY] === nameMap.quarter ||
+            col[COLUMN_KEY] === xlsxConfigs.typeColumnKey
+        ); // remove timeline
 
         if (type.includes('Milestone')) {
           if (!actualQuarter) {
-            response.errors.push({
-              rowNumber: rowNum,
-              msg: 'Found a milestone without quarter'
-            });
+            pushError('Found a milestone without quarter');
           }
 
           if (!this.isMilestoneEmpty(milestone)) {
             if (milestone.activityList.length === 0) {
-              response.errors.push({
-                rowNumber: rowNum,
-                msg: 'Found a milestone without activities'
-              });
+              pushError('Found a milestone without activities');
             }
             response.milestones.push(milestone);
           }
@@ -358,36 +352,23 @@ const milestoneService = ({
           milestone = {};
           milestone.activityList = [];
 
-          while (!isEmpty(row)) {
-            const cell = row.shift();
-            const value = worksheet[cell].v;
-            const milestoneAtributeKey = xlsxConfigs.keysMap[cell[0]];
-            milestone[milestoneAtributeKey] = value;
-          }
+          Object.assign(milestone, getStandardAttributes(row));
           milestone.quarter = actualQuarter;
-          this.verifyMilestone(milestone, response, rowNum);
+          this.verifyMilestone(milestone, pushError);
         } else if (type.includes('Activity')) {
           const activity = {};
-
-          while (!isEmpty(row)) {
-            const cell = row.shift();
-            const value = worksheet[cell].v;
-            const milestoneAtributeKey = xlsxConfigs.keysMap[cell[0]];
-            activity[milestoneAtributeKey] = value;
-          }
+          Object.assign(activity, getStandardAttributes(row));
 
           if (
             !this.isMilestoneValid(milestone) ||
             this.isMilestoneEmpty(milestone)
           ) {
-            response.errors.push({
-              rowNumber: rowNum,
-              msg:
-                'Found an activity without an specified milestone or inside an invalid milestone'
-            });
+            pushError(
+              'Found an activity without an specified milestone or inside an invalid milestone'
+            );
           }
 
-          this.verifyActivity(activity, response, rowNum);
+          this.verifyActivity(activity, pushError);
           milestone.activityList.push(activity);
         }
       }
@@ -415,95 +396,47 @@ const milestoneService = ({
     return true;
   },
 
-  verifyMilestone(milestone, response, rowNumber) {
+  verifyMilestone(milestone, pushError) {
     let valid = true;
-    if (!milestone.tasks || milestone.tasks === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found a milestone without Tasks'
-      });
-    }
+    const toVerify = ['tasks', 'impact'];
 
-    if (!milestone.impact || milestone.impact === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found a milestone without Expected Changes/ Social Impact Targets'
-      });
-    }
+    toVerify.forEach(field => {
+      if (!milestone[field] || milestone[field] === '') {
+        valid = false;
+        pushError(
+          `Found a milestone without ${
+            xlsxConfigs.columnNames[field]
+          } specified`
+        );
+      }
+    });
 
     return valid;
   },
 
-  verifyActivity(activity, response, rowNumber) {
+  verifyActivity(activity, pushError) {
     let valid = true;
+    const toVerify = [
+      'tasks',
+      'impact',
+      'impactCriterion',
+      'signsOfSuccess',
+      'signsOfSuccessCriterion',
+      'category',
+      'keyPersonnel',
+      'budget'
+    ];
 
-    if (activity.tasks === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found an activity without Tasks'
-      });
-    }
-
-    if (activity.impact === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found an activity without Expected Changes/ Social Impact Targets'
-      });
-    }
-
-    if (activity.impactCriterion === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg:
-          'Found an activity without a Review Criterion for the Expected Changes'
-      });
-    }
-
-    if (activity.signsOfSuccess === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found an activity without Signs of Success'
-      });
-    }
-
-    if (activity.signsOfSuccessCriterion === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg:
-          'Found an activity without a Review Criterion for the Signs of Success'
-      });
-    }
-
-    if (activity.category === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found an activity without an Expenditure Category specified'
-      });
-    }
-
-    if (activity.keyPersonnel === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found an activity without the Key Personnel Responsible specified'
-      });
-    }
-
-    if (activity.budget === '') {
-      valid = false;
-      response.errors.push({
-        rowNumber,
-        msg: 'Found an activity without the Budget needed specified'
-      });
-    }
+    toVerify.forEach(field => {
+      if (!activity[field] || activity[field] === '') {
+        valid = false;
+        pushError(
+          `Found an activity without ${
+            xlsxConfigs.columnNames[field]
+          } specified`
+        );
+      }
+    });
 
     return valid;
   },

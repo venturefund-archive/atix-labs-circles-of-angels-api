@@ -1,5 +1,5 @@
 /**
- * COA PUBLIC LICENSE
+ * AGPL License
  * Circle of Angels aims to democratize social impact financing.
  * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
  *
@@ -10,7 +10,14 @@ const updateLastBlock = blockchainBlockModel => async (
   blockNumber,
   transactionHash
 ) => {
-  const lastBlock = (await blockchainBlockModel.find())[0];
+  const lastBlock = await blockchainBlockModel.findOrCreate(
+    {
+      id: {
+        '>': 0
+      }
+    },
+    { blockNumber, transactionHash }
+  );
   const updatedBlock = await blockchainBlockModel
     .update({ blockNumber: lastBlock.blockNumber })
     .set({ blockNumber, transactionHash });

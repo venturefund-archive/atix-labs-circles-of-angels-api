@@ -1,5 +1,5 @@
 /**
- * COA PUBLIC LICENSE
+ * AGPL License
  * Circle of Angels aims to democratize social impact financing.
  * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
  *
@@ -58,6 +58,33 @@ const blockchainStatus = {
   CONFIRMED: 3
 };
 
+const xlsxConfigs = {
+  keysMap: {
+    A: 'quarter',
+    C: 'tasks',
+    D: 'impact',
+    E: 'impactCriterion',
+    F: 'signsOfSuccess',
+    G: 'signsOfSuccessCriterion',
+    H: 'budget',
+    I: 'category',
+    J: 'keyPersonnel'
+  },
+  columnNames: {
+    quarter: 'Timeline',
+    tasks: 'Tasks',
+    impact: 'Expected Changes/ Social Impact Targets',
+    impactCriterion: 'Review Criterion for the Expected Changes',
+    signsOfSuccess: 'Signs of Success',
+    signsOfSuccessCriterion: 'Review Criterion for the Signs of Success',
+    budget: 'Budget needed',
+    category: 'Expenditure Category',
+    keyPersonnel: 'Key Personnel Responsible'
+  },
+  typeColumnKey: 'B',
+  startRow: 4
+};
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
@@ -66,5 +93,6 @@ module.exports = {
   userRoles,
   milestoneBudgetStatus,
   userRegistrationStatus,
-  blockchainStatus
+  blockchainStatus,
+  xlsxConfigs
 };

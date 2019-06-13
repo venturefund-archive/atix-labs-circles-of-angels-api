@@ -1,5 +1,5 @@
 /**
- * COA PUBLIC LICENSE
+ * AGPL License
  * Circle of Angels aims to democratize social impact financing.
  * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
  *
@@ -14,12 +14,7 @@ const {
 
 const eventListener = async fastify => {
   const { helper } = require('../helper');
-  const {
-    projectService,
-    milestoneService,
-    activityService,
-    userService
-  } = helper.services;
+  const { projectService, milestoneService, activityService } = helper.services;
 
   const {
     blockchainBlockDao,
@@ -39,7 +34,7 @@ const eventListener = async fastify => {
       event
     );
     let { id } = event.returnValues;
-    id = parseInt(id._hex);
+    id = parseInt(id._hex, 16);
 
     projectDao.updateStartBlockchainStatus(id, blockchainStatus.CONFIRMED);
   };
@@ -51,7 +46,7 @@ const eventListener = async fastify => {
         event
       );
       let { id } = event.returnValues;
-      id = parseInt(id._hex);
+      id = parseInt(id._hex, 16);
       const updatedMilestone = await milestoneDao.updateBudgetStatus(
         id,
         milestoneBudgetStatus.CLAIMABLE
@@ -69,7 +64,7 @@ const eventListener = async fastify => {
         event
       );
       let { id } = event.returnValues;
-      id = parseInt(id._hex);
+      id = parseInt(id._hex, 16);
       const updatedMilestone = await milestoneDao.updateBudgetStatus(
         id,
         milestoneBudgetStatus.CLAIMED
@@ -87,7 +82,7 @@ const eventListener = async fastify => {
         event
       );
       let { id } = event.returnValues;
-      id = parseInt(id._hex);
+      id = parseInt(id._hex, 16);
       const updatedMilestone = await milestoneDao.updateBudgetStatus(
         id,
         milestoneBudgetStatus.FUNDED
@@ -102,7 +97,7 @@ const eventListener = async fastify => {
     fastify.log.info('[Event listener] :: received New Project event', event);
     try {
       let { id } = event.returnValues;
-      id = parseInt(id._hex);
+      id = parseInt(id._hex, 16);
       const modifiedProject = await projectService.updateBlockchainStatus(
         id,
         blockchainStatus.CONFIRMED
@@ -129,8 +124,8 @@ const eventListener = async fastify => {
     fastify.log.info('[Event listener] :: received New Milestone event', event);
     try {
       let { id, projectId } = event.returnValues;
-      id = parseInt(id._hex);
-      projectId = parseInt(projectId._hex);
+      id = parseInt(id._hex, 16);
+      projectId = parseInt(projectId._hex, 16);
       const project = await projectService.getProjectWithId({ projectId });
       if (project.blockchainStatus !== blockchainStatus.CONFIRMED) {
         fastify.log.error(
@@ -178,9 +173,9 @@ const eventListener = async fastify => {
     fastify.log.info('[Event listener] :: received New Activity event', event);
     try {
       let { id, milestoneId, projectId } = event.returnValues;
-      id = parseInt(id._hex);
-      milestoneId = parseInt(milestoneId._hex);
-      projectId = parseInt(projectId._hex);
+      id = parseInt(id._hex, 16);
+      milestoneId = parseInt(milestoneId._hex, 16);
+      projectId = parseInt(projectId._hex, 16);
 
       const project = await projectService.getProjectWithId({ projectId });
       const milestone = await milestoneService.getMilestoneById(milestoneId);
@@ -246,9 +241,7 @@ const eventListener = async fastify => {
 
         if (projectComplete) {
           const userOwner = await projectDao.getUserOwnerOfProject(projectId);
-          const transactionHash = await fastify.eth.startProject(
-            { projectId }
-          );
+          const transactionHash = await fastify.eth.startProject({ projectId });
           await projectDao.updateProjectTransaction({
             projectId,
             status: projectStatus.IN_PROGRESS,

@@ -1,5 +1,5 @@
 /**
- * COA PUBLIC LICENSE
+ * AGPL License
  * Circle of Angels aims to democratize social impact financing.
  * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
  *
@@ -10,27 +10,13 @@ const Web3 = require('web3');
 const ethConfig = require('config').eth;
 const workerBuilder = require('./ethWorker');
 
-const mockAddresses = [
-  '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
-  '0x6704fbfcd5ef766b287262fa2281c105d57246a6',
-  '0x9e1ef1ec212f5dffb41d35d9e5c14054f26c6560',
-  '0xce42bdb34189a93c55de250e011c68faee374dd3',
-  '0x97a3fc5ee46852c1cf92a97b7bad42f2622267cc',
-  '0xb9dcbf8a52edc0c8dd9983fcc1d97b1f5d975ed7',
-  '0x26064a2e2b568d9a6d01b93d039d1da9cf2a58cd',
-  '0xe84da28128a48dd5585d1abb1ba67276fdd70776',
-  '0xcc036143c68a7a9a41558eae739b428ecde5ef66',
-  '0xe2b3204f29ab45d5fd074ff02ade098fbc381d42',
-  '0xd51128f302755666c42e3920d72ff2fe632856a9'
-];
-
 /**
  * Init a ethereum services, receiving the provider host and returns and object
  * @param {string} providerHost
  */
 const ethServices = async (providerHost, { logger }) => {
   const web3 = new Web3(providerHost);
-  const worker = workerBuilder(web3, mockAddresses, {
+  const worker = workerBuilder(web3, ethConfig.ALLOWED_ADDRESSES, {
     maxTransactionsPerAccount: 4,
     logger
   });

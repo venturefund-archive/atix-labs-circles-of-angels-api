@@ -1,5 +1,5 @@
 /**
- * AGPL License
+ * COA PUBLIC LICENSE
  * Circle of Angels aims to democratize social impact financing.
  * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
  *
