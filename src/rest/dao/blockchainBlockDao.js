@@ -10,7 +10,14 @@ const updateLastBlock = blockchainBlockModel => async (
   blockNumber,
   transactionHash
 ) => {
-  const lastBlock = (await blockchainBlockModel.find())[0];
+  const lastBlock = await blockchainBlockModel.findOrCreate(
+    {
+      id: {
+        '>': 0
+      }
+    },
+    { blockNumber, transactionHash }
+  );
   const updatedBlock = await blockchainBlockModel
     .update({ blockNumber: lastBlock.blockNumber })
     .set({ blockNumber, transactionHash });
