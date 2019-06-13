@@ -150,24 +150,24 @@ const routes = {
           properties: {
             projectId: { type: 'integer' }
           }
-        }
-      },
-      response: {
-        200: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              transferId: { type: 'string' },
-              destinationAccount: { type: 'string' },
-              amount: { type: 'number' },
-              currency: { type: 'string' },
-              state: { type: 'integer' },
-              createdAt: { type: 'string' },
-              updatedAt: { type: 'string' },
-              id: { type: 'integer' },
-              sender: { type: 'integer' },
-              project: { type: 'integer' }
+        },
+        response: {
+          200: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                transferId: { type: 'string' },
+                destinationAccount: { type: 'string' },
+                amount: { type: 'number' },
+                currency: { type: 'string' },
+                state: { type: 'integer' },
+                createdAt: { type: 'string' },
+                updatedAt: { type: 'string' },
+                id: { type: 'integer' },
+                sender: { type: 'integer' },
+                project: { type: 'integer' }
+              }
             }
           }
         }
