@@ -115,7 +115,7 @@ module.exports = {
           '[Milestone Routes] :: Error creating milestone: ',
           response.error
         );
-        reply.status(response.status).send(response.error);
+        reply.status(response.status).send(response);
       } else {
         reply.send({ success: 'Milestone created successfully!' });
       }
@@ -146,7 +146,7 @@ module.exports = {
           '[Milestone Routes] :: Error updating milestone: ',
           response.error
         );
-        reply.status(response.status).send(response.error);
+        reply.status(response.status).send(response);
       } else {
         reply.send({ success: 'Milestone updated successfully!' });
       }
