@@ -18,20 +18,41 @@ const routes = {
       schema: {
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
-        type: 'application/json',
-        body: {
-          amount: { type: 'float' },
-          currency: { type: 'string' },
-          senderId: { type: 'string' },
-          projectId: { type: 'integer' },
-          destinationAccount: { type: 'string' }
-        }
-      },
-      response: {
-        200: {
+        params: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            transferId: { type: 'integer' }
+          }
+        },
+        body: {
+          type: 'object',
+          properties: {
+            amount: { type: 'number' },
+            currency: { type: 'string' },
+            senderId: { type: 'string' },
+            projectId: { type: 'integer' },
+            destinationAccount: { type: 'string' }
+          },
+          required: [
+            'amount',
+            'currency',
+            'senderId',
+            'projectId',
+            'destinationAccount'
+          ]
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              sucess: { type: 'string' }
+            }
+          },
+          409: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -47,17 +68,26 @@ const routes = {
       schema: {
         description: 'Updates the state of an existing transfer',
         summary: 'Update transfer state',
-        type: 'application/json',
         body: {
-          transferId: { type: 'string' },
-          state: { type: 'integer' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            transferId: { type: 'string' },
+            state: { type: 'integer' }
+          },
+          required: ['transferId', 'state']
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              sucess: { type: 'string' }
+            }
+          },
+          409: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -74,15 +104,32 @@ const routes = {
         description: 'Returns the state of an existing transfer',
         summary: 'Get transfer state',
         params: {
-          senderId: { type: 'integer' },
-          projectId: { type: 'integer' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            senderId: { type: 'integer' },
+            projectId: { type: 'integer' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              state: {
+                type: 'object',
+                properties: {
+                  status: { type: 'integer' },
+                  name: { type: 'string' }
+                }
+              }
+            }
+          },
+          400: {
+            type: 'object',
+            properties: {
+              error: {
+                type: 'string'
+              }
+            }
           }
         }
       }
@@ -99,14 +146,29 @@ const routes = {
         description: 'Returns all the transfers related to a project',
         summary: 'Get all transfers by project',
         params: {
-          projectId: { type: 'integer' }
+          type: 'object',
+          properties: {
+            projectId: { type: 'integer' }
+          }
         }
       },
       response: {
         200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              transferId: { type: 'string' },
+              destinationAccount: { type: 'string' },
+              amount: { type: 'number' },
+              currency: { type: 'string' },
+              state: { type: 'integer' },
+              createdAt: { type: 'string' },
+              updatedAt: { type: 'string' },
+              id: { type: 'integer' },
+              sender: { type: 'integer' },
+              project: { type: 'integer' }
+            }
           }
         }
       }
