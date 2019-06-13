@@ -16,7 +16,7 @@ module.exports = {
   primaryKey: 'key',
   attributes: {
     key: { type: 'string', required: true },
-    value: { type: 'string', required: true }
+    value: { type: 'string', required: false }
   },
   async findByKey({ key }) {
     return this.findOne(key);

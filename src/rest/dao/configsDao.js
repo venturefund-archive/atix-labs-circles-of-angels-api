@@ -6,11 +6,23 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const coaAccountKey = 'coa_bank_account';
+const coaAccountAddressKey = 'coa_bank_account_address';
+const coaAccountBankKey = 'coa_bank_account_bank_name';
+const coaAccountOwnerKey = 'coa_bank_account_owner_name';
 
 const ConfigsDao = ({ configsModel }) => ({
   async getCoaBankAccount() {
-    return configsModel.findByKey({ key: coaAccountKey });
+    const response = {};
+    response.address = (await configsModel.findByKey({
+      key: coaAccountAddressKey
+    })).value;
+    response.bank = (await configsModel.findByKey({
+      key: coaAccountBankKey
+    })).value;
+    response.owner = (await configsModel.findByKey({
+      key: coaAccountOwnerKey
+    })).value;
+    return response;
   }
 });
 
