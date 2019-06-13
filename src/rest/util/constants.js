@@ -70,7 +70,19 @@ const xlsxConfigs = {
     I: 'category',
     J: 'keyPersonnel'
   },
-  typeColumnKey: 'B'
+  columnNames: {
+    quarter: 'Timeline',
+    tasks: 'Tasks',
+    impact: 'Expected Changes/ Social Impact Targets',
+    impactCriterion: 'Review Criterion for the Expected Changes',
+    signsOfSuccess: 'Signs of Success',
+    signsOfSuccessCriterion: 'Review Criterion for the Signs of Success',
+    budget: 'Budget needed',
+    category: 'Expenditure Category',
+    keyPersonnel: 'Key Personnel Responsible'
+  },
+  typeColumnKey: 'B',
+  startRow: 4
 };
 
 module.exports = {

@@ -23,7 +23,7 @@ module.exports = {
     UNLOCK_DURATION: 1000000,
     INITIAL_FUNDS: 10000000000000000,
     GAS_LIMIT: 10000000000,
-    allowedAddresses: [
+    ALLOWED_ADDRESSES: [
       '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
       '0x6704fbfcd5ef766b287262fa2281c105d57246a6',
       '0x9e1ef1ec212f5dffb41d35d9e5c14054f26c6560',
