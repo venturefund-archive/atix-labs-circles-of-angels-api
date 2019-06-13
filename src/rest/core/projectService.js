@@ -216,23 +216,23 @@ const projectService = ({
         savedProject.id
       );
 
-      const userOwner = await userDao.getUserById(ownerId);
+      if (isEmpty(milestones.errors)) {
+        const userOwner = await userDao.getUserById(ownerId);
 
-      //MODIFICAR: que el sender sea el admin
-      const transactionHash = await fastify.eth.createProject(
-        {
+        // MODIFICAR: que el sender sea el admin
+        const transactionHash = await fastify.eth.createProject({
           projectId: savedProject.id,
           seAddress: userOwner.address,
           projectName: savedProject.projectName
-        }
-      );
-      fastify.log.info(
-        '[Project Service] :: transaction hash of project creation: ',
-        transactionHash
-      );
+        });
+        fastify.log.info(
+          '[Project Service] :: transaction hash of project creation: ',
+          transactionHash
+        );
 
-      savedProject.creationTransactionHash = transactionHash;
-      savedProject.blockchainStatus = blockchainStatus.SENT;
+        savedProject.creationTransactionHash = transactionHash;
+        savedProject.blockchainStatus = blockchainStatus.SENT;
+      }
 
       fastify.log.info('[Project Service] :: Updating project:', savedProject);
       const updatedProject = await projectDao.updateProject(
@@ -912,7 +912,7 @@ const projectService = ({
   /**
    * Receive a project id and return a boolean if all activities of that project
    * has an oracle assigned
-   * @param {number} projectId 
+   * @param {number} projectId
    */
   async isFullyAssigned(projectId) {
     let isFullyAssigned = true;
@@ -965,7 +965,7 @@ const projectService = ({
   /**
    * Receive a project id and return a user object who is owner of
    * that project
-   * @param {number} projectId 
+   * @param {number} projectId
    */
   async getProjectOwner(projectId) {
     try {
@@ -981,7 +981,7 @@ const projectService = ({
    * Receive id of a project and return a boolean if project is already
    * confirmed on blockchain
    * [Only for project creation transaction]
-   * @param {number} projectId 
+   * @param {number} projectId
    */
   async isProjectTransactionConfirmed(projectId) {
     try {
@@ -992,11 +992,10 @@ const projectService = ({
     }
   },
 
-
   /**
    * Receive id of a user and return an array of project objects
    * created by that user
-   * @param {number} ownerId 
+   * @param {number} ownerId
    */
   async getProjectsOfOwner(ownerId) {
     try {
@@ -1011,9 +1010,9 @@ const projectService = ({
   },
 
   /**
-   * Receive an array of project ids and return an array of project 
+   * Receive an array of project ids and return an array of project
    * objects corresponding to these ids
-   * @param {array} projectsId 
+   * @param {array} projectsId
    */
   async getAllProjectsById(projectsId) {
     return projectDao.getAllProjectsById(projectsId);
