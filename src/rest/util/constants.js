@@ -58,6 +58,21 @@ const blockchainStatus = {
   CONFIRMED: 3
 };
 
+const xlsxConfigs = {
+  keysMap: {
+    A: 'quarter',
+    C: 'tasks',
+    D: 'impact',
+    E: 'impactCriterion',
+    F: 'signsOfSuccess',
+    G: 'signsOfSuccessCriterion',
+    H: 'budget',
+    I: 'category',
+    J: 'keyPersonnel'
+  },
+  typeColumnKey: 'B'
+};
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
@@ -66,5 +81,6 @@ module.exports = {
   userRoles,
   milestoneBudgetStatus,
   userRegistrationStatus,
-  blockchainStatus
+  blockchainStatus,
+  xlsxConfigs
 };

@@ -6,13 +6,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { values, isEmpty, remove, invert } = require('lodash');
+const { isEmpty, remove, invert } = require('lodash');
 const XLSX = require('xlsx');
 const { forEachPromise } = require('../util/promises');
 const {
   activityStatus,
   milestoneBudgetStatus,
-  blockchainStatus
+  blockchainStatus,
+  xlsxConfigs
 } = require('../util/constants');
 
 const milestoneService = ({
@@ -280,21 +281,6 @@ const milestoneService = ({
     // get first worksheet
     const worksheet = workbook.Sheets[sheetNameList[0]];
 
-    const xlsxConfigs = {
-      keysMap: {
-        A: 'quarter',
-        C: 'tasks',
-        D: 'impact',
-        E: 'impactCriterion',
-        F: 'signsOfSuccess',
-        G: 'signsOfSuccessCriterion',
-        H: 'budget',
-        I: 'category',
-        J: 'keyPersonnel'
-      },
-      typeColumnKey: 'B'
-    };
-
     const nameMap = invert({ ...xlsxConfigs.keysMap });
 
     const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -329,13 +315,13 @@ const milestoneService = ({
         ? worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`].v
         : false;
       if (type) {
-        //if is a milestone/activity row
+        //  if is a milestone/activity row
 
         remove(
           row,
           col =>
             col[0] === nameMap.quarter || col[0] === xlsxConfigs.typeColumnKey
-        ); //remove timeline
+        ); // remove timeline
 
         if (type.includes('Milestone')) {
           if (!actualQuarter) {
