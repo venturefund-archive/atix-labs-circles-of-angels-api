@@ -19,8 +19,6 @@ module.exports = {
           'Can not provide the requested information, please try again later.'
       });
 
-    reply.send({
-      bankAccount: account.value
-    });
+    reply.send(account);
   }
 };
