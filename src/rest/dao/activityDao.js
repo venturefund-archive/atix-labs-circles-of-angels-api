@@ -47,11 +47,13 @@ const deleteActivity = activityModel => async activityId => {
 
 const updateStatus = activityModel => async (activityId, status) =>
   activityModel.update(activityId).set({ status });
+
 const updateStatusWithTransaction = activityModel => async (
   activityId,
   status,
   transactionHash
-) => activityModel.update(activityId).set({ status, transactionHash });
+) =>
+  activityModel.updateOne({ id: activityId }).set({ status, transactionHash });
 
 const updateBlockchainStatus = activityModel => async (
   activityId,

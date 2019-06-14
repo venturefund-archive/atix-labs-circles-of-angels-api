@@ -246,15 +246,19 @@ module.exports = {
     const { activityId } = request.params;
     fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
     try {
-      const activity = (await activityService.completeActivity(
+      const activity = await activityService.completeActivity(
         activityId,
         milestoneService.getMilestoneById
-      ))[0];
-      await milestoneService.tryCompleteMilestone(activity.milestone);
-      reply.status(200).send(Boolean(activity));
+      );
+      if (activity.error) {
+        reply.status(activity.status).send(activity);
+      } else {
+        await milestoneService.tryCompleteMilestone(activity.milestone);
+        reply.status(200).send({ response: Boolean(activity) });
+      }
     } catch (error) {
       fastify.log.error(error);
-      reply.status(500).send('Error assigning user on activity');
+      reply.status(500).send({ error: 'Error assigning user on activity' });
     }
   }
 };
