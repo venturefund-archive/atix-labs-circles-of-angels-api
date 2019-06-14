@@ -280,9 +280,9 @@ const eventListener = async fastify => {
     async recoverPastEvents() {
       try {
         const lastBlock = await blockchainBlockDao.getLastBlock();
-        const events = await fastify.eth.getAllPastEvents({
-          fromBlock: lastBlock.blockNumber + 1 || 0
-        });
+        const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
+        const events = await fastify.eth.getAllPastEvents({ fromBlock });
+        
         for (const eventKey in events) {
           const event = events[eventKey];
           if (eventMethodMap[event.event]) eventMethodMap[event.event](event);
