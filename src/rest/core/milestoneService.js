@@ -320,9 +320,11 @@ const milestoneService = ({
         : false;
 
       if (quarter) {
+        actualQuarter = quarter;
+      }
+      if (!milestone) {
         milestone = {};
         milestone.activityList = [];
-        actualQuarter = quarter;
       }
 
       const type = worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`]
