@@ -125,7 +125,7 @@ module.exports = {
         reply
           .status(200)
           .setCookie('userAuth', token, {
-            domain: 'localhost',
+            domain: fastify.configs.server.host,
             path: '/',
             httpOnly: true,
             expires: expirationDate
