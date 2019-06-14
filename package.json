@@ -8,6 +8,7 @@
     "test": "export NODE_ENV=test && jest src/*",
     "test:coverage": "npm test -- --coverage",
     "start": "export NODE_ENV=development && node index",
+    "prod": "export NODE_ENV=production && node index",
     "migrate": "./get_flyway.sh & flyway -configFiles=flyway.conf -locations=filesystem:db/migrations migrate",
     "clean": "./get_flyway.sh & flyway -configFiles=flyway.conf -locations=filesystem:db/migrations clean"
   },
