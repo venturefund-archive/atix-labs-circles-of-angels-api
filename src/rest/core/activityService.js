@@ -873,7 +873,7 @@ const activityService = ({
         );
         return {
           error: 'Activity must be confirmed on blockchain',
-          status: 406
+          status: 409
         };
       }
       const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
