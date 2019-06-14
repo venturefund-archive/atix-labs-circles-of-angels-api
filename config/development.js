@@ -6,8 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const COAProjectAdmin = require('../../circle-of-angels-solidity/build/contracts/COAProjectAdmin.json');
-const COAOracle = require('../../circle-of-angels-solidity/build/contracts/COAOracle.json');
+const COAProjectAdmin = require('../../circles-of-angels-solidity/build/contracts/COAProjectAdmin.json');
+const COAOracle = require('../../circles-of-angels-solidity/build/contracts/COAOracle.json');
 
 module.exports = {
   eth: {
