@@ -23,17 +23,25 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'number' }
+            id: { type: 'integer', description: 'Photo to delete' }
           }
         },
         response: {
           200: { type: 'string' },
-          '40x': {
+          '4xx': {
             type: 'object',
             properties: {
               status: { type: 'number' },
               error: { type: 'string' }
-            }
+            },
+            description: 'Returns a message describing the error'
+          },
+          500: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
           }
         }
       }
