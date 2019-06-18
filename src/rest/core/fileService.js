@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const mime = require('mime');
 const { unlink } = require('fs');
 const { promisify } = require('util');
 
@@ -98,7 +99,7 @@ const fileService = ({ fastify, fileDao }) => ({
   },
 
   checkEvidenceFileType(file) {
-    const fileType = file.mimetype;
+    const fileType = mime.lookup(file.name);
     const validTypes = [
       'application/pdf',
       'application/msword',
