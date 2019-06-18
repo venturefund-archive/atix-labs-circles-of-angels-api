@@ -14,15 +14,27 @@ const routes = {
     method: 'get',
     path: `${basePath}/accountDestination`,
     options: {
-      description:
-        'Returns the account destination where the funds will be transferred to',
-      summary: 'Get account destination',
       beforeHandler: ['generalAuth'],
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
+      schema: {
+        description:
+          'Returns the account destination where the funds will be transferred to',
+        summary: 'Get account destination',
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              address: { type: 'string' },
+              bank: { type: 'string' },
+              owner: { type: 'string' }
+            },
+            description: 'Returns the account information'
+          },
+          404: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
           }
         }
       }
