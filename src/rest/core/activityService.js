@@ -861,6 +861,22 @@ const activityService = ({
   },
   async completeActivity(activityId) {
     try {
+      const activity = await activityDao.getActivityById(activityId);
+      if (!activity) {
+        fastify.log.error(
+          `[Activity Service] Activity ${activityId} doesnt exists`
+        );
+        return { error: 'Activity doesnt exists', status: 404 };
+      }
+      if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
+        fastify.log.error(
+          `[Activity Service] Activity ${activityId} must be confirmed on blockchain`
+        );
+        return {
+          error: 'Activity must be confirmed on blockchain',
+          status: 409
+        };
+      }
       const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
       const transactionHash = await fastify.eth.validateActivity(
         oracle.user.address,
