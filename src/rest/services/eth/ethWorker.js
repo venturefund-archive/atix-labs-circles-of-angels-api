@@ -11,6 +11,12 @@ const getRndInteger = (min, max) => {
 };
 
 const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
+  const ethMemPool = require('./ethMemPool')(
+    10000,
+    web3,
+    this,
+    logger
+  ).getInstance();
   const getTransactionCount = async address => {
     return web3.eth.getTransactionCount(address);
   };
@@ -32,42 +38,42 @@ const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
   const makeTxRequest = (contractAddress, sender, encodedMethod, gasLimit) => {
     if (!encodedMethod) return;
     const addressSender = toChecksum(sender);
-    return web3.eth.sendTransaction.request(
-      {
-        to: contractAddress,
-        from: addressSender,
-        data: encodedMethod,
-        gasLimit
-      },
-      (err, hash) => {
-        if (err) {
-          logger.error(err);
+    const txConfig = {
+      to: contractAddress,
+      from: addressSender,
+      data: encodedMethod,
+      gasLimit
+    };
+    return web3.eth.sendTransaction.request(txConfig, (err, hash) => {
+      if (err) {
+        if (err.includes('750')) {
         }
-        logger.info(`TxHash: ${hash}`);
+        logger.error(err);
       }
-    );
+      if (hash) ethMemPool.pushTransaction({ hash, txConfig });
+      logger.info(`TxHash: ${hash}`);
+    });
   };
 
   const makeTx = (contractAddress, sender, encodedMethod, gasLimit) => {
     if (!encodedMethod) return;
     const addressSender = toChecksum(sender);
     return new Promise((resolve, reject) => {
-      web3.eth.sendTransaction(
-        {
-          to: contractAddress,
-          from: addressSender,
-          data: encodedMethod,
-          gasLimit
-        },
-        (err, hash) => {
-          if (err) {
-            logger.error(err);
-            reject(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-          resolve(hash);
+      const txConfig = {
+        to: contractAddress,
+        from: addressSender,
+        data: encodedMethod,
+        gasLimit
+      };
+      web3.eth.sendTransaction(txConfig, (err, hash) => {
+        if (err) {
+          logger.error(err);
+          reject(err);
         }
-      );
+        logger.info(`TxHash: ${hash}`);
+        if (hash) ethMemPool.pushTransaction({ hash, txConfig });
+        resolve(hash);
+      });
     });
   };
 

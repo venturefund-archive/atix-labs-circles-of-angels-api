@@ -97,9 +97,9 @@ const ethServices = async (providerHost, { logger }) => {
       logger.info(
         `[SC::Create Project] Creating Project: ${projectId} - ${projectName}`
       );
-      seAddress = toChecksum(seAddress);
+      const checksumAddress = toChecksum(seAddress);
       const encodedMethod = COAProjectAdmin.methods
-        .createProject(projectId, seAddress, projectName)
+        .createProject(projectId, checksumAddress, projectName)
         .encodeABI();
 
       return worker.pushTransaction(

@@ -49,7 +49,7 @@ module.exports = {
   },
 
   fileServer: {
-    filePath: '/home/atixlabs/files/server'
+    filePath: '/home/federico/files/server'
   },
 
   swagger: {
