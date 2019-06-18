@@ -182,10 +182,11 @@ const userService = ({
           };
         }
 
-        await questionnaireService.saveQuestionnaireOfUser(
-          savedUser.id,
-          questionnaire
-        );
+        if (questionnaire)
+          await questionnaireService.saveQuestionnaireOfUser(
+            savedUser.id,
+            questionnaire
+          );
         // sends welcome email
         const info = await transporter.sendMail({
           from: '"Circles of Angels Support" <coa@support.com>',
