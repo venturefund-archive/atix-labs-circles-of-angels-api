@@ -23,11 +23,11 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Photo to delete' }
+            id: { type: 'integer', description: 'Photo to get' }
           }
         },
         response: {
-          200: { type: 'string' },
+          200: { type: 'string', description: 'Photo encoded in base64' },
           '4xx': {
             type: 'object',
             properties: {
