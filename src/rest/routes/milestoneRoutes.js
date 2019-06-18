@@ -8,6 +8,7 @@
 
 const basePath = '/milestones';
 const handlers = require('./handlers/milestoneHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   getMilestones: {
@@ -16,6 +17,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.GET.name],
         description: 'Returns all existing milestones',
         summary: 'Get all milestones'
       },
@@ -100,6 +102,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
         description: 'Modifies the budget status of an existing milestone',
         summary: 'Update milestone budget status',
         params: {
@@ -156,6 +159,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.GET.name],
         description: 'Returns all valid budget status',
         summary: 'Get valid budget status',
         response: {
@@ -193,6 +197,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.DELETE.name],
         description: 'Deletes an existing milestone',
         summary: 'Delete milestone',
         params: {
@@ -244,6 +249,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
         description:
           'Creates a new milestone for an existing project specified in the body request',
         summary: 'Create new milestone',
@@ -308,6 +314,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
         description: 'Modifies an existing milestone',
         summary: 'Update milestone',
         type: 'object',

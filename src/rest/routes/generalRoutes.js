@@ -8,6 +8,7 @@
 
 const basePath = '/general';
 const handlers = require('./handlers/generalHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   getAccountDestination: {
@@ -16,6 +17,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.GENERAL.name, routeTags.GET.name],
         description:
           'Returns the account destination where the funds will be transferred to',
         summary: 'Get account destination',

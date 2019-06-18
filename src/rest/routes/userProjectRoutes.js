@@ -8,6 +8,7 @@
 
 const basePath = '/userProject';
 const handlers = require('./handlers/userProjectHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   signAgreement: {
@@ -16,6 +17,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
         description:
           'Sign the agreement of an existing project by an existing funder',
         summary: 'Funder sign project agreement',
@@ -65,6 +67,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
         description: 'Returns all funders related to a project',
         summary: 'Get all funders by project',
         params: {
@@ -121,6 +124,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
         description:
           'Creates a new relation between an existing funder and an existing project',
         summary: 'Associate a funder to a project',

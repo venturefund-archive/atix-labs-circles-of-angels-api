@@ -8,6 +8,7 @@
 
 const basePath = '/transfer';
 const handlers = require('./handlers/transferHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   sendToVerification: {
@@ -16,6 +17,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
         params: {
@@ -66,6 +68,7 @@ const routes = {
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
         description: 'Updates the state of an existing transfer',
         summary: 'Update transfer state',
         body: {
@@ -101,6 +104,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
         description: 'Returns the state of an existing transfer',
         summary: 'Get transfer state',
         params: {
@@ -143,6 +147,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
         description: 'Returns all the transfers related to a project',
         summary: 'Get all transfers by project',
         params: {

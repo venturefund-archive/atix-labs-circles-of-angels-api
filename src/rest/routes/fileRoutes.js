@@ -8,6 +8,7 @@
 
 const basePath = '/files';
 const handlers = require('./handlers/fileHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   deleteFile: {
@@ -16,6 +17,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.FILE.name, routeTags.DELETE.name],
         description: 'Deletes an existing file',
         summary: 'Delete file',
         params: {

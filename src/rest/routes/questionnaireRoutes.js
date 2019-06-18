@@ -8,6 +8,7 @@
 
 const basePath = '/questionnaire';
 const handlers = require('./handlers/questionnaireHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   getQuestionnaire: {
@@ -15,6 +16,7 @@ const routes = {
     path: `${basePath}/:roleId`,
     options: {
       schema: {
+        tags: [routeTags.QUESTIONNAIRE.name, routeTags.GET.name],
         description:
           'Returns the onboarding questions and their corresponding ' +
           'answers for the specified role',

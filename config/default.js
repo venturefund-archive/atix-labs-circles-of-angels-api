@@ -6,6 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const routeTags = require('../src/rest/util/routeTags');
+
 module.exports = {
   server: {
     host: 'localhost',
@@ -64,7 +66,8 @@ module.exports = {
       host: 'localhost:3001',
       schemes: ['http', 'json'],
       consumes: ['application/json'],
-      produces: ['application/json']
+      produces: ['application/json'],
+      tags: Object.values(routeTags)
     }
   }
 };

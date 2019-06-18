@@ -17,7 +17,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.USER, routeTags.GET],
+        tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns an object the information of an existing user',
         summary: 'Get existing user',
         params: {
@@ -69,7 +69,7 @@ const routes = {
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
-        tags: [routeTags.USER, routeTags.GET],
+        tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns the information of all the existing COA users',
         summary: 'Get all existing users',
         response: {
@@ -172,7 +172,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.USER, routeTags.GET],
+        tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns the role of an existing user',
         summary: "Get user's role",
         params: {
@@ -218,7 +218,7 @@ const routes = {
     path: `${basePath}/registrationStatus`,
     options: {
       schema: {
-        tags: [routeTags.USER, routeTags.GET],
+        tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns all available registration status for a COA user',
         summary: 'Get all registration status',
         response: {
@@ -265,7 +265,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.USER, routeTags.GET],
+        tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns all available user roles in COA',
         summary: 'Get all user roles',
         response: {
@@ -311,7 +311,7 @@ const routes = {
     path: `${basePath}/login`,
     options: {
       schema: {
-        tags: [routeTags.USER, routeTags.POST],
+        tags: [routeTags.USER.name, routeTags.POST.name],
         description: 'User login by email and password',
         summary: 'User login',
         type: 'application/json',
@@ -392,7 +392,7 @@ const routes = {
     path: `${basePath}/signup`,
     options: {
       schema: {
-        tags: [routeTags.USER, routeTags.POST],
+        tags: [routeTags.USER.name, routeTags.POST.name],
         description: 'Registers a new user in COA',
         summary: 'User sign up',
         body: {
@@ -450,7 +450,7 @@ const routes = {
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
-        tags: [routeTags.USER, routeTags.PUT],
+        tags: [routeTags.USER.name, routeTags.PUT.name],
         description: 'Modifies an existing user information',
         summary: 'Update COA user',
         body: {
@@ -506,7 +506,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.USER, routeTags.GET],
+        tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns all existing COA Oracles',
         summary: 'Get all COA Oracles',
         response: {
@@ -559,7 +559,7 @@ const routes = {
     path: `${basePath}/recoverPassword`,
     options: {
       schema: {
-        tags: [routeTags.USER, routeTags.POST],
+        tags: [routeTags.USER.name, routeTags.POST.name],
         description:
           'Receives an email account and starts the password recovery process ' +
           'for the corresponding user, sending them an email with the instructions ' +
@@ -609,7 +609,7 @@ const routes = {
     path: `${basePath}/updatePassword`,
     options: {
       schema: {
-        tags: [routeTags.USER, routeTags.POST],
+        tags: [routeTags.USER.name, routeTags.POST.name],
         description:
           'Modifies the password of an existing user validating the token sent by email',
         summary: 'Update user password',
@@ -657,7 +657,7 @@ const routes = {
     path: `${basePath}/:id/projects`,
     options: {
       schema: {
-        tags: [routeTags.USER, routeTags.GET],
+        tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns all projects related to an existing user',
         summary: 'Get all projects by user',
         params: {

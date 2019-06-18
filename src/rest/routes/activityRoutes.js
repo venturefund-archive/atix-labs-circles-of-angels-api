@@ -9,6 +9,7 @@
 const basePath = '/activities';
 const restBasePath = '/activity';
 const handlers = require('./handlers/activityHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   createActivity: {
@@ -17,6 +18,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
         description:
           'Creates a new activity for an existing Milestone specified in the body request',
         summary: 'Create new activity',
@@ -80,6 +82,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.PUT.name],
         description: 'Modifies an existing activity',
         summary: 'Update activity',
         type: 'object',
@@ -146,6 +149,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.DELETE.name],
         description: 'Deletes an existing activity',
         summary: 'Delete activity',
         params: {
@@ -192,6 +196,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
         description:
           'Uploads one or more evidence files to an existing activity.\n' +
           "Receives a form-data with the attribute 'evidenceFiles' as an array of files.",
@@ -251,6 +256,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.DELETE.name],
         description: 'Deletes an evidence file from an activity',
         summary: 'Delete evidence',
         params: {
@@ -307,6 +313,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.GET.name],
         description: 'Returns the details of an existing activity',
         summary: 'Get activity details',
         params: {
@@ -396,6 +403,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.PUT.name],
         description: 'Assigns an existing oracle user to an existing activity',
         summary: 'Assign oracle to activity',
         params: {
@@ -447,6 +455,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.DELETE.name],
         description:
           'Unassigns an oracle user previously assigned to an activity',
         summary: 'Unassign oracle from activity',
@@ -495,6 +504,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.GET.name],
         description:
           "Downloads an evidence file of an activity. Returns the file name in 'file' header",
         summary: 'Download evidence',
@@ -546,6 +556,7 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
         description: 'Marks an existing activity as completed',
         summary: 'Complete activity',
         params: {
