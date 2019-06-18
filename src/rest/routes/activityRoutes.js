@@ -18,19 +18,55 @@ const routes = {
       beforeHandler: ['generalAuth'],
       schema: {
         description:
-          'Creates a new activity for an existing Milestone especified in the body request',
+          'Creates a new activity for an existing Milestone specified in the body request',
         summary: 'Create new activity',
-        type: 'application/json',
+        type: 'object',
         body: {
-          activity: { type: 'object' },
-          milestoneId: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            activity: {
+              type: 'object',
+              properties: {
+                tasks: { type: 'string' },
+                impact: { type: 'string' },
+                impactCriterion: { type: 'string' },
+                signsOfSuccess: { type: 'string' },
+                signsOfSuccessCriterion: { type: 'string' },
+                category: { type: 'string' },
+                keyPersonnel: { type: 'string' },
+                budget: { type: 'number' }
+              },
+              description: 'New activity object'
+            },
+            milestoneId: {
+              type: 'integer',
+              description: 'Milestone to which the activity belongs to'
+            }
+          },
+          required: ['activity', 'milestoneId']
+        },
+        response: {
+          200: {
+            type: 'object',
+            description: 'Success message if the activity was created',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' },
+              status: { type: 'integer' }
+            }
+          },
+          500: {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -46,19 +82,57 @@ const routes = {
       schema: {
         description: 'Modifies an existing activity',
         summary: 'Update activity',
-        type: 'application/json',
+        type: 'object',
         params: {
-          id: { type: 'number' }
-        },
-        body: {
-          activity: { type: 'object' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            id: { type: 'integer', description: 'Activity to modify' }
+          }
+        },
+        body: {
+          type: 'object',
+          properties: {
+            activity: {
+              type: 'object',
+              properties: {
+                tasks: { type: 'string' },
+                impact: { type: 'string' },
+                impactCriterion: { type: 'string' },
+                signsOfSuccess: { type: 'string' },
+                signsOfSuccessCriterion: { type: 'string' },
+                category: { type: 'string' },
+                keyPersonnel: { type: 'string' },
+                budget: { type: 'number' },
+                status: { type: 'integer', minimum: 1, maximum: 4 }
+              },
+              additionalProperties: false,
+              description: 'Fields to modify'
+            }
+          },
+          required: ['activity']
+        },
+        response: {
+          200: {
+            type: 'object',
+            description: 'Success message if the activity was updated',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' },
+              status: { type: 'integer' }
+            }
+          },
+          500: {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -75,14 +149,36 @@ const routes = {
         description: 'Deletes an existing activity',
         summary: 'Delete activity',
         params: {
-          id: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
-          type: 'application/json',
+          type: 'object',
           properties: {
-            response: { type: 'application/json' }
+            id: { type: 'integer', description: 'Activity to delete' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              tasks: { type: 'string' },
+              impact: { type: 'string' },
+              impactCriterion: { type: 'string' },
+              signsOfSuccess: { type: 'string' },
+              signsOfSuccessCriterion: { type: 'string' },
+              category: { type: 'string' },
+              keyPersonnel: { type: 'string' },
+              budget: { type: 'string' },
+              createdAt: { type: 'string' },
+              updatedAt: { type: 'string' },
+              transactionHash: { type: 'string' },
+              id: { type: 'integer' },
+              milestone: { type: 'integer' },
+              status: { type: 'integer' },
+              blockchainStatus: { type: 'integer' }
+            },
+            description: 'Returns the deleted activity'
+          },
+          500: {
+            type: 'string',
+            description: 'Returns a message describing the error'
           }
         }
       }
@@ -97,21 +193,51 @@ const routes = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         description:
-          'Uploads one or more evidence files to an existing activity',
+          'Uploads one or more evidence files to an existing activity.\n' +
+          "Receives a form-data with the attribute 'evidenceFiles' as an array of files.",
         summary: 'Upload evidence',
         type: 'multipart/form-data',
         params: {
-          id: { type: 'number' }
-        },
-        raw: {
-          files: { type: 'object' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            id: {
+              type: 'integer',
+              description: 'Activity to upload the evidence to'
+            }
+          }
+        },
+        raw: {
+          files: {
+            type: 'object',
+            properties: { evidenceFiles: { type: 'object' } }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'string',
+                description: 'Success message if the files were uploaded'
+              },
+              errors: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    error: { type: 'string' },
+                    file: { type: 'string' }
+                  }
+                },
+                description:
+                  'Array of errors for the files that failed to upload'
+              }
+            }
+          },
+          500: {
+            type: 'object',
+            properties: { error: { type: 'string' } },
+            description: 'Returns a message describing the error'
           }
         }
       }
@@ -128,14 +254,46 @@ const routes = {
         description: 'Deletes an evidence file from an activity',
         summary: 'Delete evidence',
         params: {
-          id: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            activityId: {
+              type: 'integer',
+              description: 'Activity to delete the evidence from'
+            },
+            evidenceId: {
+              type: 'integer',
+              description: 'Evidence file to delete'
+            },
+            fileType: {
+              type: 'string',
+              enum: ['File', 'Photo'],
+              description:
+                "Evidence file type. Allowed values: 'Photo' for images, 'File' for anything else"
+            }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            description: 'Success message if the evidence was deleted',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' },
+              status: { type: 'integer' }
+            }
+          },
+          500: {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -149,17 +307,82 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        description: 'Returns the information of an existing activity',
-        summary: 'Get activity',
+        description: 'Returns the details of an existing activity',
+        summary: 'Get activity details',
         params: {
-          id: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            id: { type: 'integer', description: 'Activity to get details' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            description: 'Returns the activity object with its details',
+            properties: {
+              signsOfSuccessCriterion: { type: 'string' },
+              category: { type: 'string' },
+              keyPersonnel: { type: 'string' },
+              budget: { type: 'string' },
+              createdAt: { type: 'string' },
+              updatedAt: { type: 'string' },
+              transactionHash: { type: 'string' },
+              id: { type: 'integer' },
+              milestone: { type: 'integer' },
+              status: { type: 'integer' },
+              blockchainStatus: { type: 'integer' },
+              evidence: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    createdAt: { type: 'string' },
+                    updatedAt: { type: 'string' },
+                    id: { type: 'integer' },
+                    fileHash: { type: 'string' },
+                    activity: { type: 'integer' },
+                    photo: { type: 'integer' },
+                    fileType: { type: 'string' },
+                    fileName: { type: 'string' }
+                  }
+                }
+              },
+              oracle: {
+                type: 'object',
+                properties: {
+                  id: { type: 'integer' },
+                  user: {
+                    type: 'object',
+                    properties: {
+                      username: { type: 'string' },
+                      email: { type: 'string' },
+                      address: { type: 'string' },
+                      createdAt: { type: 'string' },
+                      updatedAt: { type: 'string' },
+                      id: { type: 'integer' },
+                      role: { type: 'integer' },
+                      registrationStatus: { type: 'integer' }
+                    }
+                  },
+                  activity: { type: 'integer' }
+                }
+              }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' },
+              status: { type: 'integer' }
+            }
+          },
+          500: {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -176,15 +399,41 @@ const routes = {
         description: 'Assigns an existing oracle user to an existing activity',
         summary: 'Assign oracle to activity',
         params: {
-          id: { type: 'number' },
-          userId: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
-          type: 'application/json',
+          type: 'object',
           properties: {
-            response: { type: 'application/json' }
+            id: {
+              type: 'integer',
+              description: 'Activity to assign the oracle to'
+            },
+            userId: {
+              type: 'integer',
+              description: 'Oracle user to assign to the activity'
+            }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            description:
+              'Success message if the oracle was assigned to the activity',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' },
+              status: { type: 'integer' }
+            }
+          },
+          500: {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -202,14 +451,37 @@ const routes = {
           'Unassigns an oracle user previously assigned to an activity',
         summary: 'Unassign oracle from activity',
         params: {
-          id: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
-          type: 'application/json',
+          type: 'object',
           properties: {
-            response: { type: 'application/json' }
+            id: {
+              type: 'integer',
+              description: 'Activity to remove oracle from'
+            }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            description:
+              'Success message if the activity had its oracle removed',
+            properties: {
+              success: { type: 'string' }
+            }
+          },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' },
+              status: { type: 'integer' }
+            }
+          },
+          500: {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -223,19 +495,44 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        description: 'Downloads an evidence file of an activity',
+        description:
+          "Downloads an evidence file of an activity. Returns the file name in 'file' header",
         summary: 'Download evidence',
         params: {
-          activityId: { type: 'number' },
-          evidenceId: { type: 'number' },
-          fileType: { type: 'string' }
-        }
-      },
-      response: {
-        200: {
-          type: 'application/octet-stream',
+          type: 'object',
           properties: {
-            response: { type: 'application/octet-stream' }
+            activityId: {
+              type: 'integer',
+              description: 'Activity to download the evidence'
+            },
+            evidenceId: {
+              type: 'integer',
+              description: 'Evidence file to download'
+            },
+            fileType: {
+              type: 'string',
+              enum: ['File', 'Photo'],
+              description:
+                "Evidence file type. Allowed values: 'Photo' for images, 'File' for anything else"
+            }
+          }
+        },
+        response: {
+          200: { type: 'string', description: 'Evidence file stream' },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' },
+              status: { type: 'integer' }
+            }
+          },
+          500: {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
@@ -249,17 +546,26 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        description: 'Completes an existing activity',
+        description: 'Marks an existing activity as completed',
         summary: 'Complete activity',
         params: {
-          activityId: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
-          type: 'application/json',
+          type: 'object',
           properties: {
-            response: { type: 'application/json' }
+            activityId: { type: 'integer', description: 'Activity to complete' }
+          }
+        },
+        response: {
+          200: {
+            type: 'boolean',
+            description:
+              'Returns true if the activity was successfully marked as completed'
+          },
+          500: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
           }
         }
       }

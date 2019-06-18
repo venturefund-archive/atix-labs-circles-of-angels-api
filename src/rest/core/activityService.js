@@ -218,7 +218,7 @@ const activityService = ({
     }
 
     if (errors.length > 0) {
-      return errors;
+      return { errors };
     }
     return { success: 'The evidence was successfully uploaded!' };
   },
@@ -650,6 +650,7 @@ const activityService = ({
       !(await milestoneService.milestoneHasActivities(deleted.milestone));
     if (milestoneEmpty)
       await milestoneService.deleteMilestone(deleted.milestone);
+    return deleted;
   },
 
   /**

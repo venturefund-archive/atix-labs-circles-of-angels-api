@@ -7,6 +7,7 @@
  */
 
 const { blockchainStatus } = require('../util/constants');
+
 const saveActivity = activityModel => async (activity, milestoneId) => {
   const toSave = {
     ...activity,

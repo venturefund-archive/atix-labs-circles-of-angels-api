@@ -264,7 +264,7 @@ const routes = {
                 keyPersonnel: { type: 'string' },
                 budget: { type: 'string' }
               },
-              description: 'New Milestone'
+              description: 'New milestone object'
             },
             projectId: {
               type: 'integer',
@@ -276,7 +276,7 @@ const routes = {
         response: {
           200: {
             type: 'object',
-            description: 'Success message if the milestone was updated',
+            description: 'Success message if the milestone was created',
             properties: {
               success: { type: 'string' }
             }
