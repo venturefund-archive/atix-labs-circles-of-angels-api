@@ -158,11 +158,11 @@ describe('Testing milestoneService createMilestones', () => {
     async () => {
       const projectId = 2;
       const errors = [
-        { rowNumber: 6, msg: 'Found a milestone without Tasks' },
+        { rowNumber: 6, msg: 'Found a milestone without Tasks specified' },
         {
           rowNumber: 6,
           msg:
-            'Found a milestone without Expected Changes/ Social Impact Targets'
+            'Found a milestone without Expected Changes/ Social Impact Targets specified'
         },
         {
           rowNumber: 7,
@@ -177,13 +177,13 @@ describe('Testing milestoneService createMilestones', () => {
         {
           rowNumber: 10,
           msg:
-            'Found a milestone without Expected Changes/ Social Impact Targets'
+            'Found a milestone without Expected Changes/ Social Impact Targets specified'
         },
         {
           rowNumber: 11,
           msg: 'Found a milestone without activities'
         },
-        { rowNumber: 11, msg: 'Found a milestone without Tasks' }
+        { rowNumber: 11, msg: 'Found a milestone without Tasks specified' }
       ];
 
       const filePath = testHelper.getMockFiles().milestonesErrors.path;
@@ -488,6 +488,11 @@ describe('Testing milestoneService verifyActivity', () => {
   let milestoneService;
 
   const mockActivity = testHelper.buildActivity({ id: 1 });
+  const response = { milestones: [], errors: [] };
+
+  const pushError = rowNumber => msg => {
+    response.errors.push({ rowNumber, msg });
+  };
 
   beforeAll(() => {
     milestoneService = require('../rest/core/milestoneService')({
@@ -496,21 +501,15 @@ describe('Testing milestoneService verifyActivity', () => {
   });
 
   it('should return true if activity has all fields not empty', async () => {
-    const response = { milestones: [], errors: [] };
-    const rowNumber = 6;
-
-    await expect(
-      milestoneService.verifyActivity(mockActivity, response, rowNumber)
-    ).toBe(true);
+    await expect(milestoneService.verifyActivity(mockActivity, pushError)).toBe(
+      true
+    );
   });
 
   it('should return false if activity has at least one field empty', async () => {
     const incompleteActivity = { ...mockActivity, signsOfSuccess: '' };
-    const response = { milestones: [], errors: [] };
-    const rowNumber = 6;
-
     await expect(
-      milestoneService.verifyActivity(incompleteActivity, response, rowNumber)
+      milestoneService.verifyActivity(incompleteActivity, pushError)
     ).toBe(false);
   });
 });

@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const mime = require('mime');
 const { unlink } = require('fs');
 const { promisify } = require('util');
 const { getBase64htmlFromPath } = require('../util/images');
@@ -179,7 +180,7 @@ const photoService = ({ fastify, photoDao }) => ({
   },
 
   checkEvidencePhotoType(photo) {
-    const fileType = photo.mimetype;
+    const fileType = mime.lookup(photo.name);
     return fileType.includes('image/');
   }
 });
