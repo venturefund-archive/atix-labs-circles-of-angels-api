@@ -29,7 +29,7 @@ const routes = {
             },
             description: 'Returns the account information'
           },
-          404: {
+          '4xx': {
             type: 'object',
             properties: {
               error: { type: 'string' }
