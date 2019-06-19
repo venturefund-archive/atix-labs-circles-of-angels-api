@@ -7,10 +7,9 @@
  */
 
 class MemPool {
-  constructor(timelapse, web3, worker, logger) {
+  constructor(transactionDao, timelapse, worker, logger) {
+    this.transactionDao = transactionDao;
     this.MAX_TIME = 750; // in seconds
-    this.web3 = web3;
-    this.transactions = [];
     this.logger = logger;
     this.timelapse = timelapse;
     this.worker = worker;
@@ -23,51 +22,50 @@ class MemPool {
     }, this.timelapse);
   }
 
-  async isConfirmed(hash) {
-    const transaction = await this.web3.eth.getTransaction(hash);
-    return Boolean(
-      transaction && transaction.blockHash && transaction.blockNumber
-    );
-  }
-
   async checkTransactions() {
     const actualDate = new Date();
-    const auxTransactions = this.transactions;
-    this.transactions = [];
+    const transactions = await this.transactionDao.getUnconfirmedTransactions();
+    this.logger.info('[eth Mem Pool] Checking transactions', transactions);
+    transactions.forEach(async transaction => {
+      const lapse = (actualDate - new Date(transaction.updatedAt)) / 1000;
 
-    auxTransactions.forEach(async transaction => {
-      const isConfirmed = await isConfirmed(transaction.hash);
-      if (!isConfirmed) {
+      if (lapse >= this.MAX_TIME) {
         if (
-          new Date(actualDate - transaction.timestamp).getSeconds() >=
-          this.MAX_TIME
-        ) {
-          this.worker.pushTransaction(
-            transaction.txConfig.to,
-            transaction.txConfig.data,
-            transaction.txConfig.gasLimit,
-            transaction.txConfig.sender
+          await this.worker.isTransactionConfirmed(transaction.transactionHash)
+        )
+          await this.transactionDao.confirmTransaction(
+            transaction.transactionHash
           );
-        } else {
-          this.transactions.push(transaction);
-        }
+        else
+          this.worker.pushTransaction(
+            transaction.receiver,
+            transaction.data,
+            transaction.sender
+          );
       }
     });
-    this.logger.info('[eth Mem Pool] Checking transactions', this.transactions);
-    this.startCheckTransactions();
-  }
 
-  pushTransaction({ hash, txConfig }) {
-    this.logger.info('[eth Mem Pool] pushing new transaction: ', hash);
-    this.transactions.push({ hash, txConfig, timestamp: new Date() });
+    this.startCheckTransactions();
   }
 }
 
-const ethMemPoolBuilder = (timelapse, worker, logger) => {
+const ethMemPoolBuilder = (
+  transactionDao,
+  timelapse,
+  worker,
+  logger,
+  gasLimit
+) => {
   let instance;
 
   const createInstance = () => {
-    const response = new MemPool(timelapse, worker, logger);
+    const response = new MemPool(
+      transactionDao,
+      timelapse,
+      worker,
+      logger,
+      gasLimit
+    );
     return response;
   };
 

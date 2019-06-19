@@ -7,10 +7,13 @@
  */
 
 const { isEmpty } = require('lodash');
+const Web3 = require('web3');
 const ethService = require('./services/eth/ethServices');
 const ethServiceMock = require('./services/eth/ethServicesMock');
 const { helperBuilder } = require('./services/helper');
 const eventListenerBuilder = require('./services/eth/eventListener');
+const workerBuilder = require('./services/eth/ethWorker');
+const ethMemPoolBuilder = require('./services/eth/ethMemPool');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -45,19 +48,26 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
 
-    if (!isEmpty(configs.eth)) {
-      fastify.eth = await ethService(configs.eth.HOST, { logger });
-    } else {
-      fastify.eth = await ethServiceMock();
-    }
-
     loadRoutes(fastify);
 
     await fastify.listen(configs.server);
     await helperBuilder(fastify);
-    const eventListener = await eventListenerBuilder(fastify);
-    await eventListener.recoverPastEvents();
-    await eventListener.initEventListener();
+    if (!isEmpty(configs.eth)) {
+      const web3 = new Web3(configs.eth.HOST);
+      const worker = workerBuilder(web3, configs.eth.ALLOWED_ADDRESSES, {
+        maxTransactionsPerAccount: 4,
+        logger,
+        reintentLapse: configs.eth.REINTENT_LAPSE,
+        gasLimit: configs.eth.GAS_LIMIT
+      });
+      fastify.eth = await ethService(web3, worker, { logger });
+      const eventListener = await eventListenerBuilder(fastify);
+      await eventListener.recoverPastEvents();
+      await eventListener.initEventListener();
+    } else {
+      fastify.eth = await ethServiceMock();
+    }
+
     module.exports.fastify = fastify;
   } catch (err) {
     console.log(err);

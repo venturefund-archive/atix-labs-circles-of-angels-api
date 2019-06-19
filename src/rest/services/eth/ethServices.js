@@ -6,20 +6,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const Web3 = require('web3');
 const ethConfig = require('config').eth;
-const workerBuilder = require('./ethWorker');
 
 /**
- * Init a ethereum services, receiving the provider host and returns and object
- * @param {string} providerHost
+ * Init a ethereum services, receiving a web3 instance and a worker instance
+ * @param {object} web3
+ * @param {object} worker
  */
-const ethServices = async (providerHost, { logger }) => {
-  const web3 = new Web3(providerHost);
-  const worker = workerBuilder(web3, ethConfig.ALLOWED_ADDRESSES, {
-    maxTransactionsPerAccount: 4,
-    logger
-  });
+const ethServices = async (web3, worker, { logger }) => {
   const COAProjectAdmin = new web3.eth.Contract(
     ethConfig.CONTRACT_ADMIN_ABI,
     ethConfig.CONTRACT_ADMIN_ADDRESS,
@@ -102,11 +96,7 @@ const ethServices = async (providerHost, { logger }) => {
         .createProject(projectId, checksumAddress, projectName)
         .encodeABI();
 
-      return worker.pushTransaction(
-        COAProjectAdmin.address,
-        encodedMethod,
-        ethConfig.GAS_LIMIT
-      );
+      return worker.pushTransaction(COAProjectAdmin.address, encodedMethod);
     },
 
     async startProject({ projectId }) {
@@ -114,11 +104,7 @@ const ethServices = async (providerHost, { logger }) => {
       const encodedMethod = COAProjectAdmin.methods
         .startProject(projectId)
         .encodeABI();
-      return worker.pushTransaction(
-        COAProjectAdmin.address,
-        encodedMethod,
-        ethConfig.GAS_LIMIT
-      );
+      return worker.pushTransaction(COAProjectAdmin.address, encodedMethod);
     },
 
     async createActivities(activities) {
@@ -185,7 +171,6 @@ const ethServices = async (providerHost, { logger }) => {
       const txHash = await worker.pushTransaction(
         COAOracle.address,
         encodedMethod,
-        ethConfig.GAS_LIMIT,
         sender
       );
       await lockAccount(sender);
@@ -264,7 +249,6 @@ const ethServices = async (providerHost, { logger }) => {
         const txHash = await worker.pushTransaction(
           COAOracle.address,
           encodedMethod,
-          ethConfig.GAS_LIMIT,
           sender
         );
         await lockAccount(sender);
@@ -284,7 +268,6 @@ const ethServices = async (providerHost, { logger }) => {
         const txHash = await worker.pushTransaction(
           COAProjectAdmin.address,
           encodedMethod,
-          ethConfig.GAS_LIMIT,
           sender
         );
         await lockAccount(sender);
@@ -299,11 +282,7 @@ const ethServices = async (providerHost, { logger }) => {
         const encodedMethod = COAProjectAdmin.methods
           .setMilestoneFunded(milestoneId, projectId)
           .encodeABI();
-        return worker.pushTransaction(
-          COAProjectAdmin.address,
-          encodedMethod,
-          ethConfig.GAS_LIMIT
-        );
+        return worker.pushTransaction(COAProjectAdmin.address, encodedMethod);
       } catch (error) {
         return { error };
       }

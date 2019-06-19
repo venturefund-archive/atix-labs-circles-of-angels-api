@@ -15,6 +15,7 @@ const {
 const eventListener = async fastify => {
   const { helper } = require('../helper');
   const { projectService, milestoneService, activityService } = helper.services;
+  const { transactionDao } = helper.daos;
 
   const {
     blockchainBlockDao,
@@ -25,6 +26,7 @@ const eventListener = async fastify => {
 
   const updateLastBlock = async event => {
     const { blockNumber, transactionHash } = event;
+    await transactionDao.confirmTransaction(transactionHash);
     return blockchainBlockDao.updateLastBlock(blockNumber, transactionHash);
   };
 
@@ -282,7 +284,7 @@ const eventListener = async fastify => {
         const lastBlock = await blockchainBlockDao.getLastBlock();
         const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
         const events = await fastify.eth.getAllPastEvents({ fromBlock });
-        
+
         for (const eventKey in events) {
           const event = events[eventKey];
           if (eventMethodMap[event.event]) eventMethodMap[event.event](event);

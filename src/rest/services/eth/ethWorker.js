@@ -5,18 +5,19 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
+const ethMemPoolBuilder = require('./ethMemPool');
+const apiHelper = require('../helper');
 
 const getRndInteger = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
-  const ethMemPool = require('./ethMemPool')(
-    10000,
-    web3,
-    this,
-    logger
-  ).getInstance();
+const ethWorker = (
+  web3,
+  addresses,
+  { maxTransactionsPerAccount, logger, reintentLapse, gasLimit }
+) => {
+  const { transactionDao } = apiHelper.helper.daos;
   const getTransactionCount = async address => {
     return web3.eth.getTransactionCount(address);
   };
@@ -35,7 +36,27 @@ const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
 
   const toChecksum = address => web3.utils.toChecksumAddress(address);
 
-  const makeTxRequest = (contractAddress, sender, encodedMethod, gasLimit) => {
+  const saveTransaction = async ({
+    sender,
+    receiver,
+    data,
+    transactionHash
+  }) => {
+    logger.info('[ETH Worker] - saving transaction', {
+      sender,
+      receiver,
+      data,
+      transactionHash
+    });
+    return transactionDao.insertTransaction({
+      sender,
+      receiver,
+      data,
+      transactionHash
+    });
+  };
+
+  const makeTxRequest = (contractAddress, sender, encodedMethod) => {
     if (!encodedMethod) return;
     const addressSender = toChecksum(sender);
     const txConfig = {
@@ -44,18 +65,22 @@ const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
       data: encodedMethod,
       gasLimit
     };
-    return web3.eth.sendTransaction.request(txConfig, (err, hash) => {
+    return web3.eth.sendTransaction.request(txConfig, async (err, hash) => {
       if (err) {
-        if (err.includes('750')) {
-        }
         logger.error(err);
       }
-      if (hash) ethMemPool.pushTransaction({ hash, txConfig });
+      if (hash)
+        await saveTransaction({
+          transactionHash: hash,
+          sender: addressSender,
+          receiver: contractAddress,
+          data: encodedMethod
+        });
       logger.info(`TxHash: ${hash}`);
     });
   };
 
-  const makeTx = (contractAddress, sender, encodedMethod, gasLimit) => {
+  const makeTx = (contractAddress, sender, encodedMethod) => {
     if (!encodedMethod) return;
     const addressSender = toChecksum(sender);
     return new Promise((resolve, reject) => {
@@ -65,20 +90,31 @@ const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
         data: encodedMethod,
         gasLimit
       };
-      web3.eth.sendTransaction(txConfig, (err, hash) => {
+      web3.eth.sendTransaction(txConfig, async (err, hash) => {
         if (err) {
           logger.error(err);
           reject(err);
         }
         logger.info(`TxHash: ${hash}`);
-        if (hash) ethMemPool.pushTransaction({ hash, txConfig });
+        if (hash)
+          await saveTransaction({
+            transactionHash: hash,
+            sender: addressSender,
+            receiver: contractAddress,
+            data: encodedMethod
+          });
         resolve(hash);
       });
     });
   };
 
-  return {
-    async pushTransaction(contractAddress, encodedMethod, gasLimit, sender) {
+  const worker = {
+    async isTransactionConfirmed(transactionHash) {
+      const transaction = await web3.eth.getTransaction(transactionHash);
+      console.log(transaction);
+      return Boolean(transaction);
+    },
+    async pushTransaction(contractAddress, encodedMethod, sender) {
       if (!encodedMethod) return;
       let address = sender;
       if (!sender) {
@@ -92,14 +128,14 @@ const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
       this.pushTransaction(contractAddress, encodedMethod, gasLimit);
     },
 
-    async pushAllTransactions(contractAddress, encodedMethods, gasLimit) {
+    async pushAllTransactions(contractAddress, encodedMethods) {
       const addressIndex = getRndInteger(0, addresses.length - 1);
       const address = addresses[addressIndex];
       if (encodedMethods.length === 0) return;
       const allowedTransactions = await getAllowedTransactions(address);
 
       if (allowedTransactions <= 0)
-        this.pushAllTransactions(contractAddress, encodedMethods, gasLimit);
+        this.pushAllTransactions(contractAddress, encodedMethods);
 
       const batch = new web3.BatchRequest();
       let execute = false;
@@ -119,8 +155,15 @@ const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
         const txHashes = await batch.execute();
         return txHashes;
       }
-      await this.pushAllTransactions(contractAddress, encodedMethods, gasLimit);
+      await this.pushAllTransactions(contractAddress, encodedMethods);
     }
   };
+  const ethMemPool = ethMemPoolBuilder(
+    transactionDao,
+    reintentLapse,
+    worker,
+    logger
+  ).getInstance();
+  return worker;
 };
 module.exports = ethWorker;
