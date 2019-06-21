@@ -6,18 +6,18 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/userProject';
+const basePath = '/userProjects';
 const handlers = require('./handlers/userProjectHandlers');
 const routeTags = require('../util/routeTags');
 
 const routes = {
   signAgreement: {
-    method: 'get',
-    path: `${basePath}/:userId/:projectId/signAgreement`,
+    method: 'put',
+    path: `${basePath}/users/:userId/projects/:projectId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
+        tags: [routeTags.USER_PROJECT.name, routeTags.PUT.name],
         description:
           'Sign the agreement of an existing project by an existing funder',
         summary: 'Funder sign project agreement',
@@ -63,13 +63,14 @@ const routes = {
 
   getUsers: {
     method: 'get',
-    path: `${basePath}/:projectId/getUsers`,
+    path: `${basePath}/projects/:projectId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
-        description: 'Returns all funders related to a project',
-        summary: 'Get all funders by project',
+        description:
+          'Returns all funders related to a project and their signature status',
+        summary: 'Get all funders and signatures by project',
         params: {
           type: 'object',
           properties: {
@@ -82,7 +83,7 @@ const routes = {
         response: {
           200: {
             type: 'array',
-            description: 'Returns a list of user objects',
+            description: 'Returns a list of user-project objects',
             items: {
               type: 'object',
               properties: {

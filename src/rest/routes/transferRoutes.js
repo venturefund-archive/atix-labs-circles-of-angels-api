@@ -6,14 +6,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/transfer';
+const basePath = '/transfers';
 const handlers = require('./handlers/transferHandlers');
 const routeTags = require('../util/routeTags');
 
 const routes = {
   sendToVerification: {
     method: 'post',
-    path: `${basePath}/:transferId/sendToVerification`,
+    path: `${basePath}/:transferId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -63,12 +63,12 @@ const routes = {
   },
 
   updateState: {
-    method: 'post',
-    path: `${basePath}/updateState`,
+    method: 'put',
+    path: `${basePath}`,
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
-        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
         description: 'Updates the state of an existing transfer',
         summary: 'Update transfer state',
         body: {
@@ -100,7 +100,7 @@ const routes = {
 
   getState: {
     method: 'get',
-    path: `${basePath}/:senderId/:projectId/getState`,
+    path: `${basePath}/:senderId/:projectId/state`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -143,7 +143,7 @@ const routes = {
 
   getTransfers: {
     method: 'get',
-    path: `${basePath}/:projectId/getTransfers`,
+    path: `/projects/:projectId${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {

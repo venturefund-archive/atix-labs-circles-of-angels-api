@@ -193,7 +193,7 @@ const routes = {
 
   deleteMilestone: {
     method: 'delete',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:milestoneId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -203,7 +203,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Milestone to delete' }
+            milestoneId: { type: 'integer', description: 'Milestone to delete' }
           }
         },
         response: {
@@ -310,7 +310,7 @@ const routes = {
 
   updateMilestone: {
     method: 'put',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:milestoneId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -321,7 +321,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Milestone to update' }
+            milestoneId: { type: 'integer', description: 'Milestone to update' }
           }
         },
         body: {

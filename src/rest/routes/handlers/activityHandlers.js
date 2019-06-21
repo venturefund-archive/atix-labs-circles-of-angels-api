@@ -50,10 +50,13 @@ module.exports = {
     );
 
     const { activity } = req.body;
-    const { id } = req.params;
+    const { activityId } = req.params;
 
     try {
-      const response = await activityService.updateActivity(activity, id);
+      const response = await activityService.updateActivity(
+        activity,
+        activityId
+      );
 
       if (response.error) {
         fastify.log.error(
@@ -75,11 +78,13 @@ module.exports = {
 
   deleteActivity: fastify => async (request, reply) => {
     const { activityService, milestoneService } = apiHelper.helper.services;
-    const { id } = request.params;
-    fastify.log.info(`[Activity Routes] Deleting activity with id: ${id}`);
+    const { activityId } = request.params;
+    fastify.log.info(
+      `[Activity Routes] Deleting activity with id: ${activityId}`
+    );
     try {
       const deleted = await activityService.deleteActivity(
-        id,
+        activityId,
         milestoneService
       );
       reply.status(200).send(deleted);
@@ -91,16 +96,16 @@ module.exports = {
 
   uploadEvidence: fastify => async (req, reply) => {
     const { activityService } = apiHelper.helper.services;
-    const { id } = req.params;
+    const { activityId } = req.params;
     fastify.log.info(
-      `[Activity Routes] :: POST request at /activities/${id}/evidences:`,
+      `[Activity Routes] :: POST request at /activities/${activityId}/evidence:`,
       req
     );
     const { evidenceFiles } = req.raw.files;
 
     try {
       const response = await activityService.addEvidenceFiles(
-        id,
+        activityId,
         evidenceFiles,
         req.user
       );
@@ -119,7 +124,7 @@ module.exports = {
     const { activityService } = apiHelper.helper.services;
     const { activityId, evidenceId, fileType } = request.params;
     fastify.log.info(
-      `[Activity Routes] :: DELETE request activities/${activityId}/evidences/${evidenceId}/${fileType}`
+      `[Activity Routes] :: DELETE request activities/${activityId}/evidence/${evidenceId}/${fileType}`
     );
 
     try {
@@ -142,12 +147,14 @@ module.exports = {
 
   getActivity: fastify => async (request, reply) => {
     const { activityService } = apiHelper.helper.services;
-    const { id } = request.params;
+    const { activityId } = request.params;
 
-    fastify.log.info(`[Activity Routes] :: GET request at /activities/${id}`);
+    fastify.log.info(
+      `[Activity Routes] :: GET request at /activities/${activityId}`
+    );
 
     try {
-      const activity = await activityService.getActivityDetails(id);
+      const activity = await activityService.getActivityDetails(activityId);
 
       if (activity.error) {
         reply.status(activity.status).send(activity);
@@ -163,13 +170,16 @@ module.exports = {
 
   assignOracle: fastify => async (request, reply) => {
     const { activityService } = apiHelper.helper.services;
-    const { id, userId } = request.params;
+    const { activityId, userId } = request.params;
     fastify.log.info(
-      `[Activity Routes] :: PUT request at /activities/${id}/assignOracle/${userId}`
+      `[Activity Routes] :: POST request at /activities/${activityId}/oracle/${userId}`
     );
 
     try {
-      const assign = await activityService.assignOracleToActivity(userId, id);
+      const assign = await activityService.assignOracleToActivity(
+        userId,
+        activityId
+      );
 
       if (assign.error) {
         reply.status(assign.status).send(assign);
@@ -187,12 +197,12 @@ module.exports = {
 
   unassignOracle: fastify => async (request, reply) => {
     const { activityService } = apiHelper.helper.services;
-    const { id } = request.params;
+    const { activityId } = request.params;
     fastify.log.info(
-      `[Activity Routes] :: DELETE request at /activities/${id}/unassignOracle`
+      `[Activity Routes] :: DELETE request at /activities/${activityId}/oracle`
     );
     try {
-      const assign = await activityService.unassignOracleToActivity(id);
+      const assign = await activityService.unassignOracleToActivity(activityId);
       if (assign.error) {
         reply.status(assign.status).send(assign);
       } else {
@@ -211,7 +221,7 @@ module.exports = {
     const { activityService } = apiHelper.helper.services;
     const { activityId, evidenceId, fileType } = request.params;
     fastify.log.info(
-      `[Activity Routes] :: GET request at /activities/${activityId}/evidence/${evidenceId}/download/${fileType}`
+      `[Activity Routes] :: GET request at /activities/${activityId}/evidence/${evidenceId}/${fileType}`
     );
     try {
       const res = await activityService.downloadEvidence(

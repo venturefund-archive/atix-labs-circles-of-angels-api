@@ -7,7 +7,6 @@
  */
 
 const basePath = '/activities';
-const restBasePath = '/activity';
 const handlers = require('./handlers/activityHandlers');
 const routeTags = require('../util/routeTags');
 
@@ -78,7 +77,7 @@ const routes = {
 
   updateActivity: {
     method: 'put',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:activityId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -89,7 +88,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Activity to modify' }
+            activityId: { type: 'integer', description: 'Activity to modify' }
           }
         },
         body: {
@@ -145,7 +144,7 @@ const routes = {
 
   deleteActivity: {
     method: 'delete',
-    path: `${restBasePath}/:id`,
+    path: `${basePath}/:activityId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -155,7 +154,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Activity to delete' }
+            activityId: { type: 'integer', description: 'Activity to delete' }
           }
         },
         response: {
@@ -192,7 +191,7 @@ const routes = {
 
   uploadEvidence: {
     method: 'post',
-    path: `${basePath}/:id/evidences`,
+    path: `${basePath}/:activityId/evidence`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -205,7 +204,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: {
+            activityId: {
               type: 'integer',
               description: 'Activity to upload the evidence to'
             }
@@ -252,7 +251,7 @@ const routes = {
 
   deleteEvidence: {
     method: 'delete',
-    path: `${basePath}/:activityId/evidences/:evidenceId/:fileType`,
+    path: `${basePath}/:activityId/evidence/:evidenceId/:fileType`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -309,7 +308,7 @@ const routes = {
 
   getActivity: {
     method: 'get',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:activityId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -319,7 +318,10 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Activity to get details' }
+            activityId: {
+              type: 'integer',
+              description: 'Activity to get details'
+            }
           }
         },
         response: {
@@ -398,18 +400,18 @@ const routes = {
   },
 
   assignOracle: {
-    method: 'put',
-    path: `${basePath}/:id/assignOracle/:userId`,
+    method: 'post',
+    path: `${basePath}/:activityId/oracle/:userId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.ACTIVITY.name, routeTags.PUT.name],
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
         description: 'Assigns an existing oracle user to an existing activity',
         summary: 'Assign oracle to activity',
         params: {
           type: 'object',
           properties: {
-            id: {
+            activityId: {
               type: 'integer',
               description: 'Activity to assign the oracle to'
             },
@@ -451,7 +453,7 @@ const routes = {
 
   unassignOracle: {
     method: 'delete',
-    path: `${basePath}/:id/unassignOracle`,
+    path: `${basePath}/:activityId/oracle`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -462,7 +464,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: {
+            activityId: {
               type: 'integer',
               description: 'Activity to remove oracle from'
             }
@@ -500,7 +502,7 @@ const routes = {
 
   downloadEvidence: {
     method: 'get',
-    path: `${basePath}/:activityId/evidences/:evidenceId/download/:fileType`,
+    path: `${basePath}/:activityId/evidence/:evidenceId/:fileType`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {

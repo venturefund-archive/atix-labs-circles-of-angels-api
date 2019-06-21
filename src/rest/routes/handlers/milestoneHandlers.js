@@ -84,10 +84,12 @@ module.exports = {
 
   deleteMilestone: fastify => async (request, reply) => {
     const { milestoneService } = apiHelper.helper.services;
-    const { id } = request.params;
-    fastify.log.info(`[Milestone Routes] Deleting milestone with id: ${id}`);
+    const { milestoneId } = request.params;
+    fastify.log.info(
+      `[Milestone Routes] Deleting milestone with id: ${milestoneId}`
+    );
     try {
-      const deleted = await milestoneService.deleteMilestone(id);
+      const deleted = await milestoneService.deleteMilestone(milestoneId);
       reply.status(200).send(deleted);
     } catch (error) {
       fastify.log.error(error);
@@ -131,15 +133,20 @@ module.exports = {
   updateMilestone: fastify => async (req, reply) => {
     const { milestoneService } = apiHelper.helper.services;
     fastify.log.info(
-      `[Milestone Routes] :: PUT request at /milestones/${req.params.id}:`,
+      `[Milestone Routes] :: PUT request at /milestones/${
+        req.params.milestoneId
+      }:`,
       req.body
     );
 
     const { milestone } = req.body;
-    const { id } = req.params;
+    const { milestoneId } = req.params;
 
     try {
-      const response = await milestoneService.updateMilestone(milestone, id);
+      const response = await milestoneService.updateMilestone(
+        milestone,
+        milestoneId
+      );
 
       if (response.error) {
         fastify.log.error(
