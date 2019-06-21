@@ -13,10 +13,10 @@ module.exports = {
   getUser: fastify => async (request, reply) => {
     const { userService } = apiHelper.helper.services;
     fastify.log.info('[User Routes] :: Getting user info');
-    const user = await userService.getUserById(request.params.id);
+    const user = await userService.getUserById(request.params.userId);
     if (!user)
       reply.status(404).send({
-        error: `Cannot find user with id: ${request.params.id}`
+        error: `Cannot find user with id: ${request.params.userId}`
       });
 
     reply.send(user);
@@ -177,12 +177,12 @@ module.exports = {
 
   updateUser: fastify => async (request, reply) => {
     const { userService } = apiHelper.helper.services;
-    const { id } = request.params;
-    fastify.log.info(`PUT request at ${basePath}/${id}`, request.body);
+    const { userId } = request.params;
+    fastify.log.info(`PUT request at ${basePath}/${userId}`, request.body);
     try {
       const { body } = request;
 
-      const updatedUser = await userService.updateUser(id, body);
+      const updatedUser = await userService.updateUser(userId, body);
 
       if (updatedUser.error) {
         fastify.log.error('[User Routes] :: User update failed', updatedUser);
@@ -269,11 +269,11 @@ module.exports = {
       userProjectService,
       projectService
     } = apiHelper.helper.services;
-    const { id } = request.params;
+    const { userId } = request.params;
     fastify.log.info('[User Routes] :: getting list of oracles');
     try {
       const projects = await userService.getProjectsOfUser(
-        id,
+        userId,
         userProjectService,
         projectService
       );
