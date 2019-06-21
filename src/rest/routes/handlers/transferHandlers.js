@@ -13,7 +13,7 @@ module.exports = {
     const { transferService } = apiHelper.helper.services;
     fastify.log.info('[Transfer Routes] :: Send transfer to verification');
     const verification = await transferService.sendTransferToVerification({
-      transferId: request.params.transferId,
+      transferId: request.body.transferId,
       amount: request.body.amount,
       currency: request.body.currency,
       senderId: request.body.senderId,
@@ -43,11 +43,11 @@ module.exports = {
     const { transferService } = apiHelper.helper.services;
     fastify.log.info(
       `[Transfer Routes] :: Getting state of user ${
-        request.params.senderId
+        request.params.userId
       } in project ${request.params.projectId}`
     );
     const status = await transferService.getTransferStatusByUserAndProject({
-      senderId: request.params.senderId,
+      senderId: request.params.userId,
       projectId: request.params.projectId
     });
 

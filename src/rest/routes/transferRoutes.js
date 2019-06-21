@@ -13,19 +13,13 @@ const routeTags = require('../util/routeTags');
 const routes = {
   sendToVerification: {
     method: 'post',
-    path: `${basePath}/:transferId`,
+    path: `${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.POST.name],
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
-        params: {
-          type: 'object',
-          properties: {
-            transferId: { type: 'integer' }
-          }
-        },
         body: {
           type: 'object',
           properties: {
@@ -33,14 +27,16 @@ const routes = {
             currency: { type: 'string' },
             senderId: { type: 'string' },
             projectId: { type: 'integer' },
-            destinationAccount: { type: 'string' }
+            destinationAccount: { type: 'string' },
+            transferId: { type: 'integer' }
           },
           required: [
             'amount',
             'currency',
             'senderId',
             'projectId',
-            'destinationAccount'
+            'destinationAccount',
+            'transferId'
           ]
         },
         response: {
@@ -100,7 +96,7 @@ const routes = {
 
   getState: {
     method: 'get',
-    path: `${basePath}/:senderId/:projectId/state`,
+    path: `${basePath}/user/:userId/project/:projectId/state`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -110,7 +106,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            senderId: { type: 'integer' },
+            userId: { type: 'integer' },
             projectId: { type: 'integer' }
           }
         },
