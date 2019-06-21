@@ -356,12 +356,21 @@ const projectService = ({
           await projectCoverPhoto.mv(coverPhotoPath);
 
           // update cover photo path in database
-          const updatedCoverPhoto = await photoService.updatePhoto(
-            projectPhotos.coverPhoto,
-            coverPhotoPath
-          );
-          if (updatedCoverPhoto && updatedCoverPhoto != null) {
-            newProject.coverPhoto = updatedCoverPhoto.id;
+          if (!currentCoverPhoto.error) {
+            const updatedCoverPhoto = await photoService.updatePhoto(
+              projectPhotos.coverPhoto,
+              coverPhotoPath
+            );
+            if (updatedCoverPhoto && updatedCoverPhoto != null) {
+              newProject.coverPhoto = updatedCoverPhoto.id;
+            }
+          } else {
+            const savedCoverPhoto = await photoService.savePhoto(
+              coverPhotoPath
+            );
+            if (savedCoverPhoto && savedCoverPhoto != null) {
+              newProject.coverPhoto = savedCoverPhoto.id;
+            }
           }
         }
 
@@ -382,12 +391,19 @@ const projectService = ({
           await projectCardPhoto.mv(cardPhotoPath);
 
           // update card photo path in database
-          const updatedCardPhoto = await photoService.updatePhoto(
-            projectPhotos.cardPhoto,
-            cardPhotoPath
-          );
-          if (updatedCardPhoto && updatedCardPhoto != null) {
-            newProject.cardPhoto = updatedCardPhoto.id;
+          if (!currentCardPhoto.error) {
+            const updatedCardPhoto = await photoService.updatePhoto(
+              projectPhotos.cardPhoto,
+              cardPhotoPath
+            );
+            if (updatedCardPhoto && updatedCardPhoto != null) {
+              newProject.cardPhoto = updatedCardPhoto.id;
+            }
+          } else {
+            const savedCardPhoto = await photoService.savePhoto(cardPhotoPath);
+            if (savedCardPhoto && savedCardPhoto != null) {
+              newProject.cardPhoto = savedCardPhoto.id;
+            }
           }
         }
 
