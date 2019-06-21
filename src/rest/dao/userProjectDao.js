@@ -6,6 +6,11 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const findUserProjectById = userProjectModel => async userProjectId => {
+  const userProject = await userProjectModel.findOne({ id: userProjectId });
+  return userProject;
+};
+
 const findUserProject = userProjectModel => async ({ userId, projectId }) => {
   const userProject = await userProjectModel.findOne({
     user: userId,
@@ -41,5 +46,6 @@ module.exports = userProjectModel => ({
   updateStatus: updateStatus(userProjectModel),
   getUserProjects: getUserProjects(userProjectModel),
   createUserProject: createUserProject(userProjectModel),
-  getProjectsOfUser: getProjectsOfUser(userProjectModel)
+  getProjectsOfUser: getProjectsOfUser(userProjectModel),
+  findUserProjectById: findUserProjectById(userProjectModel)
 });

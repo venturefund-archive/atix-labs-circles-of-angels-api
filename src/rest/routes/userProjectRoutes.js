@@ -13,24 +13,32 @@ const routeTags = require('../util/routeTags');
 const routes = {
   signAgreement: {
     method: 'put',
-    path: `${basePath}/users/:userId/projects/:projectId`,
+    path: `${basePath}/:userProjectId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.USER_PROJECT.name, routeTags.PUT.name],
         description:
-          'Sign the agreement of an existing project by an existing funder',
+          'Updates the sign status of the agreement for an existing project by an existing funder',
         summary: 'Funder sign project agreement',
         params: {
           type: 'object',
           properties: {
-            userId: {
+            userProjectId: {
               type: 'integer',
-              description: 'User that will be signing the agreement'
-            },
-            projectId: {
+              description:
+                'User-Project relation to change the signature status'
+            }
+          }
+        },
+        body: {
+          type: 'object',
+          properties: {
+            status: {
               type: 'integer',
-              description: 'Project to which the agreement document belongs to'
+              minimum: 0,
+              maximum: 1,
+              description: '1 to mark as signed, 0 to mark as not signed'
             }
           }
         },
@@ -120,21 +128,22 @@ const routes = {
   },
 
   createUserProject: {
-    method: 'get',
-    path: `${basePath}/:userId/:projectId/create`,
+    method: 'post',
+    path: `${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
+        tags: [routeTags.USER_PROJECT.name, routeTags.POST.name],
         description:
           'Creates a new relation between an existing funder and an existing project',
         summary: 'Associate a funder to a project',
-        params: {
+        body: {
           type: 'object',
           properties: {
             userId: { type: 'integer' },
             projectId: { type: 'integer' }
-          }
+          },
+          description: 'Funder id and project id to create the relation'
         },
         response: {
           200: {

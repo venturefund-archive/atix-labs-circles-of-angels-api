@@ -13,8 +13,8 @@ module.exports = {
     const { userProjectService } = apiHelper.helper.services;
     fastify.log.info('[User Project Routes] :: Signing Agreement');
     const newUserProject = await userProjectService.signAgreement({
-      userId: request.params.userId,
-      projectId: request.params.projectId
+      userProjectId: request.params.userProjectId,
+      status: request.body.status
     });
 
     if (newUserProject.error) {
@@ -43,7 +43,7 @@ module.exports = {
 
   createUserProject: fastify => async (request, reply) => {
     const { userProjectService } = apiHelper.helper.services;
-    const { userId, projectId } = request.params;
+    const { userId, projectId } = request.body;
 
     fastify.log.info(
       `[User Project Routes] :: Associating User ID ${userId} to Project ID 
