@@ -6,14 +6,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/project';
+const basePath = '/projects';
 const handlers = require('./handlers/projectHandlers');
 const routeTags = require('../util/routeTags');
 
 const routes = {
   createProject: {
     method: 'post',
-    path: `${basePath}/create`,
+    path: `${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -69,7 +69,7 @@ const routes = {
 
   getProjects: {
     method: 'get',
-    path: `${basePath}/getProjects`,
+    path: `${basePath}`,
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
@@ -133,7 +133,7 @@ const routes = {
 
   getActiveProjects: {
     method: 'get',
-    path: `${basePath}/getActiveProjects`,
+    path: `${basePath}/active`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -197,7 +197,7 @@ const routes = {
 
   getProject: {
     method: 'get',
-    path: `${basePath}/:projectId/getProject`,
+    path: `${basePath}/:projectId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -265,12 +265,12 @@ const routes = {
   },
 
   updateStatus: {
-    method: 'post',
-    path: `${basePath}/:projectId/updateStatus`,
+    method: 'put',
+    path: `${basePath}/:projectId/status`,
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
         description: 'Modifies the status of an existing project',
         summary: 'Update project status',
         params: {
@@ -348,12 +348,12 @@ const routes = {
   },
 
   deleteProject: {
-    method: 'post',
-    path: `${basePath}/:projectId/deleteProject`,
+    method: 'delete',
+    path: `${basePath}/:projectId`,
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        tags: [routeTags.PROJECT.name, routeTags.DELETE.name],
         description: 'Deletes the specified project',
         summary: 'Delete project',
         params: {
@@ -422,7 +422,7 @@ const routes = {
 
   getProjectMilestones: {
     method: 'get',
-    path: `${basePath}/:projectId/getMilestones`,
+    path: `${basePath}/:projectId/milestones`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -543,7 +543,7 @@ const routes = {
 
   downloadMilestonesTemplate: {
     method: 'get',
-    path: `${basePath}/downloadMilestonesTemplate`,
+    path: `${basePath}/templates/milestones`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -575,7 +575,7 @@ const routes = {
 
   downloadProposalTemplate: {
     method: 'get',
-    path: `${basePath}/proposalTemplate`,
+    path: `${basePath}/templates/proposal`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -607,7 +607,7 @@ const routes = {
 
   getMilestonesFile: {
     method: 'get',
-    path: `${basePath}/:projectId/getMilestonesFile`,
+    path: `${basePath}/:projectId/milestonesFile`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -648,7 +648,7 @@ const routes = {
 
   uploadAgreement: {
     method: 'post',
-    path: `${basePath}/:projectId/uploadAgreement`,
+    path: `${basePath}/:projectId/agreement`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -699,7 +699,7 @@ const routes = {
 
   downloadAgreement: {
     method: 'get',
-    path: `${basePath}/:projectId/downloadAgreement`,
+    path: `${basePath}/:projectId/agreement`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -740,7 +740,7 @@ const routes = {
 
   downloadProposal: {
     method: 'get',
-    path: `${basePath}/:projectId/downloadProposal`,
+    path: `${basePath}/:projectId/proposal`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -781,7 +781,7 @@ const routes = {
 
   updateProject: {
     method: 'put',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:projectId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -791,7 +791,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'number' }
+            projectId: { type: 'number' }
           }
         },
         raw: {
@@ -857,7 +857,7 @@ const routes = {
 
   getTotalFunded: {
     method: 'get',
-    path: `${basePath}/:id/alreadyFunded`,
+    path: `${basePath}/:projectId/funded`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -868,7 +868,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: {
+            projectId: {
               type: 'integer',
               description: 'Project to get the funded amount from'
             }
@@ -899,7 +899,7 @@ const routes = {
 
   startProject: {
     method: 'put',
-    path: `${basePath}/:id/start`,
+    path: `${basePath}/:projectId/start`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -910,7 +910,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: {
+            projectId: {
               type: 'integer',
               description: 'Project to set as "In Progress"'
             }
@@ -946,7 +946,7 @@ const routes = {
 
   getProjectsByOracle: {
     method: 'get',
-    path: `${basePath}/oracle/:id`,
+    path: `/oracles/:userId${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -957,7 +957,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: {
+            userId: {
               type: 'integer',
               description: 'Oracle to get the projects from'
             }
@@ -999,7 +999,7 @@ const routes = {
 
   uploadExperience: {
     method: 'post',
-    path: `${basePath}/:id/experience`,
+    path: `${basePath}/:projectId/experiences`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -1009,7 +1009,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: {
+            projectId: {
               type: 'number',
               description: 'Project to upload the experience to'
             }
@@ -1059,7 +1059,7 @@ const routes = {
 
   getExperiences: {
     method: 'get',
-    path: `${basePath}/:id/experiences`,
+    path: `${basePath}/:projectId/experiences`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -1069,7 +1069,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: {
+            projectId: {
               type: 'number',
               description: 'Project to get the experiences from'
             }

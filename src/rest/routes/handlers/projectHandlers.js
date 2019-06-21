@@ -347,7 +347,7 @@ module.exports = {
   updateProject: fastify => async (req, reply) => {
     const { projectService } = apiHelper.helper.services;
     fastify.log.info(
-      `[Project Routes] :: PUT request at /project/${req.params.id}:`,
+      `[Project Routes] :: PUT request at /project/${req.params.projectId}:`,
       req.raw.body,
       req.raw.files
     );
@@ -363,14 +363,14 @@ module.exports = {
         : undefined;
 
     const { project } = req.raw.body;
-    const { id } = req.params;
+    const { projectId } = req.params;
 
     try {
       const response = await projectService.updateProject(
         project,
         projectCoverPhoto,
         projectCardPhoto,
-        id
+        projectId
       );
 
       if (response.error) {
@@ -390,12 +390,12 @@ module.exports = {
 
   getTotalFunded: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
-    const { id } = request.params;
+    const { projectId } = request.params;
     fastify.log.info(
-      `[Project Routes] :: GET request at /project/${id}/alreadyFunded`
+      `[Project Routes] :: GET request at /project/${projectId}/funded`
     );
     try {
-      const fundedAmount = await projectService.getTotalFunded(id);
+      const fundedAmount = await projectService.getTotalFunded(projectId);
 
       if (fundedAmount.error) {
         fastify.log.error(
@@ -414,10 +414,12 @@ module.exports = {
 
   startProject: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
-    const { id } = request.params;
-    fastify.log.info(`[Project Routes] :: PUT request at /project/${id}/start`);
+    const { projectId } = request.params;
+    fastify.log.info(
+      `[Project Routes] :: PUT request at /project/${projectId}/start`
+    );
     try {
-      const startedProject = await projectService.startProject(id);
+      const startedProject = await projectService.startProject(projectId);
 
       if (startedProject.error) {
         fastify.log.error(
@@ -438,12 +440,12 @@ module.exports = {
 
   getProjectsByOracle: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
-    const { id } = request.params;
+    const { userId } = request.params;
     fastify.log.info(
-      `[Project Routes] :: GET request at /project/oracle/${id}`
+      `[Project Routes] :: GET request at /oracles/${userId}/projects`
     );
     try {
-      const projects = await projectService.getProjectsAsOracle(id);
+      const projects = await projectService.getProjectsAsOracle(userId);
 
       if (projects.error) {
         fastify.log.error(
@@ -462,10 +464,10 @@ module.exports = {
 
   uploadExperience: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
-    const { id } = request.params;
+    const { projectId } = request.params;
     const { body, files } = request.raw;
     fastify.log.info(
-      `[Project Routes] :: POST request at /project/${id}/experience`,
+      `[Project Routes] :: POST request at /projects/${projectId}/experiences`,
       { body },
       { files }
     );
@@ -478,7 +480,7 @@ module.exports = {
       const newExperience = Object.assign({}, JSON.parse(experience));
 
       const response = await projectService.uploadExperience(
-        id,
+        projectId,
         newExperience,
         attachedFiles
       );
@@ -512,13 +514,13 @@ module.exports = {
 
   getExperiences: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
-    const { id } = request.params;
+    const { projectId } = request.params;
     fastify.log.info(
-      `[Project Routes] :: GET request at /project/${id}/experience`
+      `[Project Routes] :: GET request at /projects/${projectId}/experiences`
     );
 
     try {
-      const response = await projectService.getExperiences(id);
+      const response = await projectService.getExperiences(projectId);
 
       if (response.error) {
         fastify.log.error(
