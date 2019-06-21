@@ -46,7 +46,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-static'), { root: '/' });
 
     if (!isEmpty(configs.eth)) {
-      fastify.eth = await ethService(configs.eth.HOST, { logger });
+      fastify.eth = await ethService(configs.eth.HTTP_HOST, { logger });
     } else {
       fastify.eth = await ethServiceMock();
     }

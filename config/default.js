@@ -8,7 +8,7 @@
 
 module.exports = {
   server: {
-    host: 'localhost',
+    host: '173.255.254.208',
     port: 3001,
     headers: {
       'Access-Control-Allow-Credentials': true,

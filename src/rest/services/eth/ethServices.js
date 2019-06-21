@@ -7,19 +7,19 @@
  */
 
 const Web3 = require('web3');
+const HDWalletProvider = require('truffle-hdwallet-provider');
 const ethConfig = require('config').eth;
 const workerBuilder = require('./ethWorker');
+
+const mnemonic = 'mnemonic';
 
 /**
  * Init a ethereum services, receiving the provider host and returns and object
  * @param {string} providerHost
  */
 const ethServices = async (providerHost, { logger }) => {
-  const web3 = new Web3(providerHost);
-  const worker = workerBuilder(web3, ethConfig.ALLOWED_ADDRESSES, {
-    maxTransactionsPerAccount: 4,
-    logger
-  });
+  const web3 = new Web3(new HDWalletProvider(ethConfig.mnemonic, providerHost));
+  const worker = workerBuilder({ maxTransactionsPerAccount: 4, logger });
   const COAProjectAdmin = new web3.eth.Contract(
     ethConfig.CONTRACT_ADMIN_ABI,
     ethConfig.CONTRACT_ADMIN_ADDRESS,
