@@ -6,7 +6,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const Web3 = require('web3');
 const ethConfig = require('config').eth;
 const workerBuilder = require('./ethWorker');
 
@@ -14,23 +13,12 @@ const workerBuilder = require('./ethWorker');
  * Init a ethereum services, receiving the provider host and returns and object
  * @param {string} providerHost
  */
-const ethServices = async (providerHost, { logger }) => {
-  const web3 = new Web3(providerHost);
-  const worker = workerBuilder(web3, ethConfig.ALLOWED_ADDRESSES, {
-    maxTransactionsPerAccount: 4,
-    logger
-  });
-  const COAProjectAdmin = new web3.eth.Contract(
-    ethConfig.CONTRACT_ADMIN_ABI,
-    ethConfig.CONTRACT_ADMIN_ADDRESS,
-    ethConfig.DEFAULT_CONFIG
-  );
-
-  const COAOracle = new web3.eth.Contract(
-    ethConfig.CONTRACT_ORACLE_ABI,
-    ethConfig.CONTRACT_ORACLE_ADDRESS,
-    ethConfig.DEFAULT_CONFIG
-  );
+const ethServices = async (
+  web3,
+  { COAProjectAdmin, COAOracle },
+  { logger }
+) => {
+  const worker = workerBuilder(web3, { maxTransactionsPerAccount: 4, logger });
 
   const unlockAccount = async (account, pwd) => {
     await web3.eth.personal.unlockAccount(
@@ -75,13 +63,6 @@ const ethServices = async (providerHost, { logger }) => {
           resolve(recipt);
         }
       );
-    });
-  };
-
-  const suscribeToEvent = async (event, callback) => {
-    event({}, (error, event) => {
-      if (error) return { error };
-      callback(event);
     });
   };
 
@@ -196,46 +177,6 @@ const ethServices = async (providerHost, { logger }) => {
       return Boolean(
         transaction && transaction.blockHash && transaction.blockNumber
       );
-    },
-
-    async suscribeNewProjectEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.NewProject, callback);
-    },
-
-    async suscribeNewMilestoneEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.NewMilestone, callback);
-    },
-
-    async suscribeNewActivityEvent(callback) {
-      suscribeToEvent(COAOracle.events.NewActivity, callback);
-    },
-
-    async suscribeActivityValidatedEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.ActivityValidated, callback);
-    },
-
-    async suscribeMilestoneCompletedEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.MilestoneCompleted, callback);
-    },
-
-    async suscribeProjectCompletedEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
-    },
-
-    async suscribeMilestoneClaimableEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.MilestoneClaimable, callback);
-    },
-
-    async suscribeMilestoneClaimedEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.MilestoneClaimed, callback);
-    },
-
-    async suscribeMilestoneFundedEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.MilestoneFunded, callback);
-    },
-
-    async suscribeProjectStartedEvent(callback) {
-      suscribeToEvent(COAProjectAdmin.events.ProjectStarted, callback);
     },
 
     async getAllPastEvents(options) {

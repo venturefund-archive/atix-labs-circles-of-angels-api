@@ -5,12 +5,14 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
+const ethConfig = require('config').eth;
 
 const getRndInteger = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-const ethWorker = (web3, addresses, { maxTransactionsPerAccount, logger }) => {
+const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
+  const addresses = ethConfig.ALLOWED_ADDRESSES;
   const getTransactionCount = async address => {
     return web3.eth.getTransactionCount(address);
   };

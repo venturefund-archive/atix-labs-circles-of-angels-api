@@ -11,9 +11,11 @@ const COAOracle = require('../../circles-of-angels-solidity/build/contracts/COAO
 
 module.exports = {
   eth: {
-    HOST: 'ws://localhost:8545',
-    CONTRACT_ADMIN_ADDRESS: COAProjectAdmin.networks['5777'].address,
-    CONTRACT_ORACLE_ADDRESS: COAOracle.networks['5777'].address,
+    HTTP_HOST: 'http://localhost:4444',
+    WS_HOST: 'ws://localhost:4445/websocket',
+    CONTRACT_ADMIN_ADDRESS: COAProjectAdmin.networks['31'].address,
+    CONTRACT_ORACLE_ADDRESS: COAOracle.networks['31'].address,
+    MNEMONIC: 'mnemonic',
     CONTRACT_ADMIN_ABI: COAProjectAdmin.abi,
     CONTRACT_ORACLE_ABI: COAOracle.abi,
     DEFAULT_CONFIG: {
