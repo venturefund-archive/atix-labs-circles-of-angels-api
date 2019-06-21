@@ -24,7 +24,10 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            roleId: { type: 'number' }
+            roleId: {
+              type: 'number',
+              description: 'Role to get the questionnaire from'
+            }
           }
         },
         response: {
@@ -36,6 +39,7 @@ const routes = {
                 items: {
                   type: 'object',
                   properties: {
+                    id: { type: 'integer' },
                     question: { type: 'string' },
                     role: { type: 'number' },
                     answerLimit: { type: 'number' },
@@ -53,13 +57,16 @@ const routes = {
                   }
                 }
               }
-            }
+            },
+            description:
+              'Returns an array of questions and their corresponding answers'
           },
           500: {
             type: 'object',
             properties: {
               error: { type: 'string' }
-            }
+            },
+            description: 'Returns a message describing the error'
           }
         }
       }
