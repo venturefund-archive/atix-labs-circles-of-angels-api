@@ -96,63 +96,6 @@ const routes = {
     handler: handlers.getMilestones
   },
 
-  updateBudgetStatus: {
-    method: 'put',
-    path: `${basePath}/:id/budgetStatus`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
-        description: 'Modifies the budget status of an existing milestone',
-        summary: 'Update milestone budget status',
-        params: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'integer',
-              description: 'Milestone to update budget status'
-            }
-          }
-        },
-        body: {
-          type: 'object',
-          properties: {
-            budgetStatusId: {
-              type: 'integer',
-              description: 'New budget status'
-            }
-          },
-          required: ['budgetStatusId']
-        },
-        response: {
-          200: {
-            type: 'object',
-            description: 'Success message if the milestone was updated',
-            properties: {
-              success: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.updateBudgetStatus
-  },
-
   getBudgetStatus: {
     method: 'get',
     path: `${basePath}/budgetStatus`,
@@ -312,7 +255,7 @@ const routes = {
     method: 'put',
     path: `${basePath}/:milestoneId`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
         description: 'Modifies an existing milestone',

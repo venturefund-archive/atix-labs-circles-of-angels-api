@@ -148,46 +148,65 @@ const milestoneService = ({
    * @param {number} id
    * @returns updated milestone | error message
    */
-  async updateMilestone(milestone, id) {
+  async updateMilestone(milestone, id, user) {
     try {
       fastify.log.info('[Milestone Service] :: Updating milestone:', milestone);
 
-      if (
-        !this.isMilestoneEmpty(milestone) &&
-        this.isMilestoneValid(milestone)
-      ) {
-        const savedMilestone = await milestoneDao.updateMilestone(
-          milestone,
-          id
+      if (milestone.budgetStatus) {
+        const updatedBudgetStatus = await this.updateBudgetStatus(
+          id,
+          milestone.budgetStatus,
+          user
         );
-
-        if (!savedMilestone || savedMilestone == null) {
+        if (updatedBudgetStatus.error) {
           fastify.log.error(
-            `[Milestone Service] :: Milestone ID ${id} does not exist`,
-            savedMilestone
+            '[Milestone Service] :: Error updating budget status:',
+            updatedBudgetStatus.error
           );
-          return {
-            status: 404,
-            error: 'Milestone does not exist'
-          };
+          return updatedBudgetStatus;
         }
-
-        fastify.log.info(
-          '[Milestone Service] :: Milestone updated:',
-          savedMilestone
-        );
-
-        return savedMilestone;
       }
 
-      fastify.log.error(
-        '[Milestone Service] :: Milestone not valid',
-        milestone
-      );
-      return {
-        status: 409,
-        error: 'Milestone is missing mandatory fields'
-      };
+      const toUpdateMilestone = { ...milestone };
+      delete toUpdateMilestone.budgetStatus;
+
+      if (!isEmpty(toUpdateMilestone)) {
+        if (this.canMilestoneUpdate(toUpdateMilestone)) {
+          const savedMilestone = await milestoneDao.updateMilestone(
+            toUpdateMilestone,
+            id
+          );
+
+          if (!savedMilestone || savedMilestone == null) {
+            fastify.log.error(
+              `[Milestone Service] :: Milestone ID ${id} does not exist`,
+              savedMilestone
+            );
+            return {
+              status: 404,
+              error: 'Milestone does not exist'
+            };
+          }
+
+          fastify.log.info(
+            '[Milestone Service] :: Milestone updated:',
+            savedMilestone
+          );
+
+          return savedMilestone;
+        }
+
+        fastify.log.error(
+          '[Milestone Service] :: Milestone not valid',
+          toUpdateMilestone
+        );
+        return {
+          status: 409,
+          error: 'Milestone has empty mandatory fields'
+        };
+      }
+
+      return toUpdateMilestone;
     } catch (error) {
       fastify.log.error(
         '[Milestone Service] :: Error updating Milestone:',
@@ -395,6 +414,17 @@ const milestoneService = ({
       return false;
     }
 
+    return true;
+  },
+
+  canMilestoneUpdate(milestone) {
+    if (
+      milestone.quarter === '' ||
+      milestone.tasks === '' ||
+      milestone.impact === ''
+    ) {
+      return false;
+    }
     return true;
   },
 
