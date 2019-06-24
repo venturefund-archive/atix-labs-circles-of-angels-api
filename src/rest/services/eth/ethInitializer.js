@@ -38,22 +38,22 @@ const ethInitializer = async ({ logger }) => {
       },
       { logger }
     );
+
+    const wsWeb3 = new Web3(ethConfig.WS_HOST);
+    eth.initListener = async () => {
+      const listener = await ethListenerBuilder(
+        eth,
+        {
+          COAProjectAdmin: buildProjectAdminContract(wsWeb3),
+          COAOracle: buildOracleContract(wsWeb3)
+        },
+        { logger }
+      );
+      eth.listener = listener;
+    };
   } else {
     eth = await ethServiceMock();
   }
-
-  const wsWeb3 = new Web3(ethConfig.WS_HOST);
-  eth.initListener = async () => {
-    const listener = await ethListenerBuilder(
-      eth,
-      {
-        COAProjectAdmin: buildProjectAdminContract(wsWeb3),
-        COAOracle: buildOracleContract(wsWeb3)
-      },
-      { logger }
-    );
-    eth.listener = listener;
-  };
 
   return eth;
 };
