@@ -32,6 +32,7 @@ const eventListener = async (
 
   const updateLastBlock = async event => {
     const { blockNumber, transactionHash } = event;
+    console.log('leo', { blockNumber, transactionHash });
     if (!blockNumber || !transactionHash) {
       return false;
     }
