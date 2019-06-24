@@ -348,14 +348,7 @@ const eventListener = async (
       // suscribeMilestoneClaimedEvent(onMilestoneClaimedEvent);
       // suscribeMilestoneFundedEvent(onMilestoneFundedEvent);
       // suscribeProjectStartedEvent(onProjectStarted);
-
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        // eslint-disable-next-line no-await-in-loop
-        await this.recoverPastEvents();
-        // eslint-disable-next-line no-await-in-loop
-        await sleep(5000);
-      }
+      setInterval(this.recoverPastEvents, 5000);
     }
   };
 };
