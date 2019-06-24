@@ -58,22 +58,22 @@ const routes = {
     handler: handlers.sendToVerification
   },
 
-  updateState: {
+  updateTransfer: {
     method: 'put',
-    path: `${basePath}`,
+    path: `${basePath}/:id`,
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
         description: 'Updates the state of an existing transfer',
-        summary: 'Update transfer state',
+        summary: 'Update transfer',
         body: {
           type: 'object',
           properties: {
-            transferId: { type: 'string' },
             state: { type: 'integer' }
           },
-          required: ['transferId', 'state']
+          required: ['state'],
+          additionalProperties: false
         },
         response: {
           200: {
@@ -91,7 +91,7 @@ const routes = {
         }
       }
     },
-    handler: handlers.updateState
+    handler: handlers.updateTransfer
   },
 
   getState: {

@@ -46,7 +46,7 @@ const TransferDao = ({ transferModel, transferStatusModel }) => ({
   },
 
   async updateTransferState({ transferId, state }) {
-    return transferModel.update({ transferId }).set({ state });
+    return transferModel.update({ id: transferId }).set({ state });
   },
 
   async getTransferById({ transferId }) {
