@@ -11,6 +11,10 @@ const {
   milestoneBudgetStatus
 } = require('../../util/constants');
 
+const sleep = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 const eventListener = async (
   ethService,
   { COAProjectAdmin, COAOracle },
@@ -337,13 +341,19 @@ const eventListener = async (
     },
 
     async startListen() {
-      suscribeNewProjectEvent(onNewProjectEvent);
-      suscribeNewMilestoneEvent(onNewMilestoneEvent);
-      suscribeNewActivityEvent(onNewActivityEvent);
-      suscribeMilestoneClaimableEvent(onMilestoneClaimableEvent);
-      suscribeMilestoneClaimedEvent(onMilestoneClaimedEvent);
-      suscribeMilestoneFundedEvent(onMilestoneFundedEvent);
-      suscribeProjectStartedEvent(onProjectStarted);
+      // suscribeNewProjectEvent(onNewProjectEvent);
+      // suscribeNewMilestoneEvent(onNewMilestoneEvent);
+      // suscribeNewActivityEvent(onNewActivityEvent);
+      // suscribeMilestoneClaimableEvent(onMilestoneClaimableEvent);
+      // suscribeMilestoneClaimedEvent(onMilestoneClaimedEvent);
+      // suscribeMilestoneFundedEvent(onMilestoneFundedEvent);
+      // suscribeProjectStartedEvent(onProjectStarted);
+      while (true) {
+        // eslint-disable-next-line no-await-in-loop
+        await this.recoverPastEvents();
+        // eslint-disable-next-line no-await-in-loop
+        await sleep(5000);
+      }
     }
   };
 };

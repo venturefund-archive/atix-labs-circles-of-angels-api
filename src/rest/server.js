@@ -7,7 +7,6 @@
  */
 
 const { helperBuilder } = require('./services/helper');
-const eventListenerBuilder = require('./services/eth/eventListener');
 const ethInitializer = require('./services/eth/ethInitializer');
 
 /**
