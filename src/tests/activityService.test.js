@@ -183,43 +183,22 @@ describe('Testing activityService updateActivity', () => {
   const activityId = 12;
 
   let mockActivity;
-  let incompleteActivity;
+  let invalidActivity;
 
   beforeEach(() => {
-    const {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel,
-      budget
-    } = testHelper.buildActivity({});
-    mockActivity = {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel,
-      budget
-    };
-
-    incompleteActivity = {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel
-    };
+    mockActivity = testHelper.buildActivity({});
+    invalidActivity = { ...mockActivity, tasks: '' };
   });
 
   beforeAll(() => {
     activityDao = {
+      async getActivityById(id) {
+        if (id === 0) {
+          return undefined;
+        }
+        return testHelper.buildActivity({ id });
+      },
+
       async updateActivity(activity, id) {
         if (id === '') {
           throw Error('Error updating activity');
@@ -236,14 +215,14 @@ describe('Testing activityService updateActivity', () => {
     });
   });
 
-  it('should return an error if the activity is incomplete', async () => {
+  it('should return an error if the activity has empty mandatory fields', async () => {
     const response = await activityService.updateActivity(
-      incompleteActivity,
+      invalidActivity,
       activityId
     );
     const expected = {
       status: 409,
-      error: 'Activity is missing mandatory fields'
+      error: 'Activity has empty mandatory fields'
     };
     return expect(response).toEqual(expected);
   });
@@ -252,12 +231,12 @@ describe('Testing activityService updateActivity', () => {
     const response = await activityService.updateActivity(mockActivity, 0);
     const expected = {
       status: 404,
-      error: 'Activity does not exist'
+      error: "Activity doesn't exist"
     };
     return expect(response).toEqual(expected);
   });
 
-  it('should return an error if the activity could not be created', async () => {
+  it('should return an error if the activity could not be updated', async () => {
     const response = await activityService.updateActivity(mockActivity, '');
     const expected = { status: 500, error: 'Error updating Activity' };
     return expect(response).toEqual(expected);

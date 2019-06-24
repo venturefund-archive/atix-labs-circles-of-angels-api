@@ -233,8 +233,8 @@ describe('Testing milestoneService updateMilestone', () => {
 
   const mockMilestone = testHelper.buildMilestone(0, { id: milestoneId });
 
-  const incompleteMilestone = testHelper.buildMilestone(0, { id: milestoneId });
-  delete incompleteMilestone.tasks;
+  // const incompleteMilestone = testHelper.buildMilestone(0, { id: milestoneId });
+  // incompleteMilestone.tasks;
 
   beforeAll(() => {
     milestoneDao = {
@@ -245,7 +245,7 @@ describe('Testing milestoneService updateMilestone', () => {
         if (id !== milestoneId) {
           return undefined;
         }
-        return milestone;
+        return { ...mockMilestone, ...milestone };
       }
     };
 
@@ -253,39 +253,32 @@ describe('Testing milestoneService updateMilestone', () => {
       fastify,
       milestoneDao
     });
+
+    milestoneService.updateBudgetStatus = () => mockMilestone;
   });
 
   it('should return the updated milestone', async () => {
-    const expected = mockMilestone;
+    const toUpdate = { tasks: 'Updated Tasks' };
+    const expected = { ...mockMilestone, ...toUpdate };
 
     const response = await milestoneService.updateMilestone(
-      mockMilestone,
+      toUpdate,
       milestoneId
     );
 
     return expect(response).toEqual(expected);
   });
 
-  it('should return an error if the milestone is empty', async () => {
-    const response = await milestoneService.updateMilestone({}, milestoneId);
-
-    const expected = {
-      status: 409,
-      error: 'Milestone is missing mandatory fields'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the milestone is missing mandatory fields', async () => {
+  it('should return an error if the milestone has empty mandatory fields', async () => {
+    const invalidMilestone = { tasks: '' };
     const response = await milestoneService.updateMilestone(
-      incompleteMilestone,
+      invalidMilestone,
       milestoneId
     );
 
     const expected = {
       status: 409,
-      error: 'Milestone is missing mandatory fields'
+      error: 'Milestone has empty mandatory fields'
     };
 
     return expect(response).toEqual(expected);
