@@ -315,6 +315,19 @@ const eventListener = async (
     suscribeToEvent(COAProjectAdmin.events.ProjectStarted, callback);
   };
 
+  const getAllPastEvents = async options => {
+    const CoaProjectAdminEvents = await COAProjectAdmin.getPastEvents(
+      'allEvents',
+      options
+    );
+    const CoaOracleEvents = await COAOracle.getPastEvents('allEvents', options);
+
+    const events = CoaProjectAdminEvents.concat(CoaOracleEvents);
+    events.sort((event1, event2) => event1.blockNumber - event2.blockNumber);
+
+    return events;
+  };
+
   const eventMethodMap = {
     NewProject: onNewProjectEvent,
     NewMilestone: onNewMilestoneEvent,
@@ -326,10 +339,11 @@ const eventListener = async (
 
   return {
     async recoverPastEvents() {
+      logger.info('[event listener] - recovering past events...');
       try {
         const lastBlock = await blockchainBlockDao.getLastBlock();
         const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
-        const events = await ethService.getAllPastEvents({ fromBlock });
+        const events = await getAllPastEvents({ fromBlock });
 
         for (const eventKey in events) {
           const event = events[eventKey];
