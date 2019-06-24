@@ -165,14 +165,14 @@ const ethServices = async (
         .validateActivity(activityId)
         .encodeABI();
 
-      await unlockAccount(sender, pwd);
+      //await unlockAccount(sender, pwd);
       const txHash = await worker.pushTransaction(
         COAOracle.address,
         encodedMethod,
         ethConfig.GAS_LIMIT,
         sender
       );
-      await lockAccount(sender);
+      //await lockAccount(sender);
       return txHash;
     },
     async isTransactionConfirmed(transactionHash) {
@@ -204,14 +204,14 @@ const ethServices = async (
           .uploadHashEvidence(activityId, toBytes64Array(hashes))
           .encodeABI();
 
-        await unlockAccount(sender, pwd);
+        //await unlockAccount(sender, pwd);
         const txHash = await worker.pushTransaction(
           COAOracle.address,
           encodedMethod,
           ethConfig.GAS_LIMIT,
           sender
         );
-        await lockAccount(sender);
+        //await lockAccount(sender);
         return txHash;
       } catch (error) {
         return { error };
@@ -224,14 +224,14 @@ const ethServices = async (
           .claimMilestone(milestoneId, projectId)
           .encodeABI();
 
-        await unlockAccount(sender, pwd);
+        //await unlockAccount(sender, pwd);
         const txHash = await worker.pushTransaction(
           COAProjectAdmin.address,
           encodedMethod,
           ethConfig.GAS_LIMIT,
           sender
         );
-        await lockAccount(sender);
+        //await lockAccount(sender);
         return txHash;
       } catch (error) {
         return { error };

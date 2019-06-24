@@ -44,8 +44,8 @@ const ethInitializer = async ({ logger }) => {
       const listener = await ethListenerBuilder(
         eth,
         {
-          COAProjectAdmin: buildProjectAdminContract(httpWeb3),
-          COAOracle: buildOracleContract(httpWeb3)
+          COAProjectAdmin: buildProjectAdminContract(wsWeb3),
+          COAOracle: buildOracleContract(wsWeb3)
         },
         { logger }
       );

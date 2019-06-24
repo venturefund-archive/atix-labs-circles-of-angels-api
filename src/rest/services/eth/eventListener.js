@@ -32,7 +32,6 @@ const eventListener = async (
   } = helper.daos;
 
   const updateLastBlock = async event => {
-    logger.info('leoooooooooooo', event);
     const { blockNumber, transactionHash } = event;
     if (!blockNumber || !transactionHash) {
       return false;
