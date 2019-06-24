@@ -5,6 +5,7 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
+const { isEmpty } = require('lodash');
 const {
   blockchainStatus,
   projectStatus,
@@ -31,8 +32,8 @@ const eventListener = async (
   } = helper.daos;
 
   const updateLastBlock = async event => {
+    logger.info('leoooooooooooo', event);
     const { blockNumber, transactionHash } = event;
-    logger.info('leo', { blockNumber, transactionHash });
     if (!blockNumber || !transactionHash) {
       return false;
     }
@@ -344,16 +345,23 @@ const eventListener = async (
 
   return {
     async recoverPastEvents() {
-      logger.info('[event listener] - recovering past events...');
+      
       try {
         const lastBlock = await blockchainBlockDao.getLastBlock();
         const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
-        const events = await getAllPastEvents({ fromBlock });
 
-        for (const eventKey in events) {
-          const event = events[eventKey];
-          if (eventMethodMap[event.event]) eventMethodMap[event.event](event);
+        const events = await getAllPastEvents({ fromBlock });
+        const filteredEvents = events.filter(
+          event => eventMethodMap[event.event]
+        );
+        if (isEmpty(filteredEvents)) return;
+        logger.info('[event listener] - recovering past events...');
+        let event;
+        for (const eventKey in filteredEvents) {
+          event = filteredEvents[eventKey];
+          await eventMethodMap[event.event](event);
         }
+        await updateLastBlock(event);
       } catch (error) {
         logger.error(error);
       }
