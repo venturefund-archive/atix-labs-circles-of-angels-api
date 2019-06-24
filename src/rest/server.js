@@ -49,7 +49,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     await helperBuilder(fastify);
     await fastify.eth.initListener();
     await fastify.eth.listener.recoverPastEvents();
-    fastify.eth.listener.startListen();
+    await fastify.eth.listener.startListen();
     module.exports.fastify = fastify;
   } catch (err) {
     console.log(err);

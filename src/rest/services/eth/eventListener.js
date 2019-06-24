@@ -32,7 +32,7 @@ const eventListener = async (
 
   const updateLastBlock = async event => {
     const { blockNumber, transactionHash } = event;
-    console.log('leo', { blockNumber, transactionHash });
+    logger.info('leo', { blockNumber, transactionHash });
     if (!blockNumber || !transactionHash) {
       return false;
     }
@@ -338,7 +338,8 @@ const eventListener = async (
     NewActivity: onNewActivityEvent,
     MilestoneClaimable: onMilestoneClaimableEvent,
     MilestoneClaimed: onMilestoneClaimedEvent,
-    MilestoneFunded: onMilestoneFundedEvent
+    MilestoneFunded: onMilestoneFundedEvent,
+    ProjectStarted: onProjectStarted
   };
 
   return {
