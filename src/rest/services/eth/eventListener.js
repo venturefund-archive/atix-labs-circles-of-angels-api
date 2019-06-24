@@ -304,6 +304,7 @@ const eventListener = async (
         const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
 
         const events = await getAllPastEvents({ fromBlock });
+        logger.info('Eventos:   ', events);
         const filteredEvents = events.filter(
           event => eventMethodMap[event.event]
         );
@@ -321,7 +322,7 @@ const eventListener = async (
     },
 
     async startListen() {
-      setInterval(this.recoverPastEvents, 5000);
+      setInterval(async () => this.recoverPastEvents(), 5000);
     }
   };
 };
