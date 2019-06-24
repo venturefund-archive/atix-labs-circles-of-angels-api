@@ -325,10 +325,13 @@ const eventListener = async (
   };
 
   return {
-    async recoverPastEvents() {
+    async recoverPastEvents({ fromLast }) {
       try {
         const lastBlock = await blockchainBlockDao.getLastBlock();
-        const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
+        const aditionalForNextBlock = fromLast ? 0 : 1;
+        const fromBlock = lastBlock
+          ? lastBlock.blockNumber + aditionalForNextBlock
+          : 0;
         const events = await ethService.getAllPastEvents({ fromBlock });
 
         for (const eventKey in events) {
@@ -350,7 +353,7 @@ const eventListener = async (
       // suscribeProjectStartedEvent(onProjectStarted);
       while (true) {
         // eslint-disable-next-line no-await-in-loop
-        await this.recoverPastEvents();
+        await this.recoverPastEvents({fromLast: true});
         // eslint-disable-next-line no-await-in-loop
         await sleep(5000);
       }
