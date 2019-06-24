@@ -67,7 +67,6 @@ const eventListener = async (
         id,
         milestoneBudgetStatus.CLAIMABLE
       );
-      updatedMilestone && (await updateLastBlock(event));
     } catch (error) {
       logger.error(error);
     }
@@ -85,7 +84,6 @@ const eventListener = async (
         id,
         milestoneBudgetStatus.CLAIMED
       );
-      updatedMilestone && (await updateLastBlock(event));
     } catch (error) {
       logger.error(error);
     }
@@ -100,7 +98,6 @@ const eventListener = async (
         id,
         milestoneBudgetStatus.FUNDED
       );
-      updatedMilestone && (await updateLastBlock(event));
     } catch (error) {
       logger.error(error);
     }
@@ -123,7 +120,6 @@ const eventListener = async (
         );
         return;
       }
-      await updateLastBlock(event);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of project ',
         id
@@ -172,7 +168,6 @@ const eventListener = async (
         activities[j].milestoneId = id;
       }
       await ethService.createActivities(activities);
-      await updateLastBlock(event);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of milestone ',
         id
@@ -268,7 +263,6 @@ const eventListener = async (
 
           logger.info('[Event listener] :: Project started:', projectId);
 
-          await updateLastBlock(event);
           logger.info(
             '[Event listener] :: successfully updated blockchain status of activity',
             id
@@ -278,46 +272,6 @@ const eventListener = async (
     } catch (error) {
       logger.error(error);
     }
-  };
-
-  const suscribeNewProjectEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.NewProject, callback);
-  };
-
-  const suscribeNewMilestoneEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.NewMilestone, callback);
-  };
-
-  const suscribeNewActivityEvent = async callback => {
-    suscribeToEvent(COAOracle.events.NewActivity, callback);
-  };
-
-  const suscribeActivityValidatedEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.ActivityValidated, callback);
-  };
-
-  const suscribeMilestoneCompletedEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.MilestoneCompleted, callback);
-  };
-
-  const suscribeProjectCompletedEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.ProjectCompleted, callback);
-  };
-
-  const suscribeMilestoneClaimableEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.MilestoneClaimable, callback);
-  };
-
-  const suscribeMilestoneClaimedEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.MilestoneClaimed, callback);
-  };
-
-  const suscribeMilestoneFundedEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.MilestoneFunded, callback);
-  };
-
-  const suscribeProjectStartedEvent = async callback => {
-    suscribeToEvent(COAProjectAdmin.events.ProjectStarted, callback);
   };
 
   const getAllPastEvents = async options => {
@@ -345,7 +299,6 @@ const eventListener = async (
 
   return {
     async recoverPastEvents() {
-      
       try {
         const lastBlock = await blockchainBlockDao.getLastBlock();
         const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
@@ -368,13 +321,6 @@ const eventListener = async (
     },
 
     async startListen() {
-      // suscribeNewProjectEvent(onNewProjectEvent);
-      // suscribeNewMilestoneEvent(onNewMilestoneEvent);
-      // suscribeNewActivityEvent(onNewActivityEvent);
-      // suscribeMilestoneClaimableEvent(onMilestoneClaimableEvent);
-      // suscribeMilestoneClaimedEvent(onMilestoneClaimedEvent);
-      // suscribeMilestoneFundedEvent(onMilestoneFundedEvent);
-      // suscribeProjectStartedEvent(onProjectStarted);
       setInterval(this.recoverPastEvents, 5000);
     }
   };
