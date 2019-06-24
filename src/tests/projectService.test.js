@@ -945,15 +945,6 @@ describe('Testing projectService startProject', () => {
     };
 
     projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (projectId === undefined) throw Error('Error');
-        const project = find(
-          mockProjects,
-          mockProject => mockProject.id === projectId
-        );
-        return project;
-      },
-
       getUserOwnerOfProject: projectId => {
         const project = find(
           mockProjects,
@@ -974,39 +965,27 @@ describe('Testing projectService startProject', () => {
 
   it('should return the updated project with status In Progress', async () => {
     const projectId = 4;
-    const response = await projectService.startProject(projectId);
+    const response = await projectService.startProject(mockProjects[3]);
     const expected = find(mockProjects, project => projectId === project.id);
     return expect(response).toEqual(expected);
   });
 
-  it('should return an error if the project does not exist', async () => {
-    const response = await projectService.startProject(-1);
-    const expected = { error: 'ERROR: Project not found', status: 404 };
-    return expect(response).toEqual(expected);
-  });
-
   it('should return an error if the project is not Published', async () => {
-    const response = await projectService.startProject(2);
+    const response = await projectService.startProject(mockProjects[1]);
     const expected = { error: 'Project needs to be published', status: 409 };
     return expect(response).toEqual(expected);
   });
 
   it('should return an error if the project is already In Progress', async () => {
-    const response = await projectService.startProject(1);
+    const response = await projectService.startProject(mockProjects[0]);
     const expected = { error: 'Project has already started', status: 409 };
     return expect(response).toEqual(expected);
   });
 
   it('should return an error if project is not fully assigned', async () => {
-    const projectId = 4;
-    mockProjects.map(project => {
-      const newProject = { ...project };
-      if (project.id === projectId) {
-        newProject.milestones[0].activities[0].oracle = false;
-      }
-      return newProject;
-    });
-    const response = await projectService.startProject(projectId);
+    const projectNotAssigned = { ...mockProjects[3] };
+    projectNotAssigned.milestones[0].activities[0].oracle = false;
+    const response = await projectService.startProject(projectNotAssigned);
     const expected = {
       error: 'Project has activities with no oracles assigned',
       status: 409
@@ -1014,17 +993,9 @@ describe('Testing projectService startProject', () => {
     return expect(response).toEqual(expected);
   });
 
-  it.skip('should return an error if the project could not be updated', async () => {
-    const response = await projectService.startProject(5);
-    const expected = {
-      error: 'ERROR: Project could not be started',
-      status: 500
-    };
-    return expect(response).toEqual(expected);
-  });
-
   it('should throw an error if it fails to get the project', async () => {
-    return expect(projectService.startProject()).rejects.toEqual(
+    const project = { ...mockProjects[3], id: '' };
+    return expect(projectService.startProject(project)).rejects.toEqual(
       Error('Error starting project')
     );
   });

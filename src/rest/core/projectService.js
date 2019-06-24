@@ -882,14 +882,6 @@ const projectService = ({
     );
 
     try {
-      // verify if project exists
-      // const project = await projectDao.getProjectById({ projectId });
-      // if (!project || project == null) {
-      //   fastify.log.error(
-      //     `[Project Service] :: Project ID ${projectId} not found`
-      //   );
-      //   return { error: 'ERROR: Project not found', status: 404 };
-      // }
       if (
         project.status !== projectStatus.PUBLISHED &&
         project.status !== projectStatus.IN_PROGRESS
