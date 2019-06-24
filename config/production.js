@@ -37,6 +37,7 @@ module.exports = {
       '0xcc036143c68a7a9a41558eae739b428ecde5ef66',
       '0xe2b3204f29ab45d5fd074ff02ade098fbc381d42',
       '0xd51128f302755666c42e3920d72ff2fe632856a9'
-    ]
+    ],
+    NUMBER_ACCOUNTS: 20
   }
 };

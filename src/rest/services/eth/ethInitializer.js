@@ -17,11 +17,16 @@ const ethListenerBuilder = require('./eventListener');
 const ethInitializer = async ({ logger }) => {
   let eth;
   if (!isEmpty(ethConfig)) {
-    const { mnemonic } = ethConfig;
+    const { MNEMONIC } = ethConfig;
     let httpWeb3;
-    if (mnemonic)
+    if (MNEMONIC)
       httpWeb3 = new Web3(
-        new HDWalletProvider(ethConfig.mnemonic, ethConfig.HTTP_HOST)
+        new HDWalletProvider(
+          MNEMONIC,
+          ethConfig.HTTP_HOST,
+          0,
+          ethConfig.NUMBER_ACCOUNTS
+        )
       );
     else httpWeb3 = new Web3(ethConfig.HTTP_HOST);
 

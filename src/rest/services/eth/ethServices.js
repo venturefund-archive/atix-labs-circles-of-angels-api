@@ -18,7 +18,10 @@ const ethServices = async (
   { COAProjectAdmin, COAOracle },
   { logger }
 ) => {
-  const worker = workerBuilder(web3, { maxTransactionsPerAccount: 4, logger });
+  const worker = await workerBuilder(web3, {
+    maxTransactionsPerAccount: 4,
+    logger
+  });
 
   const unlockAccount = async (account, pwd) => {
     await web3.eth.personal.unlockAccount(
