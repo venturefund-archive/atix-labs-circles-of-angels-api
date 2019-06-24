@@ -7,6 +7,7 @@
  */
 
 const apiHelper = require('../../services/helper');
+const { activityStatus } = require('../../util/constants');
 
 module.exports = {
   createActivity: fastify => async (req, reply) => {
@@ -43,7 +44,7 @@ module.exports = {
   },
 
   updateActivity: fastify => async (req, reply) => {
-    const { activityService } = apiHelper.helper.services;
+    const { activityService, milestoneService } = apiHelper.helper.services;
     fastify.log.info(
       `[Activity Routes] :: PUT request at /activities/${req.params.id}:`,
       req.body
@@ -65,6 +66,9 @@ module.exports = {
         );
         reply.status(response.status).send(response);
       } else {
+        if (response.status === activityStatus.COMPLETED) {
+          await milestoneService.tryCompleteMilestone(activity.milestone);
+        }
         reply.send({ success: 'Activity updated successfully!' });
       }
     } catch (error) {
@@ -248,30 +252,6 @@ module.exports = {
     } catch (error) {
       fastify.log.error('[Activity Routes] :: Error getting evidence:', error);
       reply.status(500).send({ error: 'Error getting evidence' });
-    }
-  },
-
-  completeActivity: fastify => async (request, reply) => {
-    const { activityService, milestoneService } = apiHelper.helper.services;
-    const { activityId } = request.params;
-    fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
-    try {
-      const activity = await activityService.completeActivity(
-        activityId,
-        milestoneService.getMilestoneById
-      );
-      if (activity.error) {
-        reply.status(activity.status).send(activity);
-      } else {
-        await milestoneService.tryCompleteMilestone(activity.milestone);
-        reply.status(200).send({ response: Boolean(activity) });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Activity Routes] :: Error completing activity:',
-        error
-      );
-      reply.status(500).send({ error: 'Error completing activity' });
     }
   }
 };

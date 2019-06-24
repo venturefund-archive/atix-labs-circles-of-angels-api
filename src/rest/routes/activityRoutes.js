@@ -550,40 +550,6 @@ const routes = {
       }
     },
     handler: handlers.downloadEvidence
-  },
-
-  completeActivity: {
-    method: 'post',
-    path: `${basePath}/:activityId/complete`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
-        description: 'Marks an existing activity as completed',
-        summary: 'Complete activity',
-        params: {
-          type: 'object',
-          properties: {
-            activityId: { type: 'integer', description: 'Activity to complete' }
-          }
-        },
-        response: {
-          200: {
-            type: 'boolean',
-            description:
-              'Returns true if the activity was successfully marked as completed'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.completeActivity
   }
 };
 
