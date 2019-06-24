@@ -75,8 +75,9 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
 
   return {
     async pushTransaction(contractAddress, encodedMethod, gasLimit, sender) {
-      if (!contractAddress) return;
-      if (!encodedMethod) return;
+      if (!contractAddress)
+        throw new Error('[eth worker] - contract address empty');
+      if (!encodedMethod) throw new Error('[eth worker] - method data empty');
       let address = sender;
       if (!sender) {
         const addressIndex = getRndInteger(0, addresses.length - 1);

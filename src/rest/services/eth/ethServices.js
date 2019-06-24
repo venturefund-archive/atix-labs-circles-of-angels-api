@@ -85,7 +85,7 @@ const ethServices = async (
       const encodedMethod = COAProjectAdmin.methods
         .createProject(projectId, seAddress, projectName)
         .encodeABI();
-
+      console.log(COAProjectAdmin);
       return worker.pushTransaction(
         COAProjectAdmin.address,
         encodedMethod,
