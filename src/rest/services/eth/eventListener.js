@@ -32,6 +32,9 @@ const eventListener = async (
 
   const updateLastBlock = async event => {
     const { blockNumber, transactionHash } = event;
+    if (!blockNumber || !transactionHash) {
+      return false;
+    }
     return blockchainBlockDao.updateLastBlock(blockNumber, transactionHash);
   };
 
