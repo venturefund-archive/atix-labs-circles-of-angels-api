@@ -264,89 +264,6 @@ const routes = {
     handler: handlers.getProject
   },
 
-  updateStatus: {
-    method: 'put',
-    path: `${basePath}/:projectId/status`,
-    options: {
-      beforeHandler: ['adminAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
-        description: 'Modifies the status of an existing project',
-        summary: 'Update project status',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to change the status'
-            }
-          }
-        },
-        body: {
-          type: 'object',
-          properties: {
-            status: {
-              type: 'integer',
-              minimum: 0,
-              maximum: 3,
-              description: 'Status ID [0-3] to set the project as'
-            }
-          },
-          required: ['status'],
-          additionalProperties: false
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              projectName: { type: 'string' },
-              mission: { type: 'string' },
-              problemAddressed: { type: 'string' },
-              location: { type: 'string' },
-              timeframe: { type: 'string' },
-              pitchProposal: { type: 'string' },
-              faqLink: { type: 'string' },
-              milestonesFile: { type: 'string' },
-              goalAmount: { type: 'number' },
-              status: { type: 'integer' },
-              ownerId: { type: 'integer' },
-              projectAgreement: { type: 'string' },
-              createdAt: { type: 'string' },
-              updatedAt: { type: 'string' },
-              transactionHash: { type: 'string' },
-              creationTransactionHash: { type: 'string' },
-              id: { type: 'integer' },
-              startBlockchainStatus: { type: 'integer' },
-              coverPhoto: { type: ['integer', 'null'] },
-              cardPhoto: { type: ['integer', 'null'] },
-              blockchainStatus: { type: 'integer' },
-              ownerName: { type: 'string' },
-              ownerEmail: { type: 'string' }
-            },
-            description:
-              'Returns an object with the information of the updated project'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.updateStatus
-  },
-
   deleteProject: {
     method: 'delete',
     path: `${basePath}/:projectId`,
@@ -783,7 +700,7 @@ const routes = {
     method: 'put',
     path: `${basePath}/:projectId`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.PUT.name],
         description: 'Modifies the specified project information',
@@ -817,7 +734,13 @@ const routes = {
                     location: { type: 'string' },
                     timeframe: { type: 'string' },
                     goalAmount: { type: 'number' },
-                    faqLink: { type: 'string' }
+                    faqLink: { type: 'string' },
+                    status: {
+                      type: 'integer',
+                      minimum: 0,
+                      maximum: 3,
+                      description: 'Status ID [0-3] to set the project as'
+                    }
                   },
                   additionalProperties: false
                 }
@@ -829,9 +752,32 @@ const routes = {
           200: {
             type: 'object',
             properties: {
-              success: { type: 'string' }
+              projectName: { type: 'string' },
+              mission: { type: 'string' },
+              problemAddressed: { type: 'string' },
+              location: { type: 'string' },
+              timeframe: { type: 'string' },
+              pitchProposal: { type: 'string' },
+              faqLink: { type: 'string' },
+              milestonesFile: { type: 'string' },
+              goalAmount: { type: 'number' },
+              status: { type: 'integer' },
+              ownerId: { type: 'integer' },
+              projectAgreement: { type: 'string' },
+              createdAt: { type: 'string' },
+              updatedAt: { type: 'string' },
+              transactionHash: { type: 'string' },
+              creationTransactionHash: { type: 'string' },
+              id: { type: 'integer' },
+              startBlockchainStatus: { type: 'integer' },
+              coverPhoto: { type: ['integer', 'null'] },
+              cardPhoto: { type: ['integer', 'null'] },
+              blockchainStatus: { type: 'integer' },
+              ownerName: { type: 'string' },
+              ownerEmail: { type: 'string' }
             },
-            description: 'Returns a success message if the project was updated'
+            description:
+              'Returns an object with the information of the updated project'
           },
           '4xx': {
             type: 'object',
@@ -895,53 +841,6 @@ const routes = {
       }
     },
     handler: handlers.getTotalFunded
-  },
-
-  startProject: {
-    method: 'put',
-    path: `${basePath}/:projectId/start`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
-        description:
-          'Set an existing project as in progress when it is ready to start',
-        summary: 'Start project',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to set as "In Progress"'
-            }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'string' }
-            },
-            description: 'Returns a success message if the project was updated'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.startProject
   },
 
   getProjectsByOracle: {

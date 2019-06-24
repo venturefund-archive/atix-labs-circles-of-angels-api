@@ -103,23 +103,6 @@ module.exports = {
     reply.send(project);
   },
 
-  updateStatus: fastify => async (request, reply) => {
-    const { projectService } = apiHelper.helper.services;
-    fastify.log.info('[Project Routes] :: update status project');
-    const { projectId } = request.params;
-    const { status } = request.body;
-    try {
-      const response = await projectService.updateProjectStatus({
-        projectId,
-        status
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error updating project status' });
-    }
-  },
-
   deleteProject: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
     fastify.log.info('[Project Routes] :: deleting project');
@@ -370,7 +353,8 @@ module.exports = {
         project,
         projectCoverPhoto,
         projectCardPhoto,
-        projectId
+        projectId,
+        req.user
       );
 
       if (response.error) {
@@ -380,7 +364,7 @@ module.exports = {
         );
         reply.status(response.status).send(response);
       } else {
-        reply.send({ success: 'Project updated successfully!' });
+        reply.send(response);
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error updating project: ', error);
@@ -409,32 +393,6 @@ module.exports = {
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error updating project: ', error);
       reply.status(500).send({ error: 'Error updating project' });
-    }
-  },
-
-  startProject: fastify => async (request, reply) => {
-    const { projectService } = apiHelper.helper.services;
-    const { projectId } = request.params;
-    fastify.log.info(
-      `[Project Routes] :: PUT request at /project/${projectId}/start`
-    );
-    try {
-      const startedProject = await projectService.startProject(projectId);
-
-      if (startedProject.error) {
-        fastify.log.error(
-          '[Project Routes] :: Error starting project:',
-          startedProject.error
-        );
-        reply
-          .status(startedProject.status)
-          .send({ error: startedProject.error });
-      } else {
-        reply.status(200).send({ success: 'Project started successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error('[Project Routes] :: Error starting project: ', error);
-      reply.status(500).send({ error: 'Error starting project' });
     }
   },
 
