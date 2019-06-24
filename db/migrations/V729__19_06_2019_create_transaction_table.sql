@@ -1,5 +1,5 @@
 CREATE TABLE public."transaction" (
-    "id" SERIAL NOT NULL,
+    "id" SERIAL PRIMARY KEY,
     "sender" varchar(80) NOT NULL,
     "receiver" varchar(80) NOT NULL,
     "data" text NOT NULL,
