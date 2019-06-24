@@ -16,8 +16,8 @@ class MemPool {
     this.startCheckTransactions();
   }
 
-  startCheckTransactions() {
-    setTimeout(async () => {
+  async startCheckTransactions() {
+    setInterval(async () => {
       await this.checkTransactions();
     }, this.timelapse);
   }
@@ -44,8 +44,6 @@ class MemPool {
           );
       }
     });
-
-    this.startCheckTransactions();
   }
 }
 
