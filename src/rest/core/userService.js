@@ -324,23 +324,28 @@ const userService = ({
           registrationStatus === userRegistrationStatus.APPROVED
         ) {
           const onConfirm = async () => {
-            const info = await transporter.sendMail({
-              from: '"Circles of Angels Support" <coa@support.com>',
-              to: updatedUser.email,
-              subject: 'Circles of Angels - Account Confirmation',
-              text: 'Account Approved',
-              html: `<p>Your Circles Of Angels account has been approved! </br></p>
+            try {
+              const info = await transporter.sendMail({
+                from: '"Circles of Angels Support" <coa@support.com>',
+                to: updatedUser.email,
+                subject: 'Circles of Angels - Account Confirmation',
+                text: 'Account Approved',
+                html: `<p>Your Circles Of Angels account has been approved! </br></p>
               <p>You can log in and start using our platform at: 
               <a href='www.coa.com/login'>www.coa.com/login</a></br></p>
               <p>Thank you for your support </br></p>`
-            });
-            if (!isEmpty(info.rejected))
-              return { status: 409, error: 'Invalid Email' };
-            await userDao.updateTransferBlockchainStatus(
-              existingUser.id,
-              blockchainStatus.CONFIRMED
-            );
-            updatedUser = await userDao.updateUser(userId, newUser);
+              });
+              if (!isEmpty(info.rejected))
+                return { status: 409, error: 'Invalid Email' };
+              await userDao.updateTransferBlockchainStatus(
+                existingUser.id,
+                blockchainStatus.CONFIRMED
+              );
+              updatedUser = await userDao.updateUser(userId, newUser);
+              return updatedUser;
+            } catch (error) {
+              fastify.error(error);
+            }
           };
           await fastify.eth.transferInitialFundsToAccount(
             existingUser.address,
