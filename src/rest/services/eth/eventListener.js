@@ -270,6 +270,24 @@ const eventListener = async (
     return events;
   };
 
+  const onActivityValidatedEvent = async event => {
+    try {
+      let { id } = event.returnValues;
+      id = parseInt(id._hex, 16);
+
+      await activityDao.updateBlockchainStatus(id, blockchainStatus.CONFIRMED);
+      logger.info(
+        '[Event listener] :: successfully updated blockchain status of activity ',
+        id
+      );
+    } catch (error) {
+      logger.error(
+        '[Event listener] :: unexpected error handleing Activity Validated Event: ',
+        error
+      );
+    }
+  };
+
   const eventMethodMap = {
     NewProject: onNewProjectEvent,
     NewMilestone: onNewMilestoneEvent,
@@ -277,7 +295,8 @@ const eventListener = async (
     MilestoneClaimable: onMilestoneClaimableEvent,
     MilestoneClaimed: onMilestoneClaimedEvent,
     MilestoneFunded: onMilestoneFundedEvent,
-    ProjectStarted: onProjectStarted
+    ProjectStarted: onProjectStarted,
+    ActivityValidated: onActivityValidatedEvent
   };
 
   return {
