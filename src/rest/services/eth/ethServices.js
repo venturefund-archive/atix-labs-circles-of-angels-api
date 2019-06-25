@@ -75,11 +75,7 @@ const ethServices = async (
       const encodedMethod = COAProjectAdmin.methods
         .createProject(projectId, checksumAddress, projectName)
         .encodeABI();
-      return worker.pushTransaction(
-        COAProjectAdmin.address,
-        encodedMethod,
-        ethConfig.GAS_LIMIT
-      );
+      return worker.pushTransaction(COAProjectAdmin.address, encodedMethod);
     },
 
     async startProject({ projectId }) {
@@ -106,8 +102,7 @@ const ethServices = async (
 
         await worker.pushAllTransactions(
           COAProjectAdmin.address,
-          encodedMethods,
-          ethConfig.GAS_LIMIT
+          encodedMethods
         );
       } catch (error) {
         logger.error(error);
@@ -126,12 +121,10 @@ const ethServices = async (
             )
             .encodeABI()
         );
-        console.log(encodedMethods);
 
         await worker.pushAllTransactions(
           COAProjectAdmin.address,
-          encodedMethods,
-          ethConfig.GAS_LIMIT
+          encodedMethods
         );
       } catch (error) {
         logger.error(error);

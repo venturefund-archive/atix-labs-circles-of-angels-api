@@ -111,7 +111,6 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
   const worker = {
     async isTransactionConfirmed(transactionHash) {
       const transaction = await web3.eth.getTransaction(transactionHash);
-      console.log(transaction);
       return Boolean(transaction);
     },
     async pushTransaction(contractAddress, encodedMethod, sender) {
