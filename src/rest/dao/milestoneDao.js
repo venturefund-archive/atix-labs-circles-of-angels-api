@@ -32,9 +32,6 @@ const saveMilestone = milestoneModel => async ({
 const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
   const toUpdate = { ...milestone };
 
-  delete toUpdate.id;
-  delete toUpdate.project;
-
   toUpdate.status = toUpdate.status || activityStatus.PENDING;
   toUpdate.budgetStatus =
     toUpdate.budgetStatus || milestoneBudgetStatus.BLOCKED;

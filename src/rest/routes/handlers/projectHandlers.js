@@ -116,13 +116,13 @@ module.exports = {
       reply.status(200).send(response);
     } catch (error) {
       fastify.log.error(error);
-      reply.status(500).send('Error updating project status');
+      reply.status(500).send({ error: 'Error updating project status' });
     }
   },
 
   deleteProject: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
-    fastify.log.info('[Project Routes] :: deleteing project');
+    fastify.log.info('[Project Routes] :: deleting project');
     const { projectId } = request.params;
     try {
       const response = await projectService.deleteProject({
@@ -131,7 +131,7 @@ module.exports = {
       reply.status(200).send(response);
     } catch (error) {
       fastify.log.error(error);
-      reply.status(500).send({ error: 'Error deleteing project' });
+      reply.status(500).send({ error: 'Error deleting project' });
     }
   },
 
@@ -168,7 +168,7 @@ module.exports = {
           '[Project Routes] :: Error getting milestones template:',
           res.error
         );
-        reply.status(res.status).send(res.error);
+        reply.status(res.status).send(res);
       } else {
         fastify.log.info(
           '[Project Routes] :: Milestones template downloaded:',
@@ -201,7 +201,7 @@ module.exports = {
           '[Project Routes] :: Error getting project proposal template:',
           res.error
         );
-        reply.status(res.status).send(res.error);
+        reply.status(res.status).send(res);
       } else {
         fastify.log.info(
           '[Project Routes] :: Project proposal template downloaded:',
@@ -267,7 +267,7 @@ module.exports = {
           '[Project Routes] :: Error uploading agreement:',
           res.error
         );
-        reply.status(res.status).send(res.error);
+        reply.status(res.status).send(res);
       } else {
         fastify.log.info(
           '[Project Routes] :: Project agreement uploaded:',
@@ -299,7 +299,7 @@ module.exports = {
           '[Project Routes] :: Error getting agreement:',
           res.error
         );
-        reply.status(res.status).send(res.error);
+        reply.status(res.status).send(res);
       } else {
         fastify.log.info(
           '[Project Routes] :: Project agreement downloaded:',
@@ -328,7 +328,7 @@ module.exports = {
           '[Project Routes] :: Error getting proposal:',
           res.error
         );
-        reply.status(res.status).send(res.error);
+        reply.status(res.status).send(res);
       } else {
         fastify.log.info(
           '[Project Routes] :: Project proposal downloaded:',
@@ -402,7 +402,7 @@ module.exports = {
           '[Project Routes] :: Error getting total funded amount:',
           fundedAmount.error
         );
-        reply.status(fundedAmount.status).send(fundedAmount.error);
+        reply.status(fundedAmount.status).send(fundedAmount);
       } else {
         reply.status(200).send(fundedAmount);
       }
@@ -450,7 +450,7 @@ module.exports = {
           '[Project Routes] :: Error getting projects:',
           projects.error
         );
-        reply.status(projects.status).send(projects.error);
+        reply.status(projects.status).send(projects);
       } else {
         reply.status(200).send(projects);
       }
