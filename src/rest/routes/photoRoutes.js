@@ -8,6 +8,7 @@
 
 const basePath = '/photos';
 const handlers = require('./handlers/photoHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   getPhoto: {
@@ -16,15 +17,31 @@ const routes = {
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
+        tags: [routeTags.PHOTO.name, routeTags.GET.name],
+        description: 'Returns an existing image encoded in base64',
+        summary: 'Get photo',
         params: {
-          id: { type: 'integer' }
-        }
-      },
-      response: {
-        200: {
-          type: 'image',
+          type: 'object',
           properties: {
-            response: { type: 'image' }
+            id: { type: 'integer', description: 'Photo to get' }
+          }
+        },
+        response: {
+          200: { type: 'string', description: 'Photo encoded in base64' },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'number' },
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
+          },
+          500: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
           }
         }
       }

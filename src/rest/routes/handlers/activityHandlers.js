@@ -29,7 +29,7 @@ module.exports = {
           '[Activity Routes] :: Error creating activity: ',
           response.error
         );
-        reply.status(response.status).send(response.error);
+        reply.status(response.status).send(response);
       } else {
         reply.send({ success: 'Activity created successfully!' });
       }
@@ -60,7 +60,7 @@ module.exports = {
           '[Activity Routes] :: Error updating activity: ',
           response.error
         );
-        reply.status(response.status).send(response.error);
+        reply.status(response.status).send(response);
       } else {
         reply.send({ success: 'Activity updated successfully!' });
       }
@@ -119,7 +119,7 @@ module.exports = {
     const { activityService } = apiHelper.helper.services;
     const { activityId, evidenceId, fileType } = request.params;
     fastify.log.info(
-      `[Activity Routes] :: DELETE request atctivities/${activityId}/evidences/${evidenceId}/${fileType}`
+      `[Activity Routes] :: DELETE request activities/${activityId}/evidences/${evidenceId}/${fileType}`
     );
 
     try {
@@ -225,7 +225,7 @@ module.exports = {
           '[Activity Routes] :: Error getting evidence:',
           res.error
         );
-        reply.status(res.status).send(res.error);
+        reply.status(res.status).send(res);
       } else {
         fastify.log.info(
           '[Activity Routes] :: Activity evidence downloaded:',
@@ -257,8 +257,11 @@ module.exports = {
         reply.status(200).send({ response: Boolean(activity) });
       }
     } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error assigning user on activity' });
+      fastify.log.error(
+        '[Activity Routes] :: Error completing activity:',
+        error
+      );
+      reply.status(500).send({ error: 'Error completing activity' });
     }
   }
 };

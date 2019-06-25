@@ -8,6 +8,7 @@
 
 const basePath = '/general';
 const handlers = require('./handlers/generalHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   getAccountDestination: {
@@ -15,11 +16,27 @@ const routes = {
     path: `${basePath}/accountDestination`,
     options: {
       beforeHandler: ['generalAuth'],
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            response: { type: 'object' }
+      schema: {
+        tags: [routeTags.GENERAL.name, routeTags.GET.name],
+        description:
+          'Returns the account destination where the funds will be transferred to',
+        summary: 'Get account destination',
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              address: { type: 'string' },
+              bank: { type: 'string' },
+              owner: { type: 'string' }
+            },
+            description: 'Returns the account information'
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
           }
         }
       }
