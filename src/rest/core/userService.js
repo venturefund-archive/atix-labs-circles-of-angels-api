@@ -325,9 +325,10 @@ const userService = ({
         ) {
           const onConfirm = async () => {
             try {
+              updatedUser = await userDao.updateUser(userId, newUser);
               const info = await transporter.sendMail({
                 from: '"Circles of Angels Support" <coa@support.com>',
-                to: email,
+                to: updatedUser.email,
                 subject: 'Circles of Angels - Account Confirmation',
                 text: 'Account Approved',
                 html: `<p>Your Circles Of Angels account has been approved! </br></p>
@@ -341,7 +342,7 @@ const userService = ({
                 existingUser.id,
                 blockchainStatus.CONFIRMED
               );
-              updatedUser = await userDao.updateUser(userId, newUser);
+
               return updatedUser;
             } catch (error) {
               fastify.log.error(error);
@@ -357,6 +358,7 @@ const userService = ({
           registrationStatus &&
           registrationStatus === userRegistrationStatus.REJECTED
         ) {
+          updatedUser = await userDao.updateUser(userId, newUser);
           const info = await transporter.sendMail({
             from: '"Circles of Angels Support" <coa@support.com>',
             to: updatedUser.email,
@@ -369,8 +371,6 @@ const userService = ({
             </a></br></p>
             <p>Thank you for your support </br></p>`
           });
-
-          updatedUser = await userDao.updateUser(userId, newUser);
 
           if (!updatedUser) {
             fastify.log.error(
