@@ -7,7 +7,6 @@
  */
 
 const apiHelper = require('../../services/helper');
-const { activityStatus } = require('../../util/constants');
 
 module.exports = {
   createActivity: fastify => async (req, reply) => {
@@ -44,9 +43,11 @@ module.exports = {
   },
 
   updateActivity: fastify => async (req, reply) => {
-    const { activityService, milestoneService } = apiHelper.helper.services;
+    const { activityService } = apiHelper.helper.services;
     fastify.log.info(
-      `[Activity Routes] :: PUT request at /activities/${req.params.id}:`,
+      `[Activity Routes] :: PUT request at /activities/${
+        req.params.activityId
+      }:`,
       req.body
     );
 
@@ -66,9 +67,40 @@ module.exports = {
         );
         reply.status(response.status).send(response);
       } else {
-        if (response.status === activityStatus.COMPLETED) {
-          await milestoneService.tryCompleteMilestone(activity.milestone);
-        }
+        reply.send({ success: 'Activity updated successfully!' });
+      }
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Routes] :: Error updating activity: ',
+        error
+      );
+      reply.status(500).send({ error: 'Error updating activity' });
+    }
+  },
+
+  updateStatus: fastify => async (req, reply) => {
+    const { activityService } = apiHelper.helper.services;
+
+    fastify.log.info(
+      `[Activity Routes] :: PUT request at /activities/${
+        req.params.activityId
+      }/status:`,
+      req.body
+    );
+
+    const { status } = req.body;
+    const { activityId } = req.params;
+
+    try {
+      const response = await activityService.updateStatus(status, activityId);
+
+      if (response.error) {
+        fastify.log.error(
+          '[Activity Routes] :: Error updating activity: ',
+          response.error
+        );
+        reply.status(response.status).send(response);
+      } else {
         reply.send({ success: 'Activity updated successfully!' });
       }
     } catch (error) {
@@ -81,16 +113,13 @@ module.exports = {
   },
 
   deleteActivity: fastify => async (request, reply) => {
-    const { activityService, milestoneService } = apiHelper.helper.services;
+    const { activityService } = apiHelper.helper.services;
     const { activityId } = request.params;
     fastify.log.info(
       `[Activity Routes] Deleting activity with id: ${activityId}`
     );
     try {
-      const deleted = await activityService.deleteActivity(
-        activityId,
-        milestoneService
-      );
+      const deleted = await activityService.deleteActivity(activityId);
       reply.status(200).send(deleted);
     } catch (error) {
       fastify.log.error(error);

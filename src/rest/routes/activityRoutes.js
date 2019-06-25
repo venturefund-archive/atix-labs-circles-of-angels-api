@@ -104,8 +104,7 @@ const routes = {
                 signsOfSuccessCriterion: { type: 'string' },
                 category: { type: 'string' },
                 keyPersonnel: { type: 'string' },
-                budget: { type: 'number' },
-                status: { type: 'integer', minimum: 1, maximum: 4 }
+                budget: { type: 'number' }
               },
               additionalProperties: false,
               description: 'Fields to modify'
@@ -140,6 +139,67 @@ const routes = {
       }
     },
     handler: handlers.updateActivity
+  },
+
+  updateStatus: {
+    method: 'put',
+    path: `${basePath}/:activityId/status`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.PUT.name],
+        description: 'Modifies the statuus of an existing activity',
+        summary: 'Update activity status',
+        type: 'object',
+        params: {
+          type: 'object',
+          properties: {
+            activityId: {
+              type: 'integer',
+              description: 'Activity to modify'
+            }
+          }
+        },
+        body: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 4,
+              description: 'New activity status'
+            },
+            additionalProperties: false
+          }
+        },
+        required: ['activity']
+      },
+      response: {
+        200: {
+          type: 'object',
+          description: 'Success message if the activity was updated',
+          properties: {
+            success: { type: 'string' }
+          }
+        },
+        '4xx': {
+          type: 'object',
+          description: 'Returns a message describing the error',
+          properties: {
+            error: { type: 'string' },
+            status: { type: 'integer' }
+          }
+        },
+        500: {
+          type: 'object',
+          description: 'Returns a message describing the error',
+          properties: {
+            error: { type: 'string' }
+          }
+        }
+      }
+    },
+    handler: handlers.updateStatus
   },
 
   deleteActivity: {
