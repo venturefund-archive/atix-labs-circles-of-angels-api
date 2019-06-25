@@ -327,7 +327,7 @@ const userService = ({
             try {
               const info = await transporter.sendMail({
                 from: '"Circles of Angels Support" <coa@support.com>',
-                to: updatedUser.email,
+                to: email,
                 subject: 'Circles of Angels - Account Confirmation',
                 text: 'Account Approved',
                 html: `<p>Your Circles Of Angels account has been approved! </br></p>
