@@ -97,10 +97,23 @@ module.exports = {
       `[Project Routes] :: Getting project with id ${projectId}`
     );
 
-    const project = await projectService.getProjectWithId({
-      projectId
-    });
-    reply.send(project);
+    try {
+      const project = await projectService.getProjectWithId({
+        projectId
+      });
+      if (project.error) {
+        fastify.log.error(
+          '[Project Routes] :: Error getting project',
+          project.error
+        );
+        reply.status(project.status).send(project);
+      } else {
+        reply.status(200).send(project);
+      }
+    } catch (error) {
+      fastify.log.error('[Project Routes] :: Error getting project');
+      reply.status(500).send({ error: 'Error getting project' });
+    }
   },
 
   deleteProject: fastify => async (request, reply) => {
@@ -365,30 +378,6 @@ module.exports = {
         reply.status(response.status).send(response);
       } else {
         reply.send(response);
-      }
-    } catch (error) {
-      fastify.log.error('[Project Routes] :: Error updating project: ', error);
-      reply.status(500).send({ error: 'Error updating project' });
-    }
-  },
-
-  getTotalFunded: fastify => async (request, reply) => {
-    const { projectService } = apiHelper.helper.services;
-    const { projectId } = request.params;
-    fastify.log.info(
-      `[Project Routes] :: GET request at /project/${projectId}/funded`
-    );
-    try {
-      const fundedAmount = await projectService.getTotalFunded(projectId);
-
-      if (fundedAmount.error) {
-        fastify.log.error(
-          '[Project Routes] :: Error getting total funded amount:',
-          fundedAmount.error
-        );
-        reply.status(fundedAmount.status).send(fundedAmount);
-      } else {
-        reply.status(200).send(fundedAmount);
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error updating project: ', error);

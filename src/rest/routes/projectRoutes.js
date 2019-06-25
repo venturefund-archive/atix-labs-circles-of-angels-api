@@ -239,7 +239,8 @@ const routes = {
               cardPhoto: { type: ['integer', 'null'] },
               blockchainStatus: { type: 'integer' },
               ownerName: { type: 'string' },
-              ownerEmail: { type: 'string' }
+              ownerEmail: { type: 'string' },
+              totalFunded: { type: 'number' }
             },
             description: 'Returns an object with the information of the project'
           },
@@ -799,48 +800,6 @@ const routes = {
       }
     },
     handler: handlers.updateProject
-  },
-
-  getTotalFunded: {
-    method: 'get',
-    path: `${basePath}/:projectId/funded`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description:
-          'Returns the total amount of pledged funds for the specified project',
-        summary: 'Get total funded amount',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to get the funded amount from'
-            }
-          }
-        },
-        response: {
-          200: { type: 'number', description: 'Returns the funded amount' },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.getTotalFunded
   },
 
   getProjectsByOracle: {

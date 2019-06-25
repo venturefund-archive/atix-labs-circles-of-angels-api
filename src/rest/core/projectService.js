@@ -481,8 +481,22 @@ const projectService = ({
   },
 
   async getProjectWithId({ projectId }) {
-    const project = await projectDao.getProjectById({ projectId });
-    return project;
+    try {
+      const project = await projectDao.getProjectById({ projectId });
+
+      if (!project) {
+        fastify.log.error('[Project Service] :: Project not found:', projectId);
+        return { error: 'Project not found', status: 404 };
+      }
+
+      const totalFunded = await this.getTotalFunded(projectId);
+      project.totalFunded = totalFunded;
+
+      return project;
+    } catch (error) {
+      fastify.log.error('[Project Service] :: Error getting project:', error);
+      throw Error('Error getting project');
+    }
   },
 
   async deleteProject({ projectId }) {
@@ -842,15 +856,6 @@ const projectService = ({
     );
 
     try {
-      // verify if project exists
-      const project = await projectDao.getProjectById({ projectId });
-      if (!project || project == null) {
-        fastify.log.error(
-          `[Project Service] :: Project ID ${projectId} not found`
-        );
-        return { error: 'ERROR: Project not found', status: 404 };
-      }
-
       const totalAmount = await transferService.getTotalFundedByProject(
         projectId
       );
