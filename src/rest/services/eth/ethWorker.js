@@ -122,12 +122,12 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       }
 
       if ((await getAllowedTransactions(address)) > 0) {
-        return makeTx(contractAddress, address, encodedMethod, gasLimit);
+        return makeTx(contractAddress, address, encodedMethod);
       }
-      this.pushTransaction(contractAddress, encodedMethod, gasLimit, sender);
+      this.pushTransaction(contractAddress, encodedMethod, sender);
     },
 
-    async pushAllTransactions(contractAddress, encodedMethods, gasLimit) {
+    async pushAllTransactions(contractAddress, encodedMethods) {
       if (!contractAddress) return;
       const addressIndex = getRndInteger(0, addresses.length - 1);
       const address = addresses[addressIndex];
