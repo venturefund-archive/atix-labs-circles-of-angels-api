@@ -9,7 +9,8 @@ const { isEmpty } = require('lodash');
 const {
   blockchainStatus,
   projectStatus,
-  milestoneBudgetStatus
+  milestoneBudgetStatus,
+  activityStatus
 } = require('../../util/constants');
 
 const eventListener = async (
@@ -275,7 +276,11 @@ const eventListener = async (
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
 
-      await activityDao.updateBlockchainStatus(id, blockchainStatus.CONFIRMED);
+      const activity = await activityDao.updateStatus(
+        id,
+        activityStatus.COMPLETED
+      );
+      await milestoneService.tryCompleteMilestone(activity);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of activity ',
         id
