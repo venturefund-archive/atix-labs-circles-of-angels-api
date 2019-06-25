@@ -12,10 +12,6 @@ const {
   milestoneBudgetStatus
 } = require('../../util/constants');
 
-const sleep = ms => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-};
-
 const eventListener = async (
   ethService,
   { COAProjectAdmin, COAOracle },
@@ -37,6 +33,7 @@ const eventListener = async (
     if (!blockNumber || !transactionHash) {
       return false;
     }
+    await transactionDao.confirmTransaction(transactionHash);
     return blockchainBlockDao.updateLastBlock(blockNumber, transactionHash);
   };
 
@@ -48,13 +45,6 @@ const eventListener = async (
     projectDao.updateStartBlockchainStatus(id, blockchainStatus.CONFIRMED);
   };
 
-  const suscribeToEvent = async (event, callback) => {
-    event({}, (error, event) => {
-      if (error) return { error };
-      callback(event);
-    });
-  };
-
   const onMilestoneClaimableEvent = async event => {
     try {
       logger.info(
@@ -63,7 +53,7 @@ const eventListener = async (
       );
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
-      const updatedMilestone = await milestoneDao.updateBudgetStatus(
+      await milestoneDao.updateBudgetStatus(
         id,
         milestoneBudgetStatus.CLAIMABLE
       );
@@ -80,10 +70,7 @@ const eventListener = async (
       );
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
-      const updatedMilestone = await milestoneDao.updateBudgetStatus(
-        id,
-        milestoneBudgetStatus.CLAIMED
-      );
+      await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.CLAIMED);
     } catch (error) {
       logger.error(error);
     }
@@ -94,10 +81,7 @@ const eventListener = async (
       logger.info('[Event listener] :: received Milestone Funded event', event);
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
-      const updatedMilestone = await milestoneDao.updateBudgetStatus(
-        id,
-        milestoneBudgetStatus.FUNDED
-      );
+      await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.FUNDED);
     } catch (error) {
       logger.error(error);
     }
@@ -248,7 +232,6 @@ const eventListener = async (
         }
 
         if (projectComplete) {
-          const userOwner = await projectDao.getUserOwnerOfProject(projectId);
           const transactionHash = await ethService.startProject({ projectId });
           await projectDao.updateProjectTransaction({
             projectId,
