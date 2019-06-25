@@ -344,7 +344,7 @@ const userService = ({
               updatedUser = await userDao.updateUser(userId, newUser);
               return updatedUser;
             } catch (error) {
-              fastify.error(error);
+              fastify.log.error(error);
             }
           };
           await fastify.eth.transferInitialFundsToAccount(
