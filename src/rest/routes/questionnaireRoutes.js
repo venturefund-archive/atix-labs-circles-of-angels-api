@@ -8,6 +8,7 @@
 
 const basePath = '/questionnaire';
 const handlers = require('./handlers/questionnaireHandlers');
+const routeTags = require('../util/routeTags');
 
 const routes = {
   getQuestionnaire: {
@@ -15,15 +16,57 @@ const routes = {
     path: `${basePath}/:roleId`,
     options: {
       schema: {
+        tags: [routeTags.QUESTIONNAIRE.name, routeTags.GET.name],
+        description:
+          'Returns the onboarding questions and their corresponding ' +
+          'answers for the specified role',
+        summary: 'Get onboarding Q&A',
         params: {
-          roleId: { type: 'integer' }
-        }
-      },
-      response: {
-        200: {
           type: 'object',
           properties: {
-            response: { type: 'object' }
+            roleId: {
+              type: 'number',
+              description: 'Role to get the questionnaire from'
+            }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              questions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer' },
+                    question: { type: 'string' },
+                    role: { type: 'number' },
+                    answerLimit: { type: 'number' },
+                    answers: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          answer: { type: 'string' },
+                          id: { type: 'number' },
+                          question: { type: 'number' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            description:
+              'Returns an array of questions and their corresponding answers'
+          },
+          500: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
           }
         }
       }

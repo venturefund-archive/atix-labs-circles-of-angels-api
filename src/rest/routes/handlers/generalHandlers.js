@@ -14,7 +14,7 @@ module.exports = {
     fastify.log.info('[General Routes] :: Getting bank account of COA');
     const account = await configsDao.getCoaBankAccount();
     if (!account)
-      reply.send({
+      reply.status(404).send({
         error:
           'Can not provide the requested information, please try again later.'
       });
