@@ -28,7 +28,7 @@ const routes = {
             senderId: { type: 'string' },
             projectId: { type: 'integer' },
             destinationAccount: { type: 'string' },
-            transferId: { type: 'integer' }
+            transferId: { type: 'string' }
           },
           required: [
             'amount',

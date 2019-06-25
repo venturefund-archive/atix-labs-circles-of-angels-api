@@ -89,6 +89,21 @@ const routes = {
                 }
               }
             }
+          },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              status: { type: 'integer' },
+              error: { type: 'string' }
+            }
+          },
+          500: {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              error: { type: 'string' }
+            }
           }
         }
       }
