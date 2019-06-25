@@ -23,6 +23,7 @@ const eventListener = async (
 ) => {
   const { helper } = require('../helper');
   const { projectService, milestoneService, activityService } = helper.services;
+  const { transactionDao } = helper.daos;
 
   const {
     blockchainBlockDao,

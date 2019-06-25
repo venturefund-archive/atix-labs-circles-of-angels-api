@@ -10,8 +10,11 @@ pipeline {
 	}
 
 	post {
+		aborted {
+					updateGitlabCommitStatus name: 'Test', state: 'failed'
+		}
 		failure {
-			updateGitlabCommitStatus name: 'Test', state: 'failed'
+					updateGitlabCommitStatus name: 'Test', state: 'failed'
 		}
 		success {
 			updateGitlabCommitStatus name: 'Test', state: 'success'

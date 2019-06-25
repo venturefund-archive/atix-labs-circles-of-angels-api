@@ -41,6 +41,7 @@ const ethInitializer = async ({ logger }) => {
 
     const wsWeb3 = new Web3(ethConfig.WS_HOST);
     eth.initListener = async () => {
+      await eth.initialize();
       const listener = await ethListenerBuilder(
         eth,
         {
