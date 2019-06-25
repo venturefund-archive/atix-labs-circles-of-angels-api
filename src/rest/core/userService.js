@@ -317,18 +317,7 @@ const userService = ({
           }
         }
 
-        const updatedUser = await userDao.updateUser(userId, newUser);
-
-        if (!updatedUser) {
-          fastify.log.error(
-            '[User Service] :: User could not be updated',
-            newUser
-          );
-          return {
-            status: 500,
-            error: 'User could not be updated'
-          };
-        }
+        let updatedUser = newUser;
 
         if (
           registrationStatus &&
@@ -347,10 +336,11 @@ const userService = ({
             });
             if (!isEmpty(info.rejected))
               return { status: 409, error: 'Invalid Email' };
-            userDao.updateTransferBlockchainStatus(
+            await userDao.updateTransferBlockchainStatus(
               existingUser.id,
               blockchainStatus.CONFIRMED
             );
+            updatedUser = await userDao.updateUser(userId, newUser);
           };
           await fastify.eth.transferInitialFundsToAccount(
             existingUser.address,
@@ -374,6 +364,19 @@ const userService = ({
             </a></br></p>
             <p>Thank you for your support </br></p>`
           });
+
+          updatedUser = await userDao.updateUser(userId, newUser);
+
+          if (!updatedUser) {
+            fastify.log.error(
+              '[User Service] :: User could not be updated',
+              newUser
+            );
+            return {
+              status: 500,
+              error: 'User could not be updated'
+            };
+          }
 
           if (!isEmpty(info.rejected))
             return { status: 409, error: 'Invalid Email' };
