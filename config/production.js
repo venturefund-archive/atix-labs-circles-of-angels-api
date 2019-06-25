@@ -23,7 +23,7 @@ module.exports = {
       defaultGasPrice: 1000000
     },
     UNLOCK_DURATION: 1000000,
-    INITIAL_FUNDS: 10000000000000000,
+    INITIAL_FUNDS: 10000000,
     GAS_LIMIT: 6800000,
     ALLOWED_ADDRESSES: [
       '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',

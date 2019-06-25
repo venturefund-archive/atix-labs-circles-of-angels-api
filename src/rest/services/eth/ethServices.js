@@ -23,18 +23,6 @@ const ethServices = async (
     logger
   });
 
-  const unlockAccount = async (account, pwd) => {
-    await web3.eth.personal.unlockAccount(
-      account,
-      pwd,
-      ethConfig.UNLOCK_DURATION
-    );
-  };
-
-  const lockAccount = async account => {
-    await web3.eth.personal.lockAccount(account);
-  };
-
   const toBytes64Array = array => {
     array = array.map(row =>
       row.split('').map(c => web3.utils.asciiToHex(c).slice(0, 4))
@@ -42,39 +30,37 @@ const ethServices = async (
     return array;
   };
 
-  const toStringArray = array => {
-    array = array.map(row => row.map(c => web3.utils.toAscii(c)).join(''));
-    return array;
-  };
-
   const toChecksum = address => web3.utils.toChecksumAddress(address);
 
-  const transfer = async (sender, receiver, value) => {
+  const transfer = async (sender, receiver, value, onConfirm) => {
     return new Promise((resolve, reject) => {
-      web3.eth.sendTransaction(
-        {
+      web3.eth
+        .sendTransaction({
           from: sender,
           to: receiver,
           value
-        },
-        (err, recipt) => {
-          if (err) {
-            logger.error(err);
-            reject(err);
-          }
-          logger.info(`TxHash: ${recipt}`);
-          resolve(recipt);
-        }
-      );
+        })
+        .on('transactionHash', hash => {
+          logger.info(`TxHash: ${hash}`);
+          resolve(hash);
+        })
+        .on('confirmation', onConfirm)
+        .on('error', error => {
+          logger.error(error);
+          reject(error);
+        });
     });
   };
 
   return {
-    async createAccount(pwd) {
-      const account = await web3.eth.personal.newAccount(pwd);
-      const adminAccount = (await web3.eth.getAccounts())[0];
-      await transfer(adminAccount, account, ethConfig.INITIAL_FUNDS);
+    async createAccount() {
+      const account = await web3.eth.accounts.create(web3.utils.randomHex(32));
       return account;
+    },
+
+    async transferInitialFundsToAccount(address, onConfirm) {
+      const adminAccount = (await web3.eth.getAccounts())[0];
+      await transfer(adminAccount, address, ethConfig.INITIAL_FUNDS, onConfirm);
     },
 
     async createProject({ projectId, seAddress, projectName }) {
@@ -85,7 +71,6 @@ const ethServices = async (
       const encodedMethod = COAProjectAdmin.methods
         .createProject(projectId, seAddress, projectName)
         .encodeABI();
-      console.log(COAProjectAdmin);
       return worker.pushTransaction(
         COAProjectAdmin.address,
         encodedMethod,
