@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 const ethConfig = require('config').eth;
+const Tx = require('ethereumjs-tx');
 const ethMemPoolBuilder = require('./ethMemPool');
 const apiHelper = require('../helper');
 
@@ -108,6 +109,43 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     });
   };
 
+  const makeSignedTx = (contractAddress, sender, privKey, encodedMethod) => {
+    if (!encodedMethod) return;
+    const cleanPrivateKey =
+      privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
+    const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
+    const addressSender = toChecksum(sender);
+    return new Promise((resolve, reject) => {
+      const txConfig = {
+        to: contractAddress,
+        from: addressSender,
+        data: encodedMethod,
+        gasLimit
+      };
+      const tx = Tx(txConfig);
+      tx.sign(bufferedPrivKey);
+      const serializedTx = tx.serialize();
+      web3.eth.sendSignedTransaction(
+        `0x${serializedTx.toString('hex')}`,
+        async (err, hash) => {
+          if (err) {
+            logger.error(err);
+            reject(err);
+          }
+          logger.info(`TxHash: ${hash}`);
+          if (hash)
+            await saveTransaction({
+              transactionHash: hash,
+              sender: addressSender,
+              receiver: contractAddress,
+              data: encodedMethod
+            });
+          resolve(hash);
+        }
+      );
+    });
+  };
+
   const worker = {
     async isTransactionConfirmed(transactionHash) {
       const transaction = await web3.eth.getTransaction(transactionHash);
@@ -115,13 +153,21 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     },
     async pushTransaction(contractAddress, encodedMethod, sender) {
       if (!encodedMethod) return;
-      let address = sender;
+      let address = sender ? sender.address : false;
       if (!sender) {
         const addressIndex = getRndInteger(0, addresses.length - 1);
         address = addresses[addressIndex];
       }
 
       if ((await getAllowedTransactions(address)) > 0) {
+        if (sender && sender.privKey) {
+          return makeSignedTx(
+            contractAddress,
+            address,
+            sender.privKey,
+            encodedMethod
+          );
+        }
         return makeTx(contractAddress, address, encodedMethod);
       }
       this.pushTransaction(contractAddress, encodedMethod, sender);
@@ -158,7 +204,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       await this.pushAllTransactions(contractAddress, encodedMethods);
     }
   };
-  const ethMemPool = ethMemPoolBuilder(
+  ethMemPoolBuilder(
     transactionDao,
     reintentLapse,
     worker,

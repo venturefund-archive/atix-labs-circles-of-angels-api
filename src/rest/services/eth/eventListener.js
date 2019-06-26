@@ -39,11 +39,23 @@ const eventListener = async (
   };
 
   const onProjectStarted = async event => {
-    logger.info('[Event listener] :: received Project started event', event);
-    let { id } = event.returnValues;
-    id = parseInt(id._hex, 16);
+    try {
+      logger.info('[Event listener] :: received Project started event', event);
+      let { id } = event.returnValues;
+      id = parseInt(id._hex, 16);
 
-    projectDao.updateStartBlockchainStatus(id, blockchainStatus.CONFIRMED);
+      await projectDao.updateStartBlockchainStatus(
+        id,
+        blockchainStatus.CONFIRMED
+      );
+      await projectService.updateProjectStatus({
+        projectId: id,
+        status: projectStatus.IN_PROGRESS
+      });
+      logger.info('[Event listener] :: Project started:', id);
+    } catch (error) {
+      logger.error(error);
+    }
   };
 
   const onMilestoneClaimableEvent = async event => {
@@ -252,13 +264,6 @@ const eventListener = async (
             status: projectStatus.IN_PROGRESS,
             transactionHash
           });
-
-          await projectService.updateProjectStatus({
-            projectId,
-            status: projectStatus.IN_PROGRESS
-          });
-
-          logger.info('[Event listener] :: Project started:', projectId);
 
           logger.info(
             '[Event listener] :: successfully updated blockchain status of activity',

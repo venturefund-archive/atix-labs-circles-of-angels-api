@@ -25,7 +25,10 @@ class MemPool {
   async checkTransactions() {
     const actualDate = new Date();
     const transactions = await this.transactionDao.getUnconfirmedTransactions();
-    this.logger.info('[eth Mem Pool] Checking transactions', transactions);
+    this.logger.info(
+      '[Eth Mem Pool] Checking transactions. Count of checked transactions: ',
+      transactions.length
+    );
     transactions.forEach(async transaction => {
       const lapse = (actualDate - new Date(transaction.updatedAt)) / 1000;
 
@@ -37,11 +40,9 @@ class MemPool {
             transaction.transactionHash
           );
         else
-          this.worker.pushTransaction(
-            transaction.receiver,
-            transaction.data,
-            transaction.sender
-          );
+          this.worker.pushTransaction(transaction.receiver, transaction.data, {
+            address: transaction.sender
+          });
       }
     });
   }

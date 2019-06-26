@@ -691,7 +691,7 @@ const milestoneService = ({
         );
         const txHash = await fastify.eth.claimMilestone(
           user.address,
-          user.pwd,
+          user.privKey,
           { milestoneId, projectId: milestone.project }
         );
         if (txHash.error) {

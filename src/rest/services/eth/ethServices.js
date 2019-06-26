@@ -136,7 +136,7 @@ const ethServices = async (
      * @param {*} onError error callback
      * @param {*} activity {activityId, projectId, milestoneId}
      */
-    async validateActivity(sender, pwd, { activityId }) {
+    async validateActivity(sender, privKey, { activityId }) {
       logger.info(`[SC::Validate Activity] Validate Activity: ${activityId}`);
 
       const encodedMethod = COAOracle.methods
@@ -147,7 +147,7 @@ const ethServices = async (
       const txHash = await worker.pushTransaction(
         COAOracle.address,
         encodedMethod,
-        sender
+        { address: sender, privKey }
       );
       //await lockAccount(sender);
       return txHash;
@@ -175,7 +175,11 @@ const ethServices = async (
       return events;
     },
 
-    async uploadHashEvidenceToActivity(sender, pwd, { activityId, hashes }) {
+    async uploadHashEvidenceToActivity(
+      sender,
+      privKey,
+      { activityId, hashes }
+    ) {
       try {
         const encodedMethod = COAOracle.methods
           .uploadHashEvidence(activityId, toBytes64Array(hashes))
@@ -185,7 +189,7 @@ const ethServices = async (
         const txHash = await worker.pushTransaction(
           COAOracle.address,
           encodedMethod,
-          sender
+          { address: sender, privKey }
         );
         //await lockAccount(sender);
         return txHash;
@@ -194,7 +198,7 @@ const ethServices = async (
       }
     },
 
-    async claimMilestone(sender, pwd, { milestoneId, projectId }) {
+    async claimMilestone(sender, privKey, { milestoneId, projectId }) {
       try {
         const encodedMethod = COAProjectAdmin.methods
           .claimMilestone(milestoneId, projectId)
@@ -204,7 +208,7 @@ const ethServices = async (
         const txHash = await worker.pushTransaction(
           COAProjectAdmin.address,
           encodedMethod,
-          sender
+          { address: sender, privKey }
         );
         //await lockAccount(sender);
         return txHash;
