@@ -129,36 +129,36 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       data: encodedMethod,
       gasLimit
     };
-    const signedTransaction = await web3.eth.accounts.signTransaction(
-      txConfig,
-      privKey
-    );
-    console.log({ signedTransaction });
-    return new Promise((resolve, reject) => {
-      // const tx = new Tx(txConfig);
-      // tx.sign(bufferedPrivKey);
-      // const serializedTx = tx.serialize();
+    web3.eth.accounts
+      .signTransaction(txConfig, privKey)
+      .then(signedTransaction => {
+        console.log({ signedTransaction });
+        return new Promise((resolve, reject) => {
+          // const tx = new Tx(txConfig);
+          // tx.sign(bufferedPrivKey);
+          // const serializedTx = tx.serialize();
 
-      web3.eth.sendSignedTransaction(
-        signedTransaction.rawTransaction,
-        async (err, hash) => {
-          if (err) {
-            logger.error(err);
-            reject(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-          if (hash)
-            await saveTransaction({
-              transactionHash: hash,
-              sender: addressSender,
-              receiver: contractAddress,
-              data: encodedMethod,
-              privKey
-            });
-          resolve(hash);
-        }
-      );
-    });
+          web3.eth.sendSignedTransaction(
+            signedTransaction.raw,
+            async (err, hash) => {
+              if (err) {
+                logger.error(err);
+                reject(err);
+              }
+              logger.info(`TxHash: ${hash}`);
+              if (hash)
+                await saveTransaction({
+                  transactionHash: hash,
+                  sender: addressSender,
+                  receiver: contractAddress,
+                  data: encodedMethod,
+                  privKey
+                });
+              resolve(hash);
+            }
+          );
+        });
+      });
   };
 
   const worker = {
