@@ -129,41 +129,38 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       to: contractAddress,
       from: addressSender,
       data: encodedMethod,
-      gasLimit
+      gasLimit,
+      gas: gasLimit
     };
     // const tx = new Tx(txConfig);
     // tx.sign(bufferedPrivKey);
     // const serializedTx = tx.serialize();
-    return httpWeb3.eth.accounts
-      .signTransaction(txConfig, privKey)
-      .then(signedTransaction => {
-        console.log({ signedTransaction });
-        return new Promise((resolve, reject) => {
-          httpWeb3.eth.sendSignedTransaction(
-            signedTransaction.rawTransaction,
-            async (err, hash) => {
-              if (err) {
-                logger.error(err);
-                reject(err);
-              }
-              logger.info(`TxHash: ${hash}`);
-              if (hash)
-                await saveTransaction({
-                  transactionHash: hash,
-                  sender: addressSender,
-                  receiver: contractAddress,
-                  data: encodedMethod,
-                  privKey
-                });
-              resolve(hash);
-            }
-          );
-        });
-      })
-      .catch(error => {
-        logger.error(error);
-        return { error };
-      });
+    const signedTransaction = await httpWeb3.eth.accounts.signTransaction(
+      txConfig,
+      privKey
+    );
+    console.log({ signedTransaction });
+    return new Promise((resolve, reject) => {
+      httpWeb3.eth.sendSignedTransaction(
+        signedTransaction.rawTransaction,
+        async (err, hash) => {
+          if (err) {
+            logger.error(err);
+            reject(err);
+          }
+          logger.info(`TxHash: ${hash}`);
+          if (hash)
+            await saveTransaction({
+              transactionHash: hash,
+              sender: addressSender,
+              receiver: contractAddress,
+              data: encodedMethod,
+              privKey
+            });
+          resolve(hash);
+        }
+      );
+    });
   };
 
   const worker = {
