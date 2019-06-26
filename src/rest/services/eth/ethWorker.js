@@ -134,7 +134,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     // const tx = new Tx(txConfig);
     // tx.sign(bufferedPrivKey);
     // const serializedTx = tx.serialize();
-    httpWeb3.eth.accounts
+    return httpWeb3.eth.accounts
       .signTransaction(txConfig, privKey)
       .then(signedTransaction => {
         console.log({ signedTransaction });
@@ -160,8 +160,8 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
           );
         });
       })
-      .catch(err => {
-        logger.error(err);
+      .catch(error => {
+        logger.error(error);
         return { error };
       });
   };
