@@ -70,6 +70,11 @@ const whichUnconfirmedActivities = activityModel => async activitiesIds => {
   });
 };
 
+const updateCreationTransactionHash = activityModel => async (
+  activityId,
+  transactionHash
+) => activityModel.updateOne({ id: activityId }).set({ transactionHash });
+
 module.exports = activityModel => ({
   saveActivity: saveActivity(activityModel),
   updateActivity: updateActivity(activityModel),
@@ -78,5 +83,6 @@ module.exports = activityModel => ({
   updateStatus: updateStatus(activityModel),
   updateStatusWithTransaction: updateStatusWithTransaction(activityModel),
   updateBlockchainStatus: updateBlockchainStatus(activityModel),
-  whichUnconfirmedActivities: whichUnconfirmedActivities(activityModel)
+  whichUnconfirmedActivities: whichUnconfirmedActivities(activityModel),
+  updateCreationTransactionHash: updateCreationTransactionHash(activityModel)
 });

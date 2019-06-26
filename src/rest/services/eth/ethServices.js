@@ -100,10 +100,10 @@ const ethServices = async (
             .encodeABI()
         );
 
-        await worker.pushAllTransactions(
+        return (await worker.pushAllTransactions(
           COAProjectAdmin.address,
           encodedMethods
-        );
+        )).response;
       } catch (error) {
         logger.error(error);
       }
@@ -122,10 +122,10 @@ const ethServices = async (
             .encodeABI()
         );
 
-        await worker.pushAllTransactions(
+        return (await worker.pushAllTransactions(
           COAProjectAdmin.address,
           encodedMethods
-        );
+        )).response;
       } catch (error) {
         logger.error(error);
       }

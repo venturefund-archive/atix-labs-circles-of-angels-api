@@ -564,7 +564,18 @@ const milestoneService = ({
 
   async startMilestonesOfProject(project) {
     const milestones = await this.getMilestonesByProject(project.id);
-    await fastify.eth.createMilestones(milestones);
+    const txHashes = await fastify.eth.createMilestones(milestones);
+    const promises = [];
+    txHashes.forEach((hash, index) => {
+      const milestone = milestones[index];
+      promises.push(
+        this.updateBlockchainStatus(milestone.id, blockchainStatus.SENT)
+      );
+      promises.push(
+        milestoneDao.updateCreationTransactionHash(milestone.id, hash)
+      );
+    });
+    await Promise.all(promises);
   },
 
   async getMilestoneById(milestoneId) {

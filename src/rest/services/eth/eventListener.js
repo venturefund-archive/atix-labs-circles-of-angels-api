@@ -152,7 +152,20 @@ const eventListener = async (
         activities[j].projectId = projectId;
         activities[j].milestoneId = id;
       }
-      await ethService.createActivities(activities);
+      const txHashes = await ethService.createActivities(activities);
+      const promises = [];
+      txHashes.forEach((hash, index) => {
+        promises.push(
+          activityDao.updateBlockchainStatus(
+            activities[index].id,
+            blockchainStatus.SENT
+          )
+        );
+        promises.push(
+          activityDao.updateCreationTransactionHash(activities[index].id, hash)
+        );
+      });
+      await Promise.all(promises);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of milestone ',
         id
