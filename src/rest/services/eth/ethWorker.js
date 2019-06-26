@@ -5,6 +5,7 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
+const PrivateKeyProvider = require('truffle-privatekey-provider');
 const ethConfig = require('config').eth;
 const Web3 = require('web3');
 const Tx = require('ethereumjs-tx').Transaction;
@@ -124,38 +125,38 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
     const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
     const addressSender = toChecksum(sender);
-    const httpWeb3 = new Web3(ethConfig.HTTP_HOST);
-    const nonce = await httpWeb3.eth.getTransactionCount(addressSender);
+    const provider = new PrivateKeyProvider(
+      cleanPrivateKey,
+      ethConfig.HTTP_HOST
+    );
+    const httpWeb3 = new Web3(provider);
     const txConfig = {
+      from: addressSender,
       to: contractAddress,
       data: encodedMethod,
-      gasLimit,
-      nonce
+      gasLimit
     };
     const tx = new Tx(txConfig);
     tx.sign(bufferedPrivKey);
     const serializedTx = tx.serialize();
 
     return new Promise((resolve, reject) => {
-      httpWeb3.eth.sendSignedTransaction(
-        `0x${serializedTx.toString('hex')}`,
-        async (err, hash) => {
-          if (err) {
-            logger.error(err);
-            reject(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-          if (hash)
-            await saveTransaction({
-              transactionHash: hash,
-              sender: addressSender,
-              receiver: contractAddress,
-              data: encodedMethod,
-              privKey
-            });
-          resolve(hash);
+      httpWeb3.eth.sendTransaction(txConfig, async (err, hash) => {
+        if (err) {
+          logger.error(err);
+          reject(err);
         }
-      );
+        logger.info(`TxHash: ${hash}`);
+        if (hash)
+          await saveTransaction({
+            transactionHash: hash,
+            sender: addressSender,
+            receiver: contractAddress,
+            data: encodedMethod,
+            privKey
+          });
+        resolve(hash);
+      });
     });
   };
 
