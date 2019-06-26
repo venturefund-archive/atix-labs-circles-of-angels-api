@@ -128,8 +128,9 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       const tx = new Tx(txConfig);
       tx.sign(bufferedPrivKey);
       const serializedTx = tx.serialize();
+      console.log(serializedTx.toString('hex'));
       web3.eth.sendSignedTransaction(
-        `0x${serializedTx.toString('hex')}`,
+        serializedTx.toString('hex'),
         async (err, hash) => {
           if (err) {
             logger.error(err);
