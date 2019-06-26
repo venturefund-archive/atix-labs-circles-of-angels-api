@@ -125,18 +125,20 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
     const addressSender = toChecksum(sender);
     //const httpWeb3 = new Web3(ethConfig.HTTP_HOST);
+    const nonce = await web3.eth.getTransactionCount(sender);
     const txConfig = {
       to: contractAddress,
       from: addressSender,
       data: encodedMethod,
-      gasLimit
+      gasLimit,
+      nonce
     };
     const tx = new Tx(txConfig);
     tx.sign(bufferedPrivKey);
     const serializedTx = tx.serialize();
 
     return new Promise((resolve, reject) => {
-      web3.eth.sendRawTransaction(
+      web3.eth.sendSignedTransaction(
         `0x${serializedTx.toString('hex')}`,
         async (err, hash) => {
           if (err) {
