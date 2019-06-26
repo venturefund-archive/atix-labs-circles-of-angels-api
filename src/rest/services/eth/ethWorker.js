@@ -125,7 +125,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
     const addressSender = toChecksum(sender);
     const httpWeb3 = new Web3(ethConfig.HTTP_HOST);
-    const nonce = await web3.eth.getTransactionCount(sender);
+    const nonce = await httpWeb3.eth.getTransactionCount(addressSender);
     const txConfig = {
       to: contractAddress,
       data: encodedMethod,
