@@ -18,6 +18,6 @@ module.exports = {
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
-    privKey: { type: 'string', required: false }
+    privKey: { type: 'string', required: false, allowNull: true }
   }
 };
