@@ -133,7 +133,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       txConfig,
       privKey
     );
-
+    console.log({ signedTransaction });
     return new Promise((resolve, reject) => {
       // const tx = new Tx(txConfig);
       // tx.sign(bufferedPrivKey);
