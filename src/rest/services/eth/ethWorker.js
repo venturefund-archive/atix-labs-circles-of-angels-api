@@ -113,49 +113,45 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
   };
 
   const makeSignedTx = (contractAddress, sender, privKey, encodedMethod) => {
-    try {
-      if (!encodedMethod) return;
-      // const cleanPrivateKey =
-      //   privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
-      // const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
-      const addressSender = toChecksum(sender);
-      return new Promise(async (resolve, reject) => {
-        const txConfig = {
-          to: contractAddress,
-          from: addressSender,
-          data: encodedMethod,
-          gasLimit
-        };
-        // const tx = new Tx(txConfig);
-        // tx.sign(bufferedPrivKey);
-        // const serializedTx = tx.serialize();
-        const signedTransaction = await web3.eth.accounts.signTransaction(
-          txConfig,
-          privKey
-        );
-        web3.eth.sendSignedTransaction(
-          signedTransaction.rawTransaction,
-          async (err, hash) => {
-            if (err) {
-              logger.error(err);
-              reject(err);
-            }
-            logger.info(`TxHash: ${hash}`);
-            if (hash)
-              await saveTransaction({
-                transactionHash: hash,
-                sender: addressSender,
-                receiver: contractAddress,
-                data: encodedMethod,
-                privKey
-              });
-            resolve(hash);
+    if (!encodedMethod) return;
+    // const cleanPrivateKey =
+    //   privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
+    // const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
+    const addressSender = toChecksum(sender);
+    return new Promise(async (resolve, reject) => {
+      const txConfig = {
+        to: contractAddress,
+        from: addressSender,
+        data: encodedMethod,
+        gasLimit
+      };
+      // const tx = new Tx(txConfig);
+      // tx.sign(bufferedPrivKey);
+      // const serializedTx = tx.serialize();
+      const signedTransaction = await web3.eth.accounts.signTransaction(
+        txConfig,
+        privKey
+      );
+      web3.eth.sendSignedTransaction(
+        signedTransaction.rawTransaction,
+        async (err, hash) => {
+          if (err) {
+            logger.error(err);
+            reject(err);
           }
-        );
-      });
-    } catch (error) {
-      logger.error(error);
-    }
+          logger.info(`TxHash: ${hash}`);
+          if (hash)
+            await saveTransaction({
+              transactionHash: hash,
+              sender: addressSender,
+              receiver: contractAddress,
+              data: encodedMethod,
+              privKey
+            });
+          resolve(hash);
+        }
+      );
+    });
   };
 
   const worker = {
@@ -164,25 +160,30 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       return Boolean(transaction);
     },
     async pushTransaction(contractAddress, encodedMethod, sender) {
-      if (!encodedMethod) return;
-      let address = sender ? sender.address : false;
-      if (!sender) {
-        const addressIndex = getRndInteger(0, addresses.length - 1);
-        address = addresses[addressIndex];
-      }
-
-      if ((await getAllowedTransactions(address)) > 0) {
-        if (sender && sender.privKey) {
-          return makeSignedTx(
-            contractAddress,
-            address,
-            sender.privKey,
-            encodedMethod
-          );
+      try {
+        if (!encodedMethod) return;
+        let address = sender ? sender.address : false;
+        if (!sender) {
+          const addressIndex = getRndInteger(0, addresses.length - 1);
+          address = addresses[addressIndex];
         }
-        return makeTx(contractAddress, address, encodedMethod);
+
+        if ((await getAllowedTransactions(address)) > 0) {
+          if (sender && sender.privKey) {
+            return makeSignedTx(
+              contractAddress,
+              address,
+              sender.privKey,
+              encodedMethod
+            );
+          }
+          return makeTx(contractAddress, address, encodedMethod);
+        }
+        this.pushTransaction(contractAddress, encodedMethod, sender);
+      } catch (error) {
+        logger.error(error);
+        return { error };
       }
-      this.pushTransaction(contractAddress, encodedMethod, sender);
     },
 
     async pushAllTransactions(contractAddress, encodedMethods) {
