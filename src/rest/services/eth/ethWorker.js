@@ -113,45 +113,49 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
   };
 
   const makeSignedTx = (contractAddress, sender, privKey, encodedMethod) => {
-    if (!encodedMethod) return;
-    // const cleanPrivateKey =
-    //   privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
-    // const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
-    const addressSender = toChecksum(sender);
-    return new Promise(async (resolve, reject) => {
-      const txConfig = {
-        to: contractAddress,
-        from: addressSender,
-        data: encodedMethod,
-        gasLimit
-      };
-      // const tx = new Tx(txConfig);
-      // tx.sign(bufferedPrivKey);
-      // const serializedTx = tx.serialize();
-      const signedTransaction = await web3.eth.accounts.signTransaction(
-        txConfig,
-        privKey
-      );
-      web3.eth.sendSignedTransaction(
-        signedTransaction.rawTransaction,
-        async (err, hash) => {
-          if (err) {
-            logger.error(err);
-            reject(err);
+    try {
+      if (!encodedMethod) return;
+      // const cleanPrivateKey =
+      //   privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
+      // const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
+      const addressSender = toChecksum(sender);
+      return new Promise(async (resolve, reject) => {
+        const txConfig = {
+          to: contractAddress,
+          from: addressSender,
+          data: encodedMethod,
+          gasLimit
+        };
+        // const tx = new Tx(txConfig);
+        // tx.sign(bufferedPrivKey);
+        // const serializedTx = tx.serialize();
+        const signedTransaction = await web3.eth.accounts.signTransaction(
+          txConfig,
+          privKey
+        );
+        web3.eth.sendSignedTransaction(
+          signedTransaction.rawTransaction,
+          async (err, hash) => {
+            if (err) {
+              logger.error(err);
+              reject(err);
+            }
+            logger.info(`TxHash: ${hash}`);
+            if (hash)
+              await saveTransaction({
+                transactionHash: hash,
+                sender: addressSender,
+                receiver: contractAddress,
+                data: encodedMethod,
+                privKey
+              });
+            resolve(hash);
           }
-          logger.info(`TxHash: ${hash}`);
-          if (hash)
-            await saveTransaction({
-              transactionHash: hash,
-              sender: addressSender,
-              receiver: contractAddress,
-              data: encodedMethod,
-              privKey
-            });
-          resolve(hash);
-        }
-      );
-    });
+        );
+      });
+    } catch (error) {
+      logger.error(error);
+    }
   };
 
   const worker = {
