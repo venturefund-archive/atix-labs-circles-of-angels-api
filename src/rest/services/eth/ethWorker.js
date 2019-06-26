@@ -162,6 +162,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       })
       .catch(err => {
         logger.error(err);
+        return { error };
       });
   };
 
