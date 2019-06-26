@@ -125,7 +125,6 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     // const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
     const addressSender = toChecksum(sender);
     const httpWeb3 = new Web3(ethConfig.HTTP_HOST);
-    console.log(httpWeb3.eth.accounts);
     const txConfig = {
       to: contractAddress,
       from: addressSender,
@@ -135,32 +134,35 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     // const tx = new Tx(txConfig);
     // tx.sign(bufferedPrivKey);
     // const serializedTx = tx.serialize();
-    const signedTransaction = httpWeb3.eth.accounts.signTransaction(
-      txConfig,
-      privKey
-    );
-    console.log({ signedTransaction });
-    return new Promise((resolve, reject) => {
-      httpWeb3.eth.sendSignedTransaction(
-        signedTransaction.rawTransaction,
-        async (err, hash) => {
-          if (err) {
-            logger.error(err);
-            reject(err);
-          }
-          logger.info(`TxHash: ${hash}`);
-          if (hash)
-            await saveTransaction({
-              transactionHash: hash,
-              sender: addressSender,
-              receiver: contractAddress,
-              data: encodedMethod,
-              privKey
-            });
-          resolve(hash);
-        }
-      );
-    });
+    httpWeb3.eth.accounts
+      .signTransaction(txConfig, privKey)
+      .then(signedTransaction => {
+        console.log({ signedTransaction });
+        return new Promise((resolve, reject) => {
+          httpWeb3.eth.sendSignedTransaction(
+            signedTransaction.rawTransaction,
+            async (err, hash) => {
+              if (err) {
+                logger.error(err);
+                reject(err);
+              }
+              logger.info(`TxHash: ${hash}`);
+              if (hash)
+                await saveTransaction({
+                  transactionHash: hash,
+                  sender: addressSender,
+                  receiver: contractAddress,
+                  data: encodedMethod,
+                  privKey
+                });
+              resolve(hash);
+            }
+          );
+        });
+      })
+      .catch(err => {
+        logger.error(err);
+      });
   };
 
   const worker = {
