@@ -696,7 +696,8 @@ const milestoneService = ({
         );
         if (txHash.error) {
           fastify.log.error(
-            `[Milestone Service] :: error setting claimed Milestone ID ${milestoneId} on Blockchain`
+            `[Milestone Service] :: error setting claimed Milestone ID ${milestoneId} on Blockchain`,
+            txHash.error
           );
         }
       }
