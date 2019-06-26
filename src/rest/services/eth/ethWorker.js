@@ -6,7 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 const ethConfig = require('config').eth;
-const Tx = require('ethereumjs-tx');
+const Tx = require('ethereumjs-tx').Transaction;
 const ethMemPoolBuilder = require('./ethMemPool');
 const apiHelper = require('../helper');
 
@@ -122,7 +122,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
         data: encodedMethod,
         gasLimit
       };
-      const tx = Tx(txConfig);
+      const tx = new Tx(txConfig);
       tx.sign(bufferedPrivKey);
       const serializedTx = tx.serialize();
       web3.eth.sendSignedTransaction(
