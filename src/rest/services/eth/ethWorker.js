@@ -122,6 +122,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     // const cleanPrivateKey =
     //   privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
     // const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
+    const addressSender = toChecksum(sender);
     const txConfig = {
       to: contractAddress,
       from: addressSender,
@@ -132,7 +133,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       txConfig,
       privKey
     );
-    const addressSender = toChecksum(sender);
+
     return new Promise((resolve, reject) => {
       // const tx = new Tx(txConfig);
       // tx.sign(bufferedPrivKey);
