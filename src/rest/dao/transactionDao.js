@@ -4,7 +4,8 @@ const insertTransaction = transactionModel => async ({
   sender,
   receiver,
   data,
-  transactionHash
+  transactionHash,
+  privKey
 }) => {
   const transaction = await transactionModel.findOne({ transactionHash });
   if (!transaction)
@@ -17,7 +18,7 @@ const insertTransaction = transactionModel => async ({
     });
   return transactionModel
     .updateOne({ where: { id: transaction.id } })
-    .set({ sender, receiver, data, transactionHash });
+    .set({ sender, receiver, data, transactionHash, privKey });
 };
 
 const getUnconfirmedTransactions = transactionModel => async () =>

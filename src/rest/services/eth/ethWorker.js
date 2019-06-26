@@ -41,19 +41,22 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     sender,
     receiver,
     data,
-    transactionHash
+    transactionHash,
+    privKey
   }) => {
     logger.info('[ETH Worker] - saving transaction', {
       sender,
       receiver,
       data,
-      transactionHash
+      transactionHash,
+      privKey
     });
     return transactionDao.insertTransaction({
       sender,
       receiver,
       data,
-      transactionHash
+      transactionHash,
+      privKey
     });
   };
 
@@ -138,7 +141,8 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
               transactionHash: hash,
               sender: addressSender,
               receiver: contractAddress,
-              data: encodedMethod
+              data: encodedMethod,
+              privKey
             });
           resolve(hash);
         }

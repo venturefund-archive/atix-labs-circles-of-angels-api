@@ -41,7 +41,8 @@ class MemPool {
           );
         else
           this.worker.pushTransaction(transaction.receiver, transaction.data, {
-            address: transaction.sender
+            address: transaction.sender,
+            privKey: transaction.privKey
           });
       }
     });
