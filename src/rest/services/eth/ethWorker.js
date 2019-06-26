@@ -125,6 +125,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     // const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
     const addressSender = toChecksum(sender);
     const httpWeb3 = new Web3(ethConfig.HTTP_HOST);
+    console.log({ httpWeb3 });
     const txConfig = {
       to: contractAddress,
       from: addressSender,
@@ -138,6 +139,7 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
       txConfig,
       privKey
     );
+    console.log({ signedTransaction });
     return new Promise((resolve, reject) => {
       httpWeb3.eth.sendSignedTransaction(
         signedTransaction.rawTransaction,
