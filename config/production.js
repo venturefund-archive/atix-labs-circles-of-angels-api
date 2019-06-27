@@ -39,6 +39,6 @@ module.exports = {
       '0xd51128f302755666c42e3920d72ff2fe632856a9'
     ],
     NUMBER_ACCOUNTS: 20,
-    REINTENT_LAPSE: 300000
+    REINTENT_LAPSE: 780000
   }
 };

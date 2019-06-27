@@ -35,6 +35,7 @@ const eventListener = async (
       return false;
     }
     await transactionDao.confirmTransaction(transactionHash);
+    await updateLastBlock(event);
     return blockchainBlockDao.updateLastBlock(blockNumber, transactionHash);
   };
 
@@ -52,6 +53,7 @@ const eventListener = async (
         projectId: id,
         status: projectStatus.IN_PROGRESS
       });
+      await updateLastBlock(event);
       logger.info('[Event listener] :: Project started:', id);
     } catch (error) {
       logger.error(error);
@@ -70,6 +72,7 @@ const eventListener = async (
         id,
         milestoneBudgetStatus.CLAIMABLE
       );
+      await updateLastBlock(event);
     } catch (error) {
       logger.error(error);
     }
@@ -84,6 +87,7 @@ const eventListener = async (
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
       await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.CLAIMED);
+      await updateLastBlock(event);
     } catch (error) {
       logger.error(error);
     }
@@ -95,6 +99,7 @@ const eventListener = async (
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
       await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.FUNDED);
+      await updateLastBlock(event);
     } catch (error) {
       logger.error(error);
     }
@@ -117,6 +122,7 @@ const eventListener = async (
         );
         return;
       }
+      await updateLastBlock(event);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of project ',
         id
@@ -144,6 +150,7 @@ const eventListener = async (
         id,
         blockchainStatus.CONFIRMED
       );
+      await updateLastBlock(event);
 
       if (milestone.error) {
         logger.error(
@@ -178,6 +185,7 @@ const eventListener = async (
         );
       });
       await Promise.all(promises);
+      await updateLastBlock(event);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of milestone ',
         id
@@ -264,7 +272,7 @@ const eventListener = async (
             status: projectStatus.IN_PROGRESS,
             transactionHash
           });
-
+          await updateLastBlock(event);
           logger.info(
             '[Event listener] :: successfully updated blockchain status of activity',
             id
@@ -299,6 +307,7 @@ const eventListener = async (
         activityStatus.COMPLETED
       );
       await milestoneService.tryCompleteMilestone(activity);
+      await updateLastBlock(event);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of activity ',
         id
@@ -339,7 +348,6 @@ const eventListener = async (
           event = filteredEvents[eventKey];
           await eventMethodMap[event.event](event);
         }
-        await updateLastBlock(event);
       } catch (error) {
         logger.error(error);
       }
