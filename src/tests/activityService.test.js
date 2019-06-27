@@ -383,11 +383,24 @@ describe('Testing activityService updateStatus', () => {
 
 describe('Testing ActivityService addEvidenceFiles', () => {
   let activityService;
-  let user = testHelper.buildUserOracle({});
+  let activityDao;
+  const user = testHelper.buildUserOracle({});
 
   beforeEach(() => {
+    activityDao = {
+      async getActivityById(id) {
+        if (id === '') {
+          throw Error('Error getting activity');
+        }
+        if (id === 0) {
+          return undefined;
+        }
+        return testHelper.buildActivity({ id });
+      }
+    };
     activityService = require('../rest/core/activityService')({
       fastify,
+      activityDao,
       userService: {
         getUserById: () => {
           return user;
@@ -398,6 +411,12 @@ describe('Testing ActivityService addEvidenceFiles', () => {
       return {
         fileHash: '23kfek32kek3edd'
       };
+    };
+
+    activityService.getProjectByActivity = () => {
+      return testHelper.buildProject(1, 1, {
+        status: projectStatus.IN_PROGRESS
+      });
     };
   });
 
