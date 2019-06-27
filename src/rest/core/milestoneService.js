@@ -13,7 +13,8 @@ const {
   activityStatus,
   milestoneBudgetStatus,
   blockchainStatus,
-  xlsxConfigs
+  xlsxConfigs,
+  projectStatus
 } = require('../util/constants');
 
 const milestoneService = ({
@@ -163,14 +164,40 @@ const milestoneService = ({
             '[Milestone Service] :: Error updating budget status:',
             updatedBudgetStatus.error
           );
-          return updatedBudgetStatus;
         }
+
+        return updatedBudgetStatus;
       }
 
       const toUpdateMilestone = { ...milestone };
       delete toUpdateMilestone.budgetStatus;
 
       if (!isEmpty(toUpdateMilestone)) {
+        const existingMilestone = await milestoneDao.getMilestoneByIdWithProject(
+          id
+        );
+
+        if (!existingMilestone || existingMilestone == null) {
+          fastify.log.error(
+            `[Milestone Service] :: Milestone ID ${id} does not exist`
+          );
+          return {
+            status: 404,
+            error: 'Milestone does not exist'
+          };
+        }
+
+        const { project } = existingMilestone;
+        if (project.status === projectStatus.IN_PROGRESS) {
+          fastify.log.error(
+            `[Milestone Service] :: Project ${project.id} is IN PROGRESS`
+          );
+          return {
+            error: 'Milestone cannot be updated. Project has already started.',
+            status: 409
+          };
+        }
+
         if (this.canMilestoneUpdate(toUpdateMilestone)) {
           const savedMilestone = await milestoneDao.updateMilestone(
             toUpdateMilestone,
@@ -179,12 +206,12 @@ const milestoneService = ({
 
           if (!savedMilestone || savedMilestone == null) {
             fastify.log.error(
-              `[Milestone Service] :: Milestone ID ${id} does not exist`,
+              `[Milestone Service] :: Milestone ID ${id} could not be updated`,
               savedMilestone
             );
             return {
               status: 404,
-              error: 'Milestone does not exist'
+              error: 'Milestone could not be updated'
             };
           }
 
@@ -632,7 +659,19 @@ const milestoneService = ({
       New status ID: ${budgetStatusId}`
     );
     try {
-      const milestone = await milestoneDao.getMilestoneById(milestoneId);
+      if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
+        fastify.log.error(
+          `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
+        );
+        return {
+          status: 404,
+          error: 'Budget transfer status is not valid'
+        };
+      }
+
+      const milestone = await milestoneDao.getMilestoneByIdWithProject(
+        milestoneId
+      );
 
       if (!milestone || milestone == null) {
         fastify.log.error(
@@ -644,25 +683,27 @@ const milestoneService = ({
         };
       }
 
-      const milestones = await this.getMilestonesByProject(milestone.project);
-      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
-      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
-
-      if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
+      const { project } = milestone;
+      if (project.status !== projectStatus.IN_PROGRESS) {
         fastify.log.error(
-          `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
+          `[Milestone Service] :: Project ${project.id} is not IN PROGRESS`
         );
         return {
-          status: 404,
-          error: 'Budget transfer status is not valid'
+          error:
+            'Milestone budget status cannot be updated. Project is not started.',
+          status: 409
         };
       }
+
+      const milestones = await this.getMilestonesByProject(project.id);
+      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
+      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
 
       if (
         budgetStatusId === milestoneBudgetStatus.CLAIMABLE &&
         (milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED ||
-          (previousMilestone &&
-            milestones[previousMilestone].budgetStatus !==
+          (previousMilestone !== false &&
+            milestones[previousMilestone].budgetStatus.id !==
               milestoneBudgetStatus.FUNDED))
       ) {
         fastify.log.error(
