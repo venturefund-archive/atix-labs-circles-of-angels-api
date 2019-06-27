@@ -143,7 +143,15 @@ module.exports = {
         req.user
       );
 
-      reply.status(200).send(response);
+      if (response.error) {
+        fastify.log.error(
+          '[Activity Routes] :: Error uploading evidences:',
+          response.error
+        );
+        reply.status(response.status).send(response);
+      } else {
+        reply.status(200).send(response);
+      }
     } catch (error) {
       fastify.log.error(
         '[Activity Routes] :: Error uploading evidences:',

@@ -345,7 +345,36 @@ const activityService = ({
    */
   async addEvidenceFiles(activityId, files, user) {
     const errors = [];
+    fastify.log.info(
+      '[Activity Service] :: Uploading evidence files for activity ID',
+      activityId
+    );
     try {
+      const activity = await activityDao.getActivityById(activityId);
+      if (!activity) {
+        fastify.log.error(
+          `[Activity Service] :: Activity ${activityId} doesn't exist`
+        );
+        return { error: "Activity doesn't exist", status: 404 };
+      }
+
+      const project = await this.getProjectByActivity(activity);
+
+      if (project.error) {
+        return project;
+      }
+
+      if (project.status !== projectStatus.IN_PROGRESS) {
+        fastify.log.error(
+          `[Activity Service] :: Project ${project.id} is not IN PROGRESS`
+        );
+        return {
+          error:
+            'Activity evidence cannot be uploaded. Project is not started.',
+          status: 409
+        };
+      }
+
       // creates the directory where this activities' evidence files will be saved if not exists
       await mkdirp(
         `${
