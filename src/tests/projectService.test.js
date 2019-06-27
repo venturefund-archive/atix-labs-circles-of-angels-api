@@ -386,27 +386,35 @@ describe('Testing projectService getProjectWithId', () => {
   let projectService;
 
   let mockProjects;
+  const totalFunded = 200;
 
   beforeAll(() => {
     mockProjects = testHelper.getMockProjects();
     projectDao = {
       async getProjectById({ projectId }) {
-        return find(mockProjects, project => project.id === projectId);
+        return mockProjects.find(project => project.id === projectId);
       }
     };
     projectService = projectServiceBuilder({
       fastify,
       projectDao
     });
+
+    projectService.getTotalFunded = () => totalFunded;
   });
-  it('should return a project with id == 1 project if exists', async () => {
-    const project = await projectService.getProjectWithId({ projectId: 1 });
-    expect(project.id).toBe(1);
+  it('should return an existing project with its total funds', async () => {
+    const response = await projectService.getProjectWithId({
+      projectId: mockProjects[0].id
+    });
+
+    const expected = { ...mockProjects[0], totalFunded };
+    expect(response).toEqual(expected);
   });
 
-  it("should return undefined if project doesn't exist", async () => {
-    const project = await projectService.getProjectWithId({ projectId: -1 });
-    expect(project).toBe(undefined);
+  it("should return a 404 error if project doesn't exist", async () => {
+    const response = await projectService.getProjectWithId({ projectId: -1 });
+    const expected = { error: 'Project not found', status: 404 };
+    expect(response).toEqual(expected);
   });
 });
 
@@ -872,47 +880,37 @@ describe('Testing projectService downloadProposal', () => {
 });
 
 describe('Testing projectService getTotalFunded', () => {
-  let projectDao;
   let projectService;
   let transferService;
 
+  const totalFunded = 300;
+
   beforeAll(() => {
     transferService = {
-      getTotalFundedByProject: () => 300
-    };
-    projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (projectId === 0) {
-          return undefined;
-        }
-        if (projectId === undefined) {
-          throw Error('Error getting project from db');
+      getTotalFundedByProject: projectId => {
+        if (!projectId) {
+          throw Error('Error getting funds');
         }
 
-        return {
-          id: projectId
-        };
+        return totalFunded;
       }
     };
 
     projectService = projectServiceBuilder({
       fastify,
-      projectDao,
       transferService
     });
   });
 
   it('should return the total funded amount for a project', async () => {
-    const projectId = 1;
-    const response = await projectService.getTotalFunded(projectId);
-    const expected = 300;
-    return expect(response).toEqual(expected);
+    const response = await projectService.getTotalFunded(1);
+    return expect(response).toEqual(totalFunded);
   });
 
-  it('should return an error if the project does not exist', async () => {
-    const response = await projectService.getTotalFunded(0);
-    const expected = { error: 'ERROR: Project not found', status: 404 };
-    return expect(response).toEqual(expected);
+  it('should throw an error if it fails to get the transferred funds', async () => {
+    return expect(projectService.getTotalFunded()).rejects.toEqual(
+      Error('Error getting funded amount')
+    );
   });
 });
 
