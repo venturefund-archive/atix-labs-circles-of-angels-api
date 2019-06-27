@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
-const PrivateKeyProvider = require('truffle-privatekey-provider');
+const HDWalletProvider = require('truffle-hdwallet-provider');
 const ethConfig = require('config').eth;
 const Web3 = require('web3');
 const Tx = require('ethereumjs-tx').Transaction;
@@ -123,22 +123,20 @@ const ethWorker = (web3, { maxTransactionsPerAccount, logger }) => {
     if (!encodedMethod) return;
     const cleanPrivateKey =
       privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
-    const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
+    // const bufferedPrivKey = Buffer.from(cleanPrivateKey, 'hex');
     const addressSender = toChecksum(sender);
-    const provider = new PrivateKeyProvider(
-      cleanPrivateKey,
-      ethConfig.HTTP_HOST
+    const httpWeb3 = new Web3(
+      new HDWalletProvider(cleanPrivateKey, ethConfig.HTTP_HOST)
     );
-    const httpWeb3 = new Web3(provider);
     const txConfig = {
       from: addressSender,
       to: contractAddress,
       data: encodedMethod,
       gasLimit
     };
-    const tx = new Tx(txConfig);
-    tx.sign(bufferedPrivKey);
-    const serializedTx = tx.serialize();
+    // const tx = new Tx(txConfig);
+    // tx.sign(bufferedPrivKey);
+    // const serializedTx = tx.serialize();
 
     return new Promise((resolve, reject) => {
       httpWeb3.eth.sendTransaction(txConfig, async (err, hash) => {
