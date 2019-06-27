@@ -1031,7 +1031,10 @@ describe('Testing projectService startProject', () => {
 
   it('should return an error if the project is already In Progress', async () => {
     const response = await projectService.startProject(mockProjects[0]);
-    const expected = { error: 'Project has already started', status: 409 };
+    const expected = {
+      error: 'Project has already started or sent to the blockchain',
+      status: 409
+    };
     return expect(response).toEqual(expected);
   });
 

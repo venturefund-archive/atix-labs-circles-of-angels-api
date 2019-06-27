@@ -912,11 +912,19 @@ const projectService = ({
         return { error: 'Project needs to be published', status: 409 };
       }
 
-      if (project.status === projectStatus.IN_PROGRESS) {
+      if (
+        project.status === projectStatus.IN_PROGRESS ||
+        project.startBlockchainStatus !== blockchainStatus.PENDING
+      ) {
         fastify.log.error(
-          `[Project Service] :: Project ID ${project.id} already in progress`
+          `[Project Service] :: Project ID ${
+            project.id
+          } already in progress or sent to the blockchain`
         );
-        return { error: 'Project has already started', status: 409 };
+        return {
+          error: 'Project has already started or sent to the blockchain',
+          status: 409
+        };
       }
 
       const projectWithOracles = await this.isFullyAssigned(project.id);
