@@ -134,12 +134,18 @@ const activityService = ({
         return project;
       }
 
-      if (project.status === projectStatus.IN_PROGRESS) {
+      if (
+        project.status === projectStatus.IN_PROGRESS ||
+        project.startBlockchainStatus !== blockchainStatus.PENDING
+      ) {
         fastify.log.error(
-          `[Activity Service] :: Project ${project.id} is IN PROGRESS`
+          `[Activity Service] :: Project ${
+            project.id
+          } is IN PROGRESS or sent to the blockchain`
         );
         return {
-          error: 'Activity cannot be updated. Project has already started.',
+          error:
+            'Activity cannot be updated. Project has already started or sent to the blockchain.',
           status: 409
         };
       }

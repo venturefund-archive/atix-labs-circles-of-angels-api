@@ -328,7 +328,8 @@ describe('Testing milestoneService updateMilestone', () => {
     );
 
     const expected = {
-      error: 'Milestone cannot be updated. Project has already started.',
+      error:
+        'Milestone cannot be updated. Project has already started or sent to the blockchain.',
       status: 409
     };
 

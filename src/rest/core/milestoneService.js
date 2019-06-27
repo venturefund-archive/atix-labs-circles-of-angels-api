@@ -188,12 +188,18 @@ const milestoneService = ({
         }
 
         const { project } = existingMilestone;
-        if (project.status === projectStatus.IN_PROGRESS) {
+        if (
+          project.status === projectStatus.IN_PROGRESS ||
+          project.startBlockchainStatus !== blockchainStatus.PENDING
+        ) {
           fastify.log.error(
-            `[Milestone Service] :: Project ${project.id} is IN PROGRESS`
+            `[Milestone Service] :: Project ${
+              project.id
+            } is IN PROGRESS or sent to the blockchain`
           );
           return {
-            error: 'Milestone cannot be updated. Project has already started.',
+            error:
+              'Milestone cannot be updated. Project has already started or sent to the blockchain.',
             status: 409
           };
         }

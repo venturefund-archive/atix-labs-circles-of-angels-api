@@ -240,7 +240,7 @@ describe('Testing activityService updateActivity', () => {
       activityId + 1
     );
     const expected = {
-      error: 'Activity cannot be updated. Project has already started.',
+      error: 'Activity cannot be updated. Project has already started or sent to the blockchain.',
       status: 409
     };
     return expect(response).toEqual(expected);
