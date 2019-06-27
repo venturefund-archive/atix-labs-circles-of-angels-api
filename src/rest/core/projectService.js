@@ -351,14 +351,18 @@ const projectService = ({
         }
       }
 
-      if (currentProject.status === projectStatus.IN_PROGRESS) {
+      if (
+        currentProject.status === projectStatus.IN_PROGRESS ||
+        currentProject.startBlockchainStatus !== blockchainStatus.PENDING
+      ) {
         fastify.log.error(
-          "[Project Service] :: Can't update project IN PROGRESS",
+          "[Project Service] :: Can't update project IN PROGRESS or SENT to the blockchain",
           id
         );
         return {
           status: 409,
-          error: 'Project cannot be updated. It has already started.'
+          error:
+            'Project cannot be updated. It has already started or sent to the blockchain.'
         };
       }
 

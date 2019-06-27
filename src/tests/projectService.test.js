@@ -44,7 +44,8 @@ describe('Testing projectService createProject', () => {
         const toSave = Object.assign({}, project, {
           id: 11,
           createdAt: '2019-05-31T03:00:00.000Z',
-          updatedAt: '2019-05-31T03:00:00.000Z'
+          updatedAt: '2019-05-31T03:00:00.000Z',
+          startBlockchainStatus: blockchainStatus.PENDING
         });
         return toSave;
       },
@@ -277,7 +278,8 @@ describe('Testing projectService updateProject', () => {
 
     const expected = {
       status: 409,
-      error: 'Project cannot be updated. It has already started.'
+      error:
+        'Project cannot be updated. It has already started or sent to the blockchain.'
     };
 
     return expect(response).toEqual(expected);

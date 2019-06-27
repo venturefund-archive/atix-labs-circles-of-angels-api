@@ -280,6 +280,7 @@ const projectId = 11;
 
 exports.project = {
   blockchainStatus: blockchainStatus.CONFIRMED,
+  startBlockchainStatus: blockchainStatus.PENDING,
   cardPhoto: 2,
   coverPhoto: 1,
   createdAt: '2019-05-31T03:00:00.000Z',
