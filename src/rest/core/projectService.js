@@ -351,6 +351,17 @@ const projectService = ({
         }
       }
 
+      if (currentProject.status === projectStatus.IN_PROGRESS) {
+        fastify.log.error(
+          "[Project Service] :: Can't update project IN PROGRESS",
+          id
+        );
+        return {
+          status: 409,
+          error: 'Project cannot be updated. It has already started.'
+        };
+      }
+
       if (projectCardPhoto || projectCoverPhoto) {
         // get current photos
         const projectPhotos = await projectDao.getProjectPhotos(id);
@@ -923,8 +934,11 @@ const projectService = ({
         }`
       );
       await milestoneService.startMilestonesOfProject(project);
-
-      return project;
+      const startPendingProject = await projectDao.updateStartBlockchainStatus(
+        project.id,
+        blockchainStatus.SENT
+      );
+      return startPendingProject;
     } catch (error) {
       fastify.log.error('[Project Service] :: Error starting project:', error);
       throw Error('Error starting project');

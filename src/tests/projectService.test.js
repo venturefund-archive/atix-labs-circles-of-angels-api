@@ -217,10 +217,12 @@ describe('Testing projectService updateProject', () => {
       projectDao,
       photoService
     });
+
+    projectService.startProject = jest.fn(project => project);
   });
 
   it('should return the updated project', async () => {
-    const projectId = 1;
+    const projectId = 2;
     const project = {
       problemAddressed: 'problem',
       mission: 'mission'
@@ -238,6 +240,44 @@ describe('Testing projectService updateProject', () => {
       id: projectId,
       cardPhoto: 2,
       coverPhoto: 1
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should call startProject if the new status is IN PROGRESS', async () => {
+    const projectId = 2;
+    const project = {
+      status: projectStatus.IN_PROGRESS
+    };
+
+    await projectService.updateProject(
+      JSON.stringify(project),
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
+      projectId
+    );
+
+    return expect(projectService.startProject).toBeCalled();
+  });
+
+  it('should return an error if the project is in progress', async () => {
+    const projectId = 1;
+    const project = {
+      problemAddressed: 'problem',
+      mission: 'mission'
+    };
+
+    const response = await projectService.updateProject(
+      JSON.stringify(project),
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
+      projectId
+    );
+
+    const expected = {
+      status: 409,
+      error: 'Project cannot be updated. It has already started.'
     };
 
     return expect(response).toEqual(expected);
@@ -950,6 +990,14 @@ describe('Testing projectService startProject', () => {
         );
         const user = testHelper.buildUserSe(project.ownerId);
         return user;
+      },
+
+      updateStartBlockchainStatus: (projectId, status) => {
+        const project = find(
+          mockProjects,
+          mockProject => mockProject.id === projectId
+        );
+        return { ...project, startBlockchainStatus: status };
       }
     };
 
@@ -961,12 +1009,17 @@ describe('Testing projectService startProject', () => {
     });
   });
 
-  it('should return the updated project with status In Progress', async () => {
-    const projectId = 4;
-    const response = await projectService.startProject(mockProjects[3]);
-    const expected = find(mockProjects, project => projectId === project.id);
-    return expect(response).toEqual(expected);
-  });
+  it(
+    'should return the updated project with status In Progress ' +
+      'and start status Pending',
+    async () => {
+      const projectId = 4;
+      const response = await projectService.startProject(mockProjects[3]);
+      const expected = find(mockProjects, project => projectId === project.id);
+      expected.startBlockchainStatus = blockchainStatus.SENT;
+      return expect(response).toEqual(expected);
+    }
+  );
 
   it('should return an error if the project is not Published', async () => {
     const response = await projectService.startProject(mockProjects[1]);
