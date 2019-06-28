@@ -39,14 +39,14 @@ const ethInitializer = async ({ logger }) => {
       { logger }
     );
 
-    const wsWeb3 = new Web3(ethConfig.WS_HOST);
+    //const wsWeb3 = new Web3(ethConfig.WS_HOST);
     eth.initListener = async () => {
       await eth.initialize();
       const listener = await ethListenerBuilder(
         eth,
         {
-          COAProjectAdmin: buildProjectAdminContract(wsWeb3),
-          COAOracle: buildOracleContract(wsWeb3)
+          COAProjectAdmin: buildProjectAdminContract(httpWeb3),
+          COAOracle: buildOracleContract(httpWeb3)
         },
         { logger }
       );
