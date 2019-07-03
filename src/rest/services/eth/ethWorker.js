@@ -87,7 +87,8 @@ const ethWorker = (web3, { logger }) => {
     activityId,
     milestoneId,
     projectId,
-    type
+    type,
+    status
   }) => {
     logger.info('[ETH Worker] - saving transaction', {
       sender,
@@ -98,7 +99,8 @@ const ethWorker = (web3, { logger }) => {
       activityId,
       milestoneId,
       projectId,
-      type
+      type,
+      status
     });
     return transactionDao.insertTransaction({
       sender,
@@ -109,7 +111,8 @@ const ethWorker = (web3, { logger }) => {
       activityId,
       milestoneId,
       projectId,
-      type
+      type,
+      status
     });
   };
 
@@ -145,14 +148,20 @@ const ethWorker = (web3, { logger }) => {
       const nonce = await web3.eth.getTransactionCount(addressSender);
       const txConfig = {
         nonce,
-        from: sender,
+        from: addressSender,
         to: receiver,
         data,
         gasLimit,
         gasPrice: 0
       };
       const httpWeb3 = new Web3(
-        new HDWalletProvider(cleanPrivateKey, ethConfig.HTTP_HOST)
+        new HDWalletProvider(
+          [cleanPrivateKey],
+          ethConfig.HTTP_HOST,
+          0,
+          1,
+          false
+        )
       );
       httpWeb3.eth.sendTransaction(txConfig, async (err, hash) => {
         if (err) {
@@ -160,7 +169,7 @@ const ethWorker = (web3, { logger }) => {
           reject(err);
         }
         logger.info(`TxHash: ${hash}`);
-        if (hash) transactionDao.sendTransaction(id, hash, sender);
+        if (hash) transactionDao.sendTransaction(id, hash, addressSender);
         resolve(hash);
       });
     });
@@ -176,18 +185,20 @@ const ethWorker = (web3, { logger }) => {
         sender,
         privKey
       } = transaction;
+
       const ids = { projectId, milestoneId, activityId };
       const callback = transactionCallbacks[type];
-      let address = sender ? sender.address : false;
-      if (!sender) {
-        address = getAddress(address);
+      let address = sender || false;
+      if (!privKey) {
+        address = getAddress();
       }
       if (!address) return;
-      transaction.sender = address;
-      if ((sender, privKey)) {
-        await callback(await makeSignedTx(transaction), ids);
+      const newTransaction = { ...transaction, sender: address };
+      if (sender && privKey) {
+        await callback(await makeSignedTx(newTransaction), ids);
+        return;
       }
-      await callback(await makeTx(transaction), ids);
+      await callback(await makeTx(newTransaction), ids);
     } catch (error) {
       logger.error(error);
       return { error };

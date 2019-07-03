@@ -9,7 +9,8 @@ const insertTransaction = transactionModel => async ({
   activityId,
   milestoneId,
   projectId,
-  type
+  type,
+  status
 }) => {
   const transaction = await transactionModel.findOne({ where: { data } });
   if (!transaction)
@@ -27,13 +28,12 @@ const insertTransaction = transactionModel => async ({
     });
   return transactionModel
     .updateOne({ where: { id: transaction.id } })
-    .set({ sender, receiver, data, transactionHash, privKey });
+    .set({ sender, receiver, data, transactionHash, privKey, status });
 };
 
 const getUnconfirmedTransactions = transactionModel => async () =>
   transactionModel.find({
-    status: blockchainStatus.PENDING,
-    transactionHash: { '!=': null }
+    status: blockchainStatus.SENT
   });
 
 const getPoolTransactions = transactionModel => async () =>
