@@ -7,6 +7,7 @@
  */
 
 const { blockchainStatus } = require('../util/constants');
+
 const saveActivity = activityModel => async (activity, milestoneId) => {
   const toSave = {
     ...activity,
@@ -48,12 +49,10 @@ const deleteActivity = activityModel => async activityId => {
 const updateStatus = activityModel => async (activityId, status) =>
   activityModel.update(activityId).set({ status });
 
-const updateStatusWithTransaction = activityModel => async (
+const updateTransactionHash = activityModel => async (
   activityId,
-  status,
   transactionHash
-) =>
-  activityModel.updateOne({ id: activityId }).set({ status, transactionHash });
+) => activityModel.updateOne({ id: activityId }).set({ transactionHash });
 
 const updateBlockchainStatus = activityModel => async (
   activityId,
@@ -69,13 +68,19 @@ const whichUnconfirmedActivities = activityModel => async activitiesIds => {
   });
 };
 
+const updateCreationTransactionHash = activityModel => async (
+  activityId,
+  transactionHash
+) => activityModel.updateOne({ id: activityId }).set({ transactionHash });
+
 module.exports = activityModel => ({
   saveActivity: saveActivity(activityModel),
   updateActivity: updateActivity(activityModel),
   getActivityById: getActivityById(activityModel),
   deleteActivity: deleteActivity(activityModel),
   updateStatus: updateStatus(activityModel),
-  updateStatusWithTransaction: updateStatusWithTransaction(activityModel),
+  updateTransactionHash: updateTransactionHash(activityModel),
   updateBlockchainStatus: updateBlockchainStatus(activityModel),
-  whichUnconfirmedActivities: whichUnconfirmedActivities(activityModel)
+  whichUnconfirmedActivities: whichUnconfirmedActivities(activityModel),
+  updateCreationTransactionHash: updateCreationTransactionHash(activityModel)
 });

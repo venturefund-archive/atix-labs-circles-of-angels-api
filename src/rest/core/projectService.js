@@ -218,20 +218,11 @@ const projectService = ({
 
       if (isEmpty(milestones.errors)) {
         const userOwner = await userDao.getUserById(ownerId);
-
-        // MODIFICAR: que el sender sea el admin
-        const transactionHash = await fastify.eth.createProject({
+        fastify.eth.createProject({
           projectId: savedProject.id,
           seAddress: userOwner.address,
           projectName: savedProject.projectName
         });
-        fastify.log.info(
-          '[Project Service] :: transaction hash of project creation: ',
-          transactionHash
-        );
-
-        savedProject.creationTransactionHash = transactionHash;
-        savedProject.blockchainStatus = blockchainStatus.SENT;
       }
 
       fastify.log.info('[Project Service] :: Updating project:', savedProject);

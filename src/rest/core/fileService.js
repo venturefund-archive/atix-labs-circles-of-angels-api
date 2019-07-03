@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const mime = require('mime');
 const { unlink } = require('fs');
 const { promisify } = require('util');
 
@@ -77,8 +78,6 @@ const fileService = ({ fastify, fileDao }) => ({
     try {
       const deletedFile = await fileDao.deleteFile(fileId);
 
-      await unlinkPromise(deletedFile.path);
-
       if (!deletedFile || deletedFile == null) {
         fastify.log.error(
           `[File Service] :: File ID ${fileId} not found in database:`
@@ -89,6 +88,8 @@ const fileService = ({ fastify, fileDao }) => ({
         };
       }
 
+      await unlinkPromise(deletedFile.path);
+
       fastify.log.info('[File Service] :: File deleted:', deletedFile);
       return deletedFile;
     } catch (error) {
@@ -98,7 +99,7 @@ const fileService = ({ fastify, fileDao }) => ({
   },
 
   checkEvidenceFileType(file) {
-    const fileType = file.mimetype;
+    const fileType = mime.lookup(file.name);
     const validTypes = [
       'application/pdf',
       'application/msword',

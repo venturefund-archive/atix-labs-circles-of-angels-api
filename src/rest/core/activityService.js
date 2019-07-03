@@ -198,14 +198,12 @@ const activityService = ({
         }
       }
       const userInfo = await userService.getUserById(user.id);
-      await fastify.eth.uploadHashEvidenceToActivity(
-        userInfo.address,
-        userInfo.pwd,
-        {
-          activityId,
-          hashes
-        }
-      );
+      await fastify.eth.uploadHashEvidenceToActivity({
+        sender: userInfo.address,
+        privKey: userInfo.privKey,
+        activityId,
+        hashes
+      });
     } catch (error) {
       fastify.log.error(
         '[Activity Service] :: There was an error uploading the evidence:',
@@ -218,7 +216,7 @@ const activityService = ({
     }
 
     if (errors.length > 0) {
-      return errors;
+      return { errors };
     }
     return { success: 'The evidence was successfully uploaded!' };
   },
@@ -650,6 +648,7 @@ const activityService = ({
       !(await milestoneService.milestoneHasActivities(deleted.milestone));
     if (milestoneEmpty)
       await milestoneService.deleteMilestone(deleted.milestone);
+    return deleted;
   },
 
   /**
@@ -877,16 +876,11 @@ const activityService = ({
         };
       }
       const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
-      const transactionHash = await fastify.eth.validateActivity(
-        oracle.user.address,
-        oracle.user.pwd,
-        { activityId }
-      );
-      return activityDao.updateStatusWithTransaction(
-        activityId,
-        activityStatus.COMPLETED,
-        transactionHash
-      );
+      await fastify.eth.validateActivity({
+        sender: oracle.user.address,
+        privKey: oracle.user.privKey,
+        activityId
+      });
     } catch (error) {
       fastify.log.error(
         '[Activity Service] :: Error completing activity:',

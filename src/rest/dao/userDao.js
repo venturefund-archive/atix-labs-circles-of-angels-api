@@ -42,6 +42,12 @@ const UserDao = ({ userModel }) => ({
 
   async updatePasswordByMail(email, pwd) {
     return userModel.updateOne({ where: { email } }).set({ pwd });
+  },
+
+  async updateTransferBlockchainStatus(userId, status) {
+    return userModel
+      .updateOne({ id: userId })
+      .set({ transferBlockchainStatus: status });
   }
 });
 

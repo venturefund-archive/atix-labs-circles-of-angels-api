@@ -15,7 +15,7 @@ module.exports = {
     fastify.log.info('[User Routes] :: Getting user info');
     const user = await userService.getUserById(request.params.id);
     if (!user)
-      reply.send({
+      reply.status(404).send({
         error: `Cannot find user with id: ${request.params.id}`
       });
 
@@ -53,7 +53,7 @@ module.exports = {
           '[User Routes] :: Error getting user role: ',
           role.error
         );
-        reply.status(404).send(role.error);
+        reply.status(404).send(role);
       }
     } catch (error) {
       fastify.log.error(
@@ -278,7 +278,7 @@ module.exports = {
         projectService
       );
       if (projects.error) {
-        reply.status(projects.status).send(projects.error);
+        reply.status(projects.status).send(projects);
       } else {
         reply.status(200).send(projects);
       }
