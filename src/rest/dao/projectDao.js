@@ -134,6 +134,14 @@ const ProjectDao = ({ projectModel, userDao }) => ({
 
   async updateStartBlockchainStatus(id, startBlockchainStatus) {
     return projectModel.updateOne({ id }).set({ startBlockchainStatus });
+  },
+
+  async updateCreationTransactionHash(id, creationTransactionHash) {
+    return projectModel.updateOne({ id }).set({ creationTransactionHash }); 
+  },
+
+  async updateStartTransactionHash(id, transactionHash) {
+    return projectModel.updateOne({ id }).set({ transactionHash });
   }
 });
 

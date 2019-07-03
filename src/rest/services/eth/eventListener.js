@@ -5,16 +5,22 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
-
+const { isEmpty } = require('lodash');
 const {
   blockchainStatus,
   projectStatus,
-  milestoneBudgetStatus
+  milestoneBudgetStatus,
+  activityStatus
 } = require('../../util/constants');
 
-const eventListener = async fastify => {
+const eventListener = async (
+  ethService,
+  { COAProjectAdmin, COAOracle },
+  { logger }
+) => {
   const { helper } = require('../helper');
   const { projectService, milestoneService, activityService } = helper.services;
+  const { transactionDao } = helper.daos;
 
   const {
     blockchainBlockDao,
@@ -25,110 +31,115 @@ const eventListener = async fastify => {
 
   const updateLastBlock = async event => {
     const { blockNumber, transactionHash } = event;
+    if (!blockNumber || !transactionHash) {
+      return false;
+    }
+    await transactionDao.confirmTransaction(transactionHash);
     return blockchainBlockDao.updateLastBlock(blockNumber, transactionHash);
   };
 
   const onProjectStarted = async event => {
-    fastify.log.info(
-      '[Event listener] :: received Project started event',
-      event
-    );
-    let { id } = event.returnValues;
-    id = parseInt(id._hex, 16);
-
-    projectDao.updateStartBlockchainStatus(id, blockchainStatus.CONFIRMED);
+    try {
+      logger.info('[Event listener] :: received Project started event', event);
+      let { id } = event.returnValues;
+      id = parseInt(id._hex, 16);
+      await updateLastBlock(event);
+      await projectDao.updateStartBlockchainStatus(
+        id,
+        blockchainStatus.CONFIRMED
+      );
+      await projectService.updateProjectStatus({
+        projectId: id,
+        status: projectStatus.IN_PROGRESS
+      });
+      logger.info('[Event listener] :: Project started:', id);
+    } catch (error) {
+      logger.error(error);
+    }
   };
 
   const onMilestoneClaimableEvent = async event => {
     try {
-      fastify.log.info(
+      logger.info(
         '[Event listener] :: received Milestone Claimable event',
         event
       );
+      await updateLastBlock(event);
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
-      const updatedMilestone = await milestoneDao.updateBudgetStatus(
-        id,
-        milestoneBudgetStatus.CLAIMABLE
-      );
-      updatedMilestone && (await updateLastBlock(event));
+      // await milestoneDao.updateBudgetStatus( ARREGLAR ORDEN DE MILESTONES EN SC!
+      //   id,
+      //   milestoneBudgetStatus.CLAIMABLE
+      // );
     } catch (error) {
-      fastify.log.error(error);
+      logger.error(error);
     }
   };
 
   const onMilestoneClaimedEvent = async event => {
     try {
-      fastify.log.info(
+      logger.info(
         '[Event listener] :: received Milestone Claimed event',
         event
       );
+      await updateLastBlock(event);
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
-      const updatedMilestone = await milestoneDao.updateBudgetStatus(
-        id,
-        milestoneBudgetStatus.CLAIMED
-      );
-      updatedMilestone && (await updateLastBlock(event));
+      await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.CLAIMED);
     } catch (error) {
-      fastify.log.error(error);
+      logger.error(error);
     }
   };
 
   const onMilestoneFundedEvent = async event => {
     try {
-      fastify.log.info(
-        '[Event listener] :: received Milestone Funded event',
-        event
-      );
+      logger.info('[Event listener] :: received Milestone Funded event', event);
+      await updateLastBlock(event);
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
-      const updatedMilestone = await milestoneDao.updateBudgetStatus(
-        id,
-        milestoneBudgetStatus.FUNDED
-      );
-      updatedMilestone && (await updateLastBlock(event));
+      await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.FUNDED);
     } catch (error) {
-      fastify.log.error(error);
+      logger.error(error);
     }
   };
 
   const onNewProjectEvent = async event => {
-    fastify.log.info('[Event listener] :: received New Project event', event);
+    logger.info('[Event listener] :: received New Project event', event);
     try {
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
+      await updateLastBlock(event);
       const modifiedProject = await projectService.updateBlockchainStatus(
         id,
         blockchainStatus.CONFIRMED
       );
 
       if (modifiedProject.error) {
-        fastify.log.error(
+        logger.error(
           '[Event listener] :: Error updating status: ',
           modifiedProject.error
         );
         return;
       }
-      await updateLastBlock(event);
-      fastify.log.info(
+      logger.info(
         '[Event listener] :: successfully updated blockchain status of project ',
         id
       );
     } catch (error) {
-      fastify.log.error(error);
+      logger.error(error);
     }
   };
 
   const onNewMilestoneEvent = async event => {
-    fastify.log.info('[Event listener] :: received New Milestone event', event);
+    logger.info('[Event listener] :: received New Milestone event', event);
     try {
       let { id, projectId } = event.returnValues;
+      await updateLastBlock(event);
       id = parseInt(id._hex, 16);
       projectId = parseInt(projectId._hex, 16);
       const project = await projectService.getProjectWithId({ projectId });
       if (project.blockchainStatus !== blockchainStatus.CONFIRMED) {
-        fastify.log.error(
+        logger.error(
           '[Event listener] :: Must be confirmed in blockchain first the project ',
           projectId
         );
@@ -140,7 +151,7 @@ const eventListener = async fastify => {
       );
 
       if (milestone.error) {
-        fastify.log.error(
+        logger.error(
           '[Event listener] :: Error updating status: ',
           milestone.error
         );
@@ -158,20 +169,21 @@ const eventListener = async fastify => {
         activities[j].projectId = projectId;
         activities[j].milestoneId = id;
       }
-      await fastify.eth.createActivities(activities);
-      await updateLastBlock(event);
-      fastify.log.info(
+      ethService.createActivities({ activities });
+
+      logger.info(
         '[Event listener] :: successfully updated blockchain status of milestone ',
         id
       );
     } catch (error) {
-      fastify.log.error(error);
+      logger.error(error);
     }
   };
 
   const onNewActivityEvent = async event => {
-    fastify.log.info('[Event listener] :: received New Activity event', event);
+    logger.info('[Event listener] :: received New Activity event', event);
     try {
+      await updateLastBlock(event);
       let { id, milestoneId, projectId } = event.returnValues;
       id = parseInt(id._hex, 16);
       milestoneId = parseInt(milestoneId._hex, 16);
@@ -181,14 +193,14 @@ const eventListener = async fastify => {
       const milestone = await milestoneService.getMilestoneById(milestoneId);
 
       if (project.blockchainStatus !== blockchainStatus.CONFIRMED) {
-        fastify.log.error(
+        logger.error(
           '[Event listener] :: Must be confirmed in blockchain first the project ',
           projectId
         );
         return;
       }
       if (milestone.blockchainStatus !== blockchainStatus.CONFIRMED) {
-        fastify.log.error(
+        logger.error(
           '[Event listener] :: Must be confirmed in blockchain first the milestone ',
           milestoneId
         );
@@ -200,7 +212,7 @@ const eventListener = async fastify => {
       );
 
       if (!response) {
-        fastify.log.error('[Event listener] :: Error updating status ');
+        logger.error('[Event listener] :: Error updating status ');
         return;
       }
       const { activities } = await milestoneService.getMilestoneActivities(
@@ -216,7 +228,7 @@ const eventListener = async fastify => {
       }
 
       if (response.error) {
-        fastify.log.error(
+        logger.error(
           '[Event listener] :: Error updating status: ',
           response.error
         );
@@ -232,7 +244,7 @@ const eventListener = async fastify => {
         );
 
         if (projectComplete.error) {
-          fastify.log.error(
+          logger.error(
             '[Event listener] :: Error updating status: ',
             projectComplete.error
           );
@@ -240,30 +252,59 @@ const eventListener = async fastify => {
         }
 
         if (projectComplete) {
-          const userOwner = await projectDao.getUserOwnerOfProject(projectId);
-          const transactionHash = await fastify.eth.startProject({ projectId });
-          await projectDao.updateProjectTransaction({
-            projectId,
-            status: projectStatus.IN_PROGRESS,
-            transactionHash
-          });
+          const onSendTransaction = async transactionHash => {
+            await projectDao.updateProjectTransaction({
+              projectId,
+              status: projectStatus.IN_PROGRESS,
+              transactionHash
+            });
+          };
+          ethService.startProject({ projectId }, onSendTransaction);
 
-          await projectService.updateProjectStatus({
-            projectId,
-            status: projectStatus.IN_PROGRESS
-          });
-
-          fastify.log.info('[Event listener] :: Project started:', projectId);
-
-          await updateLastBlock(event);
-          fastify.log.info(
+          logger.info(
             '[Event listener] :: successfully updated blockchain status of activity',
             id
           );
         }
       }
     } catch (error) {
-      fastify.log.error(error);
+      logger.error(error);
+    }
+  };
+
+  const getAllPastEvents = async options => {
+    const CoaProjectAdminEvents = await COAProjectAdmin.getPastEvents(
+      'allEvents',
+      options
+    );
+    const CoaOracleEvents = await COAOracle.getPastEvents('allEvents', options);
+
+    const events = CoaProjectAdminEvents.concat(CoaOracleEvents);
+    events.sort((event1, event2) => event1.blockNumber - event2.blockNumber);
+
+    return events;
+  };
+
+  const onActivityValidatedEvent = async event => {
+    try {
+      await updateLastBlock(event);
+      let { id } = event.returnValues;
+      id = parseInt(id._hex, 16);
+
+      const activity = await activityDao.updateStatus(
+        id,
+        activityStatus.COMPLETED
+      );
+      await milestoneService.tryCompleteMilestone(activity);
+      logger.info(
+        '[Event listener] :: successfully updated blockchain status of activity ',
+        id
+      );
+    } catch (error) {
+      logger.error(
+        '[Event listener] :: unexpected error handleing Activity Validated Event: ',
+        error
+      );
     }
   };
 
@@ -273,7 +314,9 @@ const eventListener = async fastify => {
     NewActivity: onNewActivityEvent,
     MilestoneClaimable: onMilestoneClaimableEvent,
     MilestoneClaimed: onMilestoneClaimedEvent,
-    MilestoneFunded: onMilestoneFundedEvent
+    MilestoneFunded: onMilestoneFundedEvent,
+    ProjectStarted: onProjectStarted,
+    ActivityValidated: onActivityValidatedEvent
   };
 
   return {
@@ -281,25 +324,25 @@ const eventListener = async fastify => {
       try {
         const lastBlock = await blockchainBlockDao.getLastBlock();
         const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
-        const events = await fastify.eth.getAllPastEvents({ fromBlock });
-        
-        for (const eventKey in events) {
-          const event = events[eventKey];
-          if (eventMethodMap[event.event]) eventMethodMap[event.event](event);
+
+        const events = await getAllPastEvents({ fromBlock });
+        const filteredEvents = events.filter(
+          event => eventMethodMap[event.event]
+        );
+        if (isEmpty(filteredEvents)) return;
+        logger.info('[event listener] - recovering past events...');
+        let event;
+        for (const eventKey in filteredEvents) {
+          event = filteredEvents[eventKey];
+          await eventMethodMap[event.event](event);
         }
       } catch (error) {
-        fastify.log.error(error);
+        logger.error(error);
       }
     },
 
-    async initEventListener() {
-      fastify.eth.suscribeNewProjectEvent(onNewProjectEvent);
-      fastify.eth.suscribeNewMilestoneEvent(onNewMilestoneEvent);
-      fastify.eth.suscribeNewActivityEvent(onNewActivityEvent);
-      fastify.eth.suscribeMilestoneClaimableEvent(onMilestoneClaimableEvent);
-      fastify.eth.suscribeMilestoneClaimedEvent(onMilestoneClaimedEvent);
-      fastify.eth.suscribeMilestoneFundedEvent(onMilestoneFundedEvent);
-      fastify.eth.suscribeProjectStartedEvent(onProjectStarted);
+    async startListen() {
+      setInterval(async () => this.recoverPastEvents(), 5000);
     }
   };
 };

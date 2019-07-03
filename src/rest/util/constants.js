@@ -85,6 +85,17 @@ const xlsxConfigs = {
   startRow: 4
 };
 
+const transactionTypes = {
+  projectCreation: 'projectCreation',
+  milestoneCreation: 'milestoneCreation',
+  activityCreation: 'activityCreation',
+  milestoneClaimed: 'milestoneClaimed',
+  projectStarted:'projectStarted',
+  milestoneFunded: 'milestoneFunded',
+  validateActivity: 'validateActivity',
+  updateEvidence: 'updateEvidence'
+}
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
@@ -94,5 +105,6 @@ module.exports = {
   milestoneBudgetStatus,
   userRegistrationStatus,
   blockchainStatus,
-  xlsxConfigs
+  xlsxConfigs,
+  transactionTypes
 };

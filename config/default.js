@@ -6,9 +6,11 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const routeTags = require('../src/rest/util/routeTags');
+
 module.exports = {
   server: {
-    host: 'localhost',
+    host: '173.255.254.208',
     port: 3001,
     headers: {
       'Access-Control-Allow-Credentials': true,
@@ -57,14 +59,15 @@ module.exports = {
     exposeRoute: true,
     swagger: {
       info: {
-        title: 'Circles od Angels API',
-        description: 'documentation of Circles of Angels API',
+        title: 'Circles of Angels API',
+        description: 'Circles of Angels API Documentation',
         version: '0.1.0'
       },
-      host: 'localhost',
+      host: 'localhost:3001',
       schemes: ['http', 'json'],
       consumes: ['application/json'],
-      produces: ['application/json']
+      produces: ['application/json'],
+      tags: Object.values(routeTags)
     }
   }
 };
