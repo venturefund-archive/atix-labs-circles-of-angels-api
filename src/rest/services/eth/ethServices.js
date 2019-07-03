@@ -58,6 +58,10 @@ const ethServices = async (
       });
     },
 
+    async getLastBlock() {
+      return web3.eth.getBlock('latest');
+    },
+
     async createAccount() {
       const account = await web3.eth.accounts.create(web3.utils.randomHex(32));
       return account;

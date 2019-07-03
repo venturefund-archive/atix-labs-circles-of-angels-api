@@ -329,12 +329,21 @@ const eventListener = async (
         const filteredEvents = events.filter(
           event => eventMethodMap[event.event]
         );
-        if (isEmpty(filteredEvents)) return;
-        logger.info('[event listener] - recovering past events...');
-        let event;
-        for (const eventKey in filteredEvents) {
-          event = filteredEvents[eventKey];
-          await eventMethodMap[event.event](event);
+
+        if (isEmpty(filteredEvents)) {
+          const lastMinedBlock = await ethService.getLastBlock();
+          if (lastBlock !== lastMinedBlock.number) {
+            await updateLastBlock({
+              blockNumber: lastMinedBlock.number,
+              transactionHash: lastMinedBlock.hash
+            });
+          }
+        } else {
+          logger.info('[event listener] - recovering past events...');
+          for (const eventKey in filteredEvents) {
+            event = filteredEvents[eventKey];
+            await eventMethodMap[event.event](event);
+          }
         }
       } catch (error) {
         logger.error(error);

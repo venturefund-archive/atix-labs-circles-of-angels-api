@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
-
+const { blockchainStatus } = require('../../util/constants');
 class MemPool {
   constructor(transactionDao, timelapse, worker, logger) {
     this.transactionDao = transactionDao;
@@ -38,7 +38,11 @@ class MemPool {
       try {
         const lapse = (actualDate - new Date(transaction.updatedAt)) / 1000;
         if (lapse >= this.MAX_TIME) {
-          await this.worker.pushTransaction(transaction);
+          const newTransaction = {
+            ...transaction,
+            status: blockchainStatus.PENDING
+          };
+          await this.worker.pushTransaction(newTransaction);
         }
       } catch (error) {
         this.logger.error(error);

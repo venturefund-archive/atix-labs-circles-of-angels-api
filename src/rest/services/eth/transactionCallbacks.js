@@ -18,6 +18,22 @@ const transactionCallbacks = logger => {
       await projectDao.updateCreationTransactionHash(projectId, hash);
       await projectDao.updateBlockchainStatus(projectId, blockchainStatus.SENT);
     },
+    projectStarted: async (hash, ids) => {
+      const { projectId } = ids;
+      if (!projectId) {
+        logger.error(
+          `[Transaction Callbacks] :: ${
+            transactionTypes.projectStarted
+          } must provide project id`
+        );
+        return;
+      }
+      await projectDao.updateStartTransactionHash(projectId, hash);
+      await projectDao.updateStartBlockchainStatus(
+        projectId,
+        blockchainStatus.CONFIRMED
+      );
+    },
     milestoneCreation: async (hash, ids) => {
       const { milestoneId } = ids;
       if (!milestoneId) {
