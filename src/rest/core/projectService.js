@@ -221,7 +221,8 @@ const projectService = ({
         fastify.eth.createProject({
           projectId: savedProject.id,
           seAddress: userOwner.address,
-          projectName: savedProject.projectName
+          projectName: savedProject.projectName,
+          milestonesCount: milestones.length
         });
       }
 
