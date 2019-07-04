@@ -72,13 +72,18 @@ const ethServices = async (
       await transfer(adminAccount, address, ethConfig.INITIAL_FUNDS, onConfirm);
     },
 
-    async createProject({ projectId, seAddress, projectName }) {
+    async createProject({
+      projectId,
+      seAddress,
+      projectName,
+      milestonesCount
+    }) {
       logger.info(
         `[SC::Create Project] Creating Project: ${projectId} - ${projectName}`
       );
       const checksumAddress = toChecksum(seAddress);
       const encodedMethod = COAProjectAdmin.methods
-        .createProject(projectId, checksumAddress, projectName)
+        .createProject(projectId, checksumAddress, projectName, milestonesCount)
         .encodeABI();
       await worker.pushTransaction({
         receiver: COAProjectAdmin.address,
@@ -127,10 +132,11 @@ const ethServices = async (
 
     async createMilestones({ milestones }) {
       try {
-        milestones.forEach(async milestone => {
+        milestones.forEach(async (milestone, index) => {
           const encodedMethod = COAProjectAdmin.methods
             .createMilestone(
               milestone.id,
+              index,
               milestone.project,
               milestone.budget,
               milestone.tasks
