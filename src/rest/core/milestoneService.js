@@ -348,7 +348,6 @@ const milestoneService = ({
             if (milestone.activityList.length === 0) {
               pushError('Found a milestone without activities');
             }
-            response.milestones.push(milestone);
           }
 
           milestone = {};
@@ -357,6 +356,7 @@ const milestoneService = ({
           Object.assign(milestone, getStandardAttributes(row));
           milestone.quarter = actualQuarter;
           this.verifyMilestone(milestone, pushError);
+          response.milestones.push(milestone);
         } else if (type.includes('Activity')) {
           const activity = {};
           Object.assign(activity, getStandardAttributes(row));

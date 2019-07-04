@@ -13,6 +13,9 @@ const {
   activityStatus
 } = require('../../util/constants');
 
+const INTERVAL = 5000;
+const BLOCK_STEP = 50;
+
 const eventListener = async (
   ethService,
   { COAProjectAdmin, COAOracle },
@@ -319,39 +322,55 @@ const eventListener = async (
     ActivityValidated: onActivityValidatedEvent
   };
 
+  const readEvents = async (lastBlock, lastMinedBlock, options) => {
+    const events = await getAllPastEvents(options);
+    const filteredEvents = events.filter(event => eventMethodMap[event.event]);
+    if (isEmpty(filteredEvents)) {
+      if (lastBlock !== lastMinedBlock.number) {
+        await updateLastBlock({
+          blockNumber: lastMinedBlock.number,
+          transactionHash: lastMinedBlock.hash
+        });
+      }
+    } else {
+      logger.info('[event listener] - recovering past events...');
+      for (const eventKey in filteredEvents) {
+        event = filteredEvents[eventKey];
+        await eventMethodMap[event.event](event);
+      }
+    }
+  };
+
   return {
     async recoverPastEvents() {
       try {
+        let running = true;
+        const lastMinedBlock = await ethService.getLastBlock();
+        const lastMinedBlockNumber = lastMinedBlock.number;
         const lastBlock = await blockchainBlockDao.getLastBlock();
-        const fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
+        let fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
+        let toBlock =
+          fromBlock + BLOCK_STEP < lastMinedBlockNumber
+            ? fromBlock + BLOCK_STEP
+            : lastMinedBlockNumber;
 
-        const events = await getAllPastEvents({ fromBlock });
-        const filteredEvents = events.filter(
-          event => eventMethodMap[event.event]
-        );
-
-        if (isEmpty(filteredEvents)) {
-          const lastMinedBlock = await ethService.getLastBlock();
-          if (lastBlock !== lastMinedBlock.number) {
-            await updateLastBlock({
-              blockNumber: lastMinedBlock.number,
-              transactionHash: lastMinedBlock.hash
-            });
-          }
-        } else {
-          logger.info('[event listener] - recovering past events...');
-          for (const eventKey in filteredEvents) {
-            event = filteredEvents[eventKey];
-            await eventMethodMap[event.event](event);
-          }
+        while (running) {
+          await readEvents(lastBlock, lastMinedBlock, { fromBlock, toBlock });
+          if (toBlock === lastMinedBlockNumber) running = false;
+          fromBlock = toBlock + 1;
+          toBlock =
+            fromBlock + BLOCK_STEP < lastMinedBlockNumber
+              ? fromBlock + BLOCK_STEP
+              : lastMinedBlockNumber;
         }
+        setTimeout(() => this.recoverPastEvents(), INTERVAL);
       } catch (error) {
         logger.error(error);
       }
     },
 
     async startListen() {
-      setInterval(async () => this.recoverPastEvents(), 5000);
+      this.recoverPastEvents();
     }
   };
 };

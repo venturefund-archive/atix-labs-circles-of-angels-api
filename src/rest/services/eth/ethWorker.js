@@ -119,23 +119,26 @@ const ethWorker = (web3, { logger }) => {
   const makeTx = ({ id, receiver, sender, data }) => {
     const addressSender = toChecksum(sender);
     return new Promise(async (resolve, reject) => {
-      const nonce = await web3.eth.getTransactionCount(addressSender);
+      const nonce = (await web3.eth.getTransactionCount(addressSender)) || 0;
       const txConfig = {
         nonce,
         to: receiver,
         from: addressSender,
-        data,
-        gasLimit,
-        gasPrice: 0
+        data
       };
-      web3.eth.sendTransaction(txConfig, async (err, hash) => {
-        if (err) {
+      web3.eth
+        .sendTransaction(txConfig)
+        .on('transactionHash', async hash => {
+          const tx = await web3.eth.getTransaction(hash);
+          if (hash && tx) {
+            transactionDao.sendTransaction(id, hash, sender);
+            resolve(hash);
+          } else reject('Cannot make transaction correctly');
+        })
+        .on('error', err => {
           logger.error(err);
           reject(err);
-        }
-        if (hash) transactionDao.sendTransaction(id, hash, sender);
-        resolve(hash);
-      });
+        });
     });
   };
 
@@ -150,9 +153,7 @@ const ethWorker = (web3, { logger }) => {
         nonce,
         from: addressSender,
         to: receiver,
-        data,
-        gasLimit,
-        gasPrice: 0
+        data
       };
       const httpWeb3 = new Web3(
         new HDWalletProvider(
@@ -163,15 +164,19 @@ const ethWorker = (web3, { logger }) => {
           false
         )
       );
-      httpWeb3.eth.sendTransaction(txConfig, async (err, hash) => {
-        if (err) {
+      httpWeb3.eth
+        .sendTransaction(txConfig)
+        .on('transactionHash', async hash => {
+          const tx = await web3.eth.getTransaction(hash);
+          if (hash && tx) {
+            transactionDao.sendTransaction(id, hash, sender);
+            resolve(hash);
+          } else reject('Cannot make transaction correctly');
+        })
+        .on('error', err => {
           logger.error(err);
           reject(err);
-        }
-        logger.info(`TxHash: ${hash}`);
-        if (hash) transactionDao.sendTransaction(id, hash, addressSender);
-        resolve(hash);
-      });
+        });
     });
   };
 
