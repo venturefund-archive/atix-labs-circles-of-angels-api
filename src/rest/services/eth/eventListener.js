@@ -70,10 +70,10 @@ const eventListener = async (
       await updateLastBlock(event);
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
-      // await milestoneDao.updateBudgetStatus( ARREGLAR ORDEN DE MILESTONES EN SC!
-      //   id,
-      //   milestoneBudgetStatus.CLAIMABLE
-      // );
+      await milestoneDao.updateBudgetStatus(
+        id,
+        milestoneBudgetStatus.CLAIMABLE
+      );
     } catch (error) {
       logger.error(error);
     }
@@ -99,8 +99,36 @@ const eventListener = async (
       logger.info('[Event listener] :: received Milestone Funded event', event);
       await updateLastBlock(event);
       let { id } = event.returnValues;
+
       id = parseInt(id._hex, 16);
       await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.FUNDED);
+    } catch (error) {
+      logger.error(error);
+    }
+  };
+
+  const onMilestoneCompletedEvent = async event => {
+    try {
+      logger.info(
+        '[Event listener] :: received Milestone Completed event',
+        event
+      );
+      await updateLastBlock(event);
+      let { id } = event.returnValues;
+      id = parseInt(id._hex, 16);
+      await milestoneService.tryCompleteMilestone(id);
+    } catch (error) {
+      logger.error(error);
+    }
+  };
+
+  const onProjectCompletedEvent = async event => {
+    try {
+      logger.info(
+        '[Event listener] :: received Project Completed event',
+        event
+      );
+      await updateLastBlock(event);
     } catch (error) {
       logger.error(error);
     }
@@ -255,14 +283,7 @@ const eventListener = async (
         }
 
         if (projectComplete) {
-          const onSendTransaction = async transactionHash => {
-            await projectDao.updateProjectTransaction({
-              projectId,
-              status: projectStatus.IN_PROGRESS,
-              transactionHash
-            });
-          };
-          ethService.startProject({ projectId }, onSendTransaction);
+          ethService.startProject({ projectId });
 
           logger.info(
             '[Event listener] :: successfully updated blockchain status of activity',
@@ -294,11 +315,7 @@ const eventListener = async (
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
 
-      const activity = (await activityDao.updateStatus(
-        id,
-        activityStatus.COMPLETED
-      ))[0];
-      await milestoneService.tryCompleteMilestone(activity.milestone);
+      await activityDao.updateStatus(id, activityStatus.COMPLETED);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of activity ',
         id
@@ -318,6 +335,8 @@ const eventListener = async (
     MilestoneClaimable: onMilestoneClaimableEvent,
     MilestoneClaimed: onMilestoneClaimedEvent,
     MilestoneFunded: onMilestoneFundedEvent,
+    MilestoneCompleted: onMilestoneCompletedEvent,
+    ProjectCompleted: onProjectCompletedEvent,
     ProjectStarted: onProjectStarted,
     ActivityValidated: onActivityValidatedEvent
   };

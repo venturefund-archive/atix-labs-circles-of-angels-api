@@ -47,7 +47,7 @@ const deleteActivity = activityModel => async activityId => {
 };
 
 const updateStatus = activityModel => async (activityId, status) =>
-  activityModel.update(activityId).set({ status });
+  activityModel.updateOne({ id: activityId }).set({ status });
 
 const updateTransactionHash = activityModel => async (
   activityId,
