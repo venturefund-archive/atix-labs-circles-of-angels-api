@@ -56,10 +56,14 @@ const confirmTransaction = transactionModel => async transactionHash =>
     .updateOne({ where: { transactionHash } })
     .set({ status: blockchainStatus.CONFIRMED });
 
+const abortTransaction = transactionModel => async id =>
+  transactionModel.updateOne(id).set({ status: blockchainStatus.ABORTED });
+
 module.exports = transactionModel => ({
   insertTransaction: insertTransaction(transactionModel),
   getUnconfirmedTransactions: getUnconfirmedTransactions(transactionModel),
   confirmTransaction: confirmTransaction(transactionModel),
   sendTransaction: sendTransaction(transactionModel),
-  getPoolTransactions: getPoolTransactions(transactionModel)
+  getPoolTransactions: getPoolTransactions(transactionModel),
+  abortTransaction: abortTransaction(transactionModel)
 });

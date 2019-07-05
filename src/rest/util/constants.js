@@ -55,7 +55,8 @@ const userRegistrationStatus = {
 const blockchainStatus = {
   PENDING: 1,
   SENT: 2,
-  CONFIRMED: 3
+  CONFIRMED: 3,
+  ABORTED: 4
 };
 
 const xlsxConfigs = {
