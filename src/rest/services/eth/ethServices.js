@@ -171,7 +171,7 @@ const ethServices = async (
         sender,
         privKey,
         type: transactionTypes.validateActivity,
-        activityId: activityId.id
+        activityId
       });
     },
     async isTransactionConfirmed(transactionHash) {

@@ -250,12 +250,13 @@ module.exports = {
         activityId,
         milestoneService.getMilestoneById
       );
-      if (activity.error) {
-        reply.status(activity.status).send(activity);
-      } else {
-        await milestoneService.tryCompleteMilestone(activity.milestone);
-        reply.status(200).send({ response: Boolean(activity) });
-      }
+      if (!activity)
+        if (activity.error) {
+          reply.status(activity.status).send(activity);
+        } else {
+          reply.status(200).send({ response: Boolean(activity) });
+        }
+      return activity;
     } catch (error) {
       fastify.log.error(
         '[Activity Routes] :: Error completing activity:',

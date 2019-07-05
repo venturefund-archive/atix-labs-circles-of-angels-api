@@ -294,11 +294,11 @@ const eventListener = async (
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
 
-      const activity = await activityDao.updateStatus(
+      const activity = (await activityDao.updateStatus(
         id,
         activityStatus.COMPLETED
-      );
-      await milestoneService.tryCompleteMilestone(activity);
+      ))[0];
+      await milestoneService.tryCompleteMilestone(activity.milestone);
       logger.info(
         '[Event listener] :: successfully updated blockchain status of activity ',
         id
