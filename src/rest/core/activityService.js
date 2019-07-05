@@ -881,6 +881,7 @@ const activityService = ({
         privKey: oracle.user.privKey,
         activityId
       });
+      return activity;
     } catch (error) {
       fastify.log.error(
         '[Activity Service] :: Error completing activity:',
