@@ -14,7 +14,7 @@ const {
 } = require('../../util/constants');
 
 const INTERVAL = 5000;
-const BLOCK_STEP = 50;
+const BLOCK_STEP = 20;
 
 const eventListener = async (
   ethService,
@@ -381,6 +381,7 @@ const eventListener = async (
         const lastMinedBlock = await ethService.getLastBlock();
         const lastMinedBlockNumber = lastMinedBlock.number;
         const lastBlock = await blockchainBlockDao.getLastBlock();
+
         let fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
         let toBlock =
           fromBlock + BLOCK_STEP < lastMinedBlockNumber
@@ -389,6 +390,7 @@ const eventListener = async (
 
         while (running) {
           await readEvents(lastBlock, lastMinedBlock, { fromBlock, toBlock });
+
           if (toBlock === lastMinedBlockNumber) running = false;
           fromBlock = toBlock + 1;
           toBlock =
