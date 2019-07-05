@@ -211,6 +211,15 @@ const eventListener = async (
     }
   };
 
+  const onEvidenceUploadedEvent = async event => {
+    logger.info('[Event listener] :: received EvidenceUploaded event', event);
+    try {
+      await updateLastBlock(event);
+    } catch (error) {
+      logger.error(error);
+    }
+  };
+
   const onNewActivityEvent = async event => {
     logger.info('[Event listener] :: received New Activity event', event);
     try {
@@ -311,6 +320,10 @@ const eventListener = async (
 
   const onActivityValidatedEvent = async event => {
     try {
+      logger.info(
+        '[Event listener] :: received Activity validated event',
+        event
+      );
       await updateLastBlock(event);
       let { id } = event.returnValues;
       id = parseInt(id._hex, 16);
@@ -338,7 +351,8 @@ const eventListener = async (
     MilestoneCompleted: onMilestoneCompletedEvent,
     ProjectCompleted: onProjectCompletedEvent,
     ProjectStarted: onProjectStarted,
-    ActivityValidated: onActivityValidatedEvent
+    ActivityValidated: onActivityValidatedEvent,
+    EvidenceUploaded: onEvidenceUploadedEvent
   };
 
   const readEvents = async (lastBlock, lastMinedBlock, options) => {

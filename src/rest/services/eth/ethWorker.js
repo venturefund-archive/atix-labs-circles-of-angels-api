@@ -131,9 +131,12 @@ const ethWorker = (web3, { logger }) => {
         .on('transactionHash', async hash => {
           const tx = await web3.eth.getTransaction(hash);
           if (hash && tx) {
-            transactionDao.sendTransaction(id, hash, sender);
+            await transactionDao.sendTransaction(id, hash, sender);
             resolve(hash);
-          } else reject('Cannot make transaction correctly');
+          } else {
+            await transactionDao.abortTransaction(id);
+            reject(new Error('Cannot make transaction correctly'));
+          }
         })
         .on('error', err => {
           logger.error(err);
@@ -171,7 +174,10 @@ const ethWorker = (web3, { logger }) => {
           if (hash && tx) {
             transactionDao.sendTransaction(id, hash, sender);
             resolve(hash);
-          } else reject('Cannot make transaction correctly');
+          } else {
+            await transactionDao.abortTransaction(id);
+            reject(new Error('Cannot make transaction correctly'));
+          }
         })
         .on('error', err => {
           logger.error(err);
