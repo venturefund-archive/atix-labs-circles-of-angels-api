@@ -119,70 +119,78 @@ const ethWorker = (web3, { logger }) => {
   const makeTx = ({ id, receiver, sender, data }) => {
     const addressSender = toChecksum(sender);
     return new Promise(async (resolve, reject) => {
-      const nonce = (await web3.eth.getTransactionCount(addressSender)) || 0;
-      const txConfig = {
-        nonce,
-        to: receiver,
-        from: addressSender,
-        data
-      };
-      web3.eth
-        .sendTransaction(txConfig)
-        .on('transactionHash', async hash => {
-          const tx = await web3.eth.getTransaction(hash);
-          if (hash && tx) {
-            await transactionDao.sendTransaction(id, hash, sender);
-            resolve(hash);
-          } else {
-            await transactionDao.abortTransaction(id);
-            reject(new Error('Cannot make transaction correctly'));
-          }
-        })
-        .on('error', err => {
-          logger.error(err);
-          reject(err);
-        });
+      try {
+        const nonce = (await web3.eth.getTransactionCount(addressSender)) || 0;
+        const txConfig = {
+          nonce,
+          to: receiver,
+          from: addressSender,
+          data
+        };
+        web3.eth
+          .sendTransaction(txConfig)
+          .on('transactionHash', async hash => {
+            const tx = await web3.eth.getTransaction(hash);
+            if (hash && tx) {
+              await transactionDao.sendTransaction(id, hash, sender);
+              resolve(hash);
+            } else {
+              await transactionDao.abortTransaction(id);
+              reject(new Error('Cannot make transaction correctly'));
+            }
+          })
+          .on('error', err => {
+            logger.error(err);
+            reject(err);
+          });
+      } catch (error) {
+        logger.error(error);
+      }
     });
   };
 
   const makeSignedTx = ({ id, receiver, sender, privKey, data }) => {
     if (!data) return;
     return new Promise(async (resolve, reject) => {
-      const cleanPrivateKey =
-        privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
-      const addressSender = toChecksum(sender);
-      const nonce = await web3.eth.getTransactionCount(addressSender);
-      const txConfig = {
-        nonce,
-        from: addressSender,
-        to: receiver,
-        data
-      };
-      const httpWeb3 = new Web3(
-        new HDWalletProvider(
-          [cleanPrivateKey],
-          ethConfig.HTTP_HOST,
-          0,
-          1,
-          false
-        )
-      );
-      httpWeb3.eth
-        .sendTransaction(txConfig)
-        .on('transactionHash', async hash => {
-          const tx = await web3.eth.getTransaction(hash);
-          if (hash && tx) {
-            transactionDao.sendTransaction(id, hash, sender);
-            resolve(hash);
-          } else {
-            await transactionDao.abortTransaction(id);
-            reject(new Error('Cannot make transaction correctly'));
-          }
-        })
-        .on('error', err => {
-          logger.error(err);
-          reject(err);
-        });
+      try {
+        const cleanPrivateKey =
+          privKey.slice(0, 2) === '0x' ? privKey.slice(2) : privKey;
+        const addressSender = toChecksum(sender);
+        const nonce = await web3.eth.getTransactionCount(addressSender);
+        const txConfig = {
+          nonce,
+          from: addressSender,
+          to: receiver,
+          data
+        };
+        const httpWeb3 = new Web3(
+          new HDWalletProvider(
+            [cleanPrivateKey],
+            ethConfig.HTTP_HOST,
+            0,
+            1,
+            false
+          )
+        );
+        httpWeb3.eth
+          .sendTransaction(txConfig)
+          .on('transactionHash', async hash => {
+            const tx = await web3.eth.getTransaction(hash);
+            if (hash && tx) {
+              transactionDao.sendTransaction(id, hash, sender);
+              resolve(hash);
+            } else {
+              await transactionDao.abortTransaction(id);
+              reject(new Error('Cannot make transaction correctly'));
+            }
+          })
+          .on('error', err => {
+            logger.error(err);
+            reject(err);
+          });
+      } catch (error) {
+        logger.error(error);
+      }
     });
   };
 

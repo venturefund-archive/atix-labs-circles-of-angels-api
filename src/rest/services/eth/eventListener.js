@@ -5,26 +5,30 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
-const { isEmpty } = require('lodash');
+const { isEmpty, concat } = require('lodash');
+const Web3 = require('web3_37');
 const {
   blockchainStatus,
   projectStatus,
   milestoneBudgetStatus,
   activityStatus
 } = require('../../util/constants');
+const ethConfig = require('config').eth;
 
 const INTERVAL = 5000;
-const BLOCK_STEP = 50;
+const BLOCK_STEP = 20;
 
 const eventListener = async (
   ethService,
-  { COAProjectAdmin, COAOracle },
+  { buildProjectAdminContract, buildOracleContract },
   { logger }
 ) => {
   const { helper } = require('../helper');
   const { projectService, milestoneService, activityService } = helper.services;
   const { transactionDao } = helper.daos;
-
+  const web3 = new Web3(ethConfig.HTTP_HOST);
+  const COAProjectAdmin  = buildProjectAdminContract(web3);
+  const COAOracle = buildOracleContract(web3);
   const {
     blockchainBlockDao,
     projectDao,
@@ -45,7 +49,6 @@ const eventListener = async (
     try {
       logger.info('[Event listener] :: received Project started event', event);
       let { id } = event.returnValues;
-      id = parseInt(id._hex, 16);
       await updateLastBlock(event);
       await projectDao.updateStartBlockchainStatus(
         id,
@@ -69,7 +72,6 @@ const eventListener = async (
       );
       await updateLastBlock(event);
       let { id } = event.returnValues;
-      id = parseInt(id._hex, 16);
       await milestoneDao.updateBudgetStatus(
         id,
         milestoneBudgetStatus.CLAIMABLE
@@ -87,7 +89,6 @@ const eventListener = async (
       );
       await updateLastBlock(event);
       let { id } = event.returnValues;
-      id = parseInt(id._hex, 16);
       await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.CLAIMED);
     } catch (error) {
       logger.error(error);
@@ -100,7 +101,6 @@ const eventListener = async (
       await updateLastBlock(event);
       let { id } = event.returnValues;
 
-      id = parseInt(id._hex, 16);
       await milestoneDao.updateBudgetStatus(id, milestoneBudgetStatus.FUNDED);
     } catch (error) {
       logger.error(error);
@@ -115,7 +115,6 @@ const eventListener = async (
       );
       await updateLastBlock(event);
       let { id } = event.returnValues;
-      id = parseInt(id._hex, 16);
       await milestoneService.tryCompleteMilestone(id);
     } catch (error) {
       logger.error(error);
@@ -138,7 +137,6 @@ const eventListener = async (
     logger.info('[Event listener] :: received New Project event', event);
     try {
       let { id } = event.returnValues;
-      id = parseInt(id._hex, 16);
       await updateLastBlock(event);
       const modifiedProject = await projectService.updateBlockchainStatus(
         id,
@@ -166,8 +164,6 @@ const eventListener = async (
     try {
       let { id, projectId } = event.returnValues;
       await updateLastBlock(event);
-      id = parseInt(id._hex, 16);
-      projectId = parseInt(projectId._hex, 16);
       const project = await projectService.getProjectWithId({ projectId });
       if (project.blockchainStatus !== blockchainStatus.CONFIRMED) {
         logger.error(
@@ -225,9 +221,6 @@ const eventListener = async (
     try {
       await updateLastBlock(event);
       let { id, milestoneId, projectId } = event.returnValues;
-      id = parseInt(id._hex, 16);
-      milestoneId = parseInt(milestoneId._hex, 16);
-      projectId = parseInt(projectId._hex, 16);
 
       const project = await projectService.getProjectWithId({ projectId });
       const milestone = await milestoneService.getMilestoneById(milestoneId);
@@ -306,15 +299,14 @@ const eventListener = async (
   };
 
   const getAllPastEvents = async options => {
+    const CoaOracleEvents = await COAOracle.getPastEvents('allEvents', options);
     const CoaProjectAdminEvents = await COAProjectAdmin.getPastEvents(
       'allEvents',
       options
     );
-    const CoaOracleEvents = await COAOracle.getPastEvents('allEvents', options);
 
-    const events = CoaProjectAdminEvents.concat(CoaOracleEvents);
+    const events = concat(CoaProjectAdminEvents,CoaOracleEvents);
     events.sort((event1, event2) => event1.blockNumber - event2.blockNumber);
-
     return events;
   };
 
@@ -326,7 +318,6 @@ const eventListener = async (
       );
       await updateLastBlock(event);
       let { id } = event.returnValues;
-      id = parseInt(id._hex, 16);
 
       await activityDao.updateStatus(id, activityStatus.COMPLETED);
       logger.info(
@@ -381,6 +372,7 @@ const eventListener = async (
         const lastMinedBlock = await ethService.getLastBlock();
         const lastMinedBlockNumber = lastMinedBlock.number;
         const lastBlock = await blockchainBlockDao.getLastBlock();
+
         let fromBlock = lastBlock ? lastBlock.blockNumber + 1 : 0;
         let toBlock =
           fromBlock + BLOCK_STEP < lastMinedBlockNumber
@@ -389,6 +381,7 @@ const eventListener = async (
 
         while (running) {
           await readEvents(lastBlock, lastMinedBlock, { fromBlock, toBlock });
+
           if (toBlock === lastMinedBlockNumber) running = false;
           fromBlock = toBlock + 1;
           toBlock =
