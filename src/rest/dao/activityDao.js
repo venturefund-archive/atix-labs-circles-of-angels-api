@@ -27,13 +27,6 @@ const getActivityById = activityModel => async activityId => {
 const updateActivity = activityModel => async (activity, activityId) => {
   const toUpdate = { ...activity };
 
-  delete toUpdate.id;
-  delete toUpdate.milestone;
-  delete toUpdate.blockchainStatus;
-
-  toUpdate.status = toUpdate.status || 1;
-  toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
-
   const savedActivity = await activityModel
     .updateOne({ id: activityId })
     .set({ ...toUpdate });
@@ -54,10 +47,10 @@ const updateTransactionHash = activityModel => async (
   transactionHash
 ) => activityModel.updateOne({ id: activityId }).set({ transactionHash });
 
-const updateBlockchainStatus = activityModel => async (
-  activityId,
-  blockchainStatus
-) => activityModel.updateOne({ id: activityId }).set({ blockchainStatus });
+const updateBlockchainStatus = activityModel => async (activityId, bcStatus) =>
+  activityModel
+    .updateOne({ id: activityId })
+    .set({ blockchainStatus: bcStatus });
 
 const whichUnconfirmedActivities = activityModel => async activitiesIds => {
   return activityModel.find({

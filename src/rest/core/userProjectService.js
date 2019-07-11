@@ -15,11 +15,8 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
    * @param {*} { userId, projectId }
    * @returns updated userProject row
    */
-  async signAgreement({ userId, projectId }) {
-    const userProject = await userProjectDao.findUserProject({
-      userId,
-      projectId
-    });
+  async signAgreement({ userProjectId, status }) {
+    const userProject = await userProjectDao.findUserProjectById(userProjectId);
 
     fastify.log.info(
       '[User Project Service] :: userProject found:',
@@ -27,10 +24,10 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
     );
 
     if (!userProject && userProject == null) {
-      fastify.log.info('[User Project Service] :: userProject not found for:', {
-        userId,
-        projectId
-      });
+      fastify.log.info(
+        '[User Project Service] :: UserProject ID not found:',
+        userProjectId
+      );
       return { error: 'User Project relation not found', status: 404 };
     }
 
@@ -44,7 +41,7 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
 
     const updatedUserProject = await userProjectDao.updateStatus({
       userProject,
-      newStatus: 1
+      newStatus: status
     });
 
     fastify.log.info(

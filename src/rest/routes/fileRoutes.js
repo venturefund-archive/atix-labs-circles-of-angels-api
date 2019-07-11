@@ -13,7 +13,7 @@ const routeTags = require('../util/routeTags');
 const routes = {
   deleteFile: {
     method: 'delete',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:fileId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -23,7 +23,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'File to delete' }
+            fileId: { type: 'integer', description: 'File to delete' }
           }
         },
         response: {

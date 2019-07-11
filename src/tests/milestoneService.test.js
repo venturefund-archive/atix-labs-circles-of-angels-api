@@ -10,7 +10,8 @@ const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const {
   activityStatus,
-  milestoneBudgetStatus
+  milestoneBudgetStatus,
+  projectStatus
 } = require('../rest/util/constants');
 
 const fastify = {
@@ -232,9 +233,7 @@ describe('Testing milestoneService updateMilestone', () => {
   const milestoneId = 15;
 
   const mockMilestone = testHelper.buildMilestone(0, { id: milestoneId });
-
-  const incompleteMilestone = testHelper.buildMilestone(0, { id: milestoneId });
-  delete incompleteMilestone.tasks;
+  delete mockMilestone.budgetStatus;
 
   beforeAll(() => {
     milestoneDao = {
@@ -242,10 +241,29 @@ describe('Testing milestoneService updateMilestone', () => {
         if (id === '') {
           throw Error('Error updating milestone');
         }
-        if (id !== milestoneId) {
+        return { ...mockMilestone, ...milestone };
+      },
+
+      async getMilestoneByIdWithProject(id) {
+        if (id === 0) {
           return undefined;
         }
-        return milestone;
+
+        if (id !== '' && id !== milestoneId) {
+          return {
+            ...mockMilestone,
+            project: testHelper.buildProject(1, 1, {
+              status: projectStatus.IN_PROGRESS
+            })
+          }
+        }
+
+        return {
+          ...mockMilestone,
+          project: testHelper.buildProject(1, 1, {
+            status: projectStatus.PUBLISHED
+          })
+        };
       }
     };
 
@@ -253,39 +271,32 @@ describe('Testing milestoneService updateMilestone', () => {
       fastify,
       milestoneDao
     });
+
+    milestoneService.updateBudgetStatus = jest.fn();
   });
 
   it('should return the updated milestone', async () => {
-    const expected = mockMilestone;
+    const toUpdate = { tasks: 'Updated Tasks' };
+    const expected = { ...mockMilestone, ...toUpdate };
 
     const response = await milestoneService.updateMilestone(
-      mockMilestone,
+      toUpdate,
       milestoneId
     );
 
     return expect(response).toEqual(expected);
   });
 
-  it('should return an error if the milestone is empty', async () => {
-    const response = await milestoneService.updateMilestone({}, milestoneId);
-
-    const expected = {
-      status: 409,
-      error: 'Milestone is missing mandatory fields'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the milestone is missing mandatory fields', async () => {
+  it('should return an error if the milestone has empty mandatory fields', async () => {
+    const invalidMilestone = { tasks: '' };
     const response = await milestoneService.updateMilestone(
-      incompleteMilestone,
+      invalidMilestone,
       milestoneId
     );
 
     const expected = {
       status: 409,
-      error: 'Milestone is missing mandatory fields'
+      error: 'Milestone has empty mandatory fields'
     };
 
     return expect(response).toEqual(expected);
@@ -308,6 +319,31 @@ describe('Testing milestoneService updateMilestone', () => {
     const expected = { status: 500, error: 'Error updating Milestone' };
 
     return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the project is IN PROGRESS', async () => {
+    const response = await milestoneService.updateMilestone(
+      mockMilestone,
+      milestoneId + 1
+    );
+
+    const expected = {
+      error:
+        'Milestone cannot be updated. Project has already started or sent to the blockchain.',
+      status: 409
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should call updateBudgetStatus if the new milestone has budgetStatus', async () => {
+    const milestoneWithBudget = {
+      ...mockMilestone,
+      budgetStatus: 1
+    };
+    await milestoneService.updateMilestone(milestoneWithBudget, milestoneId);
+
+    return expect(milestoneService.updateBudgetStatus).toBeCalled();
   });
 });
 
@@ -800,7 +836,7 @@ describe('Testing milestoneService updateBudgetStatus', () => {
 
   beforeAll(() => {
     milestoneDao = {
-      async getMilestoneById(id) {
+      async getMilestoneByIdWithProject(id) {
         if (
           id !== claimableMilestoneId &&
           id !== claimedMilestoneId &&
@@ -809,7 +845,14 @@ describe('Testing milestoneService updateBudgetStatus', () => {
         ) {
           return undefined;
         }
-        return mockMilestone(id);
+
+        return {
+          ...mockMilestone(id),
+          project: testHelper.buildProject(1, 1, {
+            id: 1,
+            status: projectStatus.IN_PROGRESS
+          })
+        };
       }
     };
 

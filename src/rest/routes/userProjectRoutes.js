@@ -6,31 +6,39 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/userProject';
+const basePath = '/userProjects';
 const handlers = require('./handlers/userProjectHandlers');
 const routeTags = require('../util/routeTags');
 
 const routes = {
   signAgreement: {
-    method: 'get',
-    path: `${basePath}/:userId/:projectId/signAgreement`,
+    method: 'put',
+    path: `${basePath}/:userProjectId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
+        tags: [routeTags.USER_PROJECT.name, routeTags.PUT.name],
         description:
-          'Sign the agreement of an existing project by an existing funder',
+          'Updates the sign status of the agreement for an existing project by an existing funder',
         summary: 'Funder sign project agreement',
         params: {
           type: 'object',
           properties: {
-            userId: {
+            userProjectId: {
               type: 'integer',
-              description: 'User that will be signing the agreement'
-            },
-            projectId: {
+              description:
+                'User-Project relation to change the signature status'
+            }
+          }
+        },
+        body: {
+          type: 'object',
+          properties: {
+            status: {
               type: 'integer',
-              description: 'Project to which the agreement document belongs to'
+              minimum: 0,
+              maximum: 1,
+              description: '1 to mark as signed, 0 to mark as not signed'
             }
           }
         },
@@ -63,13 +71,14 @@ const routes = {
 
   getUsers: {
     method: 'get',
-    path: `${basePath}/:projectId/getUsers`,
+    path: `${basePath}/projects/:projectId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
-        description: 'Returns all funders related to a project',
-        summary: 'Get all funders by project',
+        description:
+          'Returns all funders related to a project and their signature status',
+        summary: 'Get all funders and signatures by project',
         params: {
           type: 'object',
           properties: {
@@ -82,7 +91,7 @@ const routes = {
         response: {
           200: {
             type: 'array',
-            description: 'Returns a list of user objects',
+            description: 'Returns a list of user-project objects',
             items: {
               type: 'object',
               properties: {
@@ -119,21 +128,22 @@ const routes = {
   },
 
   createUserProject: {
-    method: 'get',
-    path: `${basePath}/:userId/:projectId/create`,
+    method: 'post',
+    path: `${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.USER_PROJECT.name, routeTags.GET.name],
+        tags: [routeTags.USER_PROJECT.name, routeTags.POST.name],
         description:
           'Creates a new relation between an existing funder and an existing project',
         summary: 'Associate a funder to a project',
-        params: {
+        body: {
           type: 'object',
           properties: {
             userId: { type: 'integer' },
             projectId: { type: 'integer' }
-          }
+          },
+          description: 'Funder id and project id to create the relation'
         },
         response: {
           200: {

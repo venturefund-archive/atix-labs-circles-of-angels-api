@@ -89,47 +89,20 @@ const routes = {
                 }
               }
             }
-          }
-        }
-      }
-    },
-    handler: handlers.getMilestones
-  },
-
-  updateBudgetStatus: {
-    method: 'put',
-    path: `${basePath}/:id/budgetStatus`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
-        description: 'Modifies the budget status of an existing milestone',
-        summary: 'Update milestone budget status',
-        params: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'integer',
-              description: 'Milestone to update budget status'
-            }
-          }
-        },
-        body: {
-          type: 'object',
-          properties: {
-            budgetStatusId: {
-              type: 'integer',
-              description: 'New budget status'
+          },
+          '4xx': {
+            type: 'object',
+            description: 'Returns a message describing the error',
+            properties: {
+              status: { type: 'integer' },
+              error: { type: 'string' }
             }
           },
-          required: ['budgetStatusId']
-        },
-        response: {
-          200: {
+          500: {
             type: 'object',
-            description: 'Success message if the milestone was updated',
+            description: 'Returns a message describing the error',
             properties: {
-              success: { type: 'string' }
+              error: { type: 'string' }
             }
           },
           '4xx': {
@@ -150,7 +123,7 @@ const routes = {
         }
       }
     },
-    handler: handlers.updateBudgetStatus
+    handler: handlers.getMilestones
   },
 
   getBudgetStatus: {
@@ -193,7 +166,7 @@ const routes = {
 
   deleteMilestone: {
     method: 'delete',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:milestoneId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -203,7 +176,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Milestone to delete' }
+            milestoneId: { type: 'integer', description: 'Milestone to delete' }
           }
         },
         response: {
@@ -310,9 +283,9 @@ const routes = {
 
   updateMilestone: {
     method: 'put',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:milestoneId`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
         description: 'Modifies an existing milestone',
@@ -321,7 +294,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Milestone to update' }
+            milestoneId: { type: 'integer', description: 'Milestone to update' }
           }
         },
         body: {

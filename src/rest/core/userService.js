@@ -12,7 +12,8 @@ const { isEmpty } = require('lodash');
 const {
   userRegistrationStatus,
   userRoles,
-  blockchainStatus
+  blockchainStatus,
+  projectStatus
 } = require('../util/constants');
 
 const userService = ({
@@ -518,7 +519,13 @@ const userService = ({
         }
         switch (user.role.id) {
           case userRoles.IMPACT_FUNDER:
-            response = await userProjectService.getProjectsOfUser(userId);
+            response = (await userProjectService.getProjectsOfUser(
+              userId
+            )).filter(
+              project =>
+                project.status === projectStatus.PUBLISHED ||
+                project.status === projectStatus.IN_PROGRESS
+            );
             break;
           case userRoles.ORACLE:
             response = await projectService.getAllProjectsById(
