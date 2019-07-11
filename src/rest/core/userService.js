@@ -9,7 +9,11 @@
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const { isEmpty } = require('lodash');
-const { userRegistrationStatus, userRoles } = require('../util/constants');
+const {
+  userRegistrationStatus,
+  userRoles,
+  projectStatus
+} = require('../util/constants');
 
 const userService = ({
   fastify,
@@ -487,7 +491,13 @@ const userService = ({
         }
         switch (user.role.id) {
           case userRoles.IMPACT_FUNDER:
-            response = await userProjectService.getProjectsOfUser(userId);
+            response = (await userProjectService.getProjectsOfUser(
+              userId
+            )).filter(
+              project =>
+                project.status === projectStatus.PUBLISHED ||
+                project.status === projectStatus.IN_PROGRESS
+            );
             break;
           case userRoles.ORACLE:
             response = await projectService.getAllProjectsById(
