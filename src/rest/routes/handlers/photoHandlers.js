@@ -11,26 +11,26 @@ const apiHelper = require('../../services/helper');
 module.exports = {
   getPhoto: fastify => async (request, reply) => {
     const { photoService } = apiHelper.helper.services;
-    const { id } = request.params;
-    fastify.log.info(`[Photo Routes] :: Getting photo ID ${id}`);
+    const { photoId } = request.params;
+    fastify.log.info(`[Photo Routes] :: Getting photo ID ${photoId}`);
 
     try {
-      const res = await photoService.getBase64Photo(id);
+      const res = await photoService.getBase64Photo(photoId);
 
       if (res && res.error) {
         fastify.log.error(
-          `[Photo Routes] :: Error getting photo ID ${id}:`,
+          `[Photo Routes] :: Error getting photo ID ${photoId}:`,
           res.error
         );
         reply.status(res.status).send(res.error);
       } else {
-        fastify.log.info('[Photo Routes] :: Serving photo ID', id);
+        fastify.log.info('[Photo Routes] :: Serving photo ID', photoId);
 
         reply.send(res);
       }
     } catch (error) {
       fastify.log.error(
-        `[Photo Routes] :: Error getting photo ID ${id}:`,
+        `[Photo Routes] :: Error getting photo ID ${photoId}:`,
         error
       );
       reply.status(500).send({ error: 'Error getting photo' });

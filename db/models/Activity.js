@@ -42,6 +42,7 @@ module.exports = {
     },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
+    validatedTransactionHash: { type: 'string', required: false },
     transactionHash: { type: 'string', required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
     blockchainStatus: {

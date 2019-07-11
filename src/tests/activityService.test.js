@@ -11,6 +11,7 @@ const fs = require('fs');
 let sha256 = require('sha256');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
+const { projectStatus, activityStatus } = require('../rest/util/constants');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
@@ -183,50 +184,26 @@ describe('Testing activityService updateActivity', () => {
   const activityId = 12;
 
   let mockActivity;
-  let incompleteActivity;
+  let invalidActivity;
 
   beforeEach(() => {
-    const {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel,
-      budget
-    } = testHelper.buildActivity({});
-    mockActivity = {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel,
-      budget
-    };
-
-    incompleteActivity = {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel
-    };
+    mockActivity = testHelper.buildActivity({});
+    invalidActivity = { ...mockActivity, tasks: '' };
   });
 
   beforeAll(() => {
     activityDao = {
-      async updateActivity(activity, id) {
+      async getActivityById(id) {
         if (id === '') {
-          throw Error('Error updating activity');
+          throw Error('Error getting activity');
         }
         if (id === 0) {
           return undefined;
         }
+        return testHelper.buildActivity({ id });
+      },
+
+      async updateActivity(activity) {
         return activity;
       }
     };
@@ -234,16 +211,49 @@ describe('Testing activityService updateActivity', () => {
       fastify,
       activityDao
     });
+
+    activityService.getProjectByActivity = activity => {
+      if (activity.id === activityId) {
+        return testHelper.buildProject(1, 1, {
+          status: projectStatus.PUBLISHED
+        });
+      }
+
+      return testHelper.buildProject(1, 1, {
+        status: projectStatus.IN_PROGRESS
+      });
+    };
   });
 
-  it('should return an error if the activity is incomplete', async () => {
+  it('should return the updated activity', async () => {
     const response = await activityService.updateActivity(
-      incompleteActivity,
+      mockActivity,
+      activityId
+    );
+    const expected = mockActivity;
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the activity project is IN PROGRESS', async () => {
+    const response = await activityService.updateActivity(
+      invalidActivity,
+      activityId + 1
+    );
+    const expected = {
+      error: 'Activity cannot be updated. Project has already started or sent to the blockchain.',
+      status: 409
+    };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the activity has empty mandatory fields', async () => {
+    const response = await activityService.updateActivity(
+      invalidActivity,
       activityId
     );
     const expected = {
       status: 409,
-      error: 'Activity is missing mandatory fields'
+      error: 'Activity has empty mandatory fields'
     };
     return expect(response).toEqual(expected);
   });
@@ -252,25 +262,145 @@ describe('Testing activityService updateActivity', () => {
     const response = await activityService.updateActivity(mockActivity, 0);
     const expected = {
       status: 404,
-      error: 'Activity does not exist'
+      error: "Activity doesn't exist"
     };
     return expect(response).toEqual(expected);
   });
 
-  it('should return an error if the activity could not be created', async () => {
+  it('should return an error if an exception is caught', async () => {
     const response = await activityService.updateActivity(mockActivity, '');
     const expected = { status: 500, error: 'Error updating Activity' };
     return expect(response).toEqual(expected);
   });
 });
 
-describe('Testing ActivityService addEvidenceFiles', () => {
+describe('Testing activityService updateStatus', () => {
+  let activityDao;
   let activityService;
-  let user = testHelper.buildUserOracle({});
+
+  const activityId = 12;
+
+  let mockActivity;
 
   beforeEach(() => {
+    mockActivity = testHelper.buildActivity({
+      id: activityId,
+      status: activityStatus.PENDING
+    });
+  });
+
+  beforeAll(() => {
+    activityDao = {
+      async getActivityById(id) {
+        if (id === '') {
+          throw Error('Error getting activity');
+        }
+        if (id === 0) {
+          return undefined;
+        }
+        return { ...mockActivity, id };
+      },
+
+      async updateStatus(id, status) {
+        if (status === 0) {
+          return undefined;
+        }
+        return { ...mockActivity, status };
+      }
+    };
     activityService = require('../rest/core/activityService')({
       fastify,
+      activityDao
+    });
+
+    activityService.getProjectByActivity = activity => {
+      if (activity.id === activityId) {
+        return testHelper.buildProject(1, 1, {
+          status: projectStatus.IN_PROGRESS
+        });
+      }
+
+      return testHelper.buildProject(1, 1, {
+        status: projectStatus.PUBLISHED
+      });
+    };
+
+    activityService.completeActivity = jest.fn();
+  });
+
+  it('should the activity with the updated status', async () => {
+    const status = activityStatus.VERIFIED;
+    const expected = { ...mockActivity, status };
+    const response = await activityService.updateStatus(status, activityId);
+
+    expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the activity does not exist', async () => {
+    const response = await activityService.updateStatus(
+      activityStatus.VERIFIED,
+      0
+    );
+    const expected = {
+      status: 404,
+      error: "Activity doesn't exist"
+    };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should return an error if the activity project is not IN PROGRESS', async () => {
+    const response = await activityService.updateStatus(
+      activityStatus.VERIFIED,
+      activityId + 1
+    );
+    const expected = {
+      error: 'Activity status cannot be updated. Project is not started.',
+      status: 409
+    };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should call completeActivity if the new status is COMPLETED', async () => {
+    await activityService.updateStatus(activityStatus.COMPLETED, activityId);
+    return expect(activityService.completeActivity).toBeCalled();
+  });
+
+  it('should return an error if the activity could not be updated', async () => {
+    const response = await activityService.updateStatus(0, activityId);
+    const expected = {
+      status: 409,
+      error: ' Could not update Activity status'
+    };
+    return expect(response).toEqual(expected);
+  });
+
+  it('should throw an error if an exception is caught', async () => {
+    return expect(
+      activityService.updateStatus(activityStatus.VERIFIED, '')
+    ).rejects.toEqual(Error('Error updating Activity status'));
+  });
+});
+
+describe('Testing ActivityService addEvidenceFiles', () => {
+  let activityService;
+  let activityDao;
+  const user = testHelper.buildUserOracle({});
+
+  beforeEach(() => {
+    activityDao = {
+      async getActivityById(id) {
+        if (id === '') {
+          throw Error('Error getting activity');
+        }
+        if (id === 0) {
+          return undefined;
+        }
+        return testHelper.buildActivity({ id });
+      }
+    };
+    activityService = require('../rest/core/activityService')({
+      fastify,
+      activityDao,
       userService: {
         getUserById: () => {
           return user;
@@ -281,6 +411,12 @@ describe('Testing ActivityService addEvidenceFiles', () => {
       return {
         fileHash: '23kfek32kek3edd'
       };
+    };
+
+    activityService.getProjectByActivity = () => {
+      return testHelper.buildProject(1, 1, {
+        status: projectStatus.IN_PROGRESS
+      });
     };
   });
 

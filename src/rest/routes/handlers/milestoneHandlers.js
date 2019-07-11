@@ -25,44 +25,6 @@ module.exports = {
     }
   },
 
-  updateBudgetStatus: fastify => async (req, reply) => {
-    const { milestoneService, userService } = apiHelper.helper.services;
-    fastify.log.info(
-      `[Milestone Routes] :: PUT request at /${basePath}/${
-        req.params.id
-      }/budgetStatus:`,
-      req.body
-    );
-
-    const { budgetStatusId } = req.body;
-    const { id } = req.params;
-
-    try {
-      const user = await userService.getUserById(req.user.id);
-      const response = await milestoneService.updateBudgetStatus(
-        id,
-        budgetStatusId,
-        user
-      );
-
-      if (response.error) {
-        fastify.log.error(
-          '[Milestone Routes] :: Error updating milestone: ',
-          response.error
-        );
-        reply.status(response.status).send(response);
-      } else {
-        reply.send({ success: 'Milestone updated successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error updating milestone: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error updating milestone' });
-    }
-  },
-
   getBudgetStatus: fastify => async (req, reply) => {
     const { milestoneService } = apiHelper.helper.services;
     fastify.log.info(
@@ -84,10 +46,12 @@ module.exports = {
 
   deleteMilestone: fastify => async (request, reply) => {
     const { milestoneService } = apiHelper.helper.services;
-    const { id } = request.params;
-    fastify.log.info(`[Milestone Routes] Deleting milestone with id: ${id}`);
+    const { milestoneId } = request.params;
+    fastify.log.info(
+      `[Milestone Routes] Deleting milestone with id: ${milestoneId}`
+    );
     try {
-      const deleted = await milestoneService.deleteMilestone(id);
+      const deleted = await milestoneService.deleteMilestone(milestoneId);
       reply.status(200).send(deleted);
     } catch (error) {
       fastify.log.error(error);
@@ -129,17 +93,24 @@ module.exports = {
   },
 
   updateMilestone: fastify => async (req, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
+    const { milestoneService, userService } = apiHelper.helper.services;
     fastify.log.info(
-      `[Milestone Routes] :: PUT request at /milestones/${req.params.id}:`,
+      `[Milestone Routes] :: PUT request at /milestones/${
+        req.params.milestoneId
+      }:`,
       req.body
     );
 
     const { milestone } = req.body;
-    const { id } = req.params;
+    const { milestoneId } = req.params;
 
     try {
-      const response = await milestoneService.updateMilestone(milestone, id);
+      const user = await userService.getUserById(req.user.id);
+      const response = await milestoneService.updateMilestone(
+        milestone,
+        milestoneId,
+        user
+      );
 
       if (response.error) {
         fastify.log.error(

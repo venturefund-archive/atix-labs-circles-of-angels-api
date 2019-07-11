@@ -1,0 +1,1 @@
+ALTER TABLE public."fund_transfer" ADD UNIQUE ("transferId");

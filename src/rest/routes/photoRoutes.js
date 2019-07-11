@@ -13,7 +13,7 @@ const routeTags = require('../util/routeTags');
 const routes = {
   getPhoto: {
     method: 'get',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:photoId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -23,7 +23,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer', description: 'Photo to get' }
+            photoId: { type: 'integer', description: 'Photo to get' }
           }
         },
         response: {

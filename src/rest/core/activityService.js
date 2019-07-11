@@ -15,7 +15,12 @@ const sha256 = require('sha256');
 const { promisify } = require('util');
 const { forEachPromise } = require('../util/promises');
 const { evidenceFileTypes, userRoles } = require('../util/constants');
-const { activityStatus, blockchainStatus } = require('../util/constants');
+const {
+  activityStatus,
+  blockchainStatus,
+  projectStatus
+} = require('../util/constants');
+const apiHelper = require('../services/helper');
 
 const activityService = ({
   fastify,
@@ -115,21 +120,52 @@ const activityService = ({
    * @param {object} activity
    * @param {number} id
    */
-  async updateActivity(activity, id) {
+  async updateActivity(newActivity, id) {
     try {
-      fastify.log.info('[Activity Service] :: Updating activity:', activity);
+      const activity = await activityDao.getActivityById(id);
+      if (!activity) {
+        fastify.log.error(`[Activity Service] Activity ${id} doesn't exist`);
+        return { error: "Activity doesn't exist", status: 404 };
+      }
 
-      if (this.verifyActivity(activity)) {
-        const savedActivity = await activityDao.updateActivity(activity, id);
+      const project = await this.getProjectByActivity(activity);
+
+      if (project.error) {
+        return project;
+      }
+
+      if (
+        project.status === projectStatus.IN_PROGRESS ||
+        project.startBlockchainStatus !== blockchainStatus.PENDING
+      ) {
+        fastify.log.error(
+          `[Activity Service] :: Project ${
+            project.id
+          } is IN PROGRESS or sent to the blockchain`
+        );
+        return {
+          error:
+            'Activity cannot be updated. Project has already started or sent to the blockchain.',
+          status: 409
+        };
+      }
+
+      if (this.canActivityUpdate(newActivity)) {
+        fastify.log.info(
+          '[Activity Service] :: Updating activity:',
+          newActivity
+        );
+
+        const savedActivity = await activityDao.updateActivity(newActivity, id);
 
         if (!savedActivity || savedActivity == null) {
           fastify.log.error(
-            `[Activity Service] :: Activity ID ${id} does not exist`,
+            `[Activity Service] :: Could not update Activity ID ${id}`,
             savedActivity
           );
           return {
-            status: 404,
-            error: 'Activity does not exist'
+            status: 409,
+            error: ' Could not update Activity'
           };
         }
 
@@ -141,10 +177,13 @@ const activityService = ({
         return savedActivity;
       }
 
-      fastify.log.error('[Activity Service] :: Activity not valid', activity);
+      fastify.log.error(
+        '[Activity Service] :: Activity not valid',
+        newActivity
+      );
       return {
         status: 409,
-        error: 'Activity is missing mandatory fields'
+        error: 'Activity has empty mandatory fields'
       };
     } catch (error) {
       fastify.log.error(
@@ -156,6 +195,154 @@ const activityService = ({
   },
 
   /**
+   * Updates the status of an activity
+   *
+   * @param {integer} status activity status
+   * @param {integer} id activity id
+   * @returns updated activity | error
+   */
+  async updateStatus(status, id) {
+    try {
+      fastify.log.info('[Activity Service] :: Updating activity status');
+      const activity = await activityDao.getActivityById(id);
+      if (!activity) {
+        fastify.log.error(`[Activity Service] :: Activity ${id} doesn't exist`);
+        return { error: "Activity doesn't exist", status: 404 };
+      }
+
+      const project = await this.getProjectByActivity(activity);
+
+      if (project.error) {
+        return project;
+      }
+
+      if (project.status !== projectStatus.IN_PROGRESS) {
+        fastify.log.error(
+          `[Activity Service] :: Project ${project.id} is not IN PROGRESS`
+        );
+        return {
+          error: 'Activity status cannot be updated. Project is not started.',
+          status: 409
+        };
+      }
+
+      if (status === activityStatus.COMPLETED) {
+        const completedActivity = await this.completeActivity(activity);
+        return completedActivity;
+      }
+
+      const savedActivity = await activityDao.updateStatus(id, status);
+
+      if (!savedActivity || savedActivity == null) {
+        fastify.log.error(
+          `[Activity Service] :: Could not update Activity ID ${id}`,
+          savedActivity
+        );
+        return {
+          status: 409,
+          error: ' Could not update Activity status'
+        };
+      }
+
+      fastify.log.info(
+        '[Activity Service] :: Activity status updated:',
+        savedActivity
+      );
+
+      return savedActivity;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Error updating Activity status:',
+        error
+      );
+      throw Error('Error updating Activity status');
+    }
+  },
+
+  /**
+   * Sends the activity to be validated on the blockchain
+   *
+   * @param {object} activity
+   * @returns activity | error
+   */
+  async completeActivity(activity) {
+    try {
+      fastify.log.error(
+        `[Activity Service] Completing Activity ID ${activity.id}`
+      );
+
+      if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
+        fastify.log.error(
+          `[Activity Service] Activity ${
+            activity.id
+          } is not confirmed on the blockchain`
+        );
+        return {
+          error:
+            'Activity must be confirmed on the blockchain to mark as completed',
+          status: 409
+        };
+      }
+
+      const oracle = await oracleActivityDao.getOracleFromActivity(activity.id);
+      const validatedTransactionHash = await fastify.eth.validateActivity(
+        oracle.user.address,
+        oracle.user.pwd,
+        { activityId: activity.id }
+      );
+
+      if (!validatedTransactionHash) {
+        fastify.log.error(
+          `[Activity Service] Activity ${
+            activity.id
+          } could not be validated on the blockchain`
+        );
+        return {
+          error: 'Activity could not be validated on the blockchain',
+          status: 409
+        };
+      }
+
+      const validatedActivity = await activityDao.updateActivity({
+        validatedTransactionHash
+      });
+
+      return validatedActivity;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Activity could not be validated on the blockchain:',
+        error
+      );
+      throw Error('Error validating activity');
+    }
+  },
+
+  async getProjectByActivity(activity) {
+    const { projectService, milestoneService } = apiHelper.helper.services;
+    const milestone = await milestoneService.getMilestoneById(
+      activity.milestone
+    );
+    if (!milestone) {
+      fastify.log.error(
+        `[Activity Service] :: Milestone ${milestone.id} doesn't exist`
+      );
+      return { error: "Milestone doesn't exist", status: 404 };
+    }
+
+    const project = await projectService.getProjectWithId({
+      projectId: milestone.project
+    });
+    if (!project) {
+      fastify.log.error(
+        `[Activity Service] :: Project ${project.id} doesn't exist`
+      );
+      return { error: "Project doesn't exist", status: 404 };
+    }
+
+    return project;
+  },
+
+  /**
    * Uploads a list of evidence files for an activity
    *
    * @param {number} activityId
@@ -164,7 +351,36 @@ const activityService = ({
    */
   async addEvidenceFiles(activityId, files, user) {
     const errors = [];
+    fastify.log.info(
+      '[Activity Service] :: Uploading evidence files for activity ID',
+      activityId
+    );
     try {
+      const activity = await activityDao.getActivityById(activityId);
+      if (!activity) {
+        fastify.log.error(
+          `[Activity Service] :: Activity ${activityId} doesn't exist`
+        );
+        return { error: "Activity doesn't exist", status: 404 };
+      }
+
+      const project = await this.getProjectByActivity(activity);
+
+      if (project.error) {
+        return project;
+      }
+
+      if (project.status !== projectStatus.IN_PROGRESS) {
+        fastify.log.error(
+          `[Activity Service] :: Project ${project.id} is not IN PROGRESS`
+        );
+        return {
+          error:
+            'Activity evidence cannot be uploaded. Project is not started.',
+          status: 409
+        };
+      }
+
       // creates the directory where this activities' evidence files will be saved if not exists
       await mkdirp(
         `${
@@ -620,6 +836,22 @@ const activityService = ({
     }
   },
 
+  canActivityUpdate(activity) {
+    if (
+      activity.tasks === '' ||
+      activity.impact === '' ||
+      activity.impactCriterion === '' ||
+      activity.signsOfSuccess === '' ||
+      activity.signsOfSuccessCriterion === '' ||
+      activity.category === '' ||
+      activity.keyPersonnel === '' ||
+      activity.budget === ''
+    ) {
+      return false;
+    }
+    return true;
+  },
+
   verifyActivity(activity) {
     let valid = true;
 
@@ -643,7 +875,8 @@ const activityService = ({
    * Delete an activity with id
    * @param {number} activityId
    */
-  async deleteActivity(activityId, milestoneService) {
+  async deleteActivity(activityId) {
+    const { milestoneService } = apiHelper.helper.services;
     const deleted = await activityDao.deleteActivity(activityId);
     const milestoneEmpty =
       deleted &&
@@ -857,43 +1090,6 @@ const activityService = ({
         error
       );
       throw Error('Error getting Activity details');
-    }
-  },
-  async completeActivity(activityId) {
-    try {
-      const activity = await activityDao.getActivityById(activityId);
-      if (!activity) {
-        fastify.log.error(
-          `[Activity Service] Activity ${activityId} doesnt exists`
-        );
-        return { error: 'Activity doesnt exists', status: 404 };
-      }
-      if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
-        fastify.log.error(
-          `[Activity Service] Activity ${activityId} must be confirmed on blockchain`
-        );
-        return {
-          error: 'Activity must be confirmed on blockchain',
-          status: 409
-        };
-      }
-      const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
-      const transactionHash = await fastify.eth.validateActivity(
-        oracle.user.address,
-        oracle.user.pwd,
-        { activityId }
-      );
-      return activityDao.updateStatusWithTransaction(
-        activityId,
-        activityStatus.COMPLETED,
-        transactionHash
-      );
-    } catch (error) {
-      fastify.log.error(
-        '[Activity Service] :: Error completing activity:',
-        error
-      );
-      throw Error('Error completing activity');
     }
   },
 
