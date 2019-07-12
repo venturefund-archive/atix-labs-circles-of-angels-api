@@ -67,6 +67,15 @@ const routes = {
         tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
         description: 'Updates the state of an existing transfer',
         summary: 'Update transfer',
+        params: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'Transfer to update'
+            }
+          }
+        },
         body: {
           type: 'object',
           properties: {
