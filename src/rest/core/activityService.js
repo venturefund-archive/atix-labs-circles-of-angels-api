@@ -414,14 +414,12 @@ const activityService = ({
         }
       }
       const userInfo = await userService.getUserById(user.id);
-      await fastify.eth.uploadHashEvidenceToActivity(
-        userInfo.address,
-        userInfo.pwd,
-        {
-          activityId,
-          hashes
-        }
-      );
+      await fastify.eth.uploadHashEvidenceToActivity({
+        sender: userInfo.address,
+        privKey: userInfo.privKey,
+        activityId,
+        hashes
+      });
     } catch (error) {
       fastify.log.error(
         '[Activity Service] :: There was an error uploading the evidence:',

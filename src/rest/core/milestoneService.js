@@ -400,7 +400,6 @@ const milestoneService = ({
             if (milestone.activityList.length === 0) {
               pushError('Found a milestone without activities');
             }
-            response.milestones.push(milestone);
           }
 
           milestone = {};
@@ -409,6 +408,7 @@ const milestoneService = ({
           Object.assign(milestone, getStandardAttributes(row));
           milestone.quarter = actualQuarter;
           this.verifyMilestone(milestone, pushError);
+          response.milestones.push(milestone);
         } else if (type.includes('Activity')) {
           const activity = {};
           Object.assign(activity, getStandardAttributes(row));
@@ -627,7 +627,7 @@ const milestoneService = ({
 
   async startMilestonesOfProject(project) {
     const milestones = await this.getMilestonesByProject(project.id);
-    await fastify.eth.createMilestones(milestones);
+    fastify.eth.createMilestones({ milestones });
   },
 
   async getMilestoneById(milestoneId) {
@@ -755,31 +755,22 @@ const milestoneService = ({
         fastify.log.info(
           `[Milestone Service] :: set claimed Milestone ID ${milestoneId} on Blockchain`
         );
-        const txHash = await fastify.eth.claimMilestone(
-          user.address,
-          user.pwd,
-          { milestoneId, projectId: milestone.project }
-        );
-        if (txHash.error) {
-          fastify.log.error(
-            `[Milestone Service] :: error setting claimed Milestone ID ${milestoneId} on Blockchain`
-          );
-        }
+        await fastify.eth.claimMilestone({
+          sender: user.address,
+          privKey: user.privKey,
+          milestoneId,
+          projectId: milestone.project
+        });
       }
 
       if (budgetStatusId === milestoneBudgetStatus.FUNDED) {
         fastify.log.info(
           `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
         );
-        const txHash = await fastify.eth.setMilestoneFunded({
+        await fastify.eth.setMilestoneFunded({
           milestoneId,
           projectId: milestone.project
         });
-        if (txHash.error) {
-          fastify.log.error(
-            `[Milestone Service] :: error setting funded Milestone ID ${milestoneId} on Blockchain`
-          );
-        }
       }
 
       return milestone;

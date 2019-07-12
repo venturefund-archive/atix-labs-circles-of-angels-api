@@ -12,6 +12,8 @@ module.exports = {
   attributes: {
     blockNumber: { type: 'number', required: true },
     transactionHash: { type: 'string', required: true },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } }
+    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    createdAt: { type: 'string', autoCreatedAt: true, required: false },
+    updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
   }
 };

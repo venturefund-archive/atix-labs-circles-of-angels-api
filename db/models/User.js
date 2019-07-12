@@ -34,7 +34,9 @@ module.exports = {
     registrationStatus: {
       columnName: 'registrationStatus',
       model: 'user_registration_status'
-    }
+    },
+    privKey: { type: 'string', required: true },
+    transferBlockchainStatus: { type: 'number', required: true }
   },
   async findById(id) {
     return this.findOne(id);

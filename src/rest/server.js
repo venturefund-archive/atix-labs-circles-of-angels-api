@@ -6,11 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { isEmpty } = require('lodash');
-const ethService = require('./services/eth/ethServices');
-const ethServiceMock = require('./services/eth/ethServicesMock');
 const { helperBuilder } = require('./services/helper');
-const eventListenerBuilder = require('./services/eth/eventListener');
+const ethInitializer = require('./services/eth/ethInitializer');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -45,19 +42,13 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
 
-    if (!isEmpty(configs.eth)) {
-      fastify.eth = await ethService(configs.eth.HOST, { logger });
-    } else {
-      fastify.eth = await ethServiceMock();
-    }
-
+    fastify.eth = await ethInitializer({ logger });
     loadRoutes(fastify);
 
     await fastify.listen(configs.server);
     await helperBuilder(fastify);
-    const eventListener = await eventListenerBuilder(fastify);
-    await eventListener.recoverPastEvents();
-    await eventListener.initEventListener();
+    await fastify.eth.initListener();
+    await fastify.eth.listener.startListen();
     module.exports.fastify = fastify;
   } catch (err) {
     console.log(err);

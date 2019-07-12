@@ -55,7 +55,8 @@ const userRegistrationStatus = {
 const blockchainStatus = {
   PENDING: 1,
   SENT: 2,
-  CONFIRMED: 3
+  CONFIRMED: 3,
+  ABORTED: 4
 };
 
 const xlsxConfigs = {
@@ -85,6 +86,17 @@ const xlsxConfigs = {
   startRow: 4
 };
 
+const transactionTypes = {
+  projectCreation: 'projectCreation',
+  milestoneCreation: 'milestoneCreation',
+  activityCreation: 'activityCreation',
+  milestoneClaimed: 'milestoneClaimed',
+  projectStarted:'projectStarted',
+  milestoneFunded: 'milestoneFunded',
+  validateActivity: 'validateActivity',
+  updateEvidence: 'updateEvidence'
+}
+
 module.exports = {
   evidenceFileTypes,
   transferStatus,
@@ -94,5 +106,6 @@ module.exports = {
   milestoneBudgetStatus,
   userRegistrationStatus,
   blockchainStatus,
-  xlsxConfigs
+  xlsxConfigs,
+  transactionTypes
 };

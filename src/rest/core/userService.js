@@ -12,6 +12,7 @@ const { isEmpty } = require('lodash');
 const {
   userRegistrationStatus,
   userRoles,
+  blockchainStatus,
   projectStatus
 } = require('../util/constants');
 
@@ -130,9 +131,17 @@ const userService = ({
     async createUser(username, email, pwd, role, detail, questionnaire) {
       const hashedPwd = await bcrypt.hash(pwd, 10);
 
-      const address = await fastify.eth.createAccount(hashedPwd);
-
       try {
+        const account = await fastify.eth.createAccount();
+        if (!account.address || !account.privateKey) {
+          fastify.log.error(
+            '[User Service] :: Error creating account on blockchain'
+          );
+          return {
+            status: 409,
+            error: 'Error creating account on blockchain'
+          };
+        }
         const existingUser = await userDao.getUserByEmail(email);
 
         if (existingUser) {
@@ -162,8 +171,10 @@ const userService = ({
           email,
           pwd: hashedPwd,
           role,
-          address,
-          registrationStatus: 1
+          address: account.address,
+          registrationStatus: 1,
+          transferBlockchainStatus: blockchainStatus.SENT,
+          privKey: account.privateKey
         };
 
         const savedUser = await userDao.createUser(user);
@@ -307,42 +318,48 @@ const userService = ({
           }
         }
 
-        const updatedUser = await userDao.updateUser(userId, newUser);
-
-        if (!updatedUser) {
-          fastify.log.error(
-            '[User Service] :: User could not be updated',
-            newUser
-          );
-          return {
-            status: 500,
-            error: 'User could not be updated'
-          };
-        }
+        let updatedUser = newUser;
 
         if (
           registrationStatus &&
           registrationStatus === userRegistrationStatus.APPROVED
         ) {
-          const info = await transporter.sendMail({
-            from: '"Circles of Angels Support" <coa@support.com>',
-            to: updatedUser.email,
-            subject: 'Circles of Angels - Account Confirmation',
-            text: 'Account Approved',
-            html: `<p>Your Circles Of Angels account has been approved! </br></p>
-            <p>You can log in and start using our platform at: 
-            <a href='www.coa.com/login'>www.coa.com/login</a></br></p>
-            <p>Thank you for your support </br></p>`
-          });
+          const onConfirm = async () => {
+            try {
+              updatedUser = await userDao.updateUser(userId, newUser);
+              const info = await transporter.sendMail({
+                from: '"Circles of Angels Support" <coa@support.com>',
+                to: updatedUser.email,
+                subject: 'Circles of Angels - Account Confirmation',
+                text: 'Account Approved',
+                html: `<p>Your Circles Of Angels account has been approved! </br></p>
+              <p>You can log in and start using our platform at: 
+              <a href='www.coa.com/login'>www.coa.com/login</a></br></p>
+              <p>Thank you for your support </br></p>`
+              });
+              if (!isEmpty(info.rejected))
+                return { status: 409, error: 'Invalid Email' };
+              await userDao.updateTransferBlockchainStatus(
+                existingUser.id,
+                blockchainStatus.CONFIRMED
+              );
 
-          if (!isEmpty(info.rejected))
-            return { status: 409, error: 'Invalid Email' };
+              return updatedUser;
+            } catch (error) {
+              fastify.log.error(error);
+            }
+          };
+          await fastify.eth.transferInitialFundsToAccount(
+            existingUser.address,
+            onConfirm
+          );
         }
 
         if (
           registrationStatus &&
           registrationStatus === userRegistrationStatus.REJECTED
         ) {
+          updatedUser = await userDao.updateUser(userId, newUser);
           const info = await transporter.sendMail({
             from: '"Circles of Angels Support" <coa@support.com>',
             to: updatedUser.email,
@@ -355,6 +372,17 @@ const userService = ({
             </a></br></p>
             <p>Thank you for your support </br></p>`
           });
+
+          if (!updatedUser) {
+            fastify.log.error(
+              '[User Service] :: User could not be updated',
+              newUser
+            );
+            return {
+              status: 500,
+              error: 'User could not be updated'
+            };
+          }
 
           if (!isEmpty(info.rejected))
             return { status: 409, error: 'Invalid Email' };

@@ -19,6 +19,7 @@
     "bunyan": "1.8.12",
     "bunyan-format": "0.2.1",
     "config": "3.1.0",
+    "ethereumjs-tx": "^2.0.0",
     "fast-water": "1.0.2",
     "fastify": "1.14.1",
     "fastify-cookie": "2.1.2",
@@ -33,7 +34,9 @@
     "nodemailer": "6.1.1",
     "sails-postgresql": "1.0.2",
     "sha256": "0.2.0",
-    "web3": "1.0.0-beta.55",
+    "truffle-hdwallet-provider": "1.0.10",
+    "web3_37": "npm:web3@1.0.0-beta.37",
+    "web3": "1.0.0-beta.52",
     "xlsx": "0.14.1"
   },
   "devDependencies": {
