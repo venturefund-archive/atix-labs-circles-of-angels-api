@@ -26,9 +26,14 @@ const insertTransaction = transactionModel => async ({
       privKey,
       type
     });
-  return transactionModel
-    .updateOne({ where: { id: transaction.id } })
-    .set({ sender, receiver, data, transactionHash, privKey, status });
+  return transactionModel.updateOne({ where: { id: transaction.id } }).set({
+    sender,
+    receiver,
+    data,
+    transactionHash,
+    privKey,
+    status: status || blockchainStatus.PENDING
+  });
 };
 
 const getUnconfirmedTransactions = transactionModel => async () =>

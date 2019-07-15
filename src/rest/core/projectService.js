@@ -938,11 +938,7 @@ const projectService = ({
         }`
       );
       await milestoneService.startMilestonesOfProject(project);
-      const startPendingProject = await projectDao.updateStartBlockchainStatus(
-        project.id,
-        blockchainStatus.SENT
-      );
-      return startPendingProject;
+      return project;
     } catch (error) {
       fastify.log.error('[Project Service] :: Error starting project:', error);
       throw Error('Error starting project');

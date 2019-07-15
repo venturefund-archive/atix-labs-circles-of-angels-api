@@ -31,7 +31,7 @@ const transactionCallbacks = logger => {
       await projectDao.updateStartTransactionHash(projectId, hash);
       await projectDao.updateStartBlockchainStatus(
         projectId,
-        blockchainStatus.CONFIRMED
+        blockchainStatus.SENT
       );
     },
     milestoneCreation: async (hash, ids) => {
