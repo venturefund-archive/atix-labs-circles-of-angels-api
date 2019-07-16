@@ -12,8 +12,6 @@ const ethServicesMock = () => ({
   isTransactionConfirmed: creationTransactionHash => !!creationTransactionHash,
   startProject: () =>
     '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a',
-  createAccount: () =>
-    '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a',
   createMilestone: () => true,
   createActivity: () => true,
   validateActivity: () =>
@@ -23,6 +21,13 @@ const ethServicesMock = () => ({
   setMilestoneFunded: () =>
     '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a',
   uploadHashEvidenceToActivity: () =>
+    '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a',
+  createAccount: () => ({
+    address: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
+    privateKey:
+      '0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200'
+  }),
+  transferInitialFundsToAccount: () =>
     '0x0d8cd6fd460d607b2590fb171a3dff04e33285830add91a2f9a4e43ced1ed01a'
 });
 

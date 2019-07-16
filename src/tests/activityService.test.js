@@ -12,6 +12,7 @@ let sha256 = require('sha256');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const { projectStatus, activityStatus } = require('../rest/util/constants');
+const activityServiceBuilder = require('../rest/core/activityService');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
@@ -34,7 +35,7 @@ describe('Testing activityService createActivities', () => {
         return toSave;
       }
     };
-    activityService = require('../rest/core/activityService')({
+    activityService = activityServiceBuilder({
       fastify,
       activityDao
     });
@@ -139,7 +140,7 @@ describe('Testing activityService createActivity', () => {
         return toSave;
       }
     };
-    activityService = require('../rest/core/activityService')({
+    activityService = activityServiceBuilder({
       fastify,
       activityDao
     });
@@ -207,7 +208,7 @@ describe('Testing activityService updateActivity', () => {
         return activity;
       }
     };
-    activityService = require('../rest/core/activityService')({
+    activityService = activityServiceBuilder({
       fastify,
       activityDao
     });
@@ -240,7 +241,8 @@ describe('Testing activityService updateActivity', () => {
       activityId + 1
     );
     const expected = {
-      error: 'Activity cannot be updated. Project has already started or sent to the blockchain.',
+      error:
+        'Activity cannot be updated. Project has already started or sent to the blockchain.',
       status: 409
     };
     return expect(response).toEqual(expected);
@@ -308,7 +310,7 @@ describe('Testing activityService updateStatus', () => {
         return { ...mockActivity, status };
       }
     };
-    activityService = require('../rest/core/activityService')({
+    activityService = activityServiceBuilder({
       fastify,
       activityDao
     });
@@ -398,7 +400,7 @@ describe('Testing ActivityService addEvidenceFiles', () => {
         return testHelper.buildActivity({ id });
       }
     };
-    activityService = require('../rest/core/activityService')({
+    activityService = activityServiceBuilder({
       fastify,
       activityDao,
       userService: {
@@ -451,7 +453,7 @@ describe('Testing ActivityService addEvidence', () => {
 
   beforeEach(() => {
     activity = testHelper.buildActivity({ id: 1 });
-    activityService = require('../rest/core/activityService')({
+    activityService = activityServiceBuilder({
       fastify,
       activityDao: {
         getActivityById: activityId => {
@@ -533,7 +535,7 @@ describe('Testing ActivityService assignOracleToActivity', () => {
 
   beforeEach(() => {
     activity = testHelper.buildActivity({ id: 1 });
-    activityService = require('../rest/core/activityService')({
+    activityService = activityServiceBuilder({
       fastify,
       activityDao: {
         getActivityById: activityId => {
