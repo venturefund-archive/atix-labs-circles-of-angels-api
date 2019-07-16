@@ -7,13 +7,13 @@
  */
 const { isEmpty, concat } = require('lodash');
 const Web3 = require('web3_37');
+const ethConfig = require('config').eth;
 const {
   blockchainStatus,
   projectStatus,
   milestoneBudgetStatus,
   activityStatus
 } = require('../../util/constants');
-const ethConfig = require('config').eth;
 
 const INTERVAL = 5000;
 const BLOCK_STEP = 20;
@@ -27,7 +27,7 @@ const eventListener = async (
   const { projectService, milestoneService, activityService } = helper.services;
   const { transactionDao } = helper.daos;
   const web3 = new Web3(ethConfig.HTTP_HOST);
-  const COAProjectAdmin  = buildProjectAdminContract(web3);
+  const COAProjectAdmin = buildProjectAdminContract(web3);
   const COAOracle = buildOracleContract(web3);
   const {
     blockchainBlockDao,
@@ -305,7 +305,7 @@ const eventListener = async (
       options
     );
 
-    const events = concat(CoaProjectAdminEvents,CoaOracleEvents);
+    const events = concat(CoaProjectAdminEvents, CoaOracleEvents);
     events.sort((event1, event2) => event1.blockNumber - event2.blockNumber);
     return events;
   };
@@ -391,7 +391,7 @@ const eventListener = async (
         }
         setTimeout(() => this.recoverPastEvents(), INTERVAL);
       } catch (error) {
-        logger.error(error);
+        logger.error('Event Listener :: ', error);
       }
     },
 

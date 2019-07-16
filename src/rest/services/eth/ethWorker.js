@@ -140,11 +140,12 @@ const ethWorker = (web3, { logger }) => {
             }
           })
           .on('error', err => {
-            logger.error(err);
+            logger.error('Eth Worker :: ', err);
             reject(err);
           });
       } catch (error) {
         logger.error(error);
+        reject(error);
       }
     });
   };
@@ -185,11 +186,12 @@ const ethWorker = (web3, { logger }) => {
             }
           })
           .on('error', err => {
-            logger.error(err);
+            logger.error('Eth Worker :: ', err);
             reject(err);
           });
       } catch (error) {
         logger.error(error);
+        reject(error);
       }
     });
   };
