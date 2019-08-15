@@ -20,6 +20,8 @@ module.exports = {
     }
   },
 
+  frontendUrl: 'http://localhost:3000',
+
   support: {
     service: 'Gmail',
     email: 'circlesofangelshelp@gmail.com',

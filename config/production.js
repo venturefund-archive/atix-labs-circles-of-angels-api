@@ -36,5 +36,6 @@ module.exports = {
       '0xe2b3204f29ab45d5fd074ff02ade098fbc381d42',
       '0xd51128f302755666c42e3920d72ff2fe632856a9'
     ]
-  }
+  },
+  frontendUrl: 'http://104.237.154.167:3000'
 };
