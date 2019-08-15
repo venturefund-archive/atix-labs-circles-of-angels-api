@@ -22,6 +22,8 @@ module.exports = {
       defaultGas: 50000,
       defaultGasPrice: 1000000
     },
+    FUND_TX_GAS: 50000,
+    FUND_TX_GAS_PRICE: 100000000,
     UNLOCK_DURATION: 1000000,
     INITIAL_FUNDS: 10000000000000000,
     GAS_LIMIT: 10000000000,
