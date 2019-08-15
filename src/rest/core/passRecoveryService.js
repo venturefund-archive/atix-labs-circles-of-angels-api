@@ -12,7 +12,7 @@ const nodemailer = require('nodemailer');
 const { isEmpty } = require('lodash');
 
 const passRecoveryService = ({ fastify, passRecoveryDao, userDao }) => {
-  const { support } = fastify.configs;
+  const { support, frontendUrl } = fastify.configs;
   const transporter = nodemailer.createTransport({
     service: support.service,
     auth: {
@@ -48,7 +48,7 @@ const passRecoveryService = ({ fastify, passRecoveryDao, userDao }) => {
           text: 'Password recovery',
           html: `<p>Recovery password proccess started for your Circles Of Angels account </br></p>
           <p>Enter to the follow link to set a new password: </br></p>
-          <a href='www.coa.com/passwordRecovery?token=${token}'>Recovery Link</a>`
+          <a href='${frontendUrl}/passwordRecovery?token=${token}'>Recovery Link</a>`
         });
 
         if (!isEmpty(info.rejected))

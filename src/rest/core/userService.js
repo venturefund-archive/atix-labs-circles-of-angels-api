@@ -25,7 +25,7 @@ const userService = ({
   roleDao,
   questionnaireService
 }) => {
-  const { support } = fastify.configs;
+  const { support, frontendUrl } = fastify.configs;
   const transporter = nodemailer.createTransport({
     service: support.service,
     auth: {
@@ -333,8 +333,8 @@ const userService = ({
                 subject: 'Circles of Angels - Account Confirmation',
                 text: 'Account Approved',
                 html: `<p>Your Circles Of Angels account has been approved! </br></p>
-              <p>You can log in and start using our platform at: 
-              <a href='www.coa.com/login'>www.coa.com/login</a></br></p>
+              <p>You can log in and start using our 
+              <a href='${frontendUrl}/login'>platform.</a></br></p>
               <p>Thank you for your support </br></p>`
               });
               if (!isEmpty(info.rejected))
