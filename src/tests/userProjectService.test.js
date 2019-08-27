@@ -48,6 +48,24 @@ describe('Testing userProjectService signAgreement', () => {
           projectId,
           status: 0
         });
+      },
+
+      async findUserProjectById(id) {
+        if (id === -1) {
+          return undefined;
+        }
+
+        if (id === 100) {
+          return testHelper.buildUserProject({
+            id,
+            status: 1
+          });
+        }
+
+        return testHelper.buildUserProject({
+          id,
+          status: 0
+        });
       }
     };
 
@@ -61,8 +79,8 @@ describe('Testing userProjectService signAgreement', () => {
     const expected = testHelper.buildUserProject({ id: userProjectId });
 
     const response = await userProjectService.signAgreement({
-      userId: expected.user,
-      projectId: expected.project
+      userProjectId,
+      status: 1
     });
 
     await expect(response).toEqual(expected);
@@ -72,8 +90,8 @@ describe('Testing userProjectService signAgreement', () => {
     const expected = { error: 'User Project relation not found', status: 404 };
 
     const response = await userProjectService.signAgreement({
-      userId: -1,
-      projectId: -1
+      userProjectId: -1,
+      status: 1
     });
 
     await expect(response).toEqual(expected);
@@ -83,8 +101,8 @@ describe('Testing userProjectService signAgreement', () => {
     const expected = { error: 'Agreement already signed', status: 409 };
 
     const response = await userProjectService.signAgreement({
-      userId: 100,
-      projectId: 100
+      userProjectId: 100,
+      status: 1
     });
 
     await expect(response).toEqual(expected);

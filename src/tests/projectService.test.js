@@ -44,7 +44,8 @@ describe('Testing projectService createProject', () => {
         const toSave = Object.assign({}, project, {
           id: 11,
           createdAt: '2019-05-31T03:00:00.000Z',
-          updatedAt: '2019-05-31T03:00:00.000Z'
+          updatedAt: '2019-05-31T03:00:00.000Z',
+          startBlockchainStatus: blockchainStatus.PENDING
         });
         return toSave;
       },
@@ -217,10 +218,12 @@ describe('Testing projectService updateProject', () => {
       projectDao,
       photoService
     });
+
+    projectService.startProject = jest.fn(project => project);
   });
 
   it('should return the updated project', async () => {
-    const projectId = 1;
+    const projectId = 2;
     const project = {
       problemAddressed: 'problem',
       mission: 'mission'
@@ -238,6 +241,45 @@ describe('Testing projectService updateProject', () => {
       id: projectId,
       cardPhoto: 2,
       coverPhoto: 1
+    };
+
+    return expect(response).toEqual(expected);
+  });
+
+  it('should call startProject if the new status is IN PROGRESS', async () => {
+    const projectId = 2;
+    const project = {
+      status: projectStatus.IN_PROGRESS
+    };
+
+    await projectService.updateProject(
+      JSON.stringify(project),
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
+      projectId
+    );
+
+    return expect(projectService.startProject).toBeCalled();
+  });
+
+  it('should return an error if the project is in progress', async () => {
+    const projectId = 1;
+    const project = {
+      problemAddressed: 'problem',
+      mission: 'mission'
+    };
+
+    const response = await projectService.updateProject(
+      JSON.stringify(project),
+      mockProjectCoverPhoto,
+      mockProjectCardPhoto,
+      projectId
+    );
+
+    const expected = {
+      status: 409,
+      error:
+        'Project cannot be updated. It has already started or sent to the blockchain.'
     };
 
     return expect(response).toEqual(expected);
@@ -386,92 +428,35 @@ describe('Testing projectService getProjectWithId', () => {
   let projectService;
 
   let mockProjects;
+  const totalFunded = 200;
 
   beforeAll(() => {
     mockProjects = testHelper.getMockProjects();
     projectDao = {
       async getProjectById({ projectId }) {
-        return find(mockProjects, project => project.id === projectId);
+        return mockProjects.find(project => project.id === projectId);
       }
     };
     projectService = projectServiceBuilder({
       fastify,
       projectDao
     });
+
+    projectService.getTotalFunded = () => totalFunded;
   });
-  it('should return a project with id == 1 project if exists', async () => {
-    const project = await projectService.getProjectWithId({ projectId: 1 });
-    expect(project.id).toBe(1);
-  });
-
-  it("should return undefined if project doesn't exist", async () => {
-    const project = await projectService.getProjectWithId({ projectId: -1 });
-    expect(project).toBe(undefined);
-  });
-});
-
-describe('Testing projectService updateProjectStatus', () => {
-  let projectDao;
-  let projectService;
-  let projectStatusDao;
-
-  let mockProjects;
-
-  beforeAll(() => {
-    mockProjects = testHelper.getMockProjects();
-    projectStatusDao = {
-      async existStatus({ status }) {
-        if (status > -2 && status < 2) {
-          return true;
-        }
-
-        return false;
-      }
-    };
-    projectDao = {
-      async updateProjectStatus({ projectId, status }) {
-        const project = find(
-          mockProjects,
-          mockProject => mockProject.id === projectId
-        );
-        project.status = status;
-        return project;
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      projectStatusDao
+  it('should return an existing project with its total funds', async () => {
+    const response = await projectService.getProjectWithId({
+      projectId: mockProjects[0].id
     });
 
-    projectService.getProjectWithId = async ({ projectId }) =>
-      find(mockProjects, project => project.id === projectId);
+    const expected = { ...mockProjects[0], totalFunded };
+    expect(response).toEqual(expected);
   });
 
-  it('should return the updated project', async () => {
-    const projectId = 1;
-    const status = 2;
-
-    const updatedProject = await projectService.updateProjectStatus({
-      projectId,
-      status
-    });
-
-    await expect(updatedProject.id).toBe(projectId);
-    await expect(updatedProject.status).toBe(status);
-  });
-
-  it("should return undefined if the projectStatus doesn't exist", async () => {
-    const projectId = 1;
-    const status = -1;
-
-    const updatedProject = await projectService.updateProjectStatus({
-      projectId,
-      status
-    });
-
-    await expect(updatedProject).toBeUndefined();
+  it("should return a 404 error if project doesn't exist", async () => {
+    const response = await projectService.getProjectWithId({ projectId: -1 });
+    const expected = { error: 'Project not found', status: 404 };
+    expect(response).toEqual(expected);
   });
 });
 
@@ -937,47 +922,37 @@ describe('Testing projectService downloadProposal', () => {
 });
 
 describe('Testing projectService getTotalFunded', () => {
-  let projectDao;
   let projectService;
   let transferService;
 
+  const totalFunded = 300;
+
   beforeAll(() => {
     transferService = {
-      getTotalFundedByProject: () => 300
-    };
-    projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (projectId === 0) {
-          return undefined;
-        }
-        if (projectId === undefined) {
-          throw Error('Error getting project from db');
+      getTotalFundedByProject: projectId => {
+        if (!projectId) {
+          throw Error('Error getting funds');
         }
 
-        return {
-          id: projectId
-        };
+        return totalFunded;
       }
     };
 
     projectService = projectServiceBuilder({
       fastify,
-      projectDao,
       transferService
     });
   });
 
   it('should return the total funded amount for a project', async () => {
-    const projectId = 1;
-    const response = await projectService.getTotalFunded(projectId);
-    const expected = 300;
-    return expect(response).toEqual(expected);
+    const response = await projectService.getTotalFunded(1);
+    return expect(response).toEqual(totalFunded);
   });
 
-  it('should return an error if the project does not exist', async () => {
-    const response = await projectService.getTotalFunded(0);
-    const expected = { error: 'ERROR: Project not found', status: 404 };
-    return expect(response).toEqual(expected);
+  it('should throw an error if it fails to get the transferred funds', async () => {
+    return expect(projectService.getTotalFunded()).rejects.toEqual(
+      Error('Error getting funded amount')
+    );
   });
 });
 
@@ -1010,15 +985,6 @@ describe('Testing projectService startProject', () => {
     };
 
     projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (projectId === undefined) throw Error('Error');
-        const project = find(
-          mockProjects,
-          mockProject => mockProject.id === projectId
-        );
-        return project;
-      },
-
       getUserOwnerOfProject: projectId => {
         const project = find(
           mockProjects,
@@ -1026,6 +992,14 @@ describe('Testing projectService startProject', () => {
         );
         const user = testHelper.buildUserSe(project.ownerId);
         return user;
+      },
+
+      updateStartBlockchainStatus: (projectId, status) => {
+        const project = find(
+          mockProjects,
+          mockProject => mockProject.id === projectId
+        );
+        return { ...project, startBlockchainStatus: status };
       }
     };
 
@@ -1037,41 +1011,37 @@ describe('Testing projectService startProject', () => {
     });
   });
 
-  it('should return the updated project with status In Progress', async () => {
-    const projectId = 4;
-    const response = await projectService.startProject(projectId);
-    const expected = find(mockProjects, project => projectId === project.id);
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the project does not exist', async () => {
-    const response = await projectService.startProject(-1);
-    const expected = { error: 'ERROR: Project not found', status: 404 };
-    return expect(response).toEqual(expected);
-  });
+  it(
+    'should return the updated project with status In Progress ' +
+      'and start status Pending',
+    async () => {
+      const projectId = 4;
+      const response = await projectService.startProject(mockProjects[3]);
+      const expected = find(mockProjects, project => projectId === project.id);
+      expected.startBlockchainStatus = blockchainStatus.SENT;
+      return expect(response).toEqual(expected);
+    }
+  );
 
   it('should return an error if the project is not Published', async () => {
-    const response = await projectService.startProject(2);
+    const response = await projectService.startProject(mockProjects[1]);
     const expected = { error: 'Project needs to be published', status: 409 };
     return expect(response).toEqual(expected);
   });
 
   it('should return an error if the project is already In Progress', async () => {
-    const response = await projectService.startProject(1);
-    const expected = { error: 'Project has already started', status: 409 };
+    const response = await projectService.startProject(mockProjects[0]);
+    const expected = {
+      error: 'Project has already started or sent to the blockchain',
+      status: 409
+    };
     return expect(response).toEqual(expected);
   });
 
   it('should return an error if project is not fully assigned', async () => {
-    const projectId = 4;
-    mockProjects.map(project => {
-      const newProject = { ...project };
-      if (project.id === projectId) {
-        newProject.milestones[0].activities[0].oracle = false;
-      }
-      return newProject;
-    });
-    const response = await projectService.startProject(projectId);
+    const projectNotAssigned = { ...mockProjects[3] };
+    projectNotAssigned.milestones[0].activities[0].oracle = false;
+    const response = await projectService.startProject(projectNotAssigned);
     const expected = {
       error: 'Project has activities with no oracles assigned',
       status: 409
@@ -1079,17 +1049,9 @@ describe('Testing projectService startProject', () => {
     return expect(response).toEqual(expected);
   });
 
-  it.skip('should return an error if the project could not be updated', async () => {
-    const response = await projectService.startProject(5);
-    const expected = {
-      error: 'ERROR: Project could not be started',
-      status: 500
-    };
-    return expect(response).toEqual(expected);
-  });
-
   it('should throw an error if it fails to get the project', async () => {
-    return expect(projectService.startProject()).rejects.toEqual(
+    const project = { ...mockProjects[3], id: '' };
+    return expect(projectService.startProject(project)).rejects.toEqual(
       Error('Error starting project')
     );
   });

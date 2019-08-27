@@ -6,14 +6,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/user';
+const basePath = '/users';
 const handlers = require('./handlers/userHandlers');
 const routeTags = require('../util/routeTags');
 
 const routes = {
   getUser: {
     method: 'get',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:userId`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -23,7 +23,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: {
+            userId: {
               type: 'integer',
               description: 'User to get the information'
             }
@@ -261,7 +261,7 @@ const routes = {
 
   getAllRoles: {
     method: 'get',
-    path: `${basePath}/role`,
+    path: `${basePath}/roles`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -446,7 +446,7 @@ const routes = {
 
   updateUser: {
     method: 'put',
-    path: `${basePath}/:id`,
+    path: `${basePath}/:userId`,
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
@@ -467,7 +467,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'number', description: 'User to modify' }
+            userId: { type: 'number', description: 'User to modify' }
           }
         },
         response: {
@@ -502,7 +502,7 @@ const routes = {
 
   getOracles: {
     method: 'get',
-    path: `${basePath}/oracle`,
+    path: `${basePath}/oracles`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -605,11 +605,11 @@ const routes = {
   },
 
   updatePassword: {
-    method: 'post',
-    path: `${basePath}/updatePassword`,
+    method: 'put',
+    path: `${basePath}/password`,
     options: {
       schema: {
-        tags: [routeTags.USER.name, routeTags.POST.name],
+        tags: [routeTags.USER.name, routeTags.PUT.name],
         description:
           'Modifies the password of an existing user validating the token sent by email',
         summary: 'Update user password',
@@ -654,7 +654,7 @@ const routes = {
 
   getUserProjects: {
     method: 'get',
-    path: `${basePath}/:id/projects`,
+    path: `${basePath}/:userId/projects`,
     options: {
       schema: {
         tags: [routeTags.USER.name, routeTags.GET.name],
@@ -663,7 +663,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            id: { type: 'integer' }
+            userId: { type: 'integer' }
           },
           description: 'User to get their projects from'
         },
