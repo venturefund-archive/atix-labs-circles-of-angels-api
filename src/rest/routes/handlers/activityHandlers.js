@@ -290,5 +290,30 @@ module.exports = {
       fastify.log.error('[Activity Routes] :: Error getting evidence:', error);
       reply.status(500).send({ error: 'Error getting evidence' });
     }
+  },
+
+  completeActivity: fastify => async (request, reply) => {
+    const { activityService, milestoneService } = apiHelper.helper.services;
+    const { activityId } = request.params;
+    fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
+    try {
+      const activity = await activityService.completeActivity(
+        activityId,
+        milestoneService.getMilestoneById
+      );
+      if (!activity)
+        if (activity.error) {
+          reply.status(activity.status).send(activity);
+        } else {
+          reply.status(200).send({ response: Boolean(activity) });
+        }
+      return activity;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Routes] :: Error completing activity:',
+        error
+      );
+      reply.status(500).send({ error: 'Error completing activity' });
+    }
   }
 };
