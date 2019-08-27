@@ -1,0 +1,1 @@
+ALTER TABLE public."transaction" ADD COLUMN "privKey" varchar(80);
