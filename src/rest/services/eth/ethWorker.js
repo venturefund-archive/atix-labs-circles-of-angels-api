@@ -125,7 +125,8 @@ const ethWorker = (web3, { logger }) => {
           nonce,
           to: receiver,
           from: addressSender,
-          data
+          data,
+          gasLimit
         };
         web3.eth
           .sendTransaction(txConfig)
@@ -161,7 +162,8 @@ const ethWorker = (web3, { logger }) => {
           nonce,
           from: addressSender,
           to: receiver,
-          data
+          data,
+          gasLimit
         };
         const httpWeb3 = new Web3(
           new HDWalletProvider(

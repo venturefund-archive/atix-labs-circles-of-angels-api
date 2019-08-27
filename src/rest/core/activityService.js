@@ -259,63 +259,63 @@ const activityService = ({
     }
   },
 
-  /**
-   * Sends the activity to be validated on the blockchain
-   *
-   * @param {object} activity
-   * @returns activity | error
-   */
-  async completeActivity(activity) {
-    try {
-      fastify.log.error(
-        `[Activity Service] Completing Activity ID ${activity.id}`
-      );
+  // /**
+  //  * Sends the activity to be validated on the blockchain
+  //  *
+  //  * @param {object} activity
+  //  * @returns activity | error
+  //  */
+  // async completeActivity(activity) {
+  //   try {
+  //     fastify.log.error(
+  //       `[Activity Service] Completing Activity ID ${activity.id}`
+  //     );
 
-      if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
-        fastify.log.error(
-          `[Activity Service] Activity ${
-            activity.id
-          } is not confirmed on the blockchain`
-        );
-        return {
-          error:
-            'Activity must be confirmed on the blockchain to mark as completed',
-          status: 409
-        };
-      }
+  //     if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
+  //       fastify.log.error(
+  //         `[Activity Service] Activity ${
+  //           activity.id
+  //         } is not confirmed on the blockchain`
+  //       );
+  //       return {
+  //         error:
+  //           'Activity must be confirmed on the blockchain to mark as completed',
+  //         status: 409
+  //       };
+  //     }
 
-      const oracle = await oracleActivityDao.getOracleFromActivity(activity.id);
-      const validatedTransactionHash = await fastify.eth.validateActivity(
-        oracle.user.address,
-        oracle.user.pwd,
-        { activityId: activity.id }
-      );
+  //     const oracle = await oracleActivityDao.getOracleFromActivity(activity.id);
+  //     const validatedTransactionHash = await fastify.eth.validateActivity(
+  //       oracle.user.address,
+  //       oracle.user.pwd,
+  //       { activityId: activity.id }
+  //     );
 
-      if (!validatedTransactionHash) {
-        fastify.log.error(
-          `[Activity Service] Activity ${
-            activity.id
-          } could not be validated on the blockchain`
-        );
-        return {
-          error: 'Activity could not be validated on the blockchain',
-          status: 409
-        };
-      }
+  //     if (!validatedTransactionHash) {
+  //       fastify.log.error(
+  //         `[Activity Service] Activity ${
+  //           activity.id
+  //         } could not be validated on the blockchain`
+  //       );
+  //       return {
+  //         error: 'Activity could not be validated on the blockchain',
+  //         status: 409
+  //       };
+  //     }
 
-      const validatedActivity = await activityDao.updateActivity({
-        validatedTransactionHash
-      });
+  //     const validatedActivity = await activityDao.updateActivity({
+  //       validatedTransactionHash
+  //     });
 
-      return validatedActivity;
-    } catch (error) {
-      fastify.log.error(
-        '[Activity Service] :: Activity could not be validated on the blockchain:',
-        error
-      );
-      throw Error('Error validating activity');
-    }
-  },
+  //     return validatedActivity;
+  //   } catch (error) {
+  //     fastify.log.error(
+  //       '[Activity Service] :: Activity could not be validated on the blockchain:',
+  //       error
+  //     );
+  //     throw Error('Error validating activity');
+  //   }
+  // },
 
   async getProjectByActivity(activity) {
     const { projectService, milestoneService } = apiHelper.helper.services;
@@ -1088,6 +1088,46 @@ const activityService = ({
         error
       );
       throw Error('Error getting Activity details');
+    }
+  },
+
+  /**
+   * Sends the activity to be validated on the blockchain
+   *
+   * @param {number} activityId
+   * @returns activity | error
+   */
+  async completeActivity(activityId) {
+    try {
+      const activity = await activityDao.getActivityById(activityId);
+      if (!activity) {
+        fastify.log.error(
+          `[Activity Service] Activity ${activityId} doesnt exists`
+        );
+        return { error: 'Activity doesnt exists', status: 404 };
+      }
+      if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
+        fastify.log.error(
+          `[Activity Service] Activity ${activityId} must be confirmed on blockchain`
+        );
+        return {
+          error: 'Activity must be confirmed on blockchain',
+          status: 409
+        };
+      }
+      const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
+      await fastify.eth.validateActivity({
+        sender: oracle.user.address,
+        privKey: oracle.user.privKey,
+        activityId
+      });
+      return activity;
+    } catch (error) {
+      fastify.log.error(
+        '[Activity Service] :: Error completing activity:',
+        error
+      );
+      throw Error('Error completing activity');
     }
   },
 
