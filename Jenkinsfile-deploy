@@ -72,7 +72,8 @@ pipeline {
                '''
      
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
-    		   pm2 restart circle-of-angels-api
+                    pm2 delete circle-of-angels-api
+                    pm2 start npm -- run testing --name circle-of-angels-api
                    "
                  '''
             }
