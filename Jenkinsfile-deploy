@@ -71,7 +71,7 @@ pipeline {
                     cd ${SERVE_DIR}
                     npm install
                     pm2 delete back
-                    pm2 start npm -- run testing --name back
+                    pm2 start  "npm run testing" --name back
                    "
                  '''
             }
