@@ -59,7 +59,7 @@ pipeline {
 
                 ln -s  ${BUILDS_DIR}/$BUILD_NUMBER ${SERVE_DIR} ;
 
-                chown www-data -R ${SERVE_DIR}/;
+                chown root -R ${SERVE_DIR}/;
                 chmod 0755 -R ${SERVE_DIR}/;
 
 
