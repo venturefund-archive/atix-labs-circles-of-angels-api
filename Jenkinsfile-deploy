@@ -67,6 +67,7 @@ pipeline {
                '''
      
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
+                    source /root/.bashrc
                     cd ${SERVE_DIR}
                     npm install
                     pm2 delete back
