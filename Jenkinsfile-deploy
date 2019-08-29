@@ -67,6 +67,7 @@ pipeline {
                '''
      
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
+                    cd ${SERVE_DIR}
                     npm install
                     pm2 delete back
                     pm2 start npm -- run testing --name back
