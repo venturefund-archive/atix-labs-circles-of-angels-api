@@ -3,9 +3,9 @@ def getDeploymentServer(branch) {
         case ~/^master$/:
             return ''
         case ~/^develop$/:
-            return 'root@173.255.254.208'
+            return credentials('COA_IP')
 	default:
-            return 'root@173.255.254.208'
+            return credentials('COA_IP')
     }
 }
 
