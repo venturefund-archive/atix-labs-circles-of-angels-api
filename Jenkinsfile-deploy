@@ -12,9 +12,15 @@ def getDeploymentServer(branch) {
 pipeline {
   agent { 
     docker { 
-      image 'node:8.12' 
-      args  '-u 0:0'
-    } 
+      image 'atixlabs/alpine-git:1.2' 
+      args  '-u 0:0' 
+    }
+  }
+
+  post {
+    cleanup {
+      cleanWs()
+    }
   }
 
   environment {
@@ -32,12 +38,6 @@ pipeline {
       steps {
         sh 'npm install'
       }    
-    }
-
-    stage("do release") {
-      steps {
-      	sh 'npm run build'
-      }
     }
     
     stage("upload build") {
