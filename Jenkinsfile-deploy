@@ -3,9 +3,9 @@ def getDeploymentServer(branch) {
         case ~/^master$/:
             return ''
         case ~/^develop$/:
-            return credentials('COA_IP')
+            return COA_IP
 	default:
-            return credentials('COA_IP')
+            return COA_IP
     }
 }
 
@@ -25,6 +25,7 @@ pipeline {
 
   environment {
     SLACK_TOKEN = credentials('slack_token')
+    COA_IP = credentials('COA_IP')
   }
 
   stages {
