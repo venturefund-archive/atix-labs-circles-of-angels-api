@@ -42,7 +42,7 @@ pipeline {
                   script: 'git rev-parse --abbrev-ref HEAD',
                   returnStdout: true
                 ).trim()
-          withEnv(['DEPLOY_SERVER=root@173.255.254.208' , 'SERVE_DIR=/home/circles-of-angels-api', 'BUILDS_DIR=/home/builds/circles-of-angels-api']) {
+          withEnv(['DEPLOY_SERVER=' + getDeploymentServer(GIT_BRANCH) , 'SERVE_DIR=/home/circles-of-angels-api', 'BUILDS_DIR=/home/builds/circles-of-angels-api']) {
             sshagent(credentials: ['ssh_jenkins_global'], ignoreMissing: true) {
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
                         cp -aL ${SERVE_DIR} ${BUILDS_DIR}/$BUILD_NUMBER;
