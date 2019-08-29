@@ -67,9 +67,7 @@ pipeline {
                '''
      
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
-                    whoami
-                    source /root/.bashrc
-                    export
+                    export PATH=/root/.nvm/versions/node/v10.15.1/bin:$PATH
                     cd ${SERVE_DIR}
                     npm install
                     pm2 delete back
