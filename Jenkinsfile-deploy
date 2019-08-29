@@ -67,10 +67,13 @@ pipeline {
                '''
      
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
+                    whoami
+                    source /root/.bashrc
+                    export
                     cd ${SERVE_DIR}
-                    /root/.nvm/versions/node/v10.15.1/bin/npm install
-                    /root/.nvm/versions/node/v10.15.1/bin/pm2 delete back
-                    /root/.nvm/versions/node/v10.15.1/bin/pm2 start npm -- run testing --name back
+                    npm install
+                    pm2 delete back
+                    pm2 start npm -- run testing --name back
                    "
                  '''
             }
