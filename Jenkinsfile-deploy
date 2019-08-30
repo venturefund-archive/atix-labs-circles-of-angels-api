@@ -45,8 +45,8 @@ pipeline {
           withEnv(['DEPLOY_SERVER=' + getDeploymentServer(GIT_BRANCH) , 'SERVE_DIR=/home/circles-of-angels-api', 'BUILDS_DIR=/home/builds/circles-of-angels-api']) {
             sshagent(credentials: ['ssh_jenkins_global'], ignoreMissing: true) {
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
-                        cp -aL ${SERVE_DIR} ${BUILDS_DIR}/$BUILD_NUMBER;
-                        "
+                    cp -aL ${SERVE_DIR} ${BUILDS_DIR}/$BUILD_NUMBER;
+                    "
                 '''
 
               sh '''rsync -av -e "ssh -oStrictHostKeyChecking=no" ${WORKSPACE}/* ${DEPLOY_SERVER}:${SERVE_DIR}/'''
@@ -56,7 +56,7 @@ pipeline {
                     cd ${SERVE_DIR}
                     npm install
                     pm2 delete back
-                    pm2 start  "npm run testing" --name back
+                    pm2 start \\\"npm run testing\\\" --name back
                    "
                  '''
             }
