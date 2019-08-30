@@ -48,6 +48,8 @@ pipeline {
                     export PATH=/root/.nvm/versions/node/v10.15.1/bin:$PATH
                     pm2 delete back
                     rm -r ${SERVE_DIR}/node_modules ${SERVE_DIR}/package-lock.json
+                    mkdir /home/backup-configs
+                    cp -r ${SERVE_DIR}/config/* /home/backup-configs;
                     cp -aL ${SERVE_DIR} ${BUILDS_DIR}/$BUILD_NUMBER;
                     "
                 '''
@@ -57,6 +59,8 @@ pipeline {
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
                     export PATH=/root/.nvm/versions/node/v10.15.1/bin:$PATH
                     cd ${SERVE_DIR}
+                    cp -r /home/backup-configs/* ${SERVE_DIR}/config;
+                    rm -r /home/backup-configs;
                     npm install
                     pm2 start \\\"npm run testing\\\" --name back
                    "
