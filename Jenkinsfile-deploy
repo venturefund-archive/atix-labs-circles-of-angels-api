@@ -48,23 +48,8 @@ pipeline {
                         cp -aL ${SERVE_DIR} ${BUILDS_DIR}/$BUILD_NUMBER;
                         "
                 '''
-              sh '''rsync -av -e "ssh -oStrictHostKeyChecking=no" ${WORKSPACE}/* ${DEPLOY_SERVER}:${BUILDS_DIR}/$BUILD_NUMBER/'''
 
-
-              sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
-
-                if [ -L ${SERVE_DIR} ]; then
-                    rm ${SERVE_DIR};
-                fi
-
-                ln -s  ${BUILDS_DIR}/$BUILD_NUMBER ${SERVE_DIR} ;
-
-                chown root -R ${SERVE_DIR}/;
-                chmod 0755 -R ${SERVE_DIR}/;
-
-
-                "
-               '''
+              sh '''rsync -av -e "ssh -oStrictHostKeyChecking=no" ${WORKSPACE}/* ${DEPLOY_SERVER}:${SERVE_DIR}/'''
      
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
                     export PATH=/root/.nvm/versions/node/v10.15.1/bin:$PATH
