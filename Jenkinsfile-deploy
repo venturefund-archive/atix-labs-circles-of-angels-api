@@ -45,6 +45,8 @@ pipeline {
           withEnv(['DEPLOY_SERVER=' + getDeploymentServer(GIT_BRANCH) , 'SERVE_DIR=/home/circles-of-angels-api', 'BUILDS_DIR=/home/builds/circles-of-angels-api']) {
             sshagent(credentials: ['ssh_jenkins_global'], ignoreMissing: true) {
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
+                    mkdir /home/backup-configs
+                    cp -r ${SERVE_DIR}/config/* /home/backup-configs;
                     cp -aL ${SERVE_DIR} ${BUILDS_DIR}/$BUILD_NUMBER;
                     "
                 '''
@@ -54,6 +56,9 @@ pipeline {
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
                     export PATH=/root/.nvm/versions/node/v10.15.1/bin:$PATH
                     cd ${SERVE_DIR}
+                    cp -r /home/backup-configs/* ${SERVE_DIR}/config;
+                    rm -r /home/backup-configs;
+
                     npm install
                     pm2 delete back
                     pm2 start \\\"npm run testing\\\" --name back
