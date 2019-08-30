@@ -38,8 +38,7 @@ const ethServices = async (
           to: receiver,
           value,
           gas: ethConfig.FUND_TX_GAS,
-          gasPrice: ethConfig.FUND_TX_GAS_PRICE,
-          gasLimit: ethConfig.GAS_LIMIT
+          gasPrice: ethConfig.FUND_TX_GAS_PRICE
         })
         .on('transactionHash', hash => {
           logger.info(`TxHash: ${hash}`);
