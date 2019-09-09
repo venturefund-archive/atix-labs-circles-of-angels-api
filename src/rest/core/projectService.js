@@ -64,7 +64,7 @@ const projectService = ({
 
       fastify.log.info('[Project Service] :: Checking file types');
 
-      if (!projectAgreement || !this.checkAgreementType(projectAgreement)) {
+      if (projectAgreement && !this.checkAgreementType(projectAgreement)) {
         fastify.log.error(
           '[Project Service] :: Wrong file type for Project Agreement',
           projectAgreement
