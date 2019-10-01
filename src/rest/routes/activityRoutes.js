@@ -349,6 +349,7 @@ const routes = {
                     fileHash: { type: 'string' },
                     activity: { type: 'integer' },
                     photo: { type: 'integer' },
+                    file: { type: 'integer' },
                     fileType: { type: 'string' },
                     fileName: { type: 'string' }
                   }
