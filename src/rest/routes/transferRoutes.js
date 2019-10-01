@@ -6,26 +6,20 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/transfer';
+const basePath = '/transfers';
 const handlers = require('./handlers/transferHandlers');
 const routeTags = require('../util/routeTags');
 
 const routes = {
   sendToVerification: {
     method: 'post',
-    path: `${basePath}/:transferId/sendToVerification`,
+    path: `${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.POST.name],
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
-        params: {
-          type: 'object',
-          properties: {
-            transferId: { type: 'integer' }
-          }
-        },
         body: {
           type: 'object',
           properties: {
@@ -33,14 +27,16 @@ const routes = {
             currency: { type: 'string' },
             senderId: { type: 'string' },
             projectId: { type: 'integer' },
-            destinationAccount: { type: 'string' }
+            destinationAccount: { type: 'string' },
+            transferId: { type: 'string' }
           },
           required: [
             'amount',
             'currency',
             'senderId',
             'projectId',
-            'destinationAccount'
+            'destinationAccount',
+            'transferId'
           ]
         },
         response: {
@@ -62,22 +58,31 @@ const routes = {
     handler: handlers.sendToVerification
   },
 
-  updateState: {
-    method: 'post',
-    path: `${basePath}/updateState`,
+  updateTransfer: {
+    method: 'put',
+    path: `${basePath}/:id`,
     options: {
       beforeHandler: ['adminAuth'],
       schema: {
-        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
         description: 'Updates the state of an existing transfer',
-        summary: 'Update transfer state',
+        summary: 'Update transfer',
+        params: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'Transfer to update'
+            }
+          }
+        },
         body: {
           type: 'object',
           properties: {
-            transferId: { type: 'string' },
             state: { type: 'integer' }
           },
-          required: ['transferId', 'state']
+          required: ['state'],
+          additionalProperties: false
         },
         response: {
           200: {
@@ -95,12 +100,12 @@ const routes = {
         }
       }
     },
-    handler: handlers.updateState
+    handler: handlers.updateTransfer
   },
 
   getState: {
     method: 'get',
-    path: `${basePath}/:senderId/:projectId/getState`,
+    path: `${basePath}/user/:userId/project/:projectId/state`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
@@ -110,7 +115,7 @@ const routes = {
         params: {
           type: 'object',
           properties: {
-            senderId: { type: 'integer' },
+            userId: { type: 'integer' },
             projectId: { type: 'integer' }
           }
         },
@@ -143,7 +148,7 @@ const routes = {
 
   getTransfers: {
     method: 'get',
-    path: `${basePath}/:projectId/getTransfers`,
+    path: `/projects/:projectId${basePath}`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {

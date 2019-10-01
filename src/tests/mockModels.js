@@ -23,7 +23,8 @@ const userFunderId = 3;
 const userOracleId = 4;
 
 exports.userOracle = {
-  address: ethServicesMock.createAccount(),
+  address: ethServicesMock.createAccount().address,
+  privKey: ethServicesMock.createAccount().privateKey,
   createdAt: '2019-04-16T03:00:00.000Z',
   email: 'oracle@test.com',
   id: userOracleId,
@@ -31,11 +32,13 @@ exports.userOracle = {
   registrationStatus: userRegistrationStatus.APPROVED,
   role: userRoles.ORACLE,
   updatedAt: '2019-05-28T03:00:00.000Z',
-  username: 'Oracle 1'
+  username: 'Oracle 1',
+  transferBlockchainStatus: blockchainStatus.CONFIRMED
 };
 
 exports.userSE = {
-  address: ethServicesMock.createAccount(),
+  address: ethServicesMock.createAccount().address,
+  privKey: ethServicesMock.createAccount().privateKey,
   createdAt: '2019-04-16T03:00:00.000Z',
   email: 'user@test.com',
   id: userSeId,
@@ -43,11 +46,13 @@ exports.userSE = {
   registrationStatus: userRegistrationStatus.APPROVED,
   role: userRoles.SOCIAL_ENTREPRENEUR,
   updatedAt: '2019-05-28T03:00:00.000Z',
-  username: 'SE 1'
+  username: 'SE 1',
+  transferBlockchainStatus: blockchainStatus.CONFIRMED
 };
 
 exports.userAdmin = {
-  address: ethServicesMock.createAccount(),
+  address: ethServicesMock.createAccount().address,
+  privKey: ethServicesMock.createAccount().privateKey,
   createdAt: '2019-04-16T03:00:00.000Z',
   email: 'admin@test.com',
   id: userAdminId,
@@ -55,11 +60,13 @@ exports.userAdmin = {
   registrationStatus: userRegistrationStatus.APPROVED,
   role: userRoles.BO_ADMIN,
   updatedAt: '2019-05-28T03:00:00.000Z',
-  username: 'Admin'
+  username: 'Admin',
+  transferBlockchainStatus: blockchainStatus.CONFIRMED
 };
 
 exports.userFunder = {
-  address: ethServicesMock.createAccount(),
+  address: ethServicesMock.createAccount().address,
+  privKey: ethServicesMock.createAccount().privateKey,
   createdAt: '2019-04-16T03:00:00.000Z',
   email: 'funder@test.com',
   id: userFunderId,
@@ -67,7 +74,8 @@ exports.userFunder = {
   registrationStatus: userRegistrationStatus.APPROVED,
   role: userRoles.IMPACT_FUNDER,
   updatedAt: '2019-05-28T03:00:00.000Z',
-  username: 'Funder 1'
+  username: 'Funder 1',
+  transferBlockchainStatus: blockchainStatus.CONFIRMED
 };
 
 exports.userSeAnswers = userId => ({
@@ -280,6 +288,7 @@ const projectId = 11;
 
 exports.project = {
   blockchainStatus: blockchainStatus.CONFIRMED,
+  startBlockchainStatus: blockchainStatus.PENDING,
   cardPhoto: 2,
   coverPhoto: 1,
   createdAt: '2019-05-31T03:00:00.000Z',

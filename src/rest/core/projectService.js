@@ -17,7 +17,11 @@ const {
   addPathToFilesProperties,
   addTimestampToFilename
 } = require('../util/files');
-const { projectStatus, blockchainStatus } = require('../util/constants');
+const {
+  projectStatus,
+  blockchainStatus,
+  userRoles
+} = require('../util/constants');
 
 const unlinkPromise = promisify(fs.unlink);
 
@@ -294,7 +298,7 @@ const projectService = ({
    * @param {number} id
    * @returns updated project | error message
    */
-  async updateProject(project, projectCoverPhoto, projectCardPhoto, id) {
+  async updateProject(project, projectCoverPhoto, projectCardPhoto, id, user) {
     try {
       const newProject = Object.assign({}, JSON.parse(project));
       fastify.log.info('[Project Service] :: Updating project:', newProject);
@@ -314,6 +318,43 @@ const projectService = ({
         return {
           status: 404,
           error: 'Project does not exist'
+        };
+      }
+
+      if (newProject.status) {
+        if (newProject.status === projectStatus.IN_PROGRESS) {
+          const startedProject = await this.startProject(currentProject);
+          if (startedProject.error) {
+            return startedProject;
+          }
+          fastify.log.info(
+            '[Project Service] :: Project started:',
+            startedProject
+          );
+          delete newProject.status;
+        } else if (user.role.id !== userRoles.BO_ADMIN) {
+          fastify.log.error(
+            '[Project Service] :: Could not change project status. User is not an admin'
+          );
+          return {
+            status: 403,
+            error: 'User needs admin privileges to perform this action'
+          };
+        }
+      }
+
+      if (
+        currentProject.status === projectStatus.IN_PROGRESS ||
+        currentProject.startBlockchainStatus !== blockchainStatus.PENDING
+      ) {
+        fastify.log.error(
+          "[Project Service] :: Can't update project IN PROGRESS or SENT to the blockchain",
+          id
+        );
+        return {
+          status: 409,
+          error:
+            'Project cannot be updated. It has already started or sent to the blockchain.'
         };
       }
 
@@ -348,12 +389,21 @@ const projectService = ({
           await projectCoverPhoto.mv(coverPhotoPath);
 
           // update cover photo path in database
-          const updatedCoverPhoto = await photoService.updatePhoto(
-            projectPhotos.coverPhoto,
-            coverPhotoPath
-          );
-          if (updatedCoverPhoto && updatedCoverPhoto != null) {
-            newProject.coverPhoto = updatedCoverPhoto.id;
+          if (!currentCoverPhoto.error) {
+            const updatedCoverPhoto = await photoService.updatePhoto(
+              projectPhotos.coverPhoto,
+              coverPhotoPath
+            );
+            if (updatedCoverPhoto && updatedCoverPhoto != null) {
+              newProject.coverPhoto = updatedCoverPhoto.id;
+            }
+          } else {
+            const savedCoverPhoto = await photoService.savePhoto(
+              coverPhotoPath
+            );
+            if (savedCoverPhoto && savedCoverPhoto != null) {
+              newProject.coverPhoto = savedCoverPhoto.id;
+            }
           }
         }
 
@@ -374,12 +424,19 @@ const projectService = ({
           await projectCardPhoto.mv(cardPhotoPath);
 
           // update card photo path in database
-          const updatedCardPhoto = await photoService.updatePhoto(
-            projectPhotos.cardPhoto,
-            cardPhotoPath
-          );
-          if (updatedCardPhoto && updatedCardPhoto != null) {
-            newProject.cardPhoto = updatedCardPhoto.id;
+          if (!currentCardPhoto.error) {
+            const updatedCardPhoto = await photoService.updatePhoto(
+              projectPhotos.cardPhoto,
+              cardPhotoPath
+            );
+            if (updatedCardPhoto && updatedCardPhoto != null) {
+              newProject.cardPhoto = updatedCardPhoto.id;
+            }
+          } else {
+            const savedCardPhoto = await photoService.savePhoto(cardPhotoPath);
+            if (savedCardPhoto && savedCardPhoto != null) {
+              newProject.cardPhoto = savedCardPhoto.id;
+            }
           }
         }
 
@@ -431,30 +488,21 @@ const projectService = ({
   },
 
   async getProjectWithId({ projectId }) {
-    const project = await projectDao.getProjectById({ projectId });
-    return project;
-  },
+    try {
+      const project = await projectDao.getProjectById({ projectId });
 
-  async updateProjectStatus({ projectId, status }) {
-    const project = await this.getProjectWithId({ projectId });
-    const existsStatus = Object.values(projectStatus).includes(status);
-    if (status === projectStatus.IN_PROGRESS) {
-      const isConfirmedOnBlockchain =
-        project.blockchainStatus === blockchainStatus.CONFIRMED;
-      if (!isConfirmedOnBlockchain)
-        return {
-          error: `Project ${
-            project.projectName
-          } is not confirmed on blockchain yet`
-        };
-    }
-    if (
-      project.status === projectStatus.IN_PROGRESS &&
-      status === projectStatus.IN_PROGRESS
-    )
-      throw Error('Already started proyect');
-    if (existsStatus) {
-      return projectDao.updateProjectStatus({ projectId, status });
+      if (!project) {
+        fastify.log.error('[Project Service] :: Project not found:', projectId);
+        return { error: 'Project not found', status: 404 };
+      }
+
+      const totalFunded = await this.getTotalFunded(projectId);
+      project.totalFunded = totalFunded;
+
+      return project;
+    } catch (error) {
+      fastify.log.error('[Project Service] :: Error getting project:', error);
+      throw Error('Error getting project');
     }
   },
 
@@ -815,15 +863,6 @@ const projectService = ({
     );
 
     try {
-      // verify if project exists
-      const project = await projectDao.getProjectById({ projectId });
-      if (!project || project == null) {
-        fastify.log.error(
-          `[Project Service] :: Project ID ${projectId} not found`
-        );
-        return { error: 'ERROR: Project not found', status: 404 };
-      }
-
       const totalAmount = await transferService.getTotalFundedByProject(
         projectId
       );
@@ -844,44 +883,48 @@ const projectService = ({
   /**
    * Changes the status of a PUBLISHED project to IN_PROGRESS
    *
-   * @param {number} projectId
+   * @param {object} project
    * @returns updated project || error
    */
-  async startProject(projectId) {
+  async startProject(project) {
     fastify.log.info(
-      `[Project Service] :: Updating Project ID ${projectId} status to In Progress`
+      `[Project Service] :: Updating Project ID ${
+        project.id
+      } status to In Progress`
     );
 
     try {
-      // verify if project exists
-      const project = await projectDao.getProjectById({ projectId });
-      if (!project || project == null) {
-        fastify.log.error(
-          `[Project Service] :: Project ID ${projectId} not found`
-        );
-        return { error: 'ERROR: Project not found', status: 404 };
-      }
       if (
         project.status !== projectStatus.PUBLISHED &&
         project.status !== projectStatus.IN_PROGRESS
       ) {
         fastify.log.error(
-          `[Project Service] :: Project ID ${projectId} is not published`
+          `[Project Service] :: Project ID ${project.id} is not published`
         );
         return { error: 'Project needs to be published', status: 409 };
       }
 
-      if (project.status === projectStatus.IN_PROGRESS) {
+      if (
+        project.status === projectStatus.IN_PROGRESS ||
+        project.startBlockchainStatus !== blockchainStatus.PENDING
+      ) {
         fastify.log.error(
-          `[Project Service] :: Project ID ${projectId} already in progress`
+          `[Project Service] :: Project ID ${
+            project.id
+          } already in progress or sent to the blockchain`
         );
-        return { error: 'Project has already started', status: 409 };
+        return {
+          error: 'Project has already started or sent to the blockchain',
+          status: 409
+        };
       }
 
-      const projectWithOracles = await this.isFullyAssigned(projectId);
+      const projectWithOracles = await this.isFullyAssigned(project.id);
       if (!projectWithOracles) {
         fastify.log.error(
-          `[Project Service] :: Project ID ${projectId} has activities with no oracles assigned`
+          `[Project Service] :: Project ID ${
+            project.id
+          } has activities with no oracles assigned`
         );
         return {
           error: 'Project has activities with no oracles assigned',
@@ -890,11 +933,16 @@ const projectService = ({
       }
 
       fastify.log.info(
-        `[Project Service] :: Starting milestones on blockchain of project Project ID ${projectId}`
+        `[Project Service] :: Starting milestones on blockchain of project Project ID ${
+          project.id
+        }`
       );
       await milestoneService.startMilestonesOfProject(project);
-
-      return project;
+      const startPendingProject = await projectDao.updateStartBlockchainStatus(
+        project.id,
+        blockchainStatus.SENT
+      );
+      return startPendingProject;
     } catch (error) {
       fastify.log.error('[Project Service] :: Error starting project:', error);
       throw Error('Error starting project');

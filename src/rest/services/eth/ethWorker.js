@@ -125,7 +125,8 @@ const ethWorker = (web3, { logger }) => {
           nonce,
           to: receiver,
           from: addressSender,
-          data
+          data,
+          gasLimit
         };
         web3.eth
           .sendTransaction(txConfig)
@@ -140,11 +141,12 @@ const ethWorker = (web3, { logger }) => {
             }
           })
           .on('error', err => {
-            logger.error(err);
+            logger.error('Eth Worker :: ', err);
             reject(err);
           });
       } catch (error) {
         logger.error(error);
+        reject(error);
       }
     });
   };
@@ -161,7 +163,8 @@ const ethWorker = (web3, { logger }) => {
           nonce,
           from: addressSender,
           to: receiver,
-          data
+          data,
+          gasLimit
         };
         const httpWeb3 = new Web3(
           new HDWalletProvider(
@@ -185,11 +188,12 @@ const ethWorker = (web3, { logger }) => {
             }
           })
           .on('error', err => {
-            logger.error(err);
+            logger.error('Eth Worker :: ', err);
             reject(err);
           });
       } catch (error) {
         logger.error(error);
+        reject(error);
       }
     });
   };

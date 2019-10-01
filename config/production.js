@@ -11,7 +11,9 @@ const COAOracle = require('../../circles-of-angels-solidity/build/contracts/COAO
 
 module.exports = {
   eth: {
-    HOST: 'ws://localhost:8545',
+    HTTP_HOST: 'http://localhost:8545',
+    WS_HOST: 'ws://localhost:8545',
+    MNEMONIC: false,
     CONTRACT_ADMIN_ADDRESS: COAProjectAdmin.networks['5777'].address,
     CONTRACT_ORACLE_ADDRESS: COAOracle.networks['5777'].address,
     CONTRACT_ADMIN_ABI: COAProjectAdmin.abi,
@@ -23,8 +25,8 @@ module.exports = {
     FUND_TX_GAS: 50000,
     FUND_TX_GAS_PRICE: 100000000,
     UNLOCK_DURATION: 1000000,
-    INITIAL_FUNDS: 100000000000000,
-    GAS_LIMIT: 10000000000,
+    INITIAL_FUNDS: 1000000,
+    GAS_LIMIT: 6800000,
     ALLOWED_ADDRESSES: [
       '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
       '0x6704fbfcd5ef766b287262fa2281c105d57246a6',
@@ -37,7 +39,10 @@ module.exports = {
       '0xcc036143c68a7a9a41558eae739b428ecde5ef66',
       '0xe2b3204f29ab45d5fd074ff02ade098fbc381d42',
       '0xd51128f302755666c42e3920d72ff2fe632856a9'
-    ]
+    ],
+    NUMBER_ACCOUNTS: 15,
+    REINTENT_LAPSE: 780000,
+    MAX_TX_ACCOUNT: 1
   },
   frontendUrl: 'http://104.237.154.167:3000'
 };

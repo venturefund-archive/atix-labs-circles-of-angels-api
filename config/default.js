@@ -10,7 +10,7 @@ const routeTags = require('../src/rest/util/routeTags');
 
 module.exports = {
   server: {
-    host: '173.255.254.208',
+    host: 'localhost',
     port: 3001,
     headers: {
       'Access-Control-Allow-Credentials': true,

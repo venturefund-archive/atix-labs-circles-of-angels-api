@@ -13,6 +13,14 @@ const getMilestoneById = milestoneModel => async milestoneId => {
   return milestone;
 };
 
+const getMilestoneByIdWithProject = milestoneModel => async milestoneId => {
+  const milestone = await milestoneModel
+    .findOne({ id: milestoneId })
+    .populate('project');
+
+  return milestone;
+};
+
 const saveMilestone = milestoneModel => async ({
   milestone,
   projectId,
@@ -112,5 +120,6 @@ module.exports = milestoneModel => ({
   updateBudgetStatus: updateBudgetStatus(milestoneModel),
   updateMilestoneStatus: updateMilestoneStatus(milestoneModel),
   updateBlockchainStatus: updateBlockchainStatus(milestoneModel),
-  updateCreationTransactionHash: updateCreationTransactionHash(milestoneModel)
+  updateCreationTransactionHash: updateCreationTransactionHash(milestoneModel),
+  getMilestoneByIdWithProject: getMilestoneByIdWithProject(milestoneModel)
 });

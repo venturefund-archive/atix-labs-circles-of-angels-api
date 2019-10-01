@@ -6,14 +6,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/questionnaire';
+const basePath = 'questionnaire';
 const handlers = require('./handlers/questionnaireHandlers');
 const routeTags = require('../util/routeTags');
 
 const routes = {
   getQuestionnaire: {
     method: 'get',
-    path: `${basePath}/:roleId`,
+    path: `/roles/:roleId/${basePath}`,
     options: {
       schema: {
         tags: [routeTags.QUESTIONNAIRE.name, routeTags.GET.name],

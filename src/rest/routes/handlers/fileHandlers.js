@@ -11,26 +11,26 @@ const apiHelper = require('../../services/helper');
 module.exports = {
   deleteFile: fastify => async (request, reply) => {
     const { fileService } = apiHelper.helper.services;
-    const { id } = request.params;
-    fastify.log.info(`[File Routes] :: Deleting file ID ${id}`);
+    const { fileId } = request.params;
+    fastify.log.info(`[File Routes] :: Deleting file ID ${fileId}`);
 
     try {
-      const res = await fileService.deleteFile(id);
+      const res = await fileService.deleteFile(fileId);
 
       if (res && res.error) {
         fastify.log.error(
-          `[File Routes] :: Error deleting file ID ${id}:`,
+          `[File Routes] :: Error deleting file ID ${fileId}:`,
           res.error
         );
         reply.status(res.status).send(res.error);
       } else {
-        fastify.log.info('[File Routes] :: deleting file ID', id);
+        fastify.log.info('[File Routes] :: deleting file ID', fileId);
 
         reply.send(res);
       }
     } catch (error) {
       fastify.log.error(
-        `[File Routes] :: Error deleting file ID ${id}:`,
+        `[File Routes] :: Error deleting file ID ${fileId}:`,
         error
       );
       reply.status(500).send({ error: 'Error deleting file' });
