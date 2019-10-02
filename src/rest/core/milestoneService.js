@@ -759,7 +759,7 @@ const milestoneService = ({
           sender: user.address,
           privKey: user.privKey,
           milestoneId,
-          projectId: milestone.project
+          projectId: milestone.project.id
         });
       }
 
@@ -769,7 +769,7 @@ const milestoneService = ({
         );
         await fastify.eth.setMilestoneFunded({
           milestoneId,
-          projectId: milestone.project
+          projectId: milestone.project.id
         });
       }
 

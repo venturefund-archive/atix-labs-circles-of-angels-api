@@ -197,6 +197,26 @@ exports.getMockProjects = () => [
   this.buildProject(1, 1, { id: 7, bcStatus: blockchainStatus.SENT })
 ];
 
+exports.getMockActiveProjects = () => [
+  this.buildProject(1, 1, { id: 1, status: projectStatus.IN_PROGRESS }),
+  this.buildProject(1, 1, {
+    id: 2,
+    status: projectStatus.IN_PROGRESS
+  }),
+  this.buildProject(1, 1, { id: 3, status: projectStatus.PUBLISHED }),
+  this.buildProject(1, 1, { id: 4, status: projectStatus.PUBLISHED }),
+  this.buildProject(1, 1, {
+    id: 5,
+    bcStatus: blockchainStatus.CONFIRMED,
+    status: projectStatus.PUBLISHED
+  }),
+  this.buildProject(1, 1, {
+    id: 6,
+    bcStatus: blockchainStatus.PENDING
+  }),
+  this.buildProject(1, 1, { id: 7, bcStatus: blockchainStatus.SENT })
+];
+
 exports.getMockFiles = () => ({
   projectCoverPhoto: {
     name: 'projectCoverPhoto.png',
