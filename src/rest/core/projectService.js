@@ -22,6 +22,7 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+const { savePhotoJpgFormat } = require('../util/files');
 
 const unlinkPromise = promisify(fs.unlink);
 
@@ -159,13 +160,13 @@ const projectService = ({
         '[Project Service] :: Saving Project cover photo to:',
         coverPhotoPath
       );
-      await projectCoverPhoto.mv(coverPhotoPath);
+      await savePhotoJpgFormat(projectCardPhoto, cardPhotoPath, 700);
 
       fastify.log.info(
         '[Project Service] :: Saving Project card photo to:',
         cardPhotoPath
       );
-      await projectCardPhoto.mv(cardPhotoPath);
+      await savePhotoJpgFormat(projectCoverPhoto, coverPhotoPath, 1400);
 
       fastify.log.info(
         '[Project Service] :: Saving pitch proposal to:',
