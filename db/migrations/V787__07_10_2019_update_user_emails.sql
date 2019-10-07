@@ -1,0 +1,1 @@
+UPDATE TABLE public.user SET email = LOWER(email);
