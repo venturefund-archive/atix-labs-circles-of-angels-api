@@ -816,11 +816,9 @@ const milestoneService = ({
     try {
       let completedMilestones = 0;
       const milestones = await this.getMilestonesByProject(project.id);
-      milestones.forEach(milestone => {
-        if (milestone.status.status === activityStatus.COMPLETED) {
-          completedMilestones++;
-        }
-      });
+      completedMilestones = milestones.filter(
+        milestone => milestone.status.status === activityStatus.COMPLETED
+      ).length;
       const hasOpenMilestones = completedMilestones < milestones.length;
       return {
         milestoneProgress: (completedMilestones * 100) / milestones.length,

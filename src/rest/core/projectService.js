@@ -26,6 +26,9 @@ const { savePhotoJpgFormat } = require('../util/files');
 
 const unlinkPromise = promisify(fs.unlink);
 
+const cardPhotoSize = 700;
+const coverPhotoSize = 1400;
+
 const projectService = ({
   fastify,
   projectDao,
@@ -159,13 +162,17 @@ const projectService = ({
         '[Project Service] :: Saving Project cover photo to:',
         coverPhotoPath
       );
-      await savePhotoJpgFormat(projectCardPhoto, cardPhotoPath, 700);
+      await savePhotoJpgFormat(projectCardPhoto, cardPhotoPath, cardPhotoSize);
 
       fastify.log.info(
         '[Project Service] :: Saving Project card photo to:',
         cardPhotoPath
       );
-      await savePhotoJpgFormat(projectCoverPhoto, coverPhotoPath, 1400);
+      await savePhotoJpgFormat(
+        projectCoverPhoto,
+        coverPhotoPath,
+        coverPhotoSize
+      );
 
       fastify.log.info(
         '[Project Service] :: Saving pitch proposal to:',
@@ -477,7 +484,7 @@ const projectService = ({
     return projects;
   },
 
-    /**
+  /**
    * Returns a list of active projects, with status == 1
    */
   async getActiveProjectList() {
