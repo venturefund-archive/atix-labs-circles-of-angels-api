@@ -24,13 +24,17 @@ const {
 } = require('../util/constants');
 const MAX_PHOTO_SIZE = 500000;
 
+const { savePhotoJpgFormat } = require('../util/files');
+
 const unlinkPromise = promisify(fs.unlink);
+
+const cardPhotoSize = 700;
+const coverPhotoSize = 1400;
 
 const projectService = ({
   fastify,
   projectDao,
   milestoneService,
-  projectStatusDao,
   photoService,
   transferService,
   userDao,
@@ -69,7 +73,7 @@ const projectService = ({
 
       fastify.log.info('[Project Service] :: Checking file types');
 
-      if (!projectAgreement || !this.checkAgreementType(projectAgreement)) {
+      if (projectAgreement && !this.checkAgreementType(projectAgreement)) {
         fastify.log.error(
           '[Project Service] :: Wrong file type for Project Agreement',
           projectAgreement
@@ -184,13 +188,17 @@ const projectService = ({
         '[Project Service] :: Saving Project cover photo to:',
         coverPhotoPath
       );
-      await projectCoverPhoto.mv(coverPhotoPath);
+      await savePhotoJpgFormat(projectCardPhoto, cardPhotoPath, cardPhotoSize);
 
       fastify.log.info(
         '[Project Service] :: Saving Project card photo to:',
         cardPhotoPath
       );
-      await projectCardPhoto.mv(cardPhotoPath);
+      await savePhotoJpgFormat(
+        projectCoverPhoto,
+        coverPhotoPath,
+        coverPhotoSize
+      );
 
       fastify.log.info(
         '[Project Service] :: Saving pitch proposal to:',
@@ -513,6 +521,29 @@ const projectService = ({
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PUBLISHED
     });
+    return projects;
+  },
+
+  /**
+   * Returns a list of projects with limited info for preview
+   */
+  async getProjectsPreview() {
+    const projects = await projectDao.getProjecListWithStatusFrom({
+      status: projectStatus.PUBLISHED
+    });
+
+    projects.map(async project => {
+      const {
+        milestoneProgress,
+        hasOpenMilestones
+      } = await milestoneService.getMilestonePreviewInfoOfProject(project);
+      return {
+        ...project,
+        milestoneProgress,
+        hasOpenMilestones
+      };
+    });
+
     return projects;
   },
 

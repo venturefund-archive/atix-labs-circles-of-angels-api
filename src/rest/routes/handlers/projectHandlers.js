@@ -90,6 +90,18 @@ module.exports = {
     }
   },
 
+  getProjectsPreview: fastify => async (request, reply) => {
+    const { projectService } = apiHelper.helper.services;
+    fastify.log.info('[Project Routes] :: Getting preview of projects');
+    try {
+      const projects = await projectService.getProjectsPreview();
+      reply.send(projects);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.status(500).send({ error: 'Error getting projects' });
+    }
+  },
+
   getProject: fastify => async (request, reply) => {
     const { projectService } = apiHelper.helper.services;
     const { projectId } = request.params;
