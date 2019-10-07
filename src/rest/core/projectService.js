@@ -22,14 +22,17 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+const { savePhotoJpgFormat } = require('../util/files');
 
 const unlinkPromise = promisify(fs.unlink);
+
+const cardPhotoSize = 700;
+const coverPhotoSize = 1400;
 
 const projectService = ({
   fastify,
   projectDao,
   milestoneService,
-  projectStatusDao,
   photoService,
   transferService,
   userDao,
@@ -159,13 +162,17 @@ const projectService = ({
         '[Project Service] :: Saving Project cover photo to:',
         coverPhotoPath
       );
-      await projectCoverPhoto.mv(coverPhotoPath);
+      await savePhotoJpgFormat(projectCardPhoto, cardPhotoPath, cardPhotoSize);
 
       fastify.log.info(
         '[Project Service] :: Saving Project card photo to:',
         cardPhotoPath
       );
-      await projectCardPhoto.mv(cardPhotoPath);
+      await savePhotoJpgFormat(
+        projectCoverPhoto,
+        coverPhotoPath,
+        coverPhotoSize
+      );
 
       fastify.log.info(
         '[Project Service] :: Saving pitch proposal to:',
@@ -484,6 +491,29 @@ const projectService = ({
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PUBLISHED
     });
+    return projects;
+  },
+
+  /**
+   * Returns a list of projects with limited info for preview
+   */
+  async getProjectsPreview() {
+    const projects = await projectDao.getProjecListWithStatusFrom({
+      status: projectStatus.PUBLISHED
+    });
+
+    projects.map(async project => {
+      const {
+        milestoneProgress,
+        hasOpenMilestones
+      } = await milestoneService.getMilestonePreviewInfoOfProject(project);
+      return {
+        ...project,
+        milestoneProgress,
+        hasOpenMilestones
+      };
+    });
+
     return projects;
   },
 
