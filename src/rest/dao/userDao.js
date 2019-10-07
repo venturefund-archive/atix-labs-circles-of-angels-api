@@ -14,7 +14,11 @@ const UserDao = ({ userModel }) => ({
   },
 
   async getUserByEmail(email) {
-    return userModel.findOne({ email }).populate('role');
+    return userModel.findOne(
+      {
+        email: email.toLowerCase()
+      }
+    ).populate('role');
   },
 
   async createUser(user) {
