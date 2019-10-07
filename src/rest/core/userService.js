@@ -168,7 +168,7 @@ const userService = ({
 
         const user = {
           username,
-          email,
+          email: email.toLowerCase(),
           pwd: hashedPwd,
           role,
           address: account.address,
