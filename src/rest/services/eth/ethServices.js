@@ -31,14 +31,17 @@ const ethServices = async (
   const toChecksum = address => web3.utils.toChecksumAddress(address);
 
   const transfer = async (sender, receiver, value, onConfirm) => {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const nonce = (await web3.eth.getTransactionCount(sender)) || 0;
       web3.eth
         .sendTransaction({
           from: sender,
           to: receiver,
           value,
           gas: ethConfig.FUND_TX_GAS,
-          gasPrice: ethConfig.FUND_TX_GAS_PRICE
+          gasPrice: ethConfig.FUND_TX_GAS_PRICE,
+          gasLimit: ethConfig.GAS_LIMIT,
+          nonce
         })
         .on('transactionHash', hash => {
           logger.info(`TxHash: ${hash}`);
