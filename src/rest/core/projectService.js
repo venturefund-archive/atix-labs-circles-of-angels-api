@@ -30,7 +30,6 @@ const projectService = ({
   fastify,
   projectDao,
   milestoneService,
-  projectStatusDao,
   photoService,
   transferService,
   userDao,
@@ -478,13 +477,36 @@ const projectService = ({
     return projects;
   },
 
-  /**
+    /**
    * Returns a list of active projects, with status == 1
    */
   async getActiveProjectList() {
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PUBLISHED
     });
+    return projects;
+  },
+
+  /**
+   * Returns a list of projects with limited info for preview
+   */
+  async getProjectsPreview() {
+    const projects = await projectDao.getProjecListWithStatusFrom({
+      status: projectStatus.PUBLISHED
+    });
+
+    projects.map(async project => {
+      const {
+        milestoneProgress,
+        hasOpenMilestones
+      } = await milestoneService.getMilestonePreviewInfoOfProject(project);
+      return {
+        ...project,
+        milestoneProgress,
+        hasOpenMilestones
+      };
+    });
+
     return projects;
   },
 

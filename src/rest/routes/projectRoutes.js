@@ -195,6 +195,55 @@ const routes = {
     handler: handlers.getActiveProjects
   },
 
+  getProjectsPreview: {
+    method: 'get',
+    path: `${basePath}/preview`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Returns preview info of all existing active COA projects',
+        summary: 'Get all active projects',
+        response: {
+          200: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                projectName: { type: 'string' },
+                location: { type: 'string' },
+                timeframe: { type: 'string' },
+                goalAmount: { type: 'number' },
+                status: { type: 'integer' },
+                ownerId: { type: 'integer' },
+                milestoneProgress: { type: 'number' },
+                id: { type: 'integer' }
+              }
+            },
+            description:
+              'Returns an array of objects with the preview information of projects'
+          },
+          '4xx': {
+            type: 'object',
+            properties: {
+              status: { type: 'integer' },
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
+          },
+          500: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' }
+            },
+            description: 'Returns a message describing the error'
+          }
+        }
+      }
+    },
+    handler: handlers.getProjectsPreview
+  },
+
   getProject: {
     method: 'get',
     path: `${basePath}/:projectId`,
