@@ -53,7 +53,7 @@ module.exports = {
   },
 
   fileServer: {
-    filePath: '/home/atixlabs/files/server'
+    filePath: '/home/atixlabs/files/server/files/'
   },
 
   swagger: {
