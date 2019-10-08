@@ -22,6 +22,7 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+const MAX_PHOTO_SIZE = 500000;
 
 const unlinkPromise = promisify(fs.unlink);
 
@@ -109,6 +110,30 @@ const projectService = ({
         return {
           status: 409,
           error: 'Invalid file type for the uploaded cover photo'
+        };
+      }
+
+      if (!this.checkPhotoSize(projectCardPhoto)) {
+        fastify.log.error(
+          '[Project Service] :: Size of Project Card Photo too high',
+          projectCardPhoto
+        );
+        return {
+          status: 409,
+          error: `Invalid size for the uploaded card photo, higher than ${MAX_PHOTO_SIZE /
+            1000} MB`
+        };
+      }
+
+      if (!this.checkPhotoSize(projectCoverPhoto)) {
+        fastify.log.error(
+          '[Project Service] :: Size of Project Cover Photo too high',
+          projectCoverPhoto
+        );
+        return {
+          status: 409,
+          error: `Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE /
+            1000} MB`
         };
       }
 
@@ -273,6 +298,10 @@ const projectService = ({
   checkCoverPhotoType(file) {
     const fileType = mime.lookup(file.name);
     return fileType.includes('image/');
+  },
+
+  checkPhotoSize(photo) {
+    return photo.size < MAX_PHOTO_SIZE;
   },
 
   checkCardPhotoType(file) {
