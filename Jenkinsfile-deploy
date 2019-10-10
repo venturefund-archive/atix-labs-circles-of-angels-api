@@ -12,15 +12,9 @@ def getDeploymentServer(branch) {
 pipeline {
   agent { 
     docker { 
-      image 'atixlabs/alpine-git:1.2' 
-      args  '-u 0:0' 
-    }
-  }
-
-  post {
-    cleanup {
-      cleanWs()
-    }
+      image 'node:12.11.1' 
+      args  '-u 0:0'
+    } 
   }
 
   environment {
@@ -42,7 +36,7 @@ pipeline {
                   script: 'git rev-parse --abbrev-ref HEAD',
                   returnStdout: true
                 ).trim()
-          withEnv(['DEPLOY_SERVER=' + getDeploymentServer(GIT_BRANCH) , 'SERVE_DIR=/home/circles-of-angels-api', 'BUILDS_DIR=/home/builds/circles-of-angels-api']) {
+          withEnv(['DEPLOY_SERVER=' + getDeploymentServer(GIT_BRANCH), 'SERVE_DIR=/home/circles-of-angels-api', 'BUILDS_DIR=/home/builds/circles-of-angels-api']) {
             sshagent(credentials: ['ssh_jenkins_global'], ignoreMissing: true) {
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
                     export PATH=/root/.nvm/versions/node/v10.15.1/bin:$PATH
@@ -57,12 +51,7 @@ pipeline {
               sh '''rsync -av -e "ssh -oStrictHostKeyChecking=no" ${WORKSPACE}/* ${DEPLOY_SERVER}:${SERVE_DIR}/'''
      
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
-                    export PATH=/root/.nvm/versions/node/v10.15.1/bin:$PATH
-                    cd ${SERVE_DIR}
-                    cp -r /home/backup-configs/* ${SERVE_DIR}/config;
-                    rm -r /home/backup-configs;
-                    npm install
-                    pm2 start \\\"npm run testing\\\" --name back
+    		   pm2 restart circles-of-angels-api
                    "
                  '''
             }

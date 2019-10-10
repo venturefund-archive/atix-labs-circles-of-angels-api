@@ -810,6 +810,23 @@ const milestoneService = ({
       return { error: 'Invalid Blockchain status' };
     }
     return milestoneDao.updateBlockchainStatus(milestoneId, status);
+  },
+
+  async getMilestonePreviewInfoOfProject(project) {
+    try {
+      let completedMilestones = 0;
+      const milestones = await this.getMilestonesByProject(project.id);
+      completedMilestones = milestones.filter(
+        milestone => milestone.status.status === activityStatus.COMPLETED
+      ).length;
+      const hasOpenMilestones = completedMilestones < milestones.length;
+      return {
+        milestoneProgress: (completedMilestones * 100) / milestones.length,
+        hasOpenMilestones
+      };
+    } catch (error) {
+      return { error };
+    }
   }
 });
 

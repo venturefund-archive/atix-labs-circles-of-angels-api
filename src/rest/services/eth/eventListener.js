@@ -25,11 +25,11 @@ const eventListener = async (
 ) => {
   const { helper } = require('../helper');
   const { projectService, milestoneService, activityService } = helper.services;
-  const { transactionDao } = helper.daos;
   const web3 = new Web3(ethConfig.HTTP_HOST);
   const COAProjectAdmin = buildProjectAdminContract(web3);
   const COAOracle = buildOracleContract(web3);
   const {
+    transactionDao,
     blockchainBlockDao,
     projectDao,
     milestoneDao,
@@ -54,7 +54,7 @@ const eventListener = async (
         id,
         blockchainStatus.CONFIRMED
       );
-      await projectService.updateProjectStatus({
+      await projectDao.updateProjectStatus({
         projectId: id,
         status: projectStatus.IN_PROGRESS
       });
