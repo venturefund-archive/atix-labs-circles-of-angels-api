@@ -168,9 +168,9 @@ const routes = {
               minimum: 1,
               maximum: 4,
               description: 'New activity status'
-            },
-            additionalProperties: false
-          }
+            }
+          },
+          additionalProperties: false
         },
         required: ['activity']
       },

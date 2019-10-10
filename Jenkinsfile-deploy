@@ -3,22 +3,23 @@ def getDeploymentServer(branch) {
         case ~/^master$/:
             return ''
         case ~/^develop$/:
-            return 'root@173.255.254.208'
+            return COA_IP
 	default:
-            return 'root@173.255.254.208'
+            return COA_IP
     }
 }
 
 pipeline {
   agent { 
     docker { 
-      image 'node:8.12' 
+      image 'node:12.11.1' 
       args  '-u 0:0'
     } 
   }
 
   environment {
     SLACK_TOKEN = credentials('slack_token')
+    COA_IP = credentials('COA_staging')
   }
 
   stages {
@@ -28,51 +29,29 @@ pipeline {
       }
     }
 
-    stage("dependencies") {
-      steps {
-        sh 'npm install'
-      }    
-    }
-
-    stage("do release") {
-      steps {
-      	sh 'npm run build'
-      }
-    }
-    
-    stage("upload build") {
+    stage("upload") {
       steps {
         script {
           GIT_BRANCH = sh (
                   script: 'git rev-parse --abbrev-ref HEAD',
                   returnStdout: true
                 ).trim()
-          withEnv(['DEPLOY_SERVER=' + getDeploymentServer(GIT_BRANCH), 'SERVE_DIR=/home/circle-of-angels-api', 'BUILDS_DIR=/home/builds/circle-of-angels-api']) {
+          withEnv(['DEPLOY_SERVER=' + getDeploymentServer(GIT_BRANCH), 'SERVE_DIR=/home/circles-of-angels-api', 'BUILDS_DIR=/home/builds/circles-of-angels-api']) {
             sshagent(credentials: ['ssh_jenkins_global'], ignoreMissing: true) {
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
-                        cp -aL ${SERVE_DIR} ${BUILDS_DIR}/$BUILD_NUMBER;
-                        "
+                    export PATH=/root/.nvm/versions/node/v10.15.1/bin:$PATH
+                    pm2 delete back
+                    rm -r ${SERVE_DIR}/node_modules ${SERVE_DIR}/package-lock.json
+                    mkdir /home/backup-configs
+                    cp -r ${SERVE_DIR}/config/* /home/backup-configs;
+                    cp -aL ${SERVE_DIR} ${BUILDS_DIR}/$BUILD_NUMBER;
+                    "
                 '''
-              sh '''rsync -av -e "ssh -oStrictHostKeyChecking=no" ${WORKSPACE}/* ${DEPLOY_SERVER}:${BUILDS_DIR}/$BUILD_NUMBER/'''
 
-
-              sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
-
-                if [ -L ${SERVE_DIR} ]; then
-                    rm ${SERVE_DIR};
-                fi
-
-                ln -s  ${BUILDS_DIR}/$BUILD_NUMBER ${SERVE_DIR} ;
-
-                chown www-data -R ${SERVE_DIR}/;
-                chmod 0755 -R ${SERVE_DIR}/;
-
-
-                "
-               '''
+              sh '''rsync -av -e "ssh -oStrictHostKeyChecking=no" ${WORKSPACE}/* ${DEPLOY_SERVER}:${SERVE_DIR}/'''
      
               sh '''ssh -oStrictHostKeyChecking=no ${DEPLOY_SERVER} "
-    		   pm2 restart circle-of-angels-api
+    		   pm2 restart circles-of-angels-api
                    "
                  '''
             }

@@ -9,21 +9,18 @@
 const fs = require('fs');
 const path = require('path');
 const configs = require('config');
+const sharp = require('sharp');
 
 exports.getFileFromPath = filepath => {
   const file = fs.createReadStream(filepath, 'utf8');
   return file;
 };
 
-const getCoverPhotoPath = (projectId, photoName) =>
-  `${
-    configs.fileServer.filePath
-  }/projects/${projectId}/coverPhoto${path.extname(photoName)}`;
+const getCoverPhotoPath = projectId =>
+  `${configs.fileServer.filePath}/projects/${projectId}/coverPhoto.jpg`;
 
-const getCardPhotoPath = (projectId, photoName) =>
-  `${configs.fileServer.filePath}/projects/${projectId}/cardPhoto${path.extname(
-    photoName
-  )}`;
+const getCardPhotoPath = projectId =>
+  `${configs.fileServer.filePath}/projects/${projectId}/cardPhoto.jpg`;
 
 const getPitchProposalPath = (projectId, proposalName) =>
   `${
@@ -49,10 +46,10 @@ exports.addPathToFilesProperties = ({
   milestones
 }) => {
   if (coverPhoto) {
-    coverPhoto.path = getCoverPhotoPath(projectId, coverPhoto.name);
+    coverPhoto.path = getCoverPhotoPath(projectId);
   }
   if (cardPhoto) {
-    cardPhoto.path = getCardPhotoPath(projectId, cardPhoto.name);
+    cardPhoto.path = getCardPhotoPath(projectId);
   }
   if (pitchProposal) {
     pitchProposal.path = getPitchProposalPath(projectId, pitchProposal.name);
@@ -92,4 +89,24 @@ exports.addTimestampToFilename = filename => {
   );
 
   return nameWithTimestamp;
+};
+
+exports.savePhotoJpgFormat = async (image, savePath, maxWidth) => {
+  return new Promise((resolve, reject) => {
+    sharp(image.data)
+      .resize({
+        width: maxWidth,
+        options: {
+          fit: 'outside'
+        }
+      })
+      .flatten()
+      .jpeg()
+      .toFile(savePath, (err, res) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(res);
+      });
+  });
 };

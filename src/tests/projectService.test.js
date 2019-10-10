@@ -104,7 +104,7 @@ describe('Testing projectService createProject', () => {
       const mockFiles = testHelper.getMockFiles();
 
       const savedProject = testHelper.buildProject(0, 0, {
-        bcStatus: blockchainStatus.SENT,
+        bcStatus: blockchainStatus.PENDING,
         status: projectStatus.PENDING_APPROVAL
       });
 
@@ -112,6 +112,7 @@ describe('Testing projectService createProject', () => {
         projectName: savedProject.projectName,
         mission: savedProject.mission,
         problemAddressed: savedProject.problemAddressed,
+        creationTransactionHash: fastify.eth.createProject(),
         location: savedProject.location,
         timeframe: savedProject.timeframe,
         goalAmount: savedProject.goalAmount,

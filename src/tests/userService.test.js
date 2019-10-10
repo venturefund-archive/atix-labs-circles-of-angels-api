@@ -13,9 +13,7 @@ const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
-  eth: {
-    createAccount: ethServicesMock.createAccount
-  },
+  eth: ethServicesMock,
   configs: require('config')
 };
 
@@ -154,7 +152,9 @@ describe('Testing userService createUser', () => {
       pwd: mockUser.pwd,
       role: mockUser.role,
       address: mockUser.address,
-      registrationStatus: userRegistrationStatus.PENDING_APPROVAL
+      privKey: mockUser.privKey,
+      registrationStatus: userRegistrationStatus.PENDING_APPROVAL,
+      transferBlockchainStatus: 2
     };
 
     const response = await userService.createUser(
@@ -343,6 +343,7 @@ describe('Testing userService updateUser', () => {
 
   it('should return the updated user', async () => {
     const toUpdateUser = {
+      ...mockUser,
       pwd: 'atix2019',
       email: 'updated@test.com',
       registrationStatus: userRegistrationStatus.APPROVED
@@ -416,7 +417,7 @@ describe('Testing userService updateUser', () => {
       registrationStatus: userRegistrationStatus.APPROVED
     };
 
-    return expect(userService.updateUser('', toUpdateUser)).rejects.toEqual(
+    return expect(userService.updateUser(-1)).rejects.toEqual(
       Error('Error updating User')
     );
   });
@@ -532,14 +533,14 @@ describe('Testing userService getProjectsOfUser', () => {
   const funderId = 3;
   const oracleId = 4;
 
-  const funderProjects = testHelper.getMockProjects();
+  const funderProjects = testHelper.getMockActiveProjects();
   const seProjects = userId => [
     testHelper.buildProject(1, 1, { id: 1, ownerId: userId }),
     testHelper.buildProject(1, 1, { id: 2, ownerId: userId })
   ];
 
   const oracleProjects = testHelper
-    .getMockProjects()
+    .getMockActiveProjects()
     .filter(project => project.id === 3 || project.id === 4);
 
   beforeAll(() => {
@@ -552,7 +553,7 @@ describe('Testing userService getProjectsOfUser', () => {
     projectService = {
       async getAllProjectsById(projects) {
         return testHelper
-          .getMockProjects()
+          .getMockActiveProjects()
           .filter(project => projects.indexOf(project.id) !== -1);
       },
 

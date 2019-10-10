@@ -22,14 +22,19 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+const MAX_PHOTO_SIZE = 500000;
+
+const { savePhotoJpgFormat } = require('../util/files');
 
 const unlinkPromise = promisify(fs.unlink);
+
+const cardPhotoSize = 700;
+const coverPhotoSize = 1400;
 
 const projectService = ({
   fastify,
   projectDao,
   milestoneService,
-  projectStatusDao,
   photoService,
   transferService,
   userDao,
@@ -112,6 +117,30 @@ const projectService = ({
         };
       }
 
+      if (!this.checkPhotoSize(projectCardPhoto)) {
+        fastify.log.error(
+          '[Project Service] :: Size of Project Card Photo too high',
+          projectCardPhoto
+        );
+        return {
+          status: 409,
+          error: `Invalid size for the uploaded card photo, higher than ${MAX_PHOTO_SIZE /
+            1000} MB`
+        };
+      }
+
+      if (!this.checkPhotoSize(projectCoverPhoto)) {
+        fastify.log.error(
+          '[Project Service] :: Size of Project Cover Photo too high',
+          projectCoverPhoto
+        );
+        return {
+          status: 409,
+          error: `Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE /
+            1000} MB`
+        };
+      }
+
       if (
         !projectMilestones ||
         !this.checkMilestonesFileType(projectMilestones)
@@ -159,13 +188,17 @@ const projectService = ({
         '[Project Service] :: Saving Project cover photo to:',
         coverPhotoPath
       );
-      await projectCoverPhoto.mv(coverPhotoPath);
+      await savePhotoJpgFormat(projectCardPhoto, cardPhotoPath, cardPhotoSize);
 
       fastify.log.info(
         '[Project Service] :: Saving Project card photo to:',
         cardPhotoPath
       );
-      await projectCardPhoto.mv(cardPhotoPath);
+      await savePhotoJpgFormat(
+        projectCoverPhoto,
+        coverPhotoPath,
+        coverPhotoSize
+      );
 
       fastify.log.info(
         '[Project Service] :: Saving pitch proposal to:',
@@ -273,6 +306,10 @@ const projectService = ({
   checkCoverPhotoType(file) {
     const fileType = mime.lookup(file.name);
     return fileType.includes('image/');
+  },
+
+  checkPhotoSize(photo) {
+    return photo.size < MAX_PHOTO_SIZE;
   },
 
   checkCardPhotoType(file) {
@@ -484,6 +521,29 @@ const projectService = ({
     const projects = await projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PUBLISHED
     });
+    return projects;
+  },
+
+  /**
+   * Returns a list of projects with limited info for preview
+   */
+  async getProjectsPreview() {
+    const projects = await projectDao.getProjecListWithStatusFrom({
+      status: projectStatus.PUBLISHED
+    });
+
+    projects.map(async project => {
+      const {
+        milestoneProgress,
+        hasOpenMilestones
+      } = await milestoneService.getMilestonePreviewInfoOfProject(project);
+      return {
+        ...project,
+        milestoneProgress,
+        hasOpenMilestones
+      };
+    });
+
     return projects;
   },
 

@@ -75,9 +75,7 @@ const userService = ({
             user.registrationStatus === userRegistrationStatus.PENDING_APPROVAL
           ) {
             fastify.log.error(
-              `[User Service] :: User ID ${
-                user.id
-              } registration status is Pending Approval`
+              `[User Service] :: User ID ${user.id} registration status is Pending Approval`
             );
 
             return {
@@ -89,9 +87,7 @@ const userService = ({
 
           if (user.registrationStatus === userRegistrationStatus.REJECTED) {
             fastify.log.error(
-              `[User Service] :: User ID ${
-                user.id
-              } registration status is Rejected`
+              `[User Service] :: User ID ${user.id} registration status is Rejected`
             );
 
             return {
@@ -168,7 +164,7 @@ const userService = ({
 
         const user = {
           username,
-          email,
+          email: email.toLowerCase(),
           pwd: hashedPwd,
           role,
           address: account.address,
@@ -245,9 +241,7 @@ const userService = ({
 
       if (user.role && user.role != null) {
         fastify.log.info(
-          `[User Service] :: Found User ID ${user.id} with Role ${
-            user.role.name
-          }`
+          `[User Service] :: Found User ID ${user.id} with Role ${user.role.name}`
         );
         return user.role;
       }
