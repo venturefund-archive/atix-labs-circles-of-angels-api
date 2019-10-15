@@ -44,5 +44,5 @@ module.exports = {
     REINTENT_LAPSE: 780000,
     MAX_TX_ACCOUNT: 1
   },
-  frontendUrl: 'http://104.237.154.167:3000'
+  frontendUrl: 'http://www.circlesofangels.org:3000'
 };
