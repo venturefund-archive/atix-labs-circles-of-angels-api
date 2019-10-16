@@ -1055,6 +1055,7 @@ const projectService = ({
       fastify.log.info(
         `[Project Service] :: Projects found for Oracle ID ${oracleId}: ${uniqueProjects}`
       );
+      console.log('uniqueProjects', uniqueProjects);
       return { projects: uniqueProjects, oracle: oracleId };
     } catch (error) {
       fastify.log.error('[Project Service] :: Error getting Projects:', error);

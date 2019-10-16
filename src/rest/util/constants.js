@@ -47,7 +47,6 @@ const milestoneBudgetStatus = {
 };
 
 const userRegistrationStatus = {
-  PENDING_APPROVAL: 1,
   APPROVED: 2,
   REJECTED: 3
 };

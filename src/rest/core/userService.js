@@ -71,20 +71,6 @@ const userService = ({
             registrationStatus: user.registrationStatus
           };
 
-          if (
-            user.registrationStatus === userRegistrationStatus.PENDING_APPROVAL
-          ) {
-            fastify.log.error(
-              `[User Service] :: User ID ${user.id} registration status is Pending Approval`
-            );
-
-            return {
-              status: 409,
-              error: 'User registration is still pending approval by the admin',
-              user: authenticatedUser
-            };
-          }
-
           if (user.registrationStatus === userRegistrationStatus.REJECTED) {
             fastify.log.error(
               `[User Service] :: User ID ${user.id} registration status is Rejected`
@@ -168,7 +154,7 @@ const userService = ({
           pwd: hashedPwd,
           role,
           address: account.address,
-          registrationStatus: 1,
+          registrationStatus: userRegistrationStatus.APPROVED,
           transferBlockchainStatus: blockchainStatus.SENT,
           privKey: account.privateKey
         };
