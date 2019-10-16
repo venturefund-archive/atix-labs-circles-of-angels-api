@@ -12,10 +12,12 @@ const {
   milestone,
   activity,
   photos,
+  genericUser,
   userOracle,
   userFunder,
   userAdmin,
   userSE,
+  userSERejected,
   userSeDetails,
   userFunderDetails,
   userFunderAnswers,
@@ -28,6 +30,10 @@ const {
   blockchainStatus,
   userRoles
 } = require('../rest/util/constants');
+
+exports.buildGenericUserWithEmail = email => {
+  return genericUser(email);
+};
 
 exports.buildUserOracle = id => {
   const user = JSON.parse(JSON.stringify(userOracle));
@@ -51,6 +57,10 @@ exports.buildUserSe = id => {
   const user = JSON.parse(JSON.stringify(userSE));
   user.id = id || user.id;
   return user;
+};
+
+exports.buildUserSeRejected = email => {
+  return userSERejected(email);
 };
 
 exports.buildUserSeDetails = id => {

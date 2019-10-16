@@ -87,6 +87,38 @@ describe('Testing userService login', () => {
 
     return expect(response).toEqual(mockError);
   });
+
+  it('should allow the user to login after the registration', async () => {
+    bcrypt.compare.mockReturnValueOnce(true);
+    const newUser = testHelper.buildGenericUserWithEmail(
+      'generic-user@email.com'
+    );
+    userDao = { getUserByEmail: () => newUser };
+    userService = require('../rest/core/userService')({
+      fastify,
+      userDao
+    });
+    const response = await userService.login('generic-user@email.com');
+    return expect(response.email).toEqual('generic-user@email.com');
+  });
+
+  it('should not allow the user to login when its status is rejected', async () => {
+    bcrypt.compare.mockReturnValueOnce(true);
+    userDao = {
+      getUserByEmail: email => testHelper.buildUserSeRejected(email)
+    };
+    userService = require('../rest/core/userService')({
+      fastify,
+      userDao
+    });
+
+    const response = await userService.login('generic-user-rejected@email.com');
+
+    expect(response.status).toEqual(409);
+    return expect(response.error).toEqual(
+      'User registration was rejected by the admin'
+    );
+  });
 });
 
 describe('Testing userService createUser', () => {
@@ -153,7 +185,7 @@ describe('Testing userService createUser', () => {
       role: mockUser.role,
       address: mockUser.address,
       privKey: mockUser.privKey,
-      registrationStatus: userRegistrationStatus.PENDING_APPROVAL,
+      registrationStatus: userRegistrationStatus.APPROVED,
       transferBlockchainStatus: 2
     };
 
@@ -224,6 +256,25 @@ describe('Testing userService createUser', () => {
     );
 
     return expect(response).toEqual(expected);
+  });
+
+  it('should be an approved user after the registration', async () => {
+    roleDao = { getRoleById: () => mockUser.role };
+
+    userService = require('../rest/core/userService')({
+      fastify,
+      userDao,
+      roleDao
+    });
+    const response = await userService.createUser(
+      mockUser.username,
+      mockUser.email,
+      mockUser.pwd,
+      mockUser.role
+    );
+    return expect(response.registrationStatus).toEqual(
+      userRegistrationStatus.APPROVED
+    );
   });
 });
 
