@@ -21,7 +21,9 @@ module.exports = {
       ]
     }
   },
+  eth: {
 
+  },
   frontendUrl: 'http://localhost:3000',
 
   support: {

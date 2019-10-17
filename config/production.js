@@ -24,6 +24,9 @@ const defaultAllowedAddreses = [
 ];
 
 module.exports = {
+  server: {
+    host: '104.237.154.167'
+  },
   eth: {
     HTTP_HOST: process.env.HTTP_HOST || 'http://localhost:8545',
     WS_HOST: process.env.WS_HOST || 'ws://localhost:8545',
