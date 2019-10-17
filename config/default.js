@@ -8,6 +8,8 @@
 
 const routeTags = require('../src/rest/util/routeTags');
 
+require('dotenv').config();
+
 module.exports = {
   server: {
     host: 'localhost',
