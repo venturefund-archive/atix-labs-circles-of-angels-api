@@ -539,6 +539,7 @@ const milestoneService = ({
           return milestone.project;
         })
       );
+
       return projects;
     } catch (error) {
       fastify.log.error(
