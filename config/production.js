@@ -11,7 +11,7 @@ const COAOracle = require('../../circles-of-angels-solidity/build/contracts/COAO
 
 module.exports = {
   server: {
-    host: '104.237.154.167'
+    host: process.env.HOST
   },
   eth: {
     HTTP_HOST: process.env.HTTP_HOST || 'http://localhost:8545',
