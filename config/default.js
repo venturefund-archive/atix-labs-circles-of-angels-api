@@ -8,6 +8,8 @@
 
 const routeTags = require('../src/rest/util/routeTags');
 
+require('dotenv').config();
+
 module.exports = {
   server: {
     host: 'localhost',
@@ -19,7 +21,9 @@ module.exports = {
       ]
     }
   },
+  eth: {
 
+  },
   frontendUrl: 'http://localhost:3000',
 
   support: {
@@ -53,7 +57,7 @@ module.exports = {
   },
 
   fileServer: {
-    filePath: '/home/atixlabs/files/server'
+    filePath: '/home/atixlabs/files/server/files'
   },
 
   swagger: {
