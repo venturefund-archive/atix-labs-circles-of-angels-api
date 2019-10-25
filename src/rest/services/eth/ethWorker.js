@@ -7,7 +7,7 @@
  */
 const Web3 = require('web3');
 const { union } = require('lodash');
-const HDWalletProvider = require('truffle-hdwallet-provider');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 const ethConfig = require('config').eth;
 const ethMemPoolBuilder = require('./ethMemPool');
 const apiHelper = require('../helper');
