@@ -6,7 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 const { isEmpty, concat } = require('lodash');
-const Web3 = require('web3_37');
+const Web3 = require('web3');
 const ethConfig = require('config').eth;
 const {
   blockchainStatus,
