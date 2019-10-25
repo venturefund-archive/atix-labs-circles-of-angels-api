@@ -17,6 +17,7 @@
   "author": "Atix Labs S.R.L",
   "license": "ISC",
   "dependencies": {
+    "@truffle/hdwallet-provider": "^1.0.22",
     "bcrypt": "3.0.5",
     "bunyan": "1.8.12",
     "bunyan-format": "0.2.1",
@@ -38,7 +39,6 @@
     "sails-postgresql": "1.0.2",
     "sha256": "0.2.0",
     "sharp": "0.23.1",
-    "truffle-hdwallet-provider": "1.0.10",
     "web3": "1.2.1",
     "xlsx": "0.14.1"
   },
