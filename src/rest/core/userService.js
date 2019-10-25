@@ -15,6 +15,8 @@ const {
   blockchainStatus,
   projectStatus
 } = require('../util/constants');
+const { ConflictError, InternalError } = require('./errors');
+const { mailService } = require('./mailService');
 
 const userService = ({
   fastify,
@@ -75,7 +77,9 @@ const userService = ({
             user.registrationStatus === userRegistrationStatus.PENDING_APPROVAL
           ) {
             fastify.log.error(
-              `[User Service] :: User ID ${user.id} registration status is Pending Approval`
+              `[User Service] :: User ID ${
+                user.id
+              } registration status is Pending Approval`
             );
 
             return {
@@ -87,7 +91,9 @@ const userService = ({
 
           if (user.registrationStatus === userRegistrationStatus.REJECTED) {
             fastify.log.error(
-              `[User Service] :: User ID ${user.id} registration status is Rejected`
+              `[User Service] :: User ID ${
+                user.id
+              } registration status is Rejected`
             );
 
             return {
@@ -128,39 +134,37 @@ const userService = ({
       const hashedPwd = await bcrypt.hash(pwd, 10);
 
       try {
+
+        // TODO : should we have a blockchain related service?
         const account = await fastify.eth.createAccount();
         if (!account.address || !account.privateKey) {
-          fastify.log.error(
-            '[User Service] :: Error creating account on blockchain'
-          );
-          return {
-            status: 409,
-            error: 'Error creating account on blockchain'
-          };
+          // TODO : this log should be handled by COAError
+          // fastify.log.error(
+          //   '[User Service] :: Error creating account on blockchain'
+          // );
+          throw new ConflictError('Error creating account on blockchain');
         }
+
         const existingUser = await userDao.getUserByEmail(email);
 
         if (existingUser) {
-          fastify.log.error(
-            `[User Service] :: User with email ${email} already exists.`
-          );
-          return {
-            status: 409,
-            error: 'A user with that email already exists'
-          };
+          // fastify.log.error(
+          //   `[User Service] :: User with email ${email} already exists.`
+          // );
+          throw new ConflictError('An user with that email already exists');
         }
 
-        const validRole = await roleDao.getRoleById(role);
-
-        if (!validRole) {
-          fastify.log.error(
-            `[User Service] :: Role ID ${role} does not exist.`
-          );
-          return {
-            status: 404,
-            error: 'User role does not exist'
-          };
-        }
+        // TODO : is this really necessary? 
+        // const validRole = await roleDao.getRoleById(role);
+        // if (!validRole) {
+        //   fastify.log.error(
+        //     `[User Service] :: Role ID ${role} does not exist.`
+        //   );
+        //   return {
+        //     status: 404,
+        //     error: 'User role does not exist'
+        //   };
+        // }
 
         const user = {
           username,
@@ -174,32 +178,31 @@ const userService = ({
         };
 
         const savedUser = await userDao.createUser(user);
-        if (this.roleCreationMap[role]) {
-          const savedInfo = await this.roleCreationMap[role].create({
-            user: savedUser.id,
-            ...detail
-          });
-          fastify.log.info('[User Service] :: User Info saved', savedInfo);
-        }
+
+        // TODO : this needs a refactor!
+        // if (this.roleCreationMap[role]) {
+        //   const savedInfo = await this.roleCreationMap[role].create({
+        //     user: savedUser.id,
+        //     ...detail
+        //   });
+        //   fastify.log.info('[User Service] :: User Info saved', savedInfo);
+        // }
 
         if (!savedUser || savedUser == null) {
-          fastify.log.error(
-            '[User Service] :: There was an unexpected error creating the user:',
-            user
-          );
-          return {
-            status: 500,
-            error: 'There was an unexpected error creating the user'
-          };
+          // fastify.log.error(
+          //   '[User Service] :: There was an unexpected error creating the user:',
+          //   user
+          // );
+          throw InternalError('There was an unexpected error creating the user');
         }
 
-        if (questionnaire)
-          await questionnaireService.saveQuestionnaireOfUser(
-            savedUser.id,
-            questionnaire
-          );
+        // if (questionnaire)
+        //   await questionnaireService.saveQuestionnaireOfUser(
+        //     savedUser.id,
+        //     questionnaire
+        //   );
         // sends welcome email
-        const info = await transporter.sendMail({
+        const info = await mailService.sendMail({
           from: '"Circles of Angels Support" <coa@support.com>',
           to: email,
           subject: 'Circles of Angels - Welcome!',
@@ -241,7 +244,9 @@ const userService = ({
 
       if (user.role && user.role != null) {
         fastify.log.info(
-          `[User Service] :: Found User ID ${user.id} with Role ${user.role.name}`
+          `[User Service] :: Found User ID ${user.id} with Role ${
+            user.role.name
+          }`
         );
         return user.role;
       }

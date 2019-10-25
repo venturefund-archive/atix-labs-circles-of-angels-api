@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "Api-rest for circle of angels",
   "main": "main.js",
+  "type": "modules",
   "scripts": {
     "lint": "eslint src/**/*.js",
     "test": "export NODE_ENV=test && jest src/*",
     "test:coverage": "npm test -- --coverage",
-    "start": "export NODE_ENV=development && node index",
-    "prod": "export NODE_ENV=production && node index",
+    "start": "export NODE_ENV=development && node --experimental-modules src/index",
+    "prod": "export NODE_ENV=production && node src/index",
     "testing": "npm run migrate && npm run prod",
     "get-flyway": "./get_flyway.sh",
     "migrate": "flyway -configFiles=flyway.conf -locations=filesystem:db/migrations migrate",
@@ -17,6 +18,7 @@
   "author": "Atix Labs S.R.L",
   "license": "ISC",
   "dependencies": {
+    "@truffle/hdwallet-provider": "^1.0.22",
     "bcrypt": "3.0.5",
     "bunyan": "1.8.12",
     "bunyan-format": "0.2.1",
@@ -38,12 +40,10 @@
     "sails-postgresql": "1.0.2",
     "sha256": "0.2.0",
     "sharp": "0.23.1",
-    "truffle-hdwallet-provider": "1.0.10",
     "web3": "1.2.1",
     "xlsx": "0.14.1"
   },
   "devDependencies": {
-    "babel-eslint": "10.0.1",
     "chai": "4.2.0",
     "eslint": "5.14.1",
     "eslint-config-airbnb": "17.1.0",

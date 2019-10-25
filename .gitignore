@@ -4,3 +4,4 @@ logs/*
 
 # dot environment variables
 .env
+dist/

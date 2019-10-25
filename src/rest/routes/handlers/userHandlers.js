@@ -9,6 +9,30 @@
 const basePath = '/user';
 const apiHelper = require('../../services/helper');
 
+// /**
+//  * Handles generic error throws on requests.
+//  * @param {*} error - an error instance.
+//  * @param {*} response - request's response.
+//  */ 
+// function handleRequestError(error, response) {
+//   // assumes error its a COAError instance.
+//   f
+//   response.status(error.code);
+//   return response;
+//   if (user.error) {
+//     fastify.log.error('[User Routes] :: User creation failed', user);
+//     reply.status(user.status).send(user);
+//   } else {
+//     fastify.log.info('[User Routes] :: Creation successful:', user);
+//     reply.status(200).send({ success: 'User successfully created!' });
+//   }
+// } catch (error) {
+//   handleRequestError(error, response)
+//   fastify.log.error(error);
+//   reply.status(500).send({ error: 'Error creating user' });
+// }
+// }
+
 module.exports = {
   getUser: fastify => async (request, reply) => {
     const { userService } = apiHelper.helper.services;
@@ -140,7 +164,7 @@ module.exports = {
     }
   },
 
-  signupUser: fastify => async (request, reply) => {
+  signupUser: fastify => async (request, response) => {
     const { userService } = apiHelper.helper.services;
     try {
       const {
@@ -170,6 +194,7 @@ module.exports = {
         reply.status(200).send({ success: 'User successfully created!' });
       }
     } catch (error) {
+      handleRequestError(error, response)
       fastify.log.error(error);
       reply.status(500).send({ error: 'Error creating user' });
     }

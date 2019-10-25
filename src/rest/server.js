@@ -56,14 +56,18 @@ module.exports.start = async ({ db, logger, configs }) => {
   }
 };
 
+const initializeServices = this.fastify => {
+  
+}
+
 const loadRoutes = fastify => {
   const fs = require('fs');
   const routesDir = `${__dirname}/routes`;
   const dirents = fs.readdirSync(routesDir, { withFileTypes: true });
-  const routeNames = dirents
+  const routes = dirents
     .filter(dirent => !dirent.isDirectory())
-    .map(dirent => dirent.name);
-  const routes = routeNames.map(route => require(`${routesDir}/${route}`));
+    .map(dirent => dirent.name)
+    .map(routePath => require(routesDir + "/" + routePath));
 
   routes.forEach(route =>
     Object.values(route).forEach(async ({ method, path, options, handler }) => {
