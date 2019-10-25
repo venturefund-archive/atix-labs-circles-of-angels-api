@@ -13,8 +13,8 @@ module.exports = {
   eth: {
     HTTP_HOST: 'http://localhost:8545',
     WS_HOST: 'ws://localhost:8545',
-    CONTRACT_ADMIN_ADDRESS: COAProjectAdmin.networks['5777'].address,
-    CONTRACT_ORACLE_ADDRESS: COAOracle.networks['5777'].address,
+    CONTRACT_ADMIN_ADDRESS: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39', //COAProjectAdmin.networks['5777'].address,
+    CONTRACT_ORACLE_ADDRESS: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39', //COAOracle.networks['5777'].address,
     MNEMONIC: false,
     CONTRACT_ADMIN_ABI: COAProjectAdmin.abi,
     CONTRACT_ORACLE_ABI: COAOracle.abi,
@@ -39,6 +39,7 @@ module.exports = {
       '0xcc036143c68a7a9a41558eae739b428ecde5ef66',
       '0xe2b3204f29ab45d5fd074ff02ade098fbc381d42',
       '0xd51128f302755666c42e3920d72ff2fe632856a9'
-    ]
+    ],
+    REINTENT_LAPSE: 1000
   }
 };
