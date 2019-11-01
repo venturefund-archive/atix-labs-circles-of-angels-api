@@ -22,8 +22,8 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-cors'), {
       credentials: true,
 
+      
       allowedHeaders: ['content-type'],
-
       origin: true
     });
 
@@ -46,6 +46,8 @@ module.exports.start = async ({ db, logger, configs }) => {
     loadRoutes(fastify);
 
     await fastify.listen(configs.server);
+    // start service initialization, load and inject dependencies
+    require('./services')(fastify);
     await helperBuilder(fastify);
     await fastify.eth.initListener();
     await fastify.eth.listener.startListen();
