@@ -6,7 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { helperBuilder } = require('./services/helper');
+// const { helperBuilder } = require('./services/helper');
 const ethInitializer = require('./services/eth/ethInitializer');
 
 /**
@@ -46,7 +46,9 @@ module.exports.start = async ({ db, logger, configs }) => {
     loadRoutes(fastify);
 
     await fastify.listen(configs.server);
-    await helperBuilder(fastify);
+    require('./services');
+    process.exit(33);
+    // await helperBuilder(fastify);
     await fastify.eth.initListener();
     await fastify.eth.listener.startListen();
     module.exports.fastify = fastify;
