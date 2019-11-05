@@ -9,9 +9,10 @@
 const basePath = '/user';
 const apiHelper = require('../../services/helper');
 
+const userService = require('../../services/userService');
+
 module.exports = {
   getUser: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     fastify.log.info('[User Routes] :: Getting user info');
     const user = await userService.getUserById(request.params.userId);
     if (!user)
@@ -23,7 +24,6 @@ module.exports = {
   },
 
   getUsers: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     fastify.log.info('[User Routes] :: Getting all users');
     try {
       const users = await userService.getUsers();
@@ -40,7 +40,6 @@ module.exports = {
   },
 
   getUserRole: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     try {
       fastify.log.info('[User Routes] :: Getting user role');
       const role = await userService.getUserRole(request.params.userId);
@@ -67,7 +66,6 @@ module.exports = {
   },
 
   getRegistrationStatus: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     try {
       fastify.log.info(
         `[User Routes] :: GET request at ${basePath}/registrationStatus`
@@ -88,7 +86,6 @@ module.exports = {
   },
 
   getAllRoles: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     try {
       fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
 
@@ -106,7 +103,6 @@ module.exports = {
   },
 
   loginUser: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     try {
       const { email, pwd } = request.body;
       fastify.log.info('[User Routes] :: Trying to log in user:', email);
@@ -141,7 +137,6 @@ module.exports = {
   },
 
   signupUser: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     try {
       const {
         email,
@@ -176,7 +171,6 @@ module.exports = {
   },
 
   updateUser: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     const { userId } = request.params;
     fastify.log.info(`PUT request at ${basePath}/${userId}`, request.body);
     try {
@@ -198,7 +192,6 @@ module.exports = {
   },
 
   getOracles: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     fastify.log.info('[User Routes] :: getting list of oracles');
     try {
       const oracles = await userService.getOracles();
@@ -265,7 +258,6 @@ module.exports = {
 
   getUserProjects: fastify => async (request, reply) => {
     const {
-      userService,
       userProjectService,
       projectService
     } = apiHelper.helper.services;
