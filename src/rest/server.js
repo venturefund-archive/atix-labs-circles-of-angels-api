@@ -23,7 +23,6 @@ module.exports.start = async ({ db, logger, configs }) => {
       credentials: true,
 
       allowedHeaders: ['content-type'],
-
       origin: true
     });
 
@@ -46,7 +45,9 @@ module.exports.start = async ({ db, logger, configs }) => {
     loadRoutes(fastify);
 
     await fastify.listen(configs.server);
-    await helperBuilder(fastify);
+    // start service initialization, load and inject dependencies
+    require('./ioc')(fastify);
+    // await helperBuilder(fastify);
     await fastify.eth.initListener();
     await fastify.eth.listener.startListen();
     module.exports.fastify = fastify;
@@ -106,10 +107,11 @@ const initJWT = fastify => {
       return token;
     };
 
+    // TODO : this should be somewhere else.
     const validateUser = async (token, reply, roleId) => {
-      const { helper } = require('./services/helper');
       const user = await fastify.jwt.verify(token);
-      const validUser = await helper.services.userService.validUser(
+      const userService = require('./services/userService');
+      const validUser = await userService.validUser(
         user,
         roleId
       );
