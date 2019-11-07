@@ -10,25 +10,10 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 
-const userDao = require('./dao/userDao');
-
-// const injectLocator = instance => {
-//   Object.defineProperty(instance, 'serviceLocator', { value: serviceLocator });
-// };
-//
+const userDao = require('../dao/userDao');
+const { injectDependencies } = require('./util/injection');
 
 module.exports = fastify => {
-  const injectDependencies = (instance, dependencies) => {
-    // map property descriptors
-    const descriptors = Object.entries(dependencies).reduce(
-      (acc, [depName, dep]) =>
-        Object.assign(acc, { [depName]: { value: dep } }),
-      {}
-    );
-
-    Object.defineProperties(instance, descriptors);
-  };
-
   // Injects a model into a dao instance as the property `model`
   const injectModel = (daoInstance, model) => {
     injectDependencies(daoInstance, { model });
@@ -57,6 +42,7 @@ module.exports = fastify => {
   function configureUserService(userService) {
     const dependencies = {
       userDao,
+      mailService,
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
       userRegistrationStatusDao: undefined,

@@ -75,16 +75,16 @@ exports.buildUserFunderAnswers = id => {
 
 exports.buildUserSeWithDetails = id => {
   const user = this.buildUserSe(id);
-  const answers = this.buildUserSeAnswers(user.id);
-  const detail = this.buildUserSeDetails(user.id);
-  return { ...user, answers, detail };
+  // const answers = {}; //this.buildUserSeAnswers(user.id);
+  // const detail = {}; //this.buildUserSeDetails(user.id);
+  return { ...user };
 };
 
 exports.buildUserFunderWithDetails = id => {
   const user = this.buildUserFunder(id);
-  const answers = this.buildUserFunderAnswers(user.id);
-  const detail = this.buildUserFunderDetails(user.id);
-  return { ...user, answers, detail };
+  // const answers = {}; //this.buildUserFunderAnswers(user.id);
+  // const detail = {}; // this.buildUserFunderDetails(user.id);
+  return { ...user };
 };
 
 exports.populateUserRole = user => {

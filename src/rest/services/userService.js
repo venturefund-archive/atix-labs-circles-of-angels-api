@@ -15,6 +15,12 @@ const {
   projectStatus
 } = require('../util/constants');
 
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
+
 module.exports = {
   // roleCreationMap: {
   //   [userRoles.IMPACT_FUNDER]: userFunderDao,
@@ -36,13 +42,13 @@ module.exports = {
     const user = await this.userDao.getUserByEmail(email);
 
     if (user && user !== null) {
-      fastify.log.info('[User Service] :: User found in database:', user);
+      // logger.info('[User Service] :: User found in database:', user);
 
       // if an user was found with that email, verify with encrypted pwd
       const match = await bcrypt.compare(pwd, user.pwd);
 
       if (match) {
-        fastify.log.info('[User Service] :: User authenticated:', user.email);
+        // logger.info('[User Service] :: User authenticated:', user.email);
 
         const authenticatedUser = {
           username: user.username,
@@ -55,7 +61,7 @@ module.exports = {
         if (
           user.registrationStatus === userRegistrationStatus.PENDING_APPROVAL
         ) {
-          fastify.log.error(
+          logger.error(
             `[User Service] :: User ID ${
               user.id
             } registration status is Pending Approval`
@@ -69,7 +75,7 @@ module.exports = {
         }
 
         if (user.registrationStatus === userRegistrationStatus.REJECTED) {
-          fastify.log.error(
+          logger.error(
             `[User Service] :: User ID ${
               user.id
             } registration status is Rejected`
@@ -86,10 +92,10 @@ module.exports = {
       }
 
       // error if wrong password
-      fastify.log.error('[User Service] :: Password failed to authenticate');
+      logger.error('[User Service] :: Password failed to authenticate');
     } else {
       // error if user not found
-      fastify.log.error('[User Service] :: User not found in database:', email);
+      logger.error('[User Service] :: User not found in database:', email);
     }
 
     return { error: 'Login failed. Incorrect user or password.' };
@@ -110,20 +116,18 @@ module.exports = {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
     try {
-      const account = await fastify.eth.createAccount();
-      if (!account.address || !account.privateKey) {
-        fastify.log.error(
-          '[User Service] :: Error creating account on blockchain'
-        );
-        return {
-          status: 409,
-          error: 'Error creating account on blockchain'
-        };
-      }
+      // const account = await fastify.eth.createAccount();
+      // if (!account.address || !account.privateKey) {
+      //   logger.error('[User Service] :: Error creating account on blockchain');
+      //   return {
+      //     status: 409,
+      //     error: 'Error creating account on blockchain'
+      //   };
+      // }
       const existingUser = await this.userDao.getUserByEmail(email);
 
       if (existingUser) {
-        fastify.log.error(
+        logger.error(
           `[User Service] :: User with email ${email} already exists.`
         );
         return {
@@ -132,10 +136,10 @@ module.exports = {
         };
       }
 
-      const validRole = await roleDao.getRoleById(role);
+      const validRole = await this.roleDao.getRoleById(role);
 
       if (!validRole) {
-        fastify.log.error(`[User Service] :: Role ID ${role} does not exist.`);
+        logger.error(`[User Service] :: Role ID ${role} does not exist.`);
         return {
           status: 404,
           error: 'User role does not exist'
@@ -150,7 +154,7 @@ module.exports = {
         address: account.address,
         registrationStatus: 1,
         transferBlockchainStatus: blockchainStatus.SENT,
-        privKey: account.privateKey
+        privKey: '' //, account.privateKey
       };
 
       const savedUser = await this.userDao.createUser(user);
@@ -159,11 +163,11 @@ module.exports = {
       //     user: savedUser.id,
       //     ...detail
       //   });
-      //   fastify.log.info('[User Service] :: User Info saved', savedInfo);
+      //   logger.info('[User Service] :: User Info saved', savedInfo);
       // }
 
       if (!savedUser || savedUser == null) {
-        fastify.log.error(
+        logger.error(
           '[User Service] :: There was an unexpected error creating the user:',
           user
         );
@@ -173,32 +177,24 @@ module.exports = {
         };
       }
 
-      if (questionnaire)
-        await questionnaireService.saveQuestionnaireOfUser(
-          savedUser.id,
-          questionnaire
-        );
+      // if (questionnaire)
+      //   await questionnaireService.saveQuestionnaireOfUser(
+      //     savedUser.id,
+      //     questionnaire
+      //   );
       // sends welcome email
-      const info = await transporter.sendMail({
-        from: '"Circles of Angels Support" <coa@support.com>',
-        to: email,
-        subject: 'Circles of Angels - Welcome!',
-        text: 'Hello!',
-        html: `<p>Your Circles Of Angels account was created successfully! </br></p>
+      await this.mailService.sendMail(
+        '"Circles of Angels Support" <coa@support.com>',
+        email,
+        'Circles of Angels - Welcome!',
+        `<p>Your Circles Of Angels account was created successfully! </br></p>
           <p>We are reviewing your account details. You will be notified once we are done. </br></p>
           <p>Thank you for your support. </br></p>`
-      });
-      if (!isEmpty(info.rejected)) {
-        fastify.log.info(
-          '[User Service] :: Invalid email account',
-          info.rejected
-        );
-        return { status: 409, error: 'Invalid Email' };
-      }
+      );
 
       return savedUser;
     } catch (error) {
-      fastify.log.error('[User Service] :: Error creating User:', error);
+      logger.error('[User Service] :: Error creating User:', error);
       throw Error('Error creating User');
     }
   },
@@ -213,22 +209,18 @@ module.exports = {
     const user = await this.userDao.getUserById(userId);
 
     if (!user || user == null) {
-      fastify.log.error(
-        `[User Service] :: User ID ${userId} not found in database`
-      );
+      logger.error(`[User Service] :: User ID ${userId} not found in database`);
       return { error: 'User not found' };
     }
 
     if (user.role && user.role != null) {
-      fastify.log.info(
+      logger.info(
         `[User Service] :: Found User ID ${user.id} with Role ${user.role.name}`
       );
       return user.role;
     }
 
-    fastify.log.error(
-      `[User Service] :: User ID ${userId} doesn't have a role`
-    );
+    logger.error(`[User Service] :: User ID ${userId} doesn't have a role`);
     return { error: "User doesn't have a role" };
   },
 
@@ -239,13 +231,13 @@ module.exports = {
    * @returns updated user | error
    */
   async updateUser(userId, user) {
-    fastify.log.info('[User Service] :: Updating User:', user);
+    logger.info('[User Service] :: Updating User:', user);
     try {
       // check user existence
       const existingUser = await this.userDao.getUserById(userId);
 
       if (!existingUser) {
-        fastify.log.error(`[User Service] :: User ID ${userId} does not exist`);
+        logger.error(`[User Service] :: User ID ${userId} does not exist`);
         return {
           status: 404,
           error: 'User does not exist'
@@ -264,7 +256,7 @@ module.exports = {
         const anotherUser = await this.userDao.getUserByEmail(email);
 
         if (anotherUser && anotherUser.id !== existingUser.id) {
-          fastify.log.error(
+          logger.error(
             `[User Service] :: User with email ${email} already exists.`
           );
           return {
@@ -280,7 +272,7 @@ module.exports = {
         );
 
         if (!existingStatus) {
-          fastify.log.error(
+          logger.error(
             `[User Service] :: Registration Status ID ${registrationStatus} does not exist`
           );
           return {
@@ -318,7 +310,7 @@ module.exports = {
 
             return updatedUser;
           } catch (error) {
-            fastify.log.error(error);
+            logger.error(error);
           }
         };
         await fastify.eth.transferInitialFundsToAccount(
@@ -346,10 +338,7 @@ module.exports = {
         });
 
         if (!updatedUser) {
-          fastify.log.error(
-            '[User Service] :: User could not be updated',
-            newUser
-          );
+          logger.error('[User Service] :: User could not be updated', newUser);
           return {
             status: 500,
             error: 'User could not be updated'
@@ -362,7 +351,7 @@ module.exports = {
 
       return updatedUser;
     } catch (error) {
-      fastify.log.error('[User Service] :: Error updating User:', error);
+      logger.error('[User Service] :: Error updating User:', error);
       throw Error('Error updating User');
     }
   },
@@ -372,19 +361,17 @@ module.exports = {
    * @returns registration status list | error
    */
   async getAllRegistrationStatus() {
-    fastify.log.info('[User Service] :: Getting all User Registration Status');
+    logger.info('[User Service] :: Getting all User Registration Status');
     try {
       const userRegistrationStatusList = await userRegistrationStatusDao.getAllRegistrationStatus();
 
       if (userRegistrationStatusList.length === 0) {
-        fastify.log.info(
-          '[User Service] :: No User Registration Status loaded'
-        );
+        logger.info('[User Service] :: No User Registration Status loaded');
       }
 
       return userRegistrationStatusList;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[User Service] :: Error getting all User Registration Status:',
         error
       );
@@ -397,7 +384,7 @@ module.exports = {
    * @returns role list | error
    */
   async getAllRoles() {
-    fastify.log.info('[User Service] :: Getting all User Roles');
+    logger.info('[User Service] :: Getting all User Roles');
     try {
       const userRoleList = await roleDao.getAllRoles();
 
@@ -406,15 +393,12 @@ module.exports = {
       );
 
       if (userRoleWithoutAdmin.length === 0) {
-        fastify.log.info('[User Service] :: No User Roles loaded');
+        logger.info('[User Service] :: No User Roles loaded');
       }
 
       return userRoleWithoutAdmin;
     } catch (error) {
-      fastify.log.error(
-        '[User Service] :: Error getting all User Roles:',
-        error
-      );
+      logger.error('[User Service] :: Error getting all User Roles:', error);
       throw Error('Error getting all User Roles');
     }
   },
@@ -432,55 +416,57 @@ module.exports = {
    * @returns user list
    */
   async getUsers() {
-    fastify.log.info('[User Service] :: Getting all Users');
+    logger.info('[User Service] :: Getting all Users');
     try {
       // get users
-      const userList = await this.userDao.getUsers();
-      userList.forEach(async user => {
-        try {
-          const answers = await questionnaireService.getAnswersOfUser(user);
-          user.answers = answers;
-        } catch (error) {
-          fastify.log.error('Questionnaire not found for user:', user.id);
-        }
-      });
+      const users = await this.userDao.getUsers();
+      return users
+      // userList.forEach(async user => {
+      //   try {
+      //     const answers = await questionnaireService.getAnswersOfUser(user);
+      //     user.answers = answers;
+      //   } catch (error) {
+      //     logger.error('Questionnaire not found for user:', user.id);
+      //   }
+      // });
 
-      if (!userList || userList.length === 0) {
-        fastify.log.info(
-          '[User Service] :: There are currently no non-admin users in the database'
-        );
-        return [];
-      }
+      // if (!userList || userList.length === 0) {
+      //   logger.info(
+      //     '[User Service] :: There are currently no non-admin users in the database'
+      //   );
+      //   return [];
+      // }
 
-      const allUsersWithDetail = await Promise.all(
-        userList.map(async user => {
-          // if se or funder get details
-          if (this.roleCreationMap[user.role.id]) {
-            // const detail = await this.roleCreationMap[user.role.id].getByUserId(
-            //   user.id
-            // );
+      // const allUsersWithDetail = await Promise.all(
+      //   userList.map(async user => {
+      //     // if se or funder get details
+      //     if (this.roleCreationMap[user.role.id]) {
+      //       // const detail = await this.roleCreationMap[user.role.id].getByUserId(
+      //       //   user.id
+      //       // );
 
-            // add details to user
-            const userWithDetail = {
-              ...user,
-              // detail
-            };
+      //       // add details to user
+      //       const userWithDetail = {
+      //         ...user
+      //         // detail
+      //       };
 
-            return userWithDetail;
-          }
+      //       return userWithDetail;
+      //     }
 
-          return user;
-        })
-      );
-
-      return allUsersWithDetail;
+      //     return user;
+      //   })
+      // );
+      // return allUsersWithDetail;
     } catch (error) {
-      fastify.log.error('[User Service] :: Error getting all Users:', error);
+      logger.error('[User Service] :: Error getting all Users:', error);
       throw Error('Error getting all Users');
     }
   },
 
+  // FIXME : fix this.
   async getProjectsOfUser(userId, userProjectService, projectService) {
+    return [];
     try {
       const user = await this.getUserById(userId);
       let response = [];
