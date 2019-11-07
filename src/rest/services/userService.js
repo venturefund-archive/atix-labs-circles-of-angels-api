@@ -448,12 +448,33 @@ module.exports = {
       //   }
       // });
 
-      // if (!userList || userList.length === 0) {
-      //   logger.info(
-      //     '[User Service] :: There are currently no non-admin users in the database'
-      //   );
-      //   return [];
-      // }
+      if (!userList || userList.length === 0) {
+        fastify.log.info(
+          '[User Service] :: There are currently no non-admin users in the database'
+        );
+        return [];
+      }
+
+      const allUsersWithDetail = await Promise.all(
+        userList.map(async user => {
+          // if se or funder get details
+          if (this.roleCreationMap[user.role.id]) {
+            // const detail = await this.roleCreationMap[user.role.id].getByUserId(
+            //   user.id
+            // );
+
+            // add details to user
+            const userWithDetail = {
+              ...user
+              // detail
+            };
+
+            return userWithDetail;
+          }
+
+          return user;
+        })
+      );
 
       // const allUsersWithDetail = await Promise.all(
       //   userList.map(async user => {
