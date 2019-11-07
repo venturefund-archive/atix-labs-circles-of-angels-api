@@ -14,7 +14,6 @@ const projectServiceBuilder = require('../core/projectService');
 const questionnaireServiceBuilder = require('../core/questionnaireService');
 const transferServiceBuilder = require('../core/transferService');
 const userProjectServiceBuilder = require('../core/userProjectService');
-//const userServiceBuilder = require('../core/userService');
 const passRecoveryServiceBuilder = require('../core/passRecoveryService');
 
 const activityDaoBuilder = require('../dao/activityDao');
@@ -75,15 +74,7 @@ const helperBuilder = async fastify => {
   const userSocialEntrepreneurDao = userSocialEntrepreneurDaoBuilder(
     models.user_social_entrepreneur
   );
-  const userService = undefined; //userServiceBuilder({
-  //   fastify,
-  //   userDao,
-  //   userRegistrationStatusDao,
-  //   roleDao,
-  //   userFunderDao,
-  //   userSocialEntrepreneurDao,
-  //   questionnaireService
-  // });
+  const userService = undefined
   const activityService = activityServiceBuilder({
     fastify,
     activityDao,
