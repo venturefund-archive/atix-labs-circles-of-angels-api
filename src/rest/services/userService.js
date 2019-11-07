@@ -19,7 +19,9 @@ const {
 // TODO : replace with a logger;
 const logger = {
   log: () => {},
-  error: () => {},
+  error: (key, msg) => {
+    console.error(key, msg);
+  },
   info: () => {}
 };
 
@@ -118,14 +120,19 @@ module.exports = {
     const hashedPwd = await bcrypt.hash(pwd, 10);
 
     try {
-      // const account = await fastify.eth.createAccount();
-      // if (!account.address || !account.privateKey) {
-      //   logger.error('[User Service] :: Error creating account on blockchain');
-      //   return {
-      //     status: 409,
-      //     error: 'Error creating account on blockchain'
-      //   };
-      // }
+      const account = {
+        address: '0x2131321',
+        privateKey: '0x12313'
+      }; /* await fastify.eth.createAccount();
+      if (!account.address || !account.privateKey) {
+        fastify.log.error(
+          '[User Service] :: Error creating account on blockchain'
+        );
+        return {
+          status: 409,
+          error: 'Error creating account on blockchain'
+        };
+      } */
       const existingUser = await this.userDao.getUserByEmail(email);
 
       if (existingUser) {
@@ -157,7 +164,7 @@ module.exports = {
         address: '0x0', //account.address,
         registrationStatus: 1,
         transferBlockchainStatus: blockchainStatus.SENT,
-        privKey: '' //, account.privateKey
+        privKey: account.privateKey
       };
 
       const savedUser = await this.userDao.createUser(user);
@@ -185,6 +192,7 @@ module.exports = {
       //     savedUser.id,
       //     questionnaire
       //   );
+
       // sends welcome email
       await this.mailService.sendMail(
         '"Circles of Angels Support" <coa@support.com>',
@@ -423,23 +431,43 @@ module.exports = {
     logger.info('[User Service] :: Getting all Users');
     try {
       // get users
-      const users = await this.userDao.getUsers();
-      return users
-      // userList.forEach(async user => {
-      //   try {
-      //     const answers = await questionnaireService.getAnswersOfUser(user);
-      //     user.answers = answers;
-      //   } catch (error) {
-      //     logger.error('Questionnaire not found for user:', user.id);
-      //   }
-      // });
+      const userList = await this.userDao.getUsers();
+      userList.forEach(async user => {
+        try {
+          const answers = await questionnaireService.getAnswersOfUser(user);
+          user.answers = answers;
+        } catch (error) {
+          fastify.log.error('Questionnaire not found for user:', user.id);
+        }
+      });
 
-      // if (!userList || userList.length === 0) {
-      //   logger.info(
-      //     '[User Service] :: There are currently no non-admin users in the database'
-      //   );
-      //   return [];
-      // }
+      if (!userList || userList.length === 0) {
+        fastify.log.info(
+          '[User Service] :: There are currently no non-admin users in the database'
+        );
+        return [];
+      }
+
+      const allUsersWithDetail = await Promise.all(
+        userList.map(async user => {
+          // if se or funder get details
+          if (this.roleCreationMap[user.role.id]) {
+            // const detail = await this.roleCreationMap[user.role.id].getByUserId(
+            //   user.id
+            // );
+
+            // add details to user
+            const userWithDetail = {
+              ...user
+              // detail
+            };
+
+            return userWithDetail;
+          }
+
+          return user;
+        })
+      );
 
       // const allUsersWithDetail = await Promise.all(
       //   userList.map(async user => {

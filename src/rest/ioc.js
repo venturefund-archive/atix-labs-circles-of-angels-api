@@ -16,6 +16,11 @@ const projectDao = require('./dao/projectDao');
 
 const { injectDependencies } = require('./util/injection');
 
+// const injectLocator = instance => {
+//   Object.defineProperty(instance, 'serviceLocator', { value: serviceLocator });
+// };
+//
+
 module.exports = fastify => {
   // Injects a model into a dao instance as the property `model`
   const injectModel = (daoInstance, model) => {
@@ -49,7 +54,7 @@ module.exports = fastify => {
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
       userRegistrationStatusDao: undefined,
-      roleDao: undefined,
+      roleDao,
       questionnaireService: undefined
     };
 
@@ -71,6 +76,7 @@ module.exports = fastify => {
 
   function configureDAOs(models) {
     injectModel(userDao, models.user);
+    injectModel(roleDao, models.role);
   }
   function configureServices() {
     configureMailService(mailService);
