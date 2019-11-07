@@ -7,10 +7,10 @@
  */
 
 const nodemailer = require('nodemailer');
-const mailService = require('./mailService');
-const userService = require('./userService');
+const mailService = require('./services/mailService');
+const userService = require('./services/userService');
 
-const userDao = require('../dao/userDao');
+const userDao = require('./dao/userDao');
 
 // const injectLocator = instance => {
 //   Object.defineProperty(instance, 'serviceLocator', { value: serviceLocator });
@@ -18,42 +18,42 @@ const userDao = require('../dao/userDao');
 //
 
 module.exports = fastify => {
-
   const injectDependencies = (instance, dependencies) => {
     // map property descriptors
     const descriptors = Object.entries(dependencies).reduce(
-      (acc, [depName, dep]) => Object.assign(acc, { [depName]: { value: dep } }),
+      (acc, [depName, dep]) =>
+        Object.assign(acc, { [depName]: { value: dep } }),
       {}
     );
-  
+
     Object.defineProperties(instance, descriptors);
   };
-  
+
   // Injects a model into a dao instance as the property `model`
   const injectModel = (daoInstance, model) => {
     injectDependencies(daoInstance, { model });
   };
-  
+
   function createEmailClient() {
     const { service, email, password } = fastify.configs.support;
     return nodemailer.createTransport({
-      service: service,
+      service,
       auth: {
         user: email,
         pass: password
       }
     });
   }
-  
+
   // Configure the mail service.
   function configureMailService(mailService) {
     const dependencies = {
       emailClient: createEmailClient()
     };
-  
+
     injectDependencies(mailService, dependencies);
   }
-  
+
   function configureUserService(userService) {
     const dependencies = {
       userDao,
@@ -63,22 +63,21 @@ module.exports = fastify => {
       roleDao: undefined,
       questionnaireService: undefined
     };
-  
+
     injectDependencies(userService, dependencies);
   }
-  
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
   }
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
-  
   }
   function init(fastify) {
     configureDAOs(fastify.models);
-    configureServices()
+    configureServices();
   }
-  
+
   init(fastify);
 };
