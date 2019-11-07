@@ -135,9 +135,9 @@ module.exports = {
           error: 'A user with that email already exists'
         };
       }
-
+      
       const validRole = await this.roleDao.getRoleById(role);
-
+      
       if (!validRole) {
         logger.error(`[User Service] :: Role ID ${role} does not exist.`);
         return {
@@ -146,12 +146,13 @@ module.exports = {
         };
       }
 
+      // TODO : address, privkey
       const user = {
         username,
         email: email.toLowerCase(),
         pwd: hashedPwd,
         role,
-        address: account.address,
+        address: '0x0', //account.address,
         registrationStatus: 1,
         transferBlockchainStatus: blockchainStatus.SENT,
         privKey: '' //, account.privateKey
@@ -194,6 +195,7 @@ module.exports = {
 
       return savedUser;
     } catch (error) {
+      logger.error(error);
       logger.error('[User Service] :: Error creating User:', error);
       throw Error('Error creating User');
     }
@@ -266,21 +268,21 @@ module.exports = {
         }
       }
 
-      if (registrationStatus) {
-        const existingStatus = await userRegistrationStatusDao.getUserRegistrationStatusById(
-          registrationStatus
-        );
+      // if (registrationStatus) {
+      //   const existingStatus = await this.userRegistrationStatusDao.getUserRegistrationStatusById(
+      //     registrationStatus
+      //   );
 
-        if (!existingStatus) {
-          logger.error(
-            `[User Service] :: Registration Status ID ${registrationStatus} does not exist`
-          );
-          return {
-            status: 404,
-            error: 'Registration status is not valid'
-          };
-        }
-      }
+      //   if (!existingStatus) {
+      //     logger.error(
+      //       `[User Service] :: Registration Status ID ${registrationStatus} does not exist`
+      //     );
+      //     return {
+      //       status: 404,
+      //       error: 'Registration status is not valid'
+      //     };
+      //   }
+      // }
 
       let updatedUser = newUser;
 
@@ -291,16 +293,16 @@ module.exports = {
         const onConfirm = async () => {
           try {
             updatedUser = await this.userDao.updateUser(userId, newUser);
-            const info = await transporter.sendMail({
-              from: '"Circles of Angels Support" <coa@support.com>',
-              to: updatedUser.email,
-              subject: 'Circles of Angels - Account Confirmation',
-              text: 'Account Approved',
-              html: `<p>Your Circles Of Angels account has been approved! </br></p>
+            const info = await this.mailService.sendMail(
+              '"Circles of Angels Support" <coa@support.com>',
+              updatedUser.email,
+              'Circles of Angels - Account Confirmation',
+              'Account Approved',
+              `<p>Your Circles Of Angels account has been approved! </br></p>
               <p>You can log in and start using our 
               <a href='${frontendUrl}/login'>platform.</a></br></p>
               <p>Thank you for your support </br></p>`
-            });
+            );
             if (!isEmpty(info.rejected))
               return { status: 409, error: 'Invalid Email' };
             await this.userDao.updateTransferBlockchainStatus(
@@ -313,10 +315,10 @@ module.exports = {
             logger.error(error);
           }
         };
-        await fastify.eth.transferInitialFundsToAccount(
-          existingUser.address,
-          onConfirm
-        );
+        // await fastify.eth.transferInitialFundsToAccount(
+        //   existingUser.address,
+        //   onConfirm
+        // );
       }
 
       if (
@@ -324,18 +326,18 @@ module.exports = {
         registrationStatus === userRegistrationStatus.REJECTED
       ) {
         updatedUser = await this.userDao.updateUser(userId, newUser);
-        const info = await transporter.sendMail({
-          from: '"Circles of Angels Support" <coa@support.com>',
-          to: updatedUser.email,
-          subject: 'Circles of Angels - Account Rejected',
-          text: 'Account Rejected',
-          html: `<p>We are sorry to inform you that your Circles Of Angels account has been rejected </br></p>
+        const info = await this.mailService.sendMail(
+          '"Circles of Angels Support" <coa@support.com>',
+          updatedUser.email,
+          'Circles of Angels - Account Rejected',
+          'Account Rejected',
+          `<p>We are sorry to inform you that your Circles Of Angels account has been rejected </br></p>
             <p>If you think there was an error, please contact us at:
             <a href="mailto:hello@circlesofangels.com">
               hello@circlesofangels.com
             </a></br></p>
             <p>Thank you for your support </br></p>`
-        });
+        );
 
         if (!updatedUser) {
           logger.error('[User Service] :: User could not be updated', newUser);
@@ -363,7 +365,7 @@ module.exports = {
   async getAllRegistrationStatus() {
     logger.info('[User Service] :: Getting all User Registration Status');
     try {
-      const userRegistrationStatusList = await userRegistrationStatusDao.getAllRegistrationStatus();
+      const userRegistrationStatusList = await this.userRegistrationStatusDao.getAllRegistrationStatus();
 
       if (userRegistrationStatusList.length === 0) {
         logger.info('[User Service] :: No User Registration Status loaded');
