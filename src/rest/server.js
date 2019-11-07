@@ -7,7 +7,7 @@
  */
 
 const { helperBuilder } = require('./services/helper');
-const ethInitializer = require('./services/eth/ethInitializer');
+//const ethInitializer = require('./services/eth/ethInitializer');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -41,15 +41,15 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
 
-    fastify.eth = await ethInitializer({ logger });
+    //fastify.eth = await ethInitializer({ logger });
     loadRoutes(fastify);
 
     await fastify.listen(configs.server);
     // start service initialization, load and inject dependencies
     require('./ioc')(fastify);
     // await helperBuilder(fastify);
-    await fastify.eth.initListener();
-    await fastify.eth.listener.startListen();
+    // await fastify.eth.initListener();
+    // await fastify.eth.listener.startListen();
     module.exports.fastify = fastify;
   } catch (err) {
     console.log(err);
@@ -111,10 +111,7 @@ const initJWT = fastify => {
     const validateUser = async (token, reply, roleId) => {
       const user = await fastify.jwt.verify(token);
       const userService = require('./services/userService');
-      const validUser = await userService.validUser(
-        user,
-        roleId
-      );
+      const validUser = await userService.validUser(user, roleId);
       if (!validUser) {
         fastify.log.error('[Server] :: Unathorized access for user:', user);
         reply.status(401).send({ error: 'Unauthorized access' });
