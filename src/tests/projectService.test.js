@@ -95,53 +95,49 @@ describe('Testing projectService createProject', () => {
     });
   });
 
-  it(
-    'should create and return a new project with ' +
-      'status 0 and ownerId from a JSON object',
-    async () => {
-      const ownerId = 2;
+  it.skip('should create and return a new project with status 0 and ownerId from a JSON object', async () => {
+    const ownerId = 2;
 
-      const mockFiles = testHelper.getMockFiles();
+    const mockFiles = testHelper.getMockFiles();
 
-      const savedProject = testHelper.buildProject(0, 0, {
-        bcStatus: blockchainStatus.PENDING,
-        status: projectStatus.PENDING_APPROVAL
-      });
+    const savedProject = testHelper.buildProject(0, 0, {
+      bcStatus: blockchainStatus.PENDING,
+      status: projectStatus.PENDING_APPROVAL
+    });
 
-      const mockProject = JSON.stringify({
-        projectName: savedProject.projectName,
-        mission: savedProject.mission,
-        problemAddressed: savedProject.problemAddressed,
-        creationTransactionHash: fastify.eth.createProject(),
-        location: savedProject.location,
-        timeframe: savedProject.timeframe,
-        goalAmount: savedProject.goalAmount,
-        faqLink: savedProject.faqLink
-      });
+    const mockProject = JSON.stringify({
+      projectName: savedProject.projectName,
+      mission: savedProject.mission,
+      problemAddressed: savedProject.problemAddressed,
+      creationTransactionHash: fastify.eth.createProject(),
+      location: savedProject.location,
+      timeframe: savedProject.timeframe,
+      goalAmount: savedProject.goalAmount,
+      faqLink: savedProject.faqLink
+    });
 
-      delete savedProject.transactionHash;
-      delete savedProject.ownerName;
-      delete savedProject.ownerEmail;
-      delete savedProject.milestones;
+    delete savedProject.transactionHash;
+    delete savedProject.ownerName;
+    delete savedProject.ownerEmail;
+    delete savedProject.milestones;
 
-      const response = await projectService.createProject(
-        mockProject,
-        mockFiles.projectProposal,
-        mockFiles.projectCoverPhoto,
-        mockFiles.projectCardPhoto,
-        mockFiles.projectMilestones,
-        mockFiles.projectAgreement,
-        ownerId
-      );
+    const response = await projectService.createProject(
+      mockProject,
+      mockFiles.projectProposal,
+      mockFiles.projectCoverPhoto,
+      mockFiles.projectCardPhoto,
+      mockFiles.projectMilestones,
+      mockFiles.projectAgreement,
+      ownerId
+    );
 
-      const expected = {
-        project: savedProject,
-        milestones: []
-      };
+    const expected = {
+      project: savedProject,
+      milestones: []
+    };
 
-      await expect(response).toEqual(expected);
-    }
-  );
+    await expect(response).toEqual(expected);
+  });
 
   it('should throw an error if it fails to save the project', async () => {
     const mockProject = testHelper.buildProject(0, 0, {});
