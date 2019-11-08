@@ -10,12 +10,20 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const activityService = require('./services/activityService');
+const milestoneService = require('./services/milestoneService');
 
-const userDao = require('./dao/userDao');
+const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
+const milestoneDao = require('./dao/milestoneDao');
+const userDao = require('./dao/userDao');
 const roleDao = require('./dao/roleDao');
-
 const { injectDependencies } = require('./util/injection');
+
+// const injectLocator = instance => {
+//   Object.defineProperty(instance, 'serviceLocator', { value: serviceLocator });
+// };
+//
 
 module.exports = fastify => {
   // Injects a model into a dao instance as the property `model`
@@ -70,13 +78,27 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureMilestoneService(milestoneService) {
+    const dependencies = {
+      milestoneDao,
+      activityService: undefined,
+      milestoneBudgetStatusDao,
+      projectDao,
+      userDao
+    };
+    injectDependencies(milestoneService, dependencies);
+  }
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(roleDao, models.role);
+    injectModel(milestoneDao, models.milestone);
+    injectModel(projectDao, models.project);
   }
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
+    configureMilestoneService(milestoneService);
     configureProjectService(projectService);
   }
   function init(fastify) {
