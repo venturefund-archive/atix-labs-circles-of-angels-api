@@ -1,4 +1,4 @@
-function getDescriptors(instance, values, mockable = false) {
+function getDescriptors(values, mockable = false) {
   // map property descriptors
   return Object.entries(values).reduce(
     (acc, [name, value]) =>
@@ -12,9 +12,9 @@ function getDescriptors(instance, values, mockable = false) {
 module.exports = {
 
   injectMocks(instance, mocks) {
-    Object.defineProperties(instance, getDescriptors(instance, mocks, true));
+    Object.defineProperties(instance, getDescriptors(mocks, true));
   },
   injectDependencies(instance, dependencies) {
-    Object.defineProperties(instance, getDescriptors(instance, dependencies));
+    Object.defineProperties(instance, getDescriptors(dependencies));
   }
 };
