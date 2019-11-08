@@ -65,7 +65,7 @@ module.exports = fastify => {
       transferService: undefined,
       userDao,
       projectExperienceDao: undefined
-    }
+    };
     injectDependencies(service, dependencies);
   }
 
@@ -75,7 +75,7 @@ module.exports = fastify => {
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
-    configureProjectService(projectService)
+    configureProjectService(projectService);
   }
   function init(fastify) {
     configureDAOs(fastify.models);
