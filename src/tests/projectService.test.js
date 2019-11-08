@@ -15,6 +15,8 @@ const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const projectServiceBuilder = require('../rest/core/projectService');
 const { projectStatus, blockchainStatus } = require('../rest/util/constants');
 
+const { injectMocks } = require('../rest/util/injection');
+
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
   eth: {
@@ -85,7 +87,9 @@ describe('Testing projectService createProject', () => {
       }
     };
 
-    projectService = projectServiceBuilder({
+
+    projectService = require('../rest/services/projectService');
+    injectMocks(projectService, {
       fastify,
       projectDao,
       milestoneService,
@@ -93,6 +97,7 @@ describe('Testing projectService createProject', () => {
       userDao,
       photoService
     });
+
   });
 
   it.skip('should create and return a new project with status 0 and ownerId from a JSON object', async () => {
