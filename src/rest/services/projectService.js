@@ -31,6 +31,13 @@ const unlinkPromise = promisify(fs.unlink);
 const cardPhotoSize = 700;
 const coverPhotoSize = 1400;
 
+// TODO : replace with a logger;
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
+
 module.exports = {
   /**
    * Uploads the project's images and files to the server.
