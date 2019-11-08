@@ -31,15 +31,6 @@ const unlinkPromise = promisify(fs.unlink);
 const cardPhotoSize = 700;
 const coverPhotoSize = 1400;
 
-const projectService = ({
-  fastify,
-  projectDao,
-  milestoneService,
-  photoService,
-  transferService,
-  userDao,
-  projectExperienceDao
-}) => (
 module.exports = {
   /**
    * Uploads the project's images and files to the server.
@@ -156,7 +147,7 @@ module.exports = {
         };
       }
 
-      const savedProject = await projectDao.saveProject(newProject);
+      const savedProject = await this.projectDao.saveProject(newProject);
 
       logger.info('[Project Service] :: Project created:', savedProject);
 
@@ -181,7 +172,7 @@ module.exports = {
 
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(
-        `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${this.fileServer.filePath}/projects/${savedProject.id}`
       );
 
       // saves the project's pictures and proposal
@@ -225,15 +216,15 @@ module.exports = {
 
       logger.info(
         '[Project Service] :: All files saved to:',
-        `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${this.fileServer.filePath}/projects/${savedProject.id}`
       );
 
-      const savedCoverPhoto = await photoService.savePhoto(coverPhotoPath);
+      const savedCoverPhoto = await this.photoService.savePhoto(coverPhotoPath);
       if (savedCoverPhoto && savedCoverPhoto != null) {
         savedProject.coverPhoto = savedCoverPhoto.id;
       }
 
-      const savedCardPhoto = await photoService.savePhoto(cardPhotoPath);
+      const savedCardPhoto = await this.photoService.savePhoto(cardPhotoPath);
       if (savedCardPhoto && savedCardPhoto != null) {
         savedProject.cardPhoto = savedCardPhoto.id;
       }
@@ -249,13 +240,13 @@ module.exports = {
         savedProject.id
       );
 
-      const milestones = await milestoneService.createMilestones(
+      const milestones = await this.milestoneService.createMilestones(
         milestonesPath,
         savedProject.id
       );
 
       if (isEmpty(milestones.errors)) {
-        const userOwner = await userDao.getUserById(ownerId);
+        const userOwner = await this.userDao.getUserById(ownerId);
         fastify.eth.createProject({
           projectId: savedProject.id,
           seAddress: userOwner.address,
@@ -265,7 +256,7 @@ module.exports = {
       }
 
       logger.info('[Project Service] :: Updating project:', savedProject);
-      const updatedProject = await projectDao.updateProject(
+      const updatedProject = await this.projectDao.updateProject(
         savedProject,
         savedProject.id
       );
@@ -348,7 +339,7 @@ module.exports = {
       delete newProject.transactionHash;
       delete newProject.creationTransactionHash;
 
-      const currentProject = await projectDao.getProjectById({ projectId: id });
+      const currentProject = await this.projectDao.getProjectById({ projectId: id });
       if (!currentProject) {
         logger.error(
           `[Project Service] :: Project ID ${id} does not exist`
@@ -398,7 +389,7 @@ module.exports = {
 
       if (projectCardPhoto || projectCoverPhoto) {
         // get current photos
-        const projectPhotos = await projectDao.getProjectPhotos(id);
+        const projectPhotos = await this.projectDao.getProjectPhotos(id);
         // create files' path
         addPathToFilesProperties({
           projectId: id,
@@ -407,11 +398,11 @@ module.exports = {
         });
 
         // creates the directory where this project's files will be saved if not exists
-        await mkdirp(`${fastify.configs.fileServer.filePath}/projects/${id}`);
+        await mkdirp(`${this.fileServer.filePath}/projects/${id}`);
 
         // saves the project's pictures
         if (projectCoverPhoto) {
-          const currentCoverPhoto = await photoService.getPhotoById(
+          const currentCoverPhoto = await this.photoService.getPhotoById(
             projectPhotos.coverPhoto
           );
           const coverPhotoPath = projectCoverPhoto.path;
@@ -428,7 +419,7 @@ module.exports = {
 
           // update cover photo path in database
           if (!currentCoverPhoto.error) {
-            const updatedCoverPhoto = await photoService.updatePhoto(
+            const updatedCoverPhoto = await this.photoService.updatePhoto(
               projectPhotos.coverPhoto,
               coverPhotoPath
             );
@@ -436,7 +427,7 @@ module.exports = {
               newProject.coverPhoto = updatedCoverPhoto.id;
             }
           } else {
-            const savedCoverPhoto = await photoService.savePhoto(
+            const savedCoverPhoto = await this.photoService.savePhoto(
               coverPhotoPath
             );
             if (savedCoverPhoto && savedCoverPhoto != null) {
@@ -446,7 +437,7 @@ module.exports = {
         }
 
         if (projectCardPhoto) {
-          const currentCardPhoto = await photoService.getPhotoById(
+          const currentCardPhoto = await this.photoService.getPhotoById(
             projectPhotos.cardPhoto
           );
           const cardPhotoPath = projectCardPhoto.path;
@@ -463,7 +454,7 @@ module.exports = {
 
           // update card photo path in database
           if (!currentCardPhoto.error) {
-            const updatedCardPhoto = await photoService.updatePhoto(
+            const updatedCardPhoto = await this.photoService.updatePhoto(
               projectPhotos.cardPhoto,
               cardPhotoPath
             );
@@ -471,7 +462,7 @@ module.exports = {
               newProject.cardPhoto = updatedCardPhoto.id;
             }
           } else {
-            const savedCardPhoto = await photoService.savePhoto(cardPhotoPath);
+            const savedCardPhoto = await this.photoService.savePhoto(cardPhotoPath);
             if (savedCardPhoto && savedCardPhoto != null) {
               newProject.cardPhoto = savedCardPhoto.id;
             }
@@ -480,12 +471,12 @@ module.exports = {
 
         logger.info(
           '[Project Service] :: All files saved to:',
-          `${fastify.configs.fileServer.filePath}/projects/${id}`
+          `${this.fileServer.filePath}/projects/${id}`
         );
       }
 
       logger.info('[Project Service] :: Updating project:', newProject);
-      const savedProject = await projectDao.updateProject(newProject, id);
+      const savedProject = await this.projectDao.updateProject(newProject, id);
       logger.info('[Project Service] :: Project Updated:', savedProject);
 
       if (!savedProject || savedProject == null) {
@@ -509,7 +500,7 @@ module.exports = {
   },
 
   async getProjectList() {
-    const projects = await projectDao.getProjecListWithStatusFrom({
+    const projects = await this.projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PENDING_APPROVAL
     });
     return projects;
@@ -519,7 +510,7 @@ module.exports = {
    * Returns a list of active projects, with status == 1
    */
   async getActiveProjectList() {
-    const projects = await projectDao.getProjecListWithStatusFrom({
+    const projects = await this.projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PUBLISHED
     });
     return projects;
@@ -529,7 +520,7 @@ module.exports = {
    * Returns a list of projects with limited info for preview
    */
   async getProjectsPreview() {
-    const projects = await projectDao.getProjecListWithStatusFrom({
+    const projects = await this.projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PUBLISHED
     });
 
@@ -538,7 +529,7 @@ module.exports = {
       const {
         milestoneProgress,
         hasOpenMilestones
-      } = await milestoneService.getMilestonePreviewInfoOfProject(project);
+      } = await this.milestoneService.getMilestonePreviewInfoOfProject(project);
       return {
         ...project,
         milestoneProgress,
@@ -551,7 +542,7 @@ module.exports = {
 
   async getProjectWithId({ projectId }) {
     try {
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project) {
         logger.error('[Project Service] :: Project not found:', projectId);
@@ -569,12 +560,12 @@ module.exports = {
   },
 
   async deleteProject({ projectId }) {
-    const projectDeleted = await projectDao.deleteProject({ projectId });
+    const projectDeleted = await this.projectDao.deleteProject({ projectId });
     return projectDeleted;
   },
 
   async getProjectMilestones(projectId) {
-    const projectMilestones = await projectDao.getProjectMilestones({
+    const projectMilestones = await this.projectDao.getProjectMilestones({
       projectId
     });
 
@@ -585,7 +576,7 @@ module.exports = {
       (milestone, context) =>
         new Promise(resolve => {
           process.nextTick(async () => {
-            const milestoneActivities = await milestoneService.getMilestoneActivities(
+            const milestoneActivities = await this.milestoneService.getMilestoneActivities(
               milestone
             );
             const milestoneWithType = {
@@ -598,7 +589,7 @@ module.exports = {
           });
         }),
       milestones
-    );
+    ); 
 
     return milestones;
   },
@@ -712,7 +703,7 @@ module.exports = {
   },
 
   async getProjectMilestonesPath(projectId) {
-    const milestonesFilePath = await projectDao.getProjectMilestonesFilePath(
+    const milestonesFilePath = await this.projectDao.getProjectMilestonesFilePath(
       projectId
     );
 
@@ -737,7 +728,7 @@ module.exports = {
   async uploadAgreement(projectAgreement, projectId) {
     try {
       // check if project exists in database
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
         logger.error(
@@ -748,29 +739,29 @@ module.exports = {
 
       // creates the directory where this project's agreement will be saved if not exists
       // (it should've been created during the project creation though)
-      mkdirp(`${fastify.configs.fileServer.filePath}/projects/${project.id}`);
+      mkdirp(`${this.fileServer.filePath}/projects/${project.id}`);
 
       const filename = `agreement${path.extname(projectAgreement.name)}`;
 
       // saves the project's agreement
       logger.info(
         '[Project Service] :: Saving Project agreement to:',
-        `${fastify.configs.fileServer.filePath}/projects/${
+        `${this.fileServer.filePath}/projects/${
           project.id
         }/${filename}`
       );
       await projectAgreement.mv(
-        `${fastify.configs.fileServer.filePath}/projects/${
+        `${this.fileServer.filePath}/projects/${
           project.id
         }/${filename}`
       );
 
       // update database
       const projectAgreementPath = `${
-        fastify.configs.fileServer.filePath
+        this.fileServer.filePath
       }/projects/${project.id}/${filename}`;
 
-      const updatedProject = await projectDao.updateProjectAgreement({
+      const updatedProject = await this.projectDao.updateProjectAgreement({
         projectAgreement: projectAgreementPath,
         projectId: project.id
       });
@@ -798,7 +789,7 @@ module.exports = {
   async downloadAgreement(projectId) {
     try {
       // check if project exists in database
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
         logger.error(
@@ -858,7 +849,7 @@ module.exports = {
   async downloadProposal(projectId) {
     try {
       // check if project exists in database
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
         logger.error(
@@ -925,7 +916,7 @@ module.exports = {
     );
 
     try {
-      const totalAmount = await transferService.getTotalFundedByProject(
+      const totalAmount = await this.transferService.getTotalFundedByProject(
         projectId
       );
 
@@ -999,8 +990,8 @@ module.exports = {
           project.id
         }`
       );
-      await milestoneService.startMilestonesOfProject(project);
-      const startPendingProject = await projectDao.updateStartBlockchainStatus(
+      await this.milestoneService.startMilestonesOfProject(project);
+      const startPendingProject = await this.projectDao.updateStartBlockchainStatus(
         project.id,
         blockchainStatus.SENT
       );
@@ -1018,7 +1009,7 @@ module.exports = {
    */
   async isFullyAssigned(projectId) {
     let isFullyAssigned = true;
-    const milestones = await milestoneService.getMilestonesByProject(projectId);
+    const milestones = await this.milestoneService.getMilestonesByProject(projectId);
 
     if (!milestones || milestones == null || isEmpty(milestones)) {
       return false;
@@ -1048,7 +1039,7 @@ module.exports = {
       oracleId
     );
     try {
-      const projects = await milestoneService.getProjectsAsOracle(oracleId);
+      const projects = await this.milestoneService.getProjectsAsOracle(oracleId);
       if (projects.error) {
         return projects;
       }
@@ -1071,8 +1062,9 @@ module.exports = {
    */
   async getProjectOwner(projectId) {
     try {
-      const project = await projectDao.getProjectById({ projectId });
-      const user = await userDao.getUserById(project.ownerId);
+      // TODO : this can be done with a single query.
+      const project = await this.projectDao.getProjectById({ projectId });
+      const user = await this.userDao.getUserById(project.ownerId);
       return user;
     } catch (error) {
       throw Error('Error getting project owner');
@@ -1087,7 +1079,7 @@ module.exports = {
    */
   async isProjectTransactionConfirmed(projectId) {
     try {
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
       return fastify.eth.isTransactionConfirmed(project.transactionHash);
     } catch (error) {
       throw Error('Error getting confirmation of transaction');
@@ -1101,7 +1093,7 @@ module.exports = {
    */
   async getProjectsOfOwner(ownerId) {
     try {
-      const projects = await projectDao.getProjectsByOwner(ownerId);
+      const projects = await this.projectDao.getProjectsByOwner(ownerId);
       return projects;
     } catch (error) {
       return {
@@ -1117,7 +1109,7 @@ module.exports = {
    * @param {array} projectsId
    */
   async getAllProjectsById(projectsId) {
-    return projectDao.getAllProjectsById(projectsId);
+    return this.projectDao.getAllProjectsById(projectsId);
   },
 
   /**
@@ -1136,7 +1128,7 @@ module.exports = {
     );
 
     try {
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project) {
         logger.error(
@@ -1148,7 +1140,7 @@ module.exports = {
         };
       }
 
-      const user = await userDao.getUserById(experience.user);
+      const user = await this.userDao.getUserById(experience.user);
 
       if (!user) {
         logger.error(
@@ -1162,7 +1154,7 @@ module.exports = {
 
       const newExperience = { ...experience, project: projectId };
 
-      const savedExperience = await projectExperienceDao.saveProjectExperience(
+      const savedExperience = await this.projectExperienceDao.saveProjectExperience(
         newExperience
       );
 
@@ -1236,7 +1228,7 @@ module.exports = {
     const filename = addTimestampToFilename(file.name);
 
     const filepath = `${
-      fastify.configs.fileServer.filePath
+      this.fileServer.filePath
     }/projects/${projectId}/experiences/${filename}`;
 
     if (fs.existsSync(filepath)) {
@@ -1244,12 +1236,12 @@ module.exports = {
     }
 
     await mkdirp(
-      `${fastify.configs.fileServer.filePath}/projects/${projectId}/experiences`
+      `${this.fileServer.filePath}/projects/${projectId}/experiences`
     );
     await file.mv(filepath);
 
     try {
-      const savedFile = await photoService.savePhoto(
+      const savedFile = await this.photoService.savePhoto(
         filepath,
         projectExperienceId
       );
@@ -1282,7 +1274,7 @@ module.exports = {
     );
 
     try {
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project) {
         logger.error(
@@ -1294,7 +1286,7 @@ module.exports = {
         };
       }
 
-      const experiences = await projectExperienceDao.getExperiencesByProject(
+      const experiences = await this.projectExperienceDao.getExperiencesByProject(
         projectId
       );
 
@@ -1328,7 +1320,7 @@ module.exports = {
     if (!Object.values(blockchainStatus).includes(status)) {
       return { error: 'Invalid Blockchain status' };
     }
-    return projectDao.updateBlockchainStatus(projectId, status);
+    return this.projectDao.updateBlockchainStatus(projectId, status);
   },
 
   async allActivitiesAreConfirmed(projectId, activityDao) {
@@ -1348,6 +1340,4 @@ module.exports = {
       return { error };
     }
   }
-});
-
-module.exports = projectService;
+};
