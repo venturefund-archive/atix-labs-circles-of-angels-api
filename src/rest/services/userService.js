@@ -14,7 +14,18 @@ const {
   blockchainStatus,
   projectStatus
 } = require('../util/constants');
-const { COAUserServiceError } = require('../errors/COAUserServiceError');
+const {
+  COAError,
+  InvalidEmailError,
+  QuestionnaireNotFoundError,
+  UpdateUserError,
+  UserAlreadyExistsError,
+  UserNotFoundError,
+  UserRejectedError,
+  UserRoleDoesNotExistsError,
+  UserStillNeedsApprovalError,
+  UserWithoutRoleError
+} = require('../errors/exporter/ErrorExporter');
 
 // TODO : replace with a logger;
 const logger = {
@@ -71,11 +82,9 @@ module.exports = {
             } registration status is Pending Approval`
           );
 
-          return {
-            status: 409,
-            error: 'User registration is still pending approval by the admin',
-            user: authenticatedUser
-          };
+          throw new UserStillNeedsApprovalError(
+            'User registration is still pending approval by the admin'
+          );
         }
 
         if (user.registrationStatus === userRegistrationStatus.REJECTED) {
@@ -85,11 +94,9 @@ module.exports = {
             } registration status is Rejected`
           );
 
-          return {
-            status: 409,
-            error: 'User registration was rejected by the admin',
-            user: authenticatedUser
-          };
+          throw new UserRejectedError(
+            'User registration was rejected by the admin'
+          );
         }
 
         return authenticatedUser;
@@ -146,14 +153,14 @@ module.exports = {
       logger.error(
         `[User Service] :: User with email ${email} already exists.`
       );
-      throw new COAUserServiceError('A user with that email already exists');
+      throw new UserAlreadyExistsError('A user with that email already exists');
     }
 
     const validRole = await this.roleDao.getRoleById(role);
 
     if (!validRole) {
       logger.error(`[User Service] :: Role ID ${role} does not exist.`);
-      throw new COAUserServiceError('User role does not exist');
+      throw new UserRoleDoesNotExistsError('User role does not exist');
     }
 
     // TODO : address, privkey
@@ -182,9 +189,7 @@ module.exports = {
         '[User Service] :: There was an unexpected error creating the user:',
         user
       );
-      throw new COAUserServiceError(
-        'There was an unexpected error creating the user'
-      );
+      throw new COAError('There was an unexpected error creating the user');
     }
 
     // if (questionnaire)
@@ -216,7 +221,7 @@ module.exports = {
 
     if (!user || user == null) {
       logger.error(`[User Service] :: User ID ${userId} not found in database`);
-      throw new COAUserServiceError('User not found');
+      throw new UserNotFoundError('User not found');
     }
 
     if (user.role && user.role != null) {
@@ -227,7 +232,7 @@ module.exports = {
     }
 
     logger.error(`[User Service] :: User ID ${userId} doesn't have a role`);
-    throw new COAUserServiceError("User doesn't have a role");
+    throw new UserWithoutRoleError("User doesn't have a role");
   },
 
   /**
@@ -243,7 +248,7 @@ module.exports = {
 
     if (!existingUser) {
       logger.error(`[User Service] :: User ID ${userId} does not exist`);
-      throw new COAUserServiceError('User does not exist');
+      throw new UserNotFoundError('User does not exist');
     }
 
     const { pwd, email, registrationStatus } = user;
@@ -261,7 +266,9 @@ module.exports = {
         logger.error(
           `[User Service] :: User with email ${email} already exists.`
         );
-        throw new COAUserServiceError('A user with that email already exists');
+        throw new UserAlreadyExistsError(
+          'A user with that email already exists'
+        );
       }
     }
 
@@ -301,7 +308,7 @@ module.exports = {
         );
         if (!isEmpty(info.rejected)) {
           logger.error('[User Service] :: Invalid email');
-          throw new COAUserServiceError('Invalid email');
+          throw new InvalidEmailError('Invalid email');
         }
         await this.userDao.updateTransferBlockchainStatus(
           existingUser.id,
@@ -317,6 +324,7 @@ module.exports = {
     }
 
     if (
+      // FIXME, ESTO ESTA MAL HECHO
       registrationStatus &&
       registrationStatus === userRegistrationStatus.REJECTED
     ) {
@@ -336,12 +344,12 @@ module.exports = {
 
       if (!updatedUser) {
         logger.error('[User Service] :: User could not be updated', newUser);
-        throw new COAUserServiceError('User could not be updated');
+        throw new UpdateUserError('User could not be updated');
       }
 
       if (!isEmpty(info.rejected)) {
         logger.error('[User Service] :: Invalid email');
-        throw new COAUserServiceError('Invalid email');
+        throw new InvalidEmailError('Invalid email');
       }
     }
 
@@ -367,9 +375,9 @@ module.exports = {
         '[User Service] :: Error getting all User Registration Status:',
         error
       );
-      throw new COAUserServiceError(
-        'Error getting all User Registration Status'
-      );
+      // TODO in the future this error should not be thrown nor catch
+      // TODO because it will be a specific dao error
+      throw new COAError('Error getting all User Registration Status');
     }
   },
 
@@ -390,7 +398,7 @@ module.exports = {
       return userRoleWithoutAdmin;
     } catch (error) {
       logger.error('[User Service] :: Error getting all User Roles:', error);
-      throw new COAUserServiceError('Error getting all User Roles');
+      throw new COAError('Error getting all User Roles');
     }
   },
 
@@ -417,7 +425,7 @@ module.exports = {
           user.answers = answers;
         } catch (error) {
           logger.error('Questionnaire not found for user:', user.id);
-          throw new COAUserServiceError(
+          throw new QuestionnaireNotFoundError(
             `Questionnaire not found for user: ${user.id}`
           );
         }
@@ -474,44 +482,44 @@ module.exports = {
       // return allUsersWithDetail;
     } catch (error) {
       logger.error('[User Service] :: Error getting all Users:', error);
-      throw new COAUserServiceError('Error getting all Users');
+      throw new COAError('Error getting all Users');
     }
   },
 
   // TODO FIXME: fix this.
   async getProjectsOfUser(userId, userProjectService, projectService) {
     return [];
-    try {
-      const user = await this.getUserById(userId);
-      let response = [];
-      if (!user) {
-        throw new COAUserServiceError('Nonexistent User');
-      }
-      switch (user.role.id) {
-        case userRoles.IMPACT_FUNDER:
-          response = (await userProjectService.getProjectsOfUser(
-            userId
-          )).filter(
-            project =>
-              project.status === projectStatus.PUBLISHED ||
-              project.status === projectStatus.IN_PROGRESS
-          );
-          break;
-        case userRoles.ORACLE:
-          response = await projectService.getAllProjectsById(
-            (await projectService.getProjectsAsOracle(userId)).projects
-          );
-          break;
-        case userRoles.SOCIAL_ENTREPRENEUR:
-          response = await projectService.getProjectsOfOwner(userId);
-          break;
-        default:
-          throw new COAUserServiceError('Invalid User');
-      }
-      return response;
-    } catch (error) {
-      throw new COAUserServiceError('Error getting projects of user');
-    }
+    // try {
+    //   const user = await this.getUserById(userId);
+    //   let response = [];
+    //   if (!user) {
+    //     throw new UserNotFoundError('Nonexistent User');
+    //   }
+    //   switch (user.role.id) {
+    //     case userRoles.IMPACT_FUNDER:
+    //       response = (await userProjectService.getProjectsOfUser(
+    //         userId
+    //       )).filter(
+    //         project =>
+    //           project.status === projectStatus.PUBLISHED ||
+    //           project.status === projectStatus.IN_PROGRESS
+    //       );
+    //       break;
+    //     case userRoles.ORACLE:
+    //       response = await projectService.getAllProjectsById(
+    //         (await projectService.getProjectsAsOracle(userId)).projects
+    //       );
+    //       break;
+    //     case userRoles.SOCIAL_ENTREPRENEUR:
+    //       response = await projectService.getProjectsOfOwner(userId);
+    //       break;
+    //     default:
+    //       throw new InvalidUserError('Invalid User');
+    //   }
+    //   return response;
+    // } catch (error) {
+    //   throw new COAUserServiceError('Error getting projects of user');
+    // }
   },
 
   async validUser(user, roleId) {

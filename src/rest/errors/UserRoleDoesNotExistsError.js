@@ -1,4 +1,6 @@
-module.exports = class COAUserServiceError extends Error {
+const COAError = require('./COAError');
+
+module.exports = class UserRoleDoesNotExistsError extends COAError {
   constructor(errorDescription) {
     super('There was an error while manipulating users');
     this.errorDescription = errorDescription;
