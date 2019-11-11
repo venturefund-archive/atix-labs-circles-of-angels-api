@@ -15,13 +15,7 @@ const {
   projectStatus
 } = require('../util/constants');
 
-
-// TODO : replace with a logger;
-const logger = {
-  log: () => {},
-  error: () => {},
-  info: () => {}
-};
+const logger = require("../logger");
 
 module.exports = {
   // roleCreationMap: {
