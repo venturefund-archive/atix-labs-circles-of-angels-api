@@ -139,6 +139,65 @@ module.exports = {
     }
   },
 
+  validateMilestoneExistence = id => {
+    const existingMilestone = await this.milestoneDao.getMilestoneByIdWithProject(
+      id
+    );
+
+    if (!existingMilestone || existingMilestone == null) {
+      logger.error(
+        `[Milestone Service] :: Milestone ID ${id} does not exist`
+      );
+      // TODO throw new error
+      return {
+        status: 404,
+        error: 'Milestone does not exist'
+      };
+    }
+  },
+
+  checkIfProjectIsInProgress = ({status, startBlockchainStatus}) => {
+    if (
+      status === projectStatus.IN_PROGRESS ||
+      startBlockchainStatus !== blockchainStatus.PENDING
+    ) {
+      logger.error(
+        `[Milestone Service] :: Project ${
+          project.id
+        } is IN PROGRESS or sent to the blockchain`
+      );
+      return {
+        error:
+          'Milestone cannot be updated. Project has already started or sent to the blockchain.',
+        status: 409
+      };
+    }
+  },
+
+  saveMilestone = (milestone, id) => {
+    const savedMilestone = await this.milestoneDao.updateMilestone(
+      milestone,
+      id
+    );
+
+    if (!savedMilestone || savedMilestone == null) {
+      logger.error(
+        `[Milestone Service] :: Milestone ID ${id} could not be updated`,
+        savedMilestone
+      );
+      return {
+        status: 404,
+        error: 'Milestone could not be updated'
+      };
+    }
+
+    logger.info(
+      '[Milestone Service] :: Milestone updated:',
+      savedMilestone
+    );
+
+    return savedMilestone;
+  },
   /**
    * Updates a Milestone
    *
@@ -151,6 +210,7 @@ module.exports = {
       logger.info('[Milestone Service] :: Updating milestone:', milestone);
 
       if (milestone.budgetStatus) {
+        // el logeo de errores esta tan horiblemente hecho y la logica de errores
         const updatedBudgetStatus = await this.updateBudgetStatus(
           id,
           milestone.budgetStatus,
@@ -170,60 +230,13 @@ module.exports = {
       delete toUpdateMilestone.budgetStatus;
 
       if (!isEmpty(toUpdateMilestone)) {
-        const existingMilestone = await this.milestoneDao.getMilestoneByIdWithProject(
-          id
-        );
-
-        if (!existingMilestone || existingMilestone == null) {
-          logger.error(
-            `[Milestone Service] :: Milestone ID ${id} does not exist`
-          );
-          return {
-            status: 404,
-            error: 'Milestone does not exist'
-          };
-        }
-
+        validateMilestoneExistence(id);
+        
         const { project } = existingMilestone;
-        if (
-          project.status === projectStatus.IN_PROGRESS ||
-          project.startBlockchainStatus !== blockchainStatus.PENDING
-        ) {
-          logger.error(
-            `[Milestone Service] :: Project ${
-              project.id
-            } is IN PROGRESS or sent to the blockchain`
-          );
-          return {
-            error:
-              'Milestone cannot be updated. Project has already started or sent to the blockchain.',
-            status: 409
-          };
-        }
-
+        checkIfProjectIsInProgress(project);
+        
         if (this.canMilestoneUpdate(toUpdateMilestone)) {
-          const savedMilestone = await this.milestoneDao.updateMilestone(
-            toUpdateMilestone,
-            id
-          );
-
-          if (!savedMilestone || savedMilestone == null) {
-            logger.error(
-              `[Milestone Service] :: Milestone ID ${id} could not be updated`,
-              savedMilestone
-            );
-            return {
-              status: 404,
-              error: 'Milestone could not be updated'
-            };
-          }
-
-          logger.info(
-            '[Milestone Service] :: Milestone updated:',
-            savedMilestone
-          );
-
-          return savedMilestone;
+          return saveMilestone(toUpdateMilestone, id);
         }
 
         logger.error(
