@@ -17,7 +17,6 @@ const roleDao = require('./dao/roleDao');
 
 const { injectDependencies } = require('./util/injection');
 
-
 module.exports = fastify => {
   // Injects a model into a dao instance as the property `model`
   const injectModel = (daoInstance, model) => {
