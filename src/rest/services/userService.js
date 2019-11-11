@@ -15,7 +15,6 @@ const {
   projectStatus
 } = require('../util/constants');
 
-
 // TODO : replace with a logger;
 const logger = {
   log: () => {},
@@ -128,6 +127,7 @@ module.exports = {
     const hashedPwd = await bcrypt.hash(password, 10);
 
     try {
+      // FIXME unmock this
       const account = {
         address: '0x2131321',
         privateKey: '0x12313'
@@ -437,43 +437,23 @@ module.exports = {
     logger.info('[User Service] :: Getting all Users');
     try {
       // get users
-      const userList = await this.userDao.getUsers();
-      userList.forEach(async user => {
-        try {
-          const answers = await questionnaireService.getAnswersOfUser(user);
-          user.answers = answers;
-        } catch (error) {
-          fastify.log.error('Questionnaire not found for user:', user.id);
-        }
-      });
+      const users = await this.userDao.getUsers();
+      return users;
+      // userList.forEach(async user => {
+      //   try {
+      //     const answers = await questionnaireService.getAnswersOfUser(user);
+      //     user.answers = answers;
+      //   } catch (error) {
+      //     logger.error('Questionnaire not found for user:', user.id);
+      //   }
+      // });
 
-      if (!userList || userList.length === 0) {
-        fastify.log.info(
-          '[User Service] :: There are currently no non-admin users in the database'
-        );
-        return [];
-      }
-
-      const allUsersWithDetail = await Promise.all(
-        userList.map(async user => {
-          // if se or funder get details
-          if (this.roleCreationMap[user.role.id]) {
-            // const detail = await this.roleCreationMap[user.role.id].getByUserId(
-            //   user.id
-            // );
-
-            // add details to user
-            const userWithDetail = {
-              ...user
-              // detail
-            };
-
-            return userWithDetail;
-          }
-
-          return user;
-        })
-      );
+      // if (!userList || userList.length === 0) {
+      //   logger.info(
+      //     '[User Service] :: There are currently no non-admin users in the database'
+      //   );
+      //   return [];
+      // }
 
       // const allUsersWithDetail = await Promise.all(
       //   userList.map(async user => {

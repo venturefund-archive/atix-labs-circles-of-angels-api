@@ -16,6 +16,8 @@
  * @attribute `roles`: role / roles that the user has in the tool
  *            (this can be for example Funder and Oracle at the same time)
  */
+const { userRoles } = require('../../src/rest/util/constants');
+
 module.exports = {
   identity: 'user',
   primaryKey: 'id',
@@ -28,7 +30,11 @@ module.exports = {
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
-    role: { type: 'string', required: true },
+    role: {
+      type: 'string',
+      validations: { isIn: Object.values(userRoles) },
+      required: true
+    },
     registrationStatus: {
       columnName: 'registrationStatus',
       model: 'user_registration_status'

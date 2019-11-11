@@ -16,11 +16,6 @@ const projectDao = require('./dao/projectDao');
 
 const { injectDependencies } = require('./util/injection');
 
-// const injectLocator = instance => {
-//   Object.defineProperty(instance, 'serviceLocator', { value: serviceLocator });
-// };
-//
-
 module.exports = fastify => {
   // Injects a model into a dao instance as the property `model`
   const injectModel = (daoInstance, model) => {

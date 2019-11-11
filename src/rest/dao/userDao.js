@@ -23,7 +23,7 @@ module.exports = {
   },
 
   async getOracles() {
-    return this.model.find({ role: 4 });
+    return this.model.find({ role: userRoles.ORACLE });
   },
 
   async updateUser(id, user) {
