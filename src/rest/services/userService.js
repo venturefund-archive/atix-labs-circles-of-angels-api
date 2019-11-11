@@ -110,14 +110,22 @@ module.exports = {
    *
    * @param {string} username
    * @param {string} email
-   * @param {string} pwd
+   * @param {string} password
    * @param {number} role id
    * @param {object} detail additional user information
    * @param {object} questionnaire on boarding Q&A
    * @returns new user | error
    */
-  async createUser(username, email, pwd, role, detail, questionnaire) {
-    const hashedPwd = await bcrypt.hash(pwd, 10);
+  async createUser({
+    firstName,
+    lastName,
+    email,
+    password,
+    role,
+    detail,
+    questionnaire
+  }) {
+    const hashedPwd = await bcrypt.hash(password, 10);
 
     try {
       const account = {
@@ -144,9 +152,9 @@ module.exports = {
           error: 'A user with that email already exists'
         };
       }
-      
-      const validRole = await this.roleDao.getRoleById(role);
-      
+
+      const validRole = Object.values(userRoles).includes(role);
+
       if (!validRole) {
         logger.error(`[User Service] :: Role ID ${role} does not exist.`);
         return {
@@ -157,7 +165,8 @@ module.exports = {
 
       // TODO : address, privkey
       const user = {
-        username,
+        firstname: firstName,
+        lastname: lastName,
         email: email.toLowerCase(),
         pwd: hashedPwd,
         role,
@@ -395,14 +404,11 @@ module.exports = {
    * Gets all valid user roles
    * @returns role list | error
    */
-  async getAllRoles() {
+  getAllRoles() {
     logger.info('[User Service] :: Getting all User Roles');
     try {
-      const userRoleList = await roleDao.getAllRoles();
-
-      const userRoleWithoutAdmin = await userRoleList.filter(
-        userRole => userRole.id !== userRoles.BO_ADMIN
-      );
+      const userRoleWithoutAdmin = Object.assign({}, userRoles);
+      delete userRoleWithoutAdmin.BO_ADMIN;
 
       if (userRoleWithoutAdmin.length === 0) {
         logger.info('[User Service] :: No User Roles loaded');

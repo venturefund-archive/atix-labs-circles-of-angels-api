@@ -54,7 +54,6 @@ module.exports = fastify => {
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
       userRegistrationStatusDao: undefined,
-      roleDao,
       questionnaireService: undefined
     };
 
@@ -76,7 +75,6 @@ module.exports = fastify => {
 
   function configureDAOs(models) {
     injectModel(userDao, models.user);
-    injectModel(roleDao, models.role);
   }
   function configureServices() {
     configureMailService(mailService);
