@@ -10,10 +10,12 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const transferService = require('./services/transferService');
 
 const userDao = require('./dao/userDao');
 const projectDao = require('./dao/projectDao');
 const roleDao = require('./dao/roleDao');
+const transferDao = require('./dao/transferDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -71,6 +73,12 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureTransferService(service) {
+    const dependencies = { transferDao };
+
+    injectDependencies(service, dependencies);
+  }
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(roleDao, models.role);
@@ -80,6 +88,7 @@ module.exports = fastify => {
     configureMailService(mailService);
     configureUserService(userService);
     configureProjectService(projectService);
+    configureTransferService(transferService);
   }
   function init(fastify) {
     configureDAOs(fastify.models);
