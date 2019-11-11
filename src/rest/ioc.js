@@ -94,6 +94,7 @@ module.exports = fastify => {
     injectModel(roleDao, models.role);
     injectModel(milestoneDao, models.milestone);
     injectModel(projectDao, models.project);
+    injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
   }
   function configureServices() {
     configureMailService(mailService);

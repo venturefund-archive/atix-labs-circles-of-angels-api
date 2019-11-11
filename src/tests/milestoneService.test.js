@@ -13,6 +13,7 @@ const {
   milestoneBudgetStatus,
   projectStatus
 } = require('../rest/util/constants');
+const { injectMocks } = require('../rest/util/injection');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
@@ -48,8 +49,8 @@ describe('Testing milestoneService createMilestone', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
       milestoneDao
     });
   });
@@ -146,10 +147,9 @@ describe('Testing milestoneService createMilestones', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
+      milestoneDao
     });
   });
 
@@ -255,7 +255,7 @@ describe('Testing milestoneService updateMilestone', () => {
             project: testHelper.buildProject(1, 1, {
               status: projectStatus.IN_PROGRESS
             })
-          }
+          };
         }
 
         return {
@@ -267,8 +267,8 @@ describe('Testing milestoneService updateMilestone', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
       milestoneDao
     });
 
@@ -371,10 +371,9 @@ describe('Testing milestoneService getMilestoneActivities', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
+      milestoneDao
     });
   });
 
@@ -406,10 +405,12 @@ describe('Testing milestoneService getMilestoneActivities', () => {
 
 describe('Testing milestoneService isMilestoneEmpty', () => {
   let milestoneService;
+  let milestoneDao;
 
   beforeAll(() => {
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
+      milestoneDao
     });
   });
 
@@ -444,10 +445,12 @@ describe('Testing milestoneService isMilestoneEmpty', () => {
 
 describe('Testing milestoneService isMilestoneValid', () => {
   let milestoneService;
+  let milestoneDao;
 
   beforeAll(() => {
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
+      milestoneDao
     });
   });
 
@@ -522,6 +525,7 @@ describe('Testing milestoneService isMilestoneValid', () => {
 
 describe('Testing milestoneService verifyActivity', () => {
   let milestoneService;
+  let milestoneDao;
 
   const mockActivity = testHelper.buildActivity({ id: 1 });
   const response = { milestones: [], errors: [] };
@@ -531,8 +535,9 @@ describe('Testing milestoneService verifyActivity', () => {
   };
 
   beforeAll(() => {
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
+      milestoneDao
     });
   });
 
@@ -565,8 +570,8 @@ describe('Testing milestonesService deleteMilestone', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
       milestoneDao
     });
   });
@@ -624,10 +629,9 @@ describe('Testing milestoneService getProjectsAsOracle', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
-      milestoneDao,
-      activityService
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
+      milestoneDao
     });
   });
 
@@ -686,8 +690,8 @@ describe('Testing milestoneService getMilestonesByProject', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
       milestoneDao
     });
 
@@ -797,8 +801,8 @@ describe('Testing milestoneService tryCompleteMilestone', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
       milestoneDao
     });
   });
@@ -856,8 +860,8 @@ describe('Testing milestoneService updateBudgetStatus', () => {
       }
     };
 
-    milestoneService = require('../rest/core/milestoneService')({
-      fastify,
+    milestoneService = require('../rest/services/milestoneService');
+    injectMocks(milestoneService, {
       milestoneDao
     });
 
