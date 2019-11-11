@@ -9,8 +9,11 @@
 const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
+const projectService = require('./services/projectService');
 
-const userDao = require('../dao/userDao');
+const userDao = require('./dao/userDao');
+const projectDao = require('./dao/projectDao');
+
 const { injectDependencies } = require('./util/injection');
 
 module.exports = fastify => {
@@ -31,15 +34,15 @@ module.exports = fastify => {
   }
 
   // Configure the mail service.
-  function configureMailService(mailService) {
+  function configureMailService(service) {
     const dependencies = {
       emailClient: createEmailClient()
     };
 
-    injectDependencies(mailService, dependencies);
+    injectDependencies(service, dependencies);
   }
 
-  function configureUserService(userService) {
+  function configureUserService(service) {
     const dependencies = {
       userDao,
       mailService,
@@ -50,7 +53,20 @@ module.exports = fastify => {
       questionnaireService: undefined
     };
 
-    injectDependencies(userService, dependencies);
+    injectDependencies(service, dependencies);
+  }
+
+  function configureProjectService(service) {
+    const dependencies = {
+      fileServer: fastify.configs.fileServer,
+      projectDao,
+      milestoneService: undefined,
+      photoService: undefined,
+      transferService: undefined,
+      userDao,
+      projectExperienceDao: undefined
+    };
+    injectDependencies(service, dependencies);
   }
 
   function configureDAOs(models) {
@@ -59,6 +75,7 @@ module.exports = fastify => {
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
+    configureProjectService(projectService);
   }
   function init(fastify) {
     configureDAOs(fastify.models);
