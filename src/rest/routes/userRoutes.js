@@ -33,7 +33,8 @@ const routes = {
           200: {
             type: 'object',
             properties: {
-              username: { type: 'string' },
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
               email: { type: 'string' },
               address: { type: 'string' },
               createdAt: { type: 'string' },
@@ -398,10 +399,11 @@ const routes = {
         body: {
           type: 'object',
           properties: {
-            username: { type: 'string' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
             email: { type: 'string' },
-            pwd: { type: 'string' },
-            role: { type: 'number' },
+            password: { type: 'string' },
+            role: { type: 'string' },
             detail: { type: 'object' },
             questionnaire: {
               type: 'array',
@@ -410,7 +412,7 @@ const routes = {
               }
             }
           },
-          required: ['username', 'email', 'pwd', 'role'],
+          required: ['firstName', 'lastName', 'email', 'password', 'role'],
           description: 'User on-boarding information'
         },
         response: {

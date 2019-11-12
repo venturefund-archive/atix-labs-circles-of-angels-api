@@ -138,24 +138,8 @@ module.exports = {
 
   signupUser: fastify => async (request, reply) => {
     try {
-      const {
-        email,
-        pwd,
-        username,
-        role,
-        detail,
-        questionnaire
-      } = request.body;
-
       fastify.log.info('[User Routes] :: Creating new user:', request.body);
-      const user = await userService.createUser(
-        username,
-        email,
-        pwd,
-        role,
-        detail,
-        questionnaire
-      );
+      const user = await userService.createUser(request.body);
 
       if (user.error) {
         fastify.log.error('[User Routes] :: User creation failed', user);
@@ -257,10 +241,7 @@ module.exports = {
   },
 
   getUserProjects: fastify => async (request, reply) => {
-    const {
-      userProjectService,
-      projectService
-    } = apiHelper.helper.services;
+    const { userProjectService, projectService } = apiHelper.helper.services;
     const { userId } = request.params;
     fastify.log.info('[User Routes] :: getting list of oracles');
     try {
