@@ -10,10 +10,12 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const activityService = require('./services/activityService');
 
 const userDao = require('./dao/userDao');
 const projectDao = require('./dao/projectDao');
 const roleDao = require('./dao/roleDao');
+const activityDao = require('./dao/activityDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -71,6 +73,19 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureActivityService(service) {
+    const dependencies = {
+      activityDao,
+      fileService: undefined,
+      photoService: undefined,
+      activityFileDao: undefined,
+      activityPhotoDao: undefined,
+      oracleActivityDao: undefined,
+      userService
+    };
+    injectDependencies(service, dependencies);
+  }
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(roleDao, models.role);
@@ -80,6 +95,7 @@ module.exports = fastify => {
     configureMailService(mailService);
     configureUserService(userService);
     configureProjectService(projectService);
+    configureActivityService(activityService);
   }
   function init(fastify) {
     configureDAOs(fastify.models);

@@ -20,18 +20,16 @@ const {
   blockchainStatus,
   projectStatus
 } = require('../util/constants');
-const apiHelper = require('../services/helper');
+const apiHelper = require('./helper');
 
-const activityService = ({
-  fastify,
-  activityDao,
-  fileService,
-  photoService,
-  activityFileDao,
-  activityPhotoDao,
-  oracleActivityDao,
-  userService
-}) => ({
+// TODO : replace with a logger;
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
+
+module.exports = {
   readFile: promisify(fs.readFile),
   /**
    * Creates an Activity for an existing Milestone
@@ -42,36 +40,30 @@ const activityService = ({
    */
   async createActivity(activity, milestoneId) {
     try {
-      fastify.log.info(
+      logger.info(
         `[Activity Service] :: Creating a new Activity for Milestone ID ${milestoneId}: `,
         activity
       );
       // TODO: should verify milestone existence and project status ????
 
       if (this.verifyActivity(activity)) {
-        const savedActivity = await activityDao.saveActivity(
+        const savedActivity = await this.activityDao.saveActivity(
           activity,
           milestoneId
         );
 
-        fastify.log.info(
-          '[Activity Service] :: Activity created:',
-          savedActivity
-        );
+        logger.info('[Activity Service] :: Activity created:', savedActivity);
 
         return savedActivity;
       }
 
-      fastify.log.error('[Activity Service] :: Activity not valid', activity);
+      logger.error('[Activity Service] :: Activity not valid', activity);
       return {
         status: 409,
         error: 'Activity is missing mandatory fields'
       };
     } catch (error) {
-      fastify.log.error(
-        '[Activity Service] :: Error creating Activity:',
-        error
-      );
+      logger.error('[Activity Service] :: Error creating Activity:', error);
       return { status: 500, error: 'Error creating Activity' };
     }
   },
@@ -84,7 +76,7 @@ const activityService = ({
    * @param {number} milestoneId
    */
   async createActivities(activities, milestoneId) {
-    fastify.log.info(
+    logger.info(
       '[Activity Service] :: Creating Activities for Milestone ID:',
       milestoneId
     );
@@ -96,11 +88,11 @@ const activityService = ({
       new Promise(resolve => {
         process.nextTick(async () => {
           if (!values(activity).every(isEmpty)) {
-            const savedActivity = await activityDao.saveActivity(
+            const savedActivity = await this.activityDao.saveActivity(
               activity,
               milestoneId
             );
-            fastify.log.info(
+            logger.info(
               '[Activity Service] :: Activity created:',
               savedActivity
             );
@@ -122,9 +114,9 @@ const activityService = ({
    */
   async updateActivity(newActivity, id) {
     try {
-      const activity = await activityDao.getActivityById(id);
+      const activity = await this.activityDao.getActivityById(id);
       if (!activity) {
-        fastify.log.error(`[Activity Service] Activity ${id} doesn't exist`);
+        logger.error(`[Activity Service] Activity ${id} doesn't exist`);
         return { error: "Activity doesn't exist", status: 404 };
       }
 
@@ -138,7 +130,7 @@ const activityService = ({
         project.status === projectStatus.IN_PROGRESS ||
         project.startBlockchainStatus !== blockchainStatus.PENDING
       ) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Project ${
             project.id
           } is IN PROGRESS or sent to the blockchain`
@@ -151,15 +143,15 @@ const activityService = ({
       }
 
       if (this.canActivityUpdate(newActivity)) {
-        fastify.log.info(
-          '[Activity Service] :: Updating activity:',
-          newActivity
+        logger.info('[Activity Service] :: Updating activity:', newActivity);
+
+        const savedActivity = await this.activityDao.updateActivity(
+          newActivity,
+          id
         );
 
-        const savedActivity = await activityDao.updateActivity(newActivity, id);
-
         if (!savedActivity || savedActivity == null) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Could not update Activity ID ${id}`,
             savedActivity
           );
@@ -169,27 +161,18 @@ const activityService = ({
           };
         }
 
-        fastify.log.info(
-          '[Activity Service] :: Activity updated:',
-          savedActivity
-        );
+        logger.info('[Activity Service] :: Activity updated:', savedActivity);
 
         return savedActivity;
       }
 
-      fastify.log.error(
-        '[Activity Service] :: Activity not valid',
-        newActivity
-      );
+      logger.error('[Activity Service] :: Activity not valid', newActivity);
       return {
         status: 409,
         error: 'Activity has empty mandatory fields'
       };
     } catch (error) {
-      fastify.log.error(
-        '[Activity Service] :: Error updating Activity:',
-        error
-      );
+      logger.error('[Activity Service] :: Error updating Activity:', error);
       return { status: 500, error: 'Error updating Activity' };
     }
   },
@@ -203,10 +186,10 @@ const activityService = ({
    */
   async updateStatus(status, id) {
     try {
-      fastify.log.info('[Activity Service] :: Updating activity status');
-      const activity = await activityDao.getActivityById(id);
+      logger.info('[Activity Service] :: Updating activity status');
+      const activity = await this.activityDao.getActivityById(id);
       if (!activity) {
-        fastify.log.error(`[Activity Service] :: Activity ${id} doesn't exist`);
+        logger.error(`[Activity Service] :: Activity ${id} doesn't exist`);
         return { error: "Activity doesn't exist", status: 404 };
       }
 
@@ -217,7 +200,7 @@ const activityService = ({
       }
 
       if (project.status !== projectStatus.IN_PROGRESS) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Project ${project.id} is not IN PROGRESS`
         );
         return {
@@ -231,10 +214,10 @@ const activityService = ({
         return completedActivity;
       }
 
-      const savedActivity = await activityDao.updateStatus(id, status);
+      const savedActivity = await this.activityDao.updateStatus(id, status);
 
       if (!savedActivity || savedActivity == null) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Could not update Activity ID ${id}`,
           savedActivity
         );
@@ -244,14 +227,14 @@ const activityService = ({
         };
       }
 
-      fastify.log.info(
+      logger.info(
         '[Activity Service] :: Activity status updated:',
         savedActivity
       );
 
       return savedActivity;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Activity Service] :: Error updating Activity status:',
         error
       );
@@ -267,12 +250,12 @@ const activityService = ({
   //  */
   // async completeActivity(activity) {
   //   try {
-  //     fastify.log.error(
+  //     logger.error(
   //       `[Activity Service] Completing Activity ID ${activity.id}`
   //     );
 
   //     if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
-  //       fastify.log.error(
+  //       logger.error(
   //         `[Activity Service] Activity ${
   //           activity.id
   //         } is not confirmed on the blockchain`
@@ -284,7 +267,7 @@ const activityService = ({
   //       };
   //     }
 
-  //     const oracle = await oracleActivityDao.getOracleFromActivity(activity.id);
+  //     const oracle = await oraclethis.activityDao.getOracleFromActivity(activity.id);
   //     const validatedTransactionHash = await fastify.eth.validateActivity(
   //       oracle.user.address,
   //       oracle.user.pwd,
@@ -292,7 +275,7 @@ const activityService = ({
   //     );
 
   //     if (!validatedTransactionHash) {
-  //       fastify.log.error(
+  //       logger.error(
   //         `[Activity Service] Activity ${
   //           activity.id
   //         } could not be validated on the blockchain`
@@ -303,13 +286,13 @@ const activityService = ({
   //       };
   //     }
 
-  //     const validatedActivity = await activityDao.updateActivity({
+  //     const validatedActivity = await this.activityDao.updateActivity({
   //       validatedTransactionHash
   //     });
 
   //     return validatedActivity;
   //   } catch (error) {
-  //     fastify.log.error(
+  //     logger.error(
   //       '[Activity Service] :: Activity could not be validated on the blockchain:',
   //       error
   //     );
@@ -323,7 +306,7 @@ const activityService = ({
       activity.milestone
     );
     if (!milestone) {
-      fastify.log.error(
+      logger.error(
         `[Activity Service] :: Milestone ${milestone.id} doesn't exist`
       );
       return { error: "Milestone doesn't exist", status: 404 };
@@ -333,9 +316,7 @@ const activityService = ({
       projectId: milestone.project
     });
     if (!project) {
-      fastify.log.error(
-        `[Activity Service] :: Project ${project.id} doesn't exist`
-      );
+      logger.error(`[Activity Service] :: Project ${project.id} doesn't exist`);
       return { error: "Project doesn't exist", status: 404 };
     }
 
@@ -351,14 +332,14 @@ const activityService = ({
    */
   async addEvidenceFiles(activityId, files, user) {
     const errors = [];
-    fastify.log.info(
+    logger.info(
       '[Activity Service] :: Uploading evidence files for activity ID',
       activityId
     );
     try {
-      const activity = await activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.getActivityById(activityId);
       if (!activity) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Activity ${activityId} doesn't exist`
         );
         return { error: "Activity doesn't exist", status: 404 };
@@ -371,7 +352,7 @@ const activityService = ({
       }
 
       if (project.status !== projectStatus.IN_PROGRESS) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Project ${project.id} is not IN PROGRESS`
         );
         return {
@@ -413,7 +394,7 @@ const activityService = ({
           hashes.push(addedEvidence.fileHash);
         }
       }
-      const userInfo = await userService.getUserById(user.id);
+      const userInfo = await this.userService.getUserById(user.id);
       await fastify.eth.uploadHashEvidenceToActivity({
         sender: userInfo.address,
         privKey: userInfo.privKey,
@@ -421,7 +402,7 @@ const activityService = ({
         hashes
       });
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Activity Service] :: There was an error uploading the evidence:',
         error
       );
@@ -445,30 +426,27 @@ const activityService = ({
    * @returns saved evidence | error message
    */
   async addEvidence(activityId, file) {
-    fastify.log.info(
+    logger.info(
       '[Activity Service] :: Adding evidence to Activity ID',
       activityId
     );
     // verify activity exists
     try {
-      const activity = await activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.getActivityById(activityId);
       if (!activity || activity == null) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Activity ID ${activityId} could not be found`
         );
         return { error: 'Activity could not be found', status: 404 };
       }
 
-      fastify.log.info('[Activity Service] :: Checking evidences file types');
+      logger.info('[Activity Service] :: Checking evidences file types');
       if (
         !file ||
-        (!fileService.checkEvidenceFileType(file) &&
-          !photoService.checkEvidencePhotoType(file))
+        (!this.fileService.checkEvidenceFileType(file) &&
+          !this.photoService.checkEvidencePhotoType(file))
       ) {
-        fastify.log.error(
-          '[Project Service] :: Wrong file type for Evidence',
-          file
-        );
+        logger.error('[Project Service] :: Wrong file type for Evidence', file);
         return {
           error: 'Invalid file type for the uploaded Evidence'
         };
@@ -494,7 +472,7 @@ const activityService = ({
       // check file type
       const filetype = mime.lookup(filepath);
       if (!filetype) {
-        fastify.log.error(
+        logger.error(
           '[Activity Service] :: Error getting mime type of file:',
           filepath
         );
@@ -503,33 +481,35 @@ const activityService = ({
 
       if (filetype.includes('image/')) {
         // save photo
-        const savedPhoto = await photoService.savePhoto(filepath);
+        const savedPhoto = await this.photoService.savePhoto(filepath);
         if (!savedPhoto || savedPhoto == null) {
-          fastify.log.error(
+          logger.error(
             '[Activity Service] :: Error saving photo to database:',
             filepath
           );
           return { error: 'Error uploading evidence', status: 409 };
         }
 
-        const savedActivityPhoto = await activityPhotoDao.saveActivityPhoto(
+        const savedActivityPhoto = await this.activityPhotoDao.saveActivityPhoto(
           activity.id,
           savedPhoto.id,
           fileHash
         );
 
         if (!savedActivityPhoto || savedActivityPhoto == null) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Error associating photo ${filepath} to Activity ID ${
               activity.id
             }`
           );
 
-          fastify.log.info('[Activity Service] :: Rolling back Operation');
-          const deletedPhoto = await photoService.deletePhoto(savedPhoto.id);
+          logger.info('[Activity Service] :: Rolling back Operation');
+          const deletedPhoto = await this.photoService.deletePhoto(
+            savedPhoto.id
+          );
 
           if (deletedPhoto && deletedPhoto.error) {
-            fastify.log.error(
+            logger.error(
               `[Activity Service] :: Photo ID ${
                 savedPhoto.id
               } could not be deleted`
@@ -537,7 +517,7 @@ const activityService = ({
           }
         }
 
-        fastify.log.info(
+        logger.info(
           '[Activity Service] :: Evidence added to activity:',
           savedActivityPhoto
         );
@@ -545,45 +525,45 @@ const activityService = ({
       }
       // if not a photo
       // save file
-      const savedFile = await fileService.saveFile(filepath);
+      const savedFile = await this.fileService.saveFile(filepath);
       if (!savedFile || savedFile == null) {
-        fastify.log.error(
+        logger.error(
           '[Activity Service] :: Error saving file to database:',
           filepath
         );
         return { error: 'Error uploading evidence', status: 409 };
       }
 
-      const savedActivityFile = await activityFileDao.saveActivityFile(
+      const savedActivityFile = await this.activityFileDao.saveActivityFile(
         activity.id,
         savedFile.id,
         fileHash
       );
 
       if (!savedActivityFile || savedActivityFile == null) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Error associating file ${filepath} to Activity ID ${
             activity.id
           }`
         );
 
-        fastify.log.info('[Activity Service] :: Rolling back Operation');
-        const deletedFile = await fileService.deleteFile(savedFile.id);
+        logger.info('[Activity Service] :: Rolling back Operation');
+        const deletedFile = await this.fileService.deleteFile(savedFile.id);
 
         if (deletedFile && deletedFile.error) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: File ID ${savedFile.id} could not be deleted`
           );
         }
       }
 
-      fastify.log.info(
+      logger.info(
         '[Activity Service] :: Evidence added to activity:',
         savedActivityFile
       );
       return savedActivityFile;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         `[Activity Service] :: There was an error uploading the evidence to Activity ID  ${activityId}:`,
         error
       );
@@ -603,16 +583,16 @@ const activityService = ({
     try {
       // need type to know if it's a photo or another type of file
       if (fileType === evidenceFileTypes.PHOTO) {
-        fastify.log.info(
+        logger.info(
           `[Activity Service] :: Getting relation for Activity ${activityId} and Photo ${evidenceId}`
         );
-        const activityPhoto = await activityPhotoDao.getActivityPhotoByActivityAndPhoto(
+        const activityPhoto = await this.activityPhotoDao.getActivityPhotoByActivityAndPhoto(
           activityId,
           evidenceId
         );
 
         if (!activityPhoto || activityPhoto == null) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Relation could not be found for Activity ${activityId} and Photo ${evidenceId}`
           );
           return {
@@ -621,16 +601,16 @@ const activityService = ({
           };
         }
 
-        fastify.log.info(
+        logger.info(
           `[Activity Service] :: Deleting Activity-Photo relation: ${activityPhoto}`
         );
 
         // deletes relation activity-photo
-        const deletedActivityPhoto = await activityPhotoDao.deleteActivityPhoto(
+        const deletedActivityPhoto = await this.activityPhotoDao.deleteActivityPhoto(
           activityPhoto.id
         );
         if (!deletedActivityPhoto || deletedActivityPhoto == null) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Activity-Photo ID ${
               activityPhoto.id
             } could not be deleted`
@@ -641,29 +621,27 @@ const activityService = ({
           };
         }
 
-        fastify.log.info(
-          `[Activity Service] :: Deleting Photo ID: ${evidenceId}`
-        );
+        logger.info(`[Activity Service] :: Deleting Photo ID: ${evidenceId}`);
 
         // deletes photo from Photo table and file in server
-        const deletedPhoto = await photoService.deletePhoto(evidenceId);
+        const deletedPhoto = await this.photoService.deletePhoto(evidenceId);
         if (deletedPhoto && deletedPhoto.error) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Photo ID ${evidenceId} could not be deleted`
           );
           return deletedPhoto;
         }
       } else if (fileType === evidenceFileTypes.FILE) {
-        fastify.log.info(
+        logger.info(
           `[Activity Service] :: Getting relation for Activity ${activityId} and File ${evidenceId}`
         );
-        const activityFile = await activityFileDao.getActivityFileByActivityAndFile(
+        const activityFile = await this.activityFileDao.getActivityFileByActivityAndFile(
           activityId,
           evidenceId
         );
 
         if (!activityFile || activityFile == null) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Relation could not be found for Activity ${activityId} and File ${evidenceId}`
           );
           return {
@@ -672,16 +650,16 @@ const activityService = ({
           };
         }
 
-        fastify.log.info(
+        logger.info(
           `[Activity Service] :: Deleting Activity-File relation: ${activityFile}`
         );
 
         // deletes db relation
-        const deletedActivityFile = await activityFileDao.deleteActivityFile(
+        const deletedActivityFile = await this.activityFileDao.deleteActivityFile(
           activityFile.id
         );
         if (!deletedActivityFile || deletedActivityFile == null) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Activity-File ID ${
               activityFile.id
             } could not be deleted`
@@ -692,20 +670,18 @@ const activityService = ({
           };
         }
 
-        fastify.log.info(
-          `[Activity Service] :: Deleting File ID: ${evidenceId}`
-        );
+        logger.info(`[Activity Service] :: Deleting File ID: ${evidenceId}`);
 
         // deletes record in File table and file in server
-        const deletedFile = await fileService.deleteFile(evidenceId);
+        const deletedFile = await this.fileService.deleteFile(evidenceId);
         if (deletedFile && deletedFile.error) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: File ID ${evidenceId} could not be deleted`
           );
           return deletedFile;
         }
       } else {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Wrong file type received: ${fileType}`
         );
         return {
@@ -716,10 +692,7 @@ const activityService = ({
 
       return { success: 'Evidence deleted successfully!' };
     } catch (error) {
-      fastify.log.error(
-        '[Activity Service] :: Error deleting evidence:',
-        error
-      );
+      logger.error('[Activity Service] :: Error deleting evidence:', error);
       throw Error('There was an error when trying to delete the evidence');
     }
   },
@@ -735,10 +708,10 @@ const activityService = ({
   async downloadEvidence(activityId, evidenceId, fileType) {
     try {
       // check if activity exists in database
-      const activity = await activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.getActivityById(activityId);
 
       if (!activity || activity == null) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Activity ID ${activityId} not found`
         );
         return { error: 'Activity not found', status: 404 };
@@ -748,53 +721,49 @@ const activityService = ({
 
       // check if activity and evidence are associated
       if (fileType === evidenceFileTypes.PHOTO) {
-        const activityPhoto = await activityPhotoDao.getActivityPhotoByActivityAndPhoto(
+        const activityPhoto = await this.activityPhotoDao.getActivityPhotoByActivityAndPhoto(
           activityId,
           evidenceId
         );
 
         if (!activityPhoto || activityPhoto == null) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Activity ${activityId} - Photo ${evidenceId} relation not found`
           );
           return { error: 'Evidence not found for this activity', status: 404 };
         }
 
-        const photo = await photoService.getPhotoById(evidenceId);
+        const photo = await this.photoService.getPhotoById(evidenceId);
 
         if (photo && photo.error) {
-          fastify.log.error(
-            `[Activity Service] :: Photo ${evidenceId} not found`
-          );
+          logger.error(`[Activity Service] :: Photo ${evidenceId} not found`);
           return photo;
         }
 
         evidencePath = photo.path;
       } else if (fileType === evidenceFileTypes.FILE) {
-        const activityFile = await activityFileDao.getActivityFileByActivityAndFile(
+        const activityFile = await this.activityFileDao.getActivityFileByActivityAndFile(
           activityId,
           evidenceId
         );
 
         if (!activityFile || activityFile == null) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Activity ${activityId} - File ${evidenceId} relation not found`
           );
           return { error: 'Evidence not found for this activity', status: 404 };
         }
 
-        const file = await fileService.getFileById(evidenceId);
+        const file = await this.fileService.getFileById(evidenceId);
 
         if (file && file.error) {
-          fastify.log.error(
-            `[Activity Service] :: File ${evidenceId} not found`
-          );
+          logger.error(`[Activity Service] :: File ${evidenceId} not found`);
           return file;
         }
 
         evidencePath = file.path;
       } else {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Wrong file type received: ${fileType}`
         );
         return {
@@ -809,7 +778,7 @@ const activityService = ({
       const filestream = fs.createReadStream(evidencePath);
 
       filestream.on('error', error => {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Evidence file ${evidencePath} not found:`,
           error
         );
@@ -826,10 +795,7 @@ const activityService = ({
 
       return response;
     } catch (error) {
-      fastify.log.error(
-        '[Activity Service] :: Error downloading evidence:',
-        error
-      );
+      logger.error('[Activity Service] :: Error downloading evidence:', error);
       throw Error('Error downloading evidence');
     }
   },
@@ -875,7 +841,7 @@ const activityService = ({
    */
   async deleteActivity(activityId) {
     const { milestoneService } = apiHelper.helper.services;
-    const deleted = await activityDao.deleteActivity(activityId);
+    const deleted = await this.activityDao.deleteActivity(activityId);
     const milestoneEmpty =
       deleted &&
       !(await milestoneService.milestoneHasActivities(deleted.milestone));
@@ -892,35 +858,35 @@ const activityService = ({
    * @returns created record | error
    */
   async assignOracleToActivity(userId, activityId) {
-    fastify.log.info(
+    logger.info(
       `[Activity Service] :: Assigning User ID ${userId} to Activity ID ${activityId}`
     );
 
     try {
       // check if user is oracle
-      const user = await userService.getUserById(userId);
+      const user = await this.userService.getUserById(userId);
 
       if (!user || user == null) {
-        fastify.log.error(`[Activity Service] :: User ID ${userId} not found`);
+        logger.error(`[Activity Service] :: User ID ${userId} not found`);
         return { error: 'User not found', status: 404 };
       }
 
       if (user.role && user.role.id !== userRoles.ORACLE) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: User ID ${userId} is not an oracle`
         );
         return { error: 'User is not an oracle', status: 409 };
       }
 
       // check if activity has oracle assigned
-      const oracleActivity = await oracleActivityDao.getOracleFromActivity(
+      const oracleActivity = await oraclethis.activityDao.getOracleFromActivity(
         activityId
       );
 
       if (oracleActivity) {
         // if user already assigned then return
         if (oracleActivity.user.id === userId) {
-          fastify.log.info(
+          logger.info(
             '[Activity Service] :: This oracle is already assigned to this Activity',
             oracleActivity
           );
@@ -932,20 +898,20 @@ const activityService = ({
         );
 
         if (unassignOracleActivty.error) {
-          fastify.log.error(
+          logger.error(
             `[Activity Service] :: Could not unassign Oracles from Activity ID ${activityId}`
           );
           return unassignOracleActivty;
         }
       }
       // assign user
-      const assignedOracle = await oracleActivityDao.assignOracleToActivity(
+      const assignedOracle = await oraclethis.activityDao.assignOracleToActivity(
         userId,
         activityId
       );
 
       if (!assignedOracle || assignedOracle == null) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Could not assign User ID ${userId} to Activity ID ${activityId}`
         );
         return { error: 'Error assigning user to activity', status: 500 };
@@ -953,7 +919,7 @@ const activityService = ({
 
       return assignedOracle;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Activity Service] :: Error assigning user to activity:',
         error
       );
@@ -968,17 +934,17 @@ const activityService = ({
    * @returns deleted record | errors
    */
   async unassignOracleToActivity(activityId) {
-    fastify.log.info(
+    logger.info(
       `[Activity Service] :: Unassigning Oracles from Activity ID ${activityId}`
     );
 
     try {
-      const oracleActivity = await oracleActivityDao.unassignOracleToActivity(
+      const oracleActivity = await oraclethis.activityDao.unassignOracleToActivity(
         activityId
       );
 
       if (!oracleActivity || oracleActivity == null) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Could not unassign Oracles from Activity ID ${activityId}`
         );
         return {
@@ -989,7 +955,7 @@ const activityService = ({
 
       return oracleActivity;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Activity Service] :: Error unassigning oracles from activity',
         error
       );
@@ -1002,17 +968,17 @@ const activityService = ({
    * @param {number} activityId
    */
   getOracleFromActivity(activityId) {
-    return oracleActivityDao.getOracleFromActivity(activityId);
+    return oraclethis.activityDao.getOracleFromActivity(activityId);
   },
 
   async getActivityDetails(activityId) {
-    fastify.log.info('[Activity Service] :: Getting activity ID', activityId);
+    logger.info('[Activity Service] :: Getting activity ID', activityId);
     try {
       // find activity
-      const activity = await activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.getActivityById(activityId);
 
       if (!activity || activity == null) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Activity ID: ${activityId} could not be found`
         );
         return {
@@ -1022,12 +988,12 @@ const activityService = ({
       }
       // find all evidence from
       // activity_file
-      fastify.log.info(
+      logger.info(
         '[Activity Service] :: Getting file evidences for Activity ID',
         activityId
       );
 
-      const activityFiles = await activityFileDao.getActivityFileByActivity(
+      const activityFiles = await this.activityFileDao.getActivityFileByActivity(
         activityId
       );
 
@@ -1043,18 +1009,18 @@ const activityService = ({
           })
         );
       } else {
-        fastify.log.info(
+        logger.info(
           `[Activity Service] :: Activity ID: ${activityId} does not have file evidence`
         );
       }
 
       // activity_photo
-      fastify.log.info(
+      logger.info(
         '[Activity Service] :: Getting photo evidences for Activity ID',
         activityId
       );
 
-      const activityPhotos = await activityPhotoDao.getActivityPhotoByActivity(
+      const activityPhotos = await this.activityPhotoDao.getActivityPhotoByActivity(
         activityId
       );
 
@@ -1070,7 +1036,7 @@ const activityService = ({
           })
         );
       } else {
-        fastify.log.info(
+        logger.info(
           `[Activity Service] :: Activity ID: ${activityId} does not have photo evidence`
         );
       }
@@ -1083,7 +1049,7 @@ const activityService = ({
 
       return activityDetail;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Activity Service] :: Error getting Activity details:',
         error
       );
@@ -1099,15 +1065,13 @@ const activityService = ({
    */
   async completeActivity(activityId) {
     try {
-      const activity = await activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.getActivityById(activityId);
       if (!activity) {
-        fastify.log.error(
-          `[Activity Service] Activity ${activityId} doesnt exists`
-        );
+        logger.error(`[Activity Service] Activity ${activityId} doesnt exists`);
         return { error: 'Activity doesnt exists', status: 404 };
       }
       if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] Activity ${activityId} must be confirmed on blockchain`
         );
         return {
@@ -1115,7 +1079,9 @@ const activityService = ({
           status: 409
         };
       }
-      const oracle = await oracleActivityDao.getOracleFromActivity(activityId);
+      const oracle = await oraclethis.activityDao.getOracleFromActivity(
+        activityId
+      );
       await fastify.eth.validateActivity({
         sender: oracle.user.address,
         privKey: oracle.user.privKey,
@@ -1123,10 +1089,7 @@ const activityService = ({
       });
       return activity;
     } catch (error) {
-      fastify.log.error(
-        '[Activity Service] :: Error completing activity:',
-        error
-      );
+      logger.error('[Activity Service] :: Error completing activity:', error);
       throw Error('Error completing activity');
     }
   },
@@ -1139,18 +1102,18 @@ const activityService = ({
    * @returns array of milestone ids | error
    */
   async getMilestonesAsOracle(oracleId) {
-    fastify.log.info(
+    logger.info(
       '[Activity Service] :: Getting Activities for Oracle ID',
       oracleId
     );
     try {
       const milestones = [];
-      const oracleActivities = await oracleActivityDao.getActivitiesByOracle(
+      const oracleActivities = await oraclethis.activityDao.getActivitiesByOracle(
         oracleId
       );
 
       if (!oracleActivities || oracleActivities == null) {
-        fastify.log.error(
+        logger.error(
           `[Activity Service] :: Oracle ID ${oracleId} doesn't have any activities assigned`
         );
         return {
@@ -1167,10 +1130,7 @@ const activityService = ({
 
       return milestones;
     } catch (error) {
-      fastify.log.error(
-        '[Activity Service] :: Error getting Activities:',
-        error
-      );
+      logger.error('[Activity Service] :: Error getting Activities:', error);
       throw Error('Error getting Activities');
     }
   },
@@ -1179,8 +1139,6 @@ const activityService = ({
     if (!Object.values(blockchainStatus).includes(status)) {
       return { error: 'Invalid Blockchain status' };
     }
-    return activityDao.updateBlockchainStatus(activityId, status);
+    return this.activityDao.updateBlockchainStatus(activityId, status);
   }
-});
-
-module.exports = activityService;
+};
