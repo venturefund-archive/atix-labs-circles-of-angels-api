@@ -19,40 +19,11 @@ const {
 
 const logger = {
   log: () => {},
-  error: () => {},
+  error: (key, msg) => {
+    console.error(key, msg);
+  },
   info: () => {}
 };
-
-// for each milestone call this function
-const createMilestone = projectId => (milestone, context) =>
-  new Promise(resolve => {
-    process.nextTick(async () => {
-      if (!this.isMilestoneEmpty(milestone)) {
-        const isFirstMilestone = isEmpty(
-          await this.milestoneDao.getMilestonesByProject(projectId)
-        );
-        const activityList = milestone.activityList.slice(0);
-        const savedMilestone = await this.milestoneDao.saveMilestone({
-          milestone,
-          projectId,
-          budgetStatus: isFirstMilestone
-            ? milestoneBudgetStatus.CLAIMABLE
-            : milestoneBudgetStatus.BLOCKED
-        });
-        logger.info(
-          '[Milestone Service] :: Milestone created:',
-          savedMilestone
-        );
-        context.push(savedMilestone);
-        // create the activities for this milestone
-        await this.activityService.createActivities(
-          activityList,
-          savedMilestone.id
-        );
-      }
-      resolve();
-    });
-  });
 
 module.exports = {
   /**
@@ -108,7 +79,7 @@ module.exports = {
    */
   async createMilestones(milestonesPath, projectId) {
     try {
-      const response = await this.readMilestones(milestonesPath); // FIXME
+      const response = await this.readMilestones(milestonesPath);
 
       if (response.errors.length > 0) {
         logger.error(
@@ -126,11 +97,37 @@ module.exports = {
 
       const savedMilestones = [];
 
-      await forEachPromise(
-        milestones,
-        createMilestone(projectId),
-        savedMilestones
-      );
+      // for each milestone call this function
+      const createMilestone = (milestone, context) =>
+        new Promise(resolve => {
+          process.nextTick(async () => {
+            if (!this.isMilestoneEmpty(milestone)) {
+              const isFirstMilestone = isEmpty(
+                await this.milestoneDao.getMilestonesByProject(projectId)
+              );
+              const activityList = milestone.activityList.slice(0);
+              const savedMilestone = await this.milestoneDao.saveMilestone({
+                milestone,
+                projectId,
+                budgetStatus: isFirstMilestone
+                  ? milestoneBudgetStatus.CLAIMABLE
+                  : milestoneBudgetStatus.BLOCKED
+              });
+              logger.info(
+                '[Milestone Service] :: Milestone created:',
+                savedMilestone
+              );
+              context.push(savedMilestone);
+              // create the activities for this milestone
+              await this.activityService.createActivities(
+                activityList,
+                savedMilestone.id
+              );
+            }
+            resolve();
+          });
+        });
+      await forEachPromise(milestones, createMilestone, savedMilestones);
 
       return savedMilestones;
     } catch (err) {
@@ -139,65 +136,6 @@ module.exports = {
     }
   },
 
-  validateMilestoneExistence = id => {
-    const existingMilestone = await this.milestoneDao.getMilestoneByIdWithProject(
-      id
-    );
-
-    if (!existingMilestone || existingMilestone == null) {
-      logger.error(
-        `[Milestone Service] :: Milestone ID ${id} does not exist`
-      );
-      // TODO throw new error
-      return {
-        status: 404,
-        error: 'Milestone does not exist'
-      };
-    }
-  },
-
-  checkIfProjectIsInProgress = ({status, startBlockchainStatus}) => {
-    if (
-      status === projectStatus.IN_PROGRESS ||
-      startBlockchainStatus !== blockchainStatus.PENDING
-    ) {
-      logger.error(
-        `[Milestone Service] :: Project ${
-          project.id
-        } is IN PROGRESS or sent to the blockchain`
-      );
-      return {
-        error:
-          'Milestone cannot be updated. Project has already started or sent to the blockchain.',
-        status: 409
-      };
-    }
-  },
-
-  saveMilestone = (milestone, id) => {
-    const savedMilestone = await this.milestoneDao.updateMilestone(
-      milestone,
-      id
-    );
-
-    if (!savedMilestone || savedMilestone == null) {
-      logger.error(
-        `[Milestone Service] :: Milestone ID ${id} could not be updated`,
-        savedMilestone
-      );
-      return {
-        status: 404,
-        error: 'Milestone could not be updated'
-      };
-    }
-
-    logger.info(
-      '[Milestone Service] :: Milestone updated:',
-      savedMilestone
-    );
-
-    return savedMilestone;
-  },
   /**
    * Updates a Milestone
    *
@@ -210,7 +148,6 @@ module.exports = {
       logger.info('[Milestone Service] :: Updating milestone:', milestone);
 
       if (milestone.budgetStatus) {
-        // el logeo de errores esta tan horiblemente hecho y la logica de errores
         const updatedBudgetStatus = await this.updateBudgetStatus(
           id,
           milestone.budgetStatus,
@@ -230,13 +167,60 @@ module.exports = {
       delete toUpdateMilestone.budgetStatus;
 
       if (!isEmpty(toUpdateMilestone)) {
-        validateMilestoneExistence(id);
-        
+        const existingMilestone = await this.milestoneDao.getMilestoneByIdWithProject(
+          id
+        );
+
+        if (!existingMilestone || existingMilestone == null) {
+          logger.error(
+            `[Milestone Service] :: Milestone ID ${id} does not exist`
+          );
+          return {
+            status: 404,
+            error: 'Milestone does not exist'
+          };
+        }
+
         const { project } = existingMilestone;
-        checkIfProjectIsInProgress(project);
-        
+        if (
+          project.status === projectStatus.IN_PROGRESS ||
+          project.startBlockchainStatus !== blockchainStatus.PENDING
+        ) {
+          logger.error(
+            `[Milestone Service] :: Project ${
+              project.id
+            } is IN PROGRESS or sent to the blockchain`
+          );
+          return {
+            error:
+              'Milestone cannot be updated. Project has already started or sent to the blockchain.',
+            status: 409
+          };
+        }
+
         if (this.canMilestoneUpdate(toUpdateMilestone)) {
-          return saveMilestone(toUpdateMilestone, id);
+          const savedMilestone = await this.milestoneDao.updateMilestone(
+            toUpdateMilestone,
+            id
+          );
+
+          if (!savedMilestone || savedMilestone == null) {
+            logger.error(
+              `[Milestone Service] :: Milestone ID ${id} could not be updated`,
+              savedMilestone
+            );
+            return {
+              status: 404,
+              error: 'Milestone could not be updated'
+            };
+          }
+
+          logger.info(
+            '[Milestone Service] :: Milestone updated:',
+            savedMilestone
+          );
+
+          return savedMilestone;
         }
 
         logger.error(
@@ -311,7 +295,6 @@ module.exports = {
    * Returns an array with all the information retrieved.
    * @param {string} file path
    */
-  // FIXME TODO ESTO HAY QUE REFACTORIZARLO TODO, ES UN ASCO
   async readMilestones(file) {
     const response = {
       milestones: [],
@@ -530,9 +513,7 @@ module.exports = {
       oracleId
     );
     try {
-      const milestones = await this.activityService.getMilestonesAsOracle(
-        oracleId
-      );
+      const milestones = await this.activityService.getMilestonesAsOracle(oracleId);
 
       if (milestones.error) {
         return milestones;
@@ -540,9 +521,7 @@ module.exports = {
 
       const projects = await Promise.all(
         milestones.map(async milestoneId => {
-          const milestone = await this.milestoneDao.getMilestoneById(
-            milestoneId
-          );
+          const milestone = await this.milestoneDao.getMilestoneById(milestoneId);
           return milestone.project;
         })
       );
@@ -560,9 +539,7 @@ module.exports = {
       projectId
     );
     try {
-      const milestones = await this.milestoneDao.getMilestonesByProject(
-        projectId
-      );
+      const milestones = await this.milestoneDao.getMilestonesByProject(projectId);
 
       if (!milestones || milestones == null) {
         return milestones;

@@ -40,14 +40,12 @@ describe('Testing milestoneService createMilestone', () => {
   delete toCreateMilestone.project;
 
   beforeAll(() => {
-    milestoneDao = {
-      async saveMilestone({ projectId }) {
-        if (projectId === 0) {
-          throw Error('Error saving milestone');
-        }
-        return mockMilestone;
+    milestoneDao.saveMilestone = jest.fn(projectId => {
+      if (projectId === 0) {
+        throw Error('Error saving milestone');
       }
-    };
+      return mockMilestone;
+    });
 
     milestoneService = require('../rest/services/milestoneService');
     injectMocks(milestoneService, {
