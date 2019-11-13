@@ -8,7 +8,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { jest, beforeAll, expect } = require('jest');
 const bcrypt = require('bcrypt');
 const { userRegistrationStatus, userRoles } = require('../rest/util/constants');
 const testHelper = require('./testHelper');

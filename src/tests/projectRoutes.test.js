@@ -8,8 +8,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { expect } = require('jest');
-
 describe.skip('Testing projectRoutes', () => {
   it('should return status code 200 when doing a post request to /project/upload', async () => {
     const projectRoutes = require('../rest/routes/projectRoutes');

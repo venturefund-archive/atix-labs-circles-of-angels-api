@@ -8,7 +8,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { jest } = require('jest');
 const configs = require('config');
 const {
   project,

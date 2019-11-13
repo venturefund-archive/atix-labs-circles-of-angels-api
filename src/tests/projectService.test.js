@@ -8,7 +8,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { jest, beforeAll, expect } = require('jest');
 const { find } = require('lodash');
 const fs = require('fs');
 const configs = require('config');
