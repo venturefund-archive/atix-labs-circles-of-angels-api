@@ -30,7 +30,6 @@ const photoDaoBuilder = require('../dao/photoDao');
 const projectDaoBuilder = require('../dao/projectDao');
 const projectStatusDaoBuilder = require('../dao/projectStatusDao');
 const questionDaoBuilder = require('../dao/questionDao');
-const roleDaoBuilder = require('../dao/roleDao');
 const transferDaoBuilder = require('../dao/transferDao');
 const userDaoBuilder = require('../dao/userDao');
 const userFunderDaoBuilder = require('../dao/userFunderDao');
@@ -69,7 +68,6 @@ const helperBuilder = async fastify => {
   const userRegistrationStatusDao = userRegistrationStatusDaoBuilder(
     models.user_registration_status
   );
-  const roleDao = roleDaoBuilder(models.role);
   const userFunderDao = userFunderDaoBuilder(models.user_funder);
   const userSocialEntrepreneurDao = userSocialEntrepreneurDaoBuilder(
     models.user_social_entrepreneur
@@ -162,7 +160,6 @@ const helperBuilder = async fastify => {
       projectDao,
       projectStatusDao,
       questionDao,
-      roleDao,
       transferDao,
       userDao,
       userFunderDao,
