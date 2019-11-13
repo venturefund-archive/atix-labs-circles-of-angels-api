@@ -1,14 +1,15 @@
 /**
  * AGPL License
  * Circle of Angels aims to democratize social impact financing.
- * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ * It facilitate the investment process by utilizing smart
+ * contracts to develop impact milestones agreed
+ * upon by funders and the social entrepenuers.
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-jest.mock('sha256');
-const fs = require('fs');
-let sha256 = require('sha256');
+const { jest, expect, beforeAll } = require('jest');
+const sha256 = require('sha256');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const { projectStatus, activityStatus } = require('../rest/util/constants');
@@ -21,6 +22,8 @@ const fastify = {
     uploadHashEvidenceToActivity: ethServicesMock.uploadHashEvidenceToActivity
   }
 };
+
+jest.mock('sha256');
 
 describe.skip('Testing activityService createActivities', () => {
   let activityDao;
@@ -376,11 +379,10 @@ describe.skip('Testing activityService updateStatus', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should throw an error if an exception is caught', async () => {
-    return expect(
+  it('should throw an error if an exception is caught', async () =>
+    expect(
       activityService.updateStatus(activityStatus.VERIFIED, '')
-    ).rejects.toEqual(Error('Error updating Activity status'));
-  });
+    ).rejects.toEqual(Error('Error updating Activity status')));
 });
 
 describe.skip('Testing ActivityService addEvidenceFiles', () => {
@@ -404,22 +406,15 @@ describe.skip('Testing ActivityService addEvidenceFiles', () => {
       fastify,
       activityDao,
       userService: {
-        getUserById: () => {
-          return user;
-        }
+        getUserById: () => user
       }
     });
-    activityService.addEvidence = () => {
-      return {
-        fileHash: '23kfek32kek3edd'
-      };
-    };
+    activityService.addEvidence = () => ({ fileHash: '23kfek32kek3edd' });
 
-    activityService.getProjectByActivity = () => {
-      return testHelper.buildProject(1, 1, {
+    activityService.getProjectByActivity = () =>
+      testHelper.buildProject(1, 1, {
         status: projectStatus.IN_PROGRESS
       });
-    };
   });
 
   it('user oracle add evidences files should update database and blockchain', async () => {
@@ -444,10 +439,10 @@ describe.skip('Testing ActivityService addEvidenceFiles', () => {
 describe.skip('Testing ActivityService addEvidence', () => {
   let activityService;
   let activity;
-  let fileId = 1;
-  let photoId = 2;
-  let activityPhotoId = 1;
-  let activityFileId = 1;
+  const fileId = 1;
+  const photoId = 2;
+  const activityPhotoId = 1;
+  const activityFileId = 1;
   const image = testHelper.getMockFiles().projectCoverPhoto;
   const file = testHelper.getMockFiles().projectAgreement;
 
@@ -456,47 +451,39 @@ describe.skip('Testing ActivityService addEvidence', () => {
     activityService = activityServiceBuilder({
       fastify,
       activityDao: {
-        getActivityById: activityId => {
-          return activity;
-        }
+        getActivityById: () => activity
       },
       fileService: {
-        saveFile: filePath => {
-          return { id: fileId };
-        },
+        saveFile: () => ({
+          id: fileId
+        }),
         checkEvidenceFileType: f => {
           const type = f.name.split('.')[1];
           return type !== 'error';
         }
       },
       photoService: {
-        savePhoto: filePath => {
-          return { id: photoId };
-        },
+        savePhoto: () => ({ id: photoId }),
         checkEvidencePhotoType: f => {
           const type = f.name.split('.')[1];
           return type !== 'error';
         }
       },
       activityPhotoDao: {
-        saveActivityPhoto: (activityId, savedPhotoId, fileHash) => {
-          return {
-            activity: activityId,
-            photo: savedPhotoId,
-            id: activityPhotoId,
-            fileHash
-          };
-        }
+        saveActivityPhoto: (activityId, savedPhotoId, fileHash) => ({
+          activity: activityId,
+          photo: savedPhotoId,
+          id: activityPhotoId,
+          fileHash
+        })
       },
       activityFileDao: {
-        saveActivityFile: (activityId, savedFileId, fileHash) => {
-          return {
-            activity: activityId,
-            file: savedFileId,
-            id: activityFileId,
-            fileHash
-          };
-        }
+        saveActivityFile: (activityId, savedFileId, fileHash) => ({
+          activity: activityId,
+          file: savedFileId,
+          id: activityFileId,
+          fileHash
+        })
       }
     });
     activityService.readFile = jest.fn();
@@ -538,9 +525,7 @@ describe.skip('Testing ActivityService assignOracleToActivity', () => {
     activityService = activityServiceBuilder({
       fastify,
       activityDao: {
-        getActivityById: activityId => {
-          return activity;
-        }
+        getActivityById: () => activity
       },
       userService: {
         getUserById: id => {
@@ -550,15 +535,11 @@ describe.skip('Testing ActivityService assignOracleToActivity', () => {
         }
       },
       oracleActivityDao: {
-        getOracleFromActivity: activityId => {
-          return { user: activity.oracle };
-        },
-        assignOracleToActivity: (userId, activityId) => {
-          return oracle;
-        }
+        getOracleFromActivity: () => ({ user: activity.oracle }),
+        assignOracleToActivity: () => oracle
       }
     });
-    activityService.unassignOracleToActivity = activityId => true;
+    activityService.unassignOracleToActivity = () => true;
   });
   it('must return oracle user object when assign a valid oracle to an activity', async () => {
     const response = await activityService.assignOracleToActivity(

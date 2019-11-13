@@ -1,11 +1,14 @@
 /**
  * AGPL License
  * Circle of Angels aims to democratize social impact financing.
- * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ * It facilitate the investment process by utilizing smart
+ * contracts to develop impact milestones agreed
+ * upon by funders and the social entrepenuers.
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { jest, beforeAll, expect } = require('jest');
 const { find } = require('lodash');
 const fs = require('fs');
 const configs = require('config');
@@ -87,7 +90,6 @@ describe('Testing projectService createProject', () => {
       }
     };
 
-
     projectService = require('../rest/services/projectService');
     injectMocks(projectService, {
       fastify,
@@ -97,7 +99,6 @@ describe('Testing projectService createProject', () => {
       userDao,
       photoService
     });
-
   });
 
   it.skip('should create and return a new project with status 0 and ownerId from a JSON object', async () => {
@@ -951,11 +952,10 @@ describe('Testing projectService getTotalFunded', () => {
     return expect(response).toEqual(totalFunded);
   });
 
-  it('should throw an error if it fails to get the transferred funds', async () => {
-    return expect(projectService.getTotalFunded()).rejects.toEqual(
+  it('should throw an error if it fails to get the transferred funds', async () =>
+    expect(projectService.getTotalFunded()).rejects.toEqual(
       Error('Error getting funded amount')
-    );
-  });
+    ));
 });
 
 describe('Testing projectService startProject', () => {
@@ -1476,7 +1476,7 @@ describe('Testing ProjectService getProjectsAsOracle', () => {
   let mockProjects;
   let milestoneService;
   let projectService;
-  let oracle = testHelper.buildUserOracle(1);
+  const oracle = testHelper.buildUserOracle(1);
 
   beforeEach(() => {
     mockProjects = testHelper.getMockProjects();
@@ -1530,7 +1530,7 @@ describe('Testing ProjectService getProjectsAsOracle', () => {
 describe('Testing ProjectService getProjectOwner', () => {
   let mockProjects;
   let projectService;
-  let user = testHelper.buildUserSe(2);
+  const user = testHelper.buildUserSe(2);
 
   beforeEach(() => {
     mockProjects = testHelper.getMockProjects();
@@ -1538,9 +1538,8 @@ describe('Testing ProjectService getProjectOwner', () => {
     projectService = projectServiceBuilder({
       fastify,
       projectDao: {
-        getProjectById: ({ projectId }) => {
-          return mockProjects.find(project => project.id === projectId);
-        }
+        getProjectById: ({ projectId }) =>
+          mockProjects.find(project => project.id === projectId)
       },
       userDao: {
         getUserById: id => {
@@ -1562,7 +1561,7 @@ describe('Testing ProjectService getProjectOwner', () => {
 describe('Testing ProjectService getProjectsOfOwner', () => {
   let mockProjects;
   let projectService;
-  let user = testHelper.buildUserSe(3);
+  const user = testHelper.buildUserSe(3);
 
   beforeEach(() => {
     mockProjects = testHelper.getMockProjects();
@@ -1570,9 +1569,8 @@ describe('Testing ProjectService getProjectsOfOwner', () => {
     projectService = projectServiceBuilder({
       fastify,
       projectDao: {
-        getProjectsByOwner: ownerId => {
-          return mockProjects.filter(project => project.ownerId === ownerId);
-        }
+        getProjectsByOwner: ownerId =>
+          mockProjects.filter(project => project.ownerId === ownerId)
       },
       transferService: {},
       milestoneService: {}
@@ -1601,7 +1599,7 @@ describe('Testing ProjectService saveExperienceFile', () => {
   let mockFiles;
   let projectService;
   let photoService;
-  let photoId = 22;
+  const photoId = 22;
 
   beforeEach(() => {
     mockFiles = testHelper.getMockFiles();

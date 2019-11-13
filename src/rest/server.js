@@ -1,13 +1,12 @@
 /**
  * AGPL License
  * Circle of Angels aims to democratize social impact financing.
- * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ * It facilitate the investment process by utilizing
+ * smart contracts to develop impact milestones agreed
+ * upon by funders and the social entrepenuers.
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
-
-const { helperBuilder } = require('./services/helper');
-//const ethInitializer = require('./services/eth/ethInitializer');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -41,7 +40,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
 
-    //fastify.eth = await ethInitializer({ logger });
+    // fastify.eth = await ethInitializer({ logger });
     loadRoutes(fastify);
 
     await fastify.listen(configs.server);
@@ -52,7 +51,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     // await fastify.eth.listener.startListen();
     module.exports.fastify = fastify;
   } catch (err) {
-    console.log(err);
+    // TODO add logger
     process.exit(1);
   }
 };
