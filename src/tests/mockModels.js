@@ -49,6 +49,20 @@ exports.userSE = {
   transferBlockchainStatus: blockchainStatus.CONFIRMED
 };
 
+exports.blockedUser = {
+  address: ethServicesMock.createAccount().address,
+  privKey: ethServicesMock.createAccount().privateKey,
+  createdAt: '2019-04-16T03:00:00.000Z',
+  email: 'user@blocked.com',
+  id: userSeId,
+  pwd: '$2a$10$phVS6ulzQvLpjIWE8bkyf.1EXtwcKUD7pgpe0CK7bYkYXmD5Ux2YK',
+  blocked: false,
+  role: userRoles.SOCIAL_ENTREPRENEUR,
+  updatedAt: '2019-05-28T03:00:00.000Z',
+  username: 'SE 1',
+  transferBlockchainStatus: blockchainStatus.CONFIRMED
+};
+
 exports.userAdmin = {
   address: ethServicesMock.createAccount().address,
   privKey: ethServicesMock.createAccount().privateKey,

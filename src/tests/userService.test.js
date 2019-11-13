@@ -32,9 +32,12 @@ describe('Testing userService login', () => {
         if (email === '') {
           return undefined;
         }
+        const userSe = testHelper.buildUserSe(userId);
+        const blockedUser = testHelper.buildBlockedUser(userId);
+        const users = [userSe, blockedUser];
+        const filteredUsers = users.filter(user => user.email === email);
 
-        const user = testHelper.buildUserSe(userId);
-        return user;
+        return filteredUsers[0];
       }
     };
 
@@ -88,6 +91,16 @@ describe('Testing userService login', () => {
     const response = await userService.login(email);
 
     return expect(response).toEqual(mockError);
+  });
+
+  it('should return an error with blocked by an admin message ', async () => {
+    bcrypt.compare.mockReturnValueOnce(true);
+
+    const mockUser = testHelper.buildBlockedUser(userId);
+    const expected = 'User was blocked by an admin';
+
+    const { error } = await userService.login(mockUser.email);
+    expect(error).toEqual(expected);
   });
 });
 
