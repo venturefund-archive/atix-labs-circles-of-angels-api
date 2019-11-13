@@ -8,6 +8,16 @@
 
 const { isEmpty, remove, invert } = require('lodash');
 const XLSX = require('xlsx');
+const {
+  COAError,
+  BudgetTransferStatusNotValidError,
+  MandatoryFieldsEmptyError,
+  MilestoneBudgetStatusIsNotValidError,
+  MilestoneNotFoundError,
+  PreviousMilestonesAreNotAllFundedError,
+  ProjectHasAlreadyStartedError,
+  ProjectStatusNotValidError
+} = require('../errors/exporter/ErrorExporter');
 const { forEachPromise } = require('../util/promises');
 const {
   activityStatus,
@@ -28,39 +38,25 @@ module.exports = {
    * @returns new milestone | error message
    */
   async createMilestone(milestone, projectId) {
-    try {
-      logger.info(
-        `[Milestone Service] :: Creating a new Milestone for Project ID ${projectId}: `,
-        milestone
-      );
-      // TODO: should verify project existence and status <- inject projectDao <- inject userDao
+    logger.info(
+      `[Milestone Service] :: Creating a new Milestone for Project ID ${projectId}: `,
+      milestone
+    );
+    // TODO: should verify project existence and status <- inject projectDao <- inject userDao
 
-      if (
-        !this.isMilestoneEmpty(milestone) &&
-        this.isMilestoneValid(milestone)
-      ) {
-        const savedMilestone = await this.milestoneDao.saveMilestone({
-          milestone,
-          projectId
-        });
+    if (!this.isMilestoneEmpty(milestone) && this.isMilestoneValid(milestone)) {
+      const savedMilestone = await this.milestoneDao.saveMilestone({
+        milestone,
+        projectId
+      });
 
-        logger.info(
-          '[Milestone Service] :: Milestone created:',
-          savedMilestone
-        );
+      logger.info('[Milestone Service] :: Milestone created:', savedMilestone);
 
-        return savedMilestone;
-      }
-
-      logger.error('[Milestone Service] :: Milestone not valid', milestone);
-      return {
-        status: 409,
-        error: 'Milestone is missing mandatory fields'
-      };
-    } catch (error) {
-      logger.error('[Milestone Service] :: Error creating Milestone:', error);
-      return { status: 500, error: 'Error creating Milestone' };
+      return savedMilestone;
     }
+
+    logger.error('[Milestone Service] :: Milestone not valid', milestone);
+    throw new MandatoryFieldsEmptyError('Milestone has empty mandatory fields');
   },
 
   /**
@@ -138,100 +134,86 @@ module.exports = {
    * @returns updated milestone | error message
    */
   async updateMilestone(milestone, id, user) {
-    try {
-      logger.info('[Milestone Service] :: Updating milestone:', milestone);
+    logger.info('[Milestone Service] :: Updating milestone:', milestone);
 
-      if (milestone.budgetStatus) {
-        const updatedBudgetStatus = await this.updateBudgetStatus(
-          id,
-          milestone.budgetStatus,
-          user
+    if (milestone.budgetStatus) {
+      const updatedBudgetStatus = await this.updateBudgetStatus(
+        id,
+        milestone.budgetStatus,
+        user
+      );
+      if (updatedBudgetStatus.error) {
+        logger.error(
+          '[Milestone Service] :: Error updating budget status:',
+          updatedBudgetStatus.error
         );
-        if (updatedBudgetStatus.error) {
-          logger.error(
-            '[Milestone Service] :: Error updating budget status:',
-            updatedBudgetStatus.error
-          );
-        }
-
-        return updatedBudgetStatus;
       }
 
-      const toUpdateMilestone = { ...milestone };
-      delete toUpdateMilestone.budgetStatus;
+      return updatedBudgetStatus;
+    }
 
-      if (!isEmpty(toUpdateMilestone)) {
-        const existingMilestone = await this.milestoneDao.getMilestoneByIdWithProject(
+    const toUpdateMilestone = { ...milestone };
+    delete toUpdateMilestone.budgetStatus;
+
+    if (!isEmpty(toUpdateMilestone)) {
+      const existingMilestone = await this.milestoneDao.getMilestoneByIdWithProject(
+        id
+      );
+
+      if (!existingMilestone || existingMilestone == null) {
+        logger.error(
+          `[Milestone Service] :: Milestone ID ${id} does not exist`
+        );
+        throw new MilestoneNotFoundError('Milestone does not exist');
+      }
+
+      const { project } = existingMilestone;
+      if (
+        project.status === projectStatus.IN_PROGRESS ||
+        project.startBlockchainStatus !== blockchainStatus.PENDING
+      ) {
+        logger.error(
+          `[Milestone Service] :: Project ${
+            project.id
+          } is IN PROGRESS or sent to the blockchain`
+        );
+        throw new ProjectHasAlreadyStartedError(
+          'Milestone cannot be updated. Project has already started or sent to the blockchain.'
+        );
+      }
+
+      if (this.canMilestoneUpdate(toUpdateMilestone)) {
+        const savedMilestone = await this.milestoneDao.updateMilestone(
+          toUpdateMilestone,
           id
         );
 
-        if (!existingMilestone || existingMilestone == null) {
+        if (!savedMilestone || savedMilestone == null) {
           logger.error(
-            `[Milestone Service] :: Milestone ID ${id} does not exist`
-          );
-          return {
-            status: 404,
-            error: 'Milestone does not exist'
-          };
-        }
-
-        const { project } = existingMilestone;
-        if (
-          project.status === projectStatus.IN_PROGRESS ||
-          project.startBlockchainStatus !== blockchainStatus.PENDING
-        ) {
-          logger.error(
-            `[Milestone Service] :: Project ${
-              project.id
-            } is IN PROGRESS or sent to the blockchain`
-          );
-          return {
-            error:
-              'Milestone cannot be updated. Project has already started or sent to the blockchain.',
-            status: 409
-          };
-        }
-
-        if (this.canMilestoneUpdate(toUpdateMilestone)) {
-          const savedMilestone = await this.milestoneDao.updateMilestone(
-            toUpdateMilestone,
-            id
-          );
-
-          if (!savedMilestone || savedMilestone == null) {
-            logger.error(
-              `[Milestone Service] :: Milestone ID ${id} could not be updated`,
-              savedMilestone
-            );
-            return {
-              status: 404,
-              error: 'Milestone could not be updated'
-            };
-          }
-
-          logger.info(
-            '[Milestone Service] :: Milestone updated:',
+            `[Milestone Service] :: Milestone ID ${id} could not be updated`,
             savedMilestone
           );
-
-          return savedMilestone;
+          throw new COAError('Milestone could not be updated');
         }
 
-        logger.error(
-          '[Milestone Service] :: Milestone not valid',
-          toUpdateMilestone
+        logger.info(
+          '[Milestone Service] :: Milestone updated:',
+          savedMilestone
         );
-        return {
-          status: 409,
-          error: 'Milestone has empty mandatory fields'
-        };
+
+        return savedMilestone;
       }
 
-      return toUpdateMilestone;
-    } catch (error) {
-      logger.error('[Milestone Service] :: Error updating Milestone:', error);
-      return { status: 500, error: 'Error updating Milestone' };
+      logger.error(
+        '[Milestone Service] :: Milestone not valid',
+        toUpdateMilestone
+      );
+      throw new MandatoryFieldsEmptyError(
+        'Milestone has empty mandatory fields'
+      );
     }
+
+    return toUpdateMilestone;
   },
 
   async milestoneHasActivities(milestoneId) {
@@ -507,7 +489,9 @@ module.exports = {
       oracleId
     );
     try {
-      const milestones = await this.activityService.getMilestonesAsOracle(oracleId);
+      const milestones = await this.activityService.getMilestonesAsOracle(
+        oracleId
+      );
 
       if (milestones.error) {
         return milestones;
@@ -515,7 +499,9 @@ module.exports = {
 
       const projects = await Promise.all(
         milestones.map(async milestoneId => {
-          const milestone = await this.milestoneDao.getMilestoneById(milestoneId);
+          const milestone = await this.milestoneDao.getMilestoneById(
+            milestoneId
+          );
           return milestone.project;
         })
       );
@@ -533,7 +519,9 @@ module.exports = {
       projectId
     );
     try {
-      const milestones = await this.milestoneDao.getMilestonesByProject(projectId);
+      const milestones = await this.milestoneDao.getMilestonesByProject(
+        projectId
+      );
 
       if (!milestones || milestones == null) {
         return milestones;
@@ -632,123 +620,104 @@ module.exports = {
       `[Milestone Service] :: Updating Milestone ID ${milestoneId} budget status. 
       New status ID: ${budgetStatusId}`
     );
-    try {
-      if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
-        logger.error(
-          `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
-        );
-        return {
-          status: 404,
-          error: 'Budget transfer status is not valid'
-        };
-      }
-
-      const milestone = await this.milestoneDao.getMilestoneByIdWithProject(
-        milestoneId
-      );
-
-      if (!milestone || milestone == null) {
-        logger.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} does not exist`
-        );
-        return {
-          status: 404,
-          error: 'Milestone does not exist'
-        };
-      }
-
-      const { project } = milestone;
-      if (project.status !== projectStatus.IN_PROGRESS) {
-        logger.error(
-          `[Milestone Service] :: Project ${project.id} is not IN PROGRESS`
-        );
-        return {
-          error:
-            'Milestone budget status cannot be updated. Project is not started.',
-          status: 409
-        };
-      }
-
-      const milestones = await this.getMilestonesByProject(project.id);
-      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
-      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
-
-      if (
-        budgetStatusId === milestoneBudgetStatus.CLAIMABLE &&
-        (milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED ||
-          (previousMilestone !== false &&
-            milestones[previousMilestone].budgetStatus.id !==
-              milestoneBudgetStatus.FUNDED))
-      ) {
-        logger.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} is not blocked 
-          or previous milestones are not funded`
-        );
-        return {
-          status: 409,
-          error:
-            'All previous milestones need to be funded before making this milestone claimable.'
-        };
-      }
-
-      if (
-        budgetStatusId === milestoneBudgetStatus.CLAIMED &&
-        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMABLE
-      ) {
-        logger.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} is not claimable.`
-        );
-        return {
-          status: 409,
-          error: 'Only claimable milestones can be claimed'
-        };
-      }
-
-      if (
-        budgetStatusId === milestoneBudgetStatus.FUNDED &&
-        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMED
-      ) {
-        logger.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} needs to be claimed 
-          in order to set the budget status to Funded`
-        );
-        return {
-          status: 409,
-          error:
-            'The milestone needs to be Claimed in order to set the budget status to Funded'
-        };
-      }
-
-      if (budgetStatusId === milestoneBudgetStatus.CLAIMED) {
-        logger.info(
-          `[Milestone Service] :: set claimed Milestone ID ${milestoneId} on Blockchain`
-        );
-        await fastify.eth.claimMilestone({
-          sender: user.address,
-          privKey: user.privKey,
-          milestoneId,
-          projectId: milestone.project.id
-        });
-      }
-
-      if (budgetStatusId === milestoneBudgetStatus.FUNDED) {
-        logger.info(
-          `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
-        );
-        await fastify.eth.setMilestoneFunded({
-          milestoneId,
-          projectId: milestone.project.id
-        });
-      }
-
-      return milestone;
-    } catch (error) {
+    if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
       logger.error(
-        '[Milestone Service] :: Error updating Milestone budget status:',
-        error
+        `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
       );
-      throw Error('Error updating Milestone budget transfer status');
+      throw new BudgetTransferStatusNotValidError(
+        'Budget transfer status is not valid'
+      );
     }
+
+    const milestone = await this.milestoneDao.getMilestoneByIdWithProject(
+      milestoneId
+    );
+
+    if (!milestone || milestone == null) {
+      logger.error(
+        `[Milestone Service] :: Milestone ID ${milestoneId} does not exist`
+      );
+      throw new MilestoneNotFoundError('Milestone does not exist');
+    }
+
+    const { project } = milestone;
+    if (project.status !== projectStatus.IN_PROGRESS) {
+      logger.error(
+        `[Milestone Service] :: Project ${project.id} is not IN PROGRESS`
+      );
+      throw new ProjectStatusNotValidError(
+        'Milestone budget status cannot be updated. Project is not started.'
+      );
+    }
+
+    const milestones = await this.getMilestonesByProject(project.id);
+    const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
+    const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
+
+    if (
+      budgetStatusId === milestoneBudgetStatus.CLAIMABLE &&
+      (milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED ||
+        (previousMilestone !== false &&
+          milestones[previousMilestone].budgetStatus.id !==
+            milestoneBudgetStatus.FUNDED))
+    ) {
+      logger.error(
+        `[Milestone Service] :: Milestone ID ${milestoneId} is not blocked 
+          or previous milestones are not funded`
+      );
+      throw new PreviousMilestonesAreNotAllFundedError(
+        'All previous milestones need to be funded before making this milestone claimable.'
+      );
+    }
+
+    if (
+      budgetStatusId === milestoneBudgetStatus.CLAIMED &&
+      milestone.budgetStatus !== milestoneBudgetStatus.CLAIMABLE
+    ) {
+      logger.error(
+        `[Milestone Service] :: Milestone ID ${milestoneId} is not claimable.`
+      );
+      throw new MilestoneBudgetStatusIsNotValidError(
+        'Only claimable milestones can be claimed'
+      );
+    }
+
+    if (
+      budgetStatusId === milestoneBudgetStatus.FUNDED &&
+      milestone.budgetStatus !== milestoneBudgetStatus.CLAIMED
+    ) {
+      logger.error(
+        `[Milestone Service] :: Milestone ID ${milestoneId} needs to be claimed 
+          in order to set the budget status to Funded`
+      );
+      throw new MilestoneBudgetStatusIsNotValidError(
+        'The milestone needs to be Claimed in order to set the budget status to Funded'
+      );
+    }
+
+    if (budgetStatusId === milestoneBudgetStatus.CLAIMED) {
+      logger.info(
+        `[Milestone Service] :: set claimed Milestone ID ${milestoneId} on Blockchain`
+      );
+      await fastify.eth.claimMilestone({
+        sender: user.address,
+        privKey: user.privKey,
+        milestoneId,
+        projectId: milestone.project.id
+      });
+    }
+
+    if (budgetStatusId === milestoneBudgetStatus.FUNDED) {
+      logger.info(
+        `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
+      );
+      await fastify.eth.setMilestoneFunded({
+        milestoneId,
+        projectId: milestone.project.id
+      });
+    }
+
+    return milestone;
   },
 
   async getAllBudgetStatus() {
