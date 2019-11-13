@@ -6,11 +6,10 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const apiHelper = require('../../services/helper');
+const photoService = require('../../services/photoService');
 
 module.exports = {
   getPhoto: fastify => async (request, reply) => {
-    const { photoService } = apiHelper.helper.services;
     const { photoId } = request.params;
     fastify.log.info(`[Photo Routes] :: Getting photo ID ${photoId}`);
 
