@@ -9,7 +9,6 @@
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
 const {
-  userRegistrationStatus,
   userRoles,
   blockchainStatus,
   projectStatus
@@ -57,36 +56,15 @@ module.exports = {
           username: user.username,
           email: user.email,
           id: user.id,
-          role: user.role,
-          registrationStatus: user.registrationStatus
+          role: user.role
         };
 
-        if (
-          user.registrationStatus === userRegistrationStatus.PENDING_APPROVAL
-        ) {
-          logger.error(
-            `[User Service] :: User ID ${
-              user.id
-            } registration status is Pending Approval`
-          );
+        if (user.blocked) {
+          logger.error(`[User Service] :: User ID ${user.id} is blocked`);
 
           return {
             status: 409,
-            error: 'User registration is still pending approval by the admin',
-            user: authenticatedUser
-          };
-        }
-
-        if (user.registrationStatus === userRegistrationStatus.REJECTED) {
-          logger.error(
-            `[User Service] :: User ID ${
-              user.id
-            } registration status is Rejected`
-          );
-
-          return {
-            status: 409,
-            error: 'User registration was rejected by the admin',
+            error: 'User was blocked by an admin',
             user: authenticatedUser
           };
         }
@@ -171,7 +149,6 @@ module.exports = {
         pwd: hashedPwd,
         role,
         address: '0x0', //account.address,
-        registrationStatus: 1,
         transferBlockchainStatus: blockchainStatus.SENT,
         privKey: account.privateKey
       };
@@ -203,14 +180,14 @@ module.exports = {
       //   );
 
       // sends welcome email
-      await this.mailService.sendMail(
-        '"Circles of Angels Support" <coa@support.com>',
-        email,
-        'Circles of Angels - Welcome!',
-        `<p>Your Circles Of Angels account was created successfully! </br></p>
-          <p>We are reviewing your account details. You will be notified once we are done. </br></p>
-          <p>Thank you for your support. </br></p>`
-      );
+      // await this.mailService.sendMail(
+      //   '"Circles of Angels Support" <coa@support.com>',
+      //   email,
+      //   'Circles of Angels - Welcome!',
+      //   `<p>Your Circles Of Angels account was created successfully! </br></p>
+      //     <p>We are reviewing your account details. You will be notified once we are done. </br></p>
+      //     <p>Thank you for your support. </br></p>`
+      // );
 
       return savedUser;
     } catch (error) {
@@ -265,7 +242,7 @@ module.exports = {
         };
       }
 
-      const { pwd, email, registrationStatus } = user;
+      const { pwd, email } = user;
       const newUser = { ...user };
 
       if (pwd) {
@@ -287,28 +264,9 @@ module.exports = {
         }
       }
 
-      // if (registrationStatus) {
-      //   const existingStatus = await this.userRegistrationStatusDao.getUserRegistrationStatusById(
-      //     registrationStatus
-      //   );
-
-      //   if (!existingStatus) {
-      //     logger.error(
-      //       `[User Service] :: Registration Status ID ${registrationStatus} does not exist`
-      //     );
-      //     return {
-      //       status: 404,
-      //       error: 'Registration status is not valid'
-      //     };
-      //   }
-      // }
-
       let updatedUser = newUser;
 
-      if (
-        registrationStatus &&
-        registrationStatus === userRegistrationStatus.APPROVED
-      ) {
+      if (!user.blocked) {
         const onConfirm = async () => {
           try {
             updatedUser = await this.userDao.updateUser(userId, newUser);
@@ -340,10 +298,7 @@ module.exports = {
         // );
       }
 
-      if (
-        registrationStatus &&
-        registrationStatus === userRegistrationStatus.REJECTED
-      ) {
+      if (user.blocked) {
         updatedUser = await this.userDao.updateUser(userId, newUser);
         const info = await this.mailService.sendMail(
           '"Circles of Angels Support" <coa@support.com>',
@@ -374,29 +329,6 @@ module.exports = {
     } catch (error) {
       logger.error('[User Service] :: Error updating User:', error);
       throw Error('Error updating User');
-    }
-  },
-
-  /**
-   * Gets all valid user registration status
-   * @returns registration status list | error
-   */
-  async getAllRegistrationStatus() {
-    logger.info('[User Service] :: Getting all User Registration Status');
-    try {
-      const userRegistrationStatusList = await this.userRegistrationStatusDao.getAllRegistrationStatus();
-
-      if (userRegistrationStatusList.length === 0) {
-        logger.info('[User Service] :: No User Registration Status loaded');
-      }
-
-      return userRegistrationStatusList;
-    } catch (error) {
-      logger.error(
-        '[User Service] :: Error getting all User Registration Status:',
-        error
-      );
-      throw Error('Error getting all User Registration Status');
     }
   },
 
@@ -521,10 +453,6 @@ module.exports = {
   async validUser(user, roleId) {
     const existentUser = await this.userDao.getUserById(user.id);
     const role = roleId ? existentUser.role.id === roleId : true;
-    return (
-      existentUser &&
-      existentUser.registrationStatus === userRegistrationStatus.APPROVED &&
-      role
-    );
+    return existentUser && !existentUser.blocked && role;
   }
 };

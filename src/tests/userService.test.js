@@ -7,7 +7,6 @@
  */
 
 const bcrypt = require('bcrypt');
-const { userRegistrationStatus, userRoles } = require('../rest/util/constants');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const { injectMocks } = require('../rest/util/injection');
@@ -292,7 +291,6 @@ describe('Testing userService getUserRole', () => {
 
 describe('Testing userService updateUser', () => {
   let userDao;
-  let userRegistrationStatusDao;
   let userService;
 
   const mockUser = testHelper.buildUserSe(1);
@@ -325,22 +323,9 @@ describe('Testing userService updateUser', () => {
       }
     };
 
-    userRegistrationStatusDao = {
-      async getUserRegistrationStatusById(registrationStatus) {
-        if (
-          Object.values(userRegistrationStatus).indexOf(registrationStatus) !==
-          -1
-        ) {
-          return registrationStatus;
-        }
-        return undefined;
-      }
-    };
-
     userService = require('../rest/services/userService');
     injectMocks(userService, {
-      userDao,
-      userRegistrationStatusDao
+      userDao
     });
 
     bcrypt.hash = jest.fn();
@@ -351,7 +336,7 @@ describe('Testing userService updateUser', () => {
       ...mockUser,
       pwd: 'atix2019',
       email: 'updated@test.com',
-      registrationStatus: userRegistrationStatus.APPROVED
+      blocked: false
     };
 
     const hashedPwd = '$2b$ae321f';
@@ -371,7 +356,7 @@ describe('Testing userService updateUser', () => {
     const toUpdateUser = {
       pwd: 'atix2019',
       email: 'updated@test.com',
-      registrationStatus: userRegistrationStatus.APPROVED
+      blocked: false
     };
 
     const expected = {
@@ -387,7 +372,7 @@ describe('Testing userService updateUser', () => {
     const toUpdateUser = {
       pwd: 'atix2019',
       email: 'existing@test.com',
-      registrationStatus: userRegistrationStatus.APPROVED
+      blocked: false
     };
 
     const expected = {
@@ -420,7 +405,7 @@ describe('Testing userService updateUser', () => {
     const toUpdateUser = {
       pwd: 'atix2019',
       email: 'updated@test.com',
-      registrationStatus: userRegistrationStatus.APPROVED
+      blocked: false
     };
 
     return expect(userService.updateUser(-1)).rejects.toEqual(
