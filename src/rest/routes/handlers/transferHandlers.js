@@ -6,11 +6,10 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const apiHelper = require('../../services/helper');
+const transferService = require('../../services/transferService');
 
 module.exports = {
   sendToVerification: fastify => async (request, reply) => {
-    const { transferService } = apiHelper.helper.services;
     fastify.log.info('[Transfer Routes] :: Send transfer to verification');
     const verification = await transferService.sendTransferToVerification({
       transferId: request.body.transferId,
@@ -28,7 +27,6 @@ module.exports = {
   },
 
   updateTransfer: fastify => async (request, reply) => {
-    const { transferService } = apiHelper.helper.services;
     fastify.log.info('[Transfer Routes] :: Update transfer state');
     const verification = await transferService.updateTransferState({
       transferId: request.params.id,
@@ -40,7 +38,6 @@ module.exports = {
   },
 
   getState: fastify => async (request, reply) => {
-    const { transferService } = apiHelper.helper.services;
     fastify.log.info(
       `[Transfer Routes] :: Getting state of user ${
         request.params.userId
@@ -61,7 +58,6 @@ module.exports = {
   },
 
   getTransfers: fastify => async (request, reply) => {
-    const { transferService } = apiHelper.helper.services;
     fastify.log.info(
       `[Transfer Routes] :: Getting transactions of project ${
         request.params.projectId
