@@ -13,6 +13,7 @@ const projectService = require('./services/projectService');
 
 const userDao = require('./dao/userDao');
 const projectDao = require('./dao/projectDao');
+const roleDao = require('./dao/roleDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -49,6 +50,7 @@ module.exports = fastify => {
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
       userRegistrationStatusDao: undefined,
+      roleDao,
       questionnaireService: undefined
     };
 
@@ -65,11 +67,14 @@ module.exports = fastify => {
       userDao,
       projectExperienceDao: undefined
     };
+
     injectDependencies(service, dependencies);
   }
 
   function configureDAOs(models) {
     injectModel(userDao, models.user);
+    injectModel(roleDao, models.role);
+    injectModel(projectDao, models.project);
   }
   function configureServices() {
     configureMailService(mailService);
