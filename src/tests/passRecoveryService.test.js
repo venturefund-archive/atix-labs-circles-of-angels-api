@@ -40,7 +40,7 @@ describe('Testing PassRecoveryService startPassRecoveryProcess', () => {
     bcrypt.compare = jest.fn();
   });
 
-  it('should return success when the given email is found', async () => {
+  it('should success when the given email is found', async () => {
     bcrypt.compare.mockReturnValueOnce(true);
     const response = await passRecoveryService.startPassRecoveryProcess(
       'dummy@email.com'
@@ -84,7 +84,7 @@ describe('Testing PassRecoveryService updatePassword', () => {
     bcrypt.compare = jest.fn();
   });
 
-  it('should return the email when the token and password are valid', async () => {
+  it('should succes when the token and password are valid', async () => {
     bcrypt.compare.mockReturnValueOnce(true);
     const response = passRecoveryService.updatePassword(
       '1d362dd70c3288ea7db239d04b57eea767112b0c77c5548a00',
@@ -105,7 +105,7 @@ describe('Testing PassRecoveryService updatePassword', () => {
     expect(response).toEqual({ status: 409, error: 'Token has expired' });
   });
 
-  // // TODO: this is not implemented but the password should be valid (lenght and characters)
+  // TODO : this is not implemented yet, but the password should be evaluated (length and characters required) 
   it.skip('should fail with an error when the password is not valid', () => {});
 
 });
