@@ -8,17 +8,24 @@
 
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-const nodemailer = require('nodemailer');
 const { isEmpty } = require('lodash');
+const { frontendUrl, support } = require('config');
+
+// TODO : replace with a logger;
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
 
 module.exports = {
   async startPassRecoveryProcess(email) {
-    fastify.log.info(
+    logger.info(
       '[Pass Recovery Service] :: Starting pass recovery for email:',
       email
     );
     try {
-      const user = await userDao.getUserByEmail(email);
+      const user = await this.userDao.getUserByEmail(email);
       if (!user) {
         return {
           status: 401,
@@ -29,9 +36,11 @@ module.exports = {
       const hash = await crypto.randomBytes(25);
       const token = hash.toString('hex');
 
-      const recovery = await passRecoveryDao.createRecovery(email, token);
+      const recovery = await this.passRecoveryDao.createRecovery(email, token);
+
       if (!recovery) return { status: 402, error: 'Cant create recovery' };
-      const info = await transporter.sendMail({
+
+      const info = await this.mailService.sendMail({
         from: '"Circles of Angels Support" <coa@support.com>',
         to: email,
         subject: 'Circles of Angels - Recovery Password',
@@ -46,7 +55,7 @@ module.exports = {
 
       return { email: info.accepted[0] };
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Pass Recovery Service] :: Error staring recovery process:',
         error
       );
@@ -56,47 +65,41 @@ module.exports = {
 
   async updatePassword(token, password) {
     try {
-      const recover = await passRecoveryDao.findRecoverBytoken(token);
+      const recover = await this.passRecoveryDao.findRecoverBytoken(token);
 
       if (!recover) {
-        fastify.log.error(
-          '[Pass Recovery Service] :: Token not found: ',
-          token
-        );
+        logger.error('[Pass Recovery Service] :: Token not found: ', token);
         return { status: 404, error: 'Invalid Token' };
       }
 
       const hoursFromCreation =
         (new Date() - new Date(recover.createdAt)) / 3600000;
       if (hoursFromCreation > support.recoveryTime) {
-        fastify.log.error(
-          '[Pass Recovery Service] :: Token has expired: ',
-          token
-        );
-        await passRecoveryDao.deleteRecoverByToken(token);
+        logger.error('[Pass Recovery Service] :: Token has expired: ', token);
+        await this.passRecoveryDao.deleteRecoverByToken(token);
         return { status: 409, error: 'Token has expired' };
       }
 
       if (!isEmpty(recover)) {
         const hashedPwd = await bcrypt.hash(password, 10);
-        const updated = await userDao.updatePasswordByMail(
+        const updated = await this.userDao.updatePasswordByMail(
           recover.email,
           hashedPwd
         );
         if (!updated) {
-          fastify.log.error(
+          logger.error(
             '[Pass Recovery Service] :: Error updating password in database for user: ',
             recover.email
           );
           return { status: 500, error: 'Error updating password' };
         }
-        await passRecoveryDao.deleteRecoverByToken(token);
+        await this.passRecoveryDao.deleteRecoverByToken(token);
         return updated;
       }
 
       return { status: 404, error: 'Invalid token' };
     } catch (error) {
-      fastify.log.error('[Pass Recovery Service] :: Error updating password');
+      logger.error('[Pass Recovery Service] :: Error updating password');
       throw Error('Error updating password');
     }
   }
