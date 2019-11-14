@@ -5,11 +5,6 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
-
-// const { userRegistrationStatus, userRoles } = require('../rest/util/constants');
-// const testHelper = require('./testHelper');
-// const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
-
 const bcrypt = require('bcrypt');
 const { buildGenericUserWithEmail } = require('./testHelper');
 const { passRecovery, passRecoveryWithExpiredToken } = require('./mockModels');
@@ -53,7 +48,6 @@ describe('Testing PassRecoveryService startPassRecoveryProcess', () => {
     const response = await passRecoveryService.startPassRecoveryProcess(
       'notvalid@email.com'
     );
-    // expect(response).toThrow(Error);
     expect(response).toEqual({
       status: 401,
       error: 'There is no user associated with that email'
@@ -62,7 +56,6 @@ describe('Testing PassRecoveryService startPassRecoveryProcess', () => {
 });
 
 describe('Testing PassRecoveryService updatePassword', () => {
-  // this.passRecoveryDao.findRecoverBytoken(token)
   let passRecoveryDao;
   let userDao;
   let passRecoveryService;
