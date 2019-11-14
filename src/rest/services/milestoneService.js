@@ -11,7 +11,7 @@ const XLSX = require('xlsx');
 const {
   COAError,
   BudgetTransferStatusNotValidError,
-  MandatoryFieldsEmptyError,
+  MilestoneMandatoryFieldsEmptyError,
   MilestoneBudgetStatusIsNotValidError,
   MilestoneNotFoundError,
   PreviousMilestonesAreNotAllFundedError,
@@ -56,7 +56,7 @@ module.exports = {
     }
 
     logger.error('[Milestone Service] :: Milestone not valid', milestone);
-    throw new MandatoryFieldsEmptyError('Milestone has empty mandatory fields');
+    throw new MilestoneMandatoryFieldsEmptyError('Milestone has empty mandatory fields');
   },
 
   /**
@@ -208,7 +208,7 @@ module.exports = {
         '[Milestone Service] :: Milestone not valid',
         toUpdateMilestone
       );
-      throw new MandatoryFieldsEmptyError(
+      throw new MilestoneMandatoryFieldsEmptyError(
         'Milestone has empty mandatory fields'
       );
     }

@@ -10,7 +10,7 @@ module.exports = {
   UserStillNeedsApprovalError: require('../UserStillNeedsApprovalError'),
   UserWithoutRoleError: require('../UserWithoutRoleError'),
   BudgetTransferStatusNotValidError: require('../BudgetTransferStatusNotValidError'),
-  MandatoryFieldsEmptyError: require('../MandatoryFieldsEmptyError'),
+  MilestoneMandatoryFieldsEmptyError: require('../MilestoneMandatoryFieldsEmptyError'),
   MilestoneBudgetStatusIsNotValidError: require('../MilestoneBudgetStatusIsNotValidError'),
   MilestoneNotFoundError: require('../MilestoneNotFoundError'),
   PreviousMilestonesAreNotAllFundedError: require('../PreviousMilestonesAreNotAllFundedError'),
