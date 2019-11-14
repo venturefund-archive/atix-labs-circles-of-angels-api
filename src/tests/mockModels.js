@@ -10,7 +10,6 @@ const configs = require('config');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 
 const {
-  userRegistrationStatus,
   projectStatus,
   blockchainStatus,
   userRoles,
@@ -29,7 +28,7 @@ exports.userOracle = {
   email: 'oracle@test.com',
   id: userOracleId,
   pwd: '$2a$10$phVS6ulzQvLpjIWE8bkyf.1EXtwcKUD7pgpe0CK7bYkYXmD5Ux2YK',
-  registrationStatus: userRegistrationStatus.APPROVED,
+  blocked: false,
   role: userRoles.ORACLE,
   updatedAt: '2019-05-28T03:00:00.000Z',
   username: 'Oracle 1',
@@ -43,7 +42,21 @@ exports.userSE = {
   email: 'user@test.com',
   id: userSeId,
   pwd: '$2a$10$phVS6ulzQvLpjIWE8bkyf.1EXtwcKUD7pgpe0CK7bYkYXmD5Ux2YK',
-  registrationStatus: userRegistrationStatus.APPROVED,
+  blocked: false,
+  role: userRoles.SOCIAL_ENTREPRENEUR,
+  updatedAt: '2019-05-28T03:00:00.000Z',
+  username: 'SE 1',
+  transferBlockchainStatus: blockchainStatus.CONFIRMED
+};
+
+exports.blockedUser = {
+  address: ethServicesMock.createAccount().address,
+  privKey: ethServicesMock.createAccount().privateKey,
+  createdAt: '2019-04-16T03:00:00.000Z',
+  email: 'user@blocked.com',
+  id: userSeId,
+  pwd: '$2a$10$phVS6ulzQvLpjIWE8bkyf.1EXtwcKUD7pgpe0CK7bYkYXmD5Ux2YK',
+  blocked: false,
   role: userRoles.SOCIAL_ENTREPRENEUR,
   updatedAt: '2019-05-28T03:00:00.000Z',
   username: 'SE 1',
@@ -57,7 +70,7 @@ exports.userAdmin = {
   email: 'admin@test.com',
   id: userAdminId,
   pwd: '$2a$10$phVS6ulzQvLpjIWE8bkyf.1EXtwcKUD7pgpe0CK7bYkYXmD5Ux2YK',
-  registrationStatus: userRegistrationStatus.APPROVED,
+  blocked: false,
   role: userRoles.BO_ADMIN,
   updatedAt: '2019-05-28T03:00:00.000Z',
   username: 'Admin',
@@ -71,7 +84,7 @@ exports.userFunder = {
   email: 'funder@test.com',
   id: userFunderId,
   pwd: '$2a$10$phVS6ulzQvLpjIWE8bkyf.1EXtwcKUD7pgpe0CK7bYkYXmD5Ux2YK',
-  registrationStatus: userRegistrationStatus.APPROVED,
+  blocked: false,
   role: userRoles.IMPACT_FUNDER,
   updatedAt: '2019-05-28T03:00:00.000Z',
   username: 'Funder 1',
