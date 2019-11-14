@@ -14,6 +14,13 @@ const mime = require('mime');
 const { isEmpty, uniq } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 const {
+  FileTypeNotValid,
+  ImageSizeNotValid,
+  ProjectDoNotExist,
+  ActionDeniedForUser
+  ProjectNotUpdated,
+} = require('../errors/exporter/ErrorExporter');
+const {
   addPathToFilesProperties,
   addTimestampToFilename
 } = require('../util/files');
@@ -359,10 +366,11 @@ module.exports = {
         logger.error(
           `[Project Service] :: Project ID ${id} does not exist`
         );
-        return {
-          status: 404,
-          error: 'Project does not exist'
-        };
+        // return {
+        //   status: 404,
+        //   error: 'Project does not exist'
+        // };
+        throw new ProjectDoNotExist(`Project ID ${id} does not exist`);
       }
 
       if (newProject.status) {
@@ -380,10 +388,11 @@ module.exports = {
           logger.error(
             '[Project Service] :: Could not change project status. User is not an admin'
           );
-          return {
-            status: 403,
-            error: 'User needs admin privileges to perform this action'
-          };
+          // return {
+          //   status: 403,
+          //   error: 'User needs admin privileges to perform this action'
+          // };
+          throw new ActionDeniedForUser('User needs admin privileges to perform this action');
         }
       }
 
@@ -395,11 +404,12 @@ module.exports = {
           "[Project Service] :: Can't update project IN PROGRESS or SENT to the blockchain",
           id
         );
-        return {
-          status: 409,
-          error:
-            'Project cannot be updated. It has already started or sent to the blockchain.'
-        };
+        // return {
+        //   status: 409,
+        //   error:
+        //     'Project cannot be updated. It has already started or sent to the blockchain.'
+        // };
+        throw new ProjectNotUpdated('Project cannot be updated. It has already started or sent to the blockchain');
       }
 
       if (projectCardPhoto || projectCoverPhoto) {

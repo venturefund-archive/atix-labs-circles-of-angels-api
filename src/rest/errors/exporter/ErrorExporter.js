@@ -8,3 +8,6 @@ export const UserRejectedError = require('../UserRejectedError');
 export const UserRoleDoesNotExistsError = require('../UserRoleDoesNotExistsError');
 export const UserStillNeedsApprovalError = require('../UserStillNeedsApprovalError');
 export const UserWithoutRoleError = require('../UserWithoutRoleError');
+export const FileTypeNotValid = require('../FileTypeNotValidError');
+export const ImageSizeNotValid = require('../ImageSizeNotValidError');
+export const ProjectDoNotExist = require('../ProjectDoNotExistError');

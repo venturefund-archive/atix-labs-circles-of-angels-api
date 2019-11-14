@@ -7,9 +7,14 @@
  */
 
 const apiHelper = require('../../services/helper');
+const {
+  FileTypeNotValid,
+  ImageSizeNotValid
+} = require('../../errors/exporter/ErrorExporter');
 
 module.exports = {
   createProject: fastify => async (req, reply) => {
+    
     const { projectService } = apiHelper.helper.services;
     fastify.log.info(
       '[Project Routes] :: POST request at /project/create:',
@@ -62,7 +67,12 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error creating project: ', error);
-      reply.status(500).send({ error: 'Error creating project' });
+      if (error instanceof FileTypeNotValid) {
+        reply.status(409).send({ error: error.errorDescription });
+      }
+      if (error instanceof ImageSizeNotValid) {
+        reply.status(409).send({ error: error.errorDescription });
+      }
     }
   },
 
