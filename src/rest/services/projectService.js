@@ -77,10 +77,11 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Agreement',
           projectAgreement
         );
-        return {
-          status: 409,
-          error: 'Invalid file type for the uploaded Agreement'
-        };
+        // return {
+        //   status: 409,
+        //   error: 'Invalid file type for the uploaded Agreement'
+        // };
+        throw new FileTypeNotValid('Invalid file type for the uploaded Agreement');
       }
 
       if (!projectProposal || !this.checkProposalType(projectProposal)) {
@@ -88,10 +89,11 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Proposal',
           projectProposal
         );
-        return {
-          status: 409,
-          error: 'Invalid file type for the uploaded Proposal'
-        };
+        // return {
+        //   status: 409,
+        //   error: 'Invalid file type for the uploaded Proposal'
+        // };
+        throw new FileTypeNotValid('Invalid file type for the uploaded Proposal');
       }
 
       if (!projectCardPhoto || !this.checkCardPhotoType(projectCardPhoto)) {
@@ -99,10 +101,11 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Card Photo',
           projectCardPhoto
         );
-        return {
-          status: 409,
-          error: 'Invalid file type for the uploaded card photo'
-        };
+        // return {
+        //   status: 409,
+        //   error: 'Invalid file type for the uploaded card photo'
+        // };
+        throw new FileTypeNotValid('Invalid file type for the uploaded card photo');
       }
 
       if (!projectCoverPhoto || !this.checkCoverPhotoType(projectCoverPhoto)) {
@@ -110,10 +113,11 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Cover Photo',
           projectCoverPhoto
         );
-        return {
-          status: 409,
-          error: 'Invalid file type for the uploaded cover photo'
-        };
+        // return {
+        //   status: 409,
+        //   error: 'Invalid file type for the uploaded cover photo'
+        // };
+        throw new FileTypeNotValid('Invalid file type for the uploaded cover photo');
       }
 
       if (!this.checkPhotoSize(projectCardPhoto)) {
@@ -121,11 +125,12 @@ module.exports = {
           '[Project Service] :: Size of Project Card Photo too high',
           projectCardPhoto
         );
-        return {
-          status: 409,
-          error: `Invalid size for the uploaded card photo, higher than ${MAX_PHOTO_SIZE /
-            1000} MB`
-        };
+        // return {
+        //   status: 409,
+        //   error: `Invalid size for the uploaded card photo, higher than ${MAX_PHOTO_SIZE /
+        //     1000} MB`
+        // };
+        throw new ImageSizeNotValid(`Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE} /1000} MB`);
       }
 
       if (!this.checkPhotoSize(projectCoverPhoto)) {
@@ -133,11 +138,12 @@ module.exports = {
           '[Project Service] :: Size of Project Cover Photo too high',
           projectCoverPhoto
         );
-        return {
-          status: 409,
-          error: `Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE /
-            1000} MB`
-        };
+        // return {
+        //   status: 409,
+        //   error: `Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE /
+        //     1000} MB`
+        // };
+        throw new ImageSizeNotValid(`Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE} /1000} MB`);
       }
 
       if (
@@ -148,10 +154,11 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Milestones file',
           projectMilestones
         );
-        return {
-          status: 409,
-          error: 'Invalid file type for the uploaded Milestones file'
-        };
+        // return {
+        //   status: 409,
+        //   error: 'Invalid file type for the uploaded Milestones file'
+        // };
+        throw new FileTypeNotValid('Invalid file type for the uploaded Milestones file');
       }
 
       const savedProject = await this.projectDao.saveProject(newProject);
@@ -275,7 +282,8 @@ module.exports = {
       return response;
     } catch (err) {
       logger.error('[Project Service] :: Error creating Project:', err);
-      throw Error('Error creating Project');
+      // throw Error('Error creating Project');
+      throw new ProjectNotCreated('Error creating Project');
     }
   },
 
