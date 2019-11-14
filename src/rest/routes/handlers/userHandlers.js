@@ -107,7 +107,7 @@ module.exports = {
             expires: expirationDate
             // secure: true
           })
-          .send(user);
+          .redirect('/explore-projects')
       }
     } catch (err) {
       reply
