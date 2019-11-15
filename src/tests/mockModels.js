@@ -21,6 +21,21 @@ const userAdminId = 1;
 const userSeId = 2;
 const userFunderId = 3;
 const userOracleId = 4;
+const genericUserId = userOracleId;
+
+exports.genericUser = userEmail => ({
+  address: ethServicesMock.createAccount().address,
+  privKey: ethServicesMock.createAccount().privateKey,
+  createdAt: '2019-04-16T03:00:00.000Z',
+  email: userEmail,
+  id: genericUserId,
+  pwd: '$2a$10$phVS6ulzQvLpjIWE8bkyf.1EXtwcKUD7pgpe0CK7bYkYXmD5Ux2YK',
+  registrationStatus: userRegistrationStatus.APPROVED,
+  role: userRoles.ORACLE,
+  updatedAt: '2019-05-28T03:00:00.000Z',
+  username: 'Social Entrepreneur Rejected',
+  transferBlockchainStatus: blockchainStatus.CONFIRMED
+});
 
 exports.userOracle = {
   address: ethServicesMock.createAccount().address,
@@ -330,3 +345,17 @@ exports.photos = [
   { id: 1, path: `${configs.fileServer.filePath}/projectCoverPhoto.png` },
   { id: 2, path: `${configs.fileServer.filePath}/projectCardPhoto.png` }
 ];
+
+exports.passRecovery = {
+  id: 1,
+  email: 'dummy@email.com',
+  token: '1d362dd70c3288ea7db239d04b57eea767112b0c77c5548a00',
+  createdAt: new Date()
+};
+
+exports.passRecoveryWithExpiredToken = {
+  id: 2,
+  email: 'invalid@email.com',
+  token: '1d362dd70c3288ea7db239d04b57eea767112b0c77c5548a00',
+  createdAt: '1900-04-16T03:00:00.000Z'
+};
