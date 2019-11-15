@@ -8,13 +8,22 @@
 
 const apiHelper = require('../../services/helper');
 const {
-  FileTypeNotValid,
-  ImageSizeNotValid
+  FileTypeNotValidError,
+  ImageSizeNotValidError,
+  ProjectNotCreatedError,
+  ProjectNotFoundError,
+  ProjectNotUpdatedError,
+  ActionDeniedForUserError,
+  ReadingProjectError,
+  ReadingFileError,
+  UpdatingAgreementError,
+  ProjectWithNoAgreementError,
+  DownloadingAgreementError,
+  GettingProjectsError
 } = require('../../errors/exporter/ErrorExporter');
 
 module.exports = {
   createProject: fastify => async (req, reply) => {
-    
     const { projectService } = apiHelper.helper.services;
     fastify.log.info(
       '[Project Routes] :: POST request at /project/create:',
@@ -67,11 +76,15 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error creating project: ', error);
-      if (error instanceof FileTypeNotValid) {
+      if (
+        error instanceof FileTypeNotValidError ||
+        error instanceof ImageSizeNotValidError
+      ) {
         reply.status(409).send({ error: error.errorDescription });
-      }
-      if (error instanceof ImageSizeNotValid) {
-        reply.status(409).send({ error: error.errorDescription });
+      } else if (error instanceof ProjectNotCreatedError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error creating project' });
       }
     }
   },
@@ -84,7 +97,11 @@ module.exports = {
       reply.send(projects);
     } catch (error) {
       fastify.log.error(error);
-      reply.status(500).send({ error: 'Error getting projects' });
+      if (error instanceof ReadingProjectError) {
+        reply.status(500).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error getting projects' });
+      }
     }
   },
 
@@ -134,7 +151,11 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error getting project');
-      reply.status(500).send({ error: 'Error getting project' });
+      if (error instanceof ReadingProjectError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error getting project' });
+      }
     }
   },
 
@@ -202,7 +223,11 @@ module.exports = {
         '[Project Routes] :: Error getting milestones template:',
         error
       );
-      reply.status(500).send({ error: 'Error getting milestones template' });
+      if (error instanceof ReadingFileError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error getting milestones template' });
+      }
     }
   },
 
@@ -235,9 +260,13 @@ module.exports = {
         '[Project Routes] :: Error getting project proposal template:',
         error
       );
-      reply
-        .status(500)
-        .send({ error: 'Error getting  project proposal template' });
+      if (error instanceof ReadingFileError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else {
+        reply
+          .status(500)
+          .send({ error: 'Error getting  project proposal template' });
+      }
     }
   },
 
@@ -265,7 +294,11 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error(error);
-      reply.status(500).send({ error: 'Error getting milestones file' });
+      if (error instanceof ReadingFileError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error getting milestones file' });
+      }
     }
   },
 
@@ -300,7 +333,13 @@ module.exports = {
         '[Project Routes] :: Error uploading agreement:',
         error
       );
-      reply.status(500).send({ error: 'Error uploading agreement' });
+      if (error instanceof ProjectNotFoundError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else if (error instanceof UpdatingAgreementError) {
+        reply.status(400).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error uploading agreement' });
+      }
     }
   },
 
@@ -329,7 +368,18 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error getting agreement:', error);
-      reply.status(500).send({ error: 'Error getting agreement' });
+      if (error instanceof DownloadingAgreementError) {
+        reply.status(400).send({ error: error.errorDescription });
+      } else if (
+        error instanceof ProjectNotFoundError ||
+        error instanceof ReadingFileError
+      ) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else if (error instanceof ProjectWithNoAgreementError) {
+        reply.status(409).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error getting agreement' });
+      }
     }
   },
 
@@ -358,7 +408,18 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error getting proposal:', error);
-      reply.status(500).send({ error: 'Error getting proposal' });
+      if (error instanceof DownloadingAgreementError) {
+        reply.status(400).send({ error: error.errorDescription });
+      } else if (
+        error instanceof ProjectNotFoundError ||
+        error instanceof ReadingFileError
+      ) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else if (error instanceof ProjectWithNoAgreementError) {
+        reply.status(409).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error getting proposal' });
+      }
     }
   },
 
@@ -403,7 +464,15 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error updating project: ', error);
-      reply.status(500).send({ error: 'Error updating project' });
+      if (error instanceof ProjectNotFoundError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else if (error instanceof ActionDeniedForUserError) {
+        reply.status(403).send({ error: error.errorDescription });
+      } else if (error instanceof ProjectNotUpdatedError) {
+        reply.status(409).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error updating project' });
+      }
     }
   },
 
@@ -427,7 +496,11 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error getting projects: ', error);
-      reply.status(500).send({ error: 'Error getting projects' });
+      if (error instanceof GettingProjectsError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({ error: 'Error getting projects' });
+      }
     }
   },
 
