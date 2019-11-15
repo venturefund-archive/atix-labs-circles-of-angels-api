@@ -27,6 +27,10 @@ module.exports = {
     try {
       const user = await this.userDao.getUserByEmail(email);
       if (!user) {
+        logger.info(
+          '[PassRecovery Service] :: There is no user associated with that email',
+          email
+        );
         return {
           status: 401,
           error: 'There is no user associated with that email'
@@ -38,7 +42,13 @@ module.exports = {
 
       const recovery = await this.passRecoveryDao.createRecovery(email, token);
 
-      if (!recovery) return { status: 402, error: 'Cant create recovery' };
+      if (!recovery) {
+        logger.info(
+          '[PassRecovery Service]:: Can not create recovery with email',
+          email
+        );
+        return { status: 402, error: 'Cant create recovery' };
+      }
 
       const info = await this.mailService.sendMail({
         from: '"Circles of Angels Support" <coa@support.com>',
@@ -50,8 +60,10 @@ module.exports = {
           <a href='${frontendUrl}/passwordRecovery?token=${token}'>Recovery Link</a>`
       });
 
-      if (!isEmpty(info.rejected))
+      if (!isEmpty(info.rejected)) {
+        logger.info('[PassRecovery Service] :: Invalid email', email);
         return { status: 403, error: 'Invalid Email' };
+      }
 
       return { email: info.accepted[0] };
     } catch (error) {
