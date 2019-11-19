@@ -7,6 +7,7 @@
  */
 
 const apiHelper = require('../../services/helper');
+const mapError = require('./mapError');
 
 module.exports = {
   createProject: fastify => async (req, reply) => {
@@ -124,7 +125,7 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error getting project');
-      reply.status(500).send({ error: 'Error getting project' });
+      reply.send(mapError(error));
     }
   },
 

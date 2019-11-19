@@ -22,6 +22,9 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+
+const { Errors } = require('./errors');
+
 const MAX_PHOTO_SIZE = 500000;
 
 const { savePhotoJpgFormat } = require('../util/files');
@@ -553,7 +556,8 @@ module.exports = {
 
       if (!project) {
         logger.error('[Project Service] :: Project not found:', projectId);
-        return { error: 'Project not found', status: 404 };
+        // return { error: 'Project not found', status: 404 };
+        throw Errors.ProjectNotFoundError;
       }
 
       const totalFunded = await this.getTotalFunded(projectId);
@@ -562,7 +566,8 @@ module.exports = {
       return project;
     } catch (error) {
       logger.error('[Project Service] :: Error getting project:', error);
-      throw Error('Error getting project');
+      // throw Error('Error getting project');
+      throw Errors.CouldNotReadProject;
     }
   },
 

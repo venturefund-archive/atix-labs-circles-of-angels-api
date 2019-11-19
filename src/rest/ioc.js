@@ -6,6 +6,10 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+import { zip } from 'lodash';
+import services from './services';
+import dependencies from './dependencies';
+
 const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
@@ -18,6 +22,12 @@ const passRecoveryService = require('./services/passRecoveryService');
 
 const passRecoveryDao = require('./dao/passRecoveryDao');
 const { injectDependencies } = require('./util/injection');
+const passRecoveryDao = require('./dao/passRecoveryDao');
+
+// const injectLocator = instance => {
+//   Object.defineProperty(instance, 'serviceLocator', { value: serviceLocator });
+// };
+//
 
 module.exports = fastify => {
   // Injects a model into a dao instance as the property `model`
