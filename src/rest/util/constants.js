@@ -46,12 +46,6 @@ const milestoneBudgetStatus = {
   BLOCKED: 4
 };
 
-const userRegistrationStatus = {
-  PENDING_APPROVAL: 1,
-  APPROVED: 2,
-  REJECTED: 3
-};
-
 const blockchainStatus = {
   PENDING: 1,
   SENT: 2,
@@ -104,7 +98,6 @@ module.exports = {
   activityStatus,
   userRoles,
   milestoneBudgetStatus,
-  userRegistrationStatus,
   blockchainStatus,
   xlsxConfigs,
   transactionTypes

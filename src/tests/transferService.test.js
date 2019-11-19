@@ -6,12 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const transferServiceBuilder = require('../rest/core/transferService');
-
-const fastify = {
-  log: { info: jest.fn(), error: jest.fn() },
-  configs: require('config')
-};
+const { injectMocks } = require('../rest/util/injection');
 
 describe('Testing projectService getTotalFundedByProject', () => {
   let transferDao;
@@ -49,8 +44,8 @@ describe('Testing projectService getTotalFundedByProject', () => {
       }
     };
 
-    transferService = transferServiceBuilder({
-      fastify,
+    transferService = require('../rest/services/transferService');
+    injectMocks(transferService, {
       transferDao
     });
   });
