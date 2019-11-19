@@ -22,6 +22,9 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+
+const { Errors } = require('./errors');
+
 const MAX_PHOTO_SIZE = 500000;
 
 const { savePhotoJpgFormat } = require('../util/files');
@@ -31,15 +34,14 @@ const unlinkPromise = promisify(fs.unlink);
 const cardPhotoSize = 700;
 const coverPhotoSize = 1400;
 
-const projectService = ({
-  fastify,
-  projectDao,
-  milestoneService,
-  photoService,
-  transferService,
-  userDao,
-  projectExperienceDao
-}) => ({
+// TODO : replace with a logger;
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
+
+module.exports = {
   /**
    * Uploads the project's images and files to the server.
    * Creates a new project with the information provided.
@@ -69,12 +71,12 @@ const projectService = ({
       newProject.status = projectStatus.PENDING_APPROVAL;
       newProject.blockchainStatus = blockchainStatus.PENDING;
 
-      fastify.log.info('[Project Service] :: Saving project:', newProject);
+      logger.info('[Project Service] :: Saving project:', newProject);
 
-      fastify.log.info('[Project Service] :: Checking file types');
+      logger.info('[Project Service] :: Checking file types');
 
       if (projectAgreement && !this.checkAgreementType(projectAgreement)) {
-        fastify.log.error(
+        logger.error(
           '[Project Service] :: Wrong file type for Project Agreement',
           projectAgreement
         );
@@ -85,7 +87,7 @@ const projectService = ({
       }
 
       if (!projectProposal || !this.checkProposalType(projectProposal)) {
-        fastify.log.error(
+        logger.error(
           '[Project Service] :: Wrong file type for Project Proposal',
           projectProposal
         );
@@ -96,7 +98,7 @@ const projectService = ({
       }
 
       if (!projectCardPhoto || !this.checkCardPhotoType(projectCardPhoto)) {
-        fastify.log.error(
+        logger.error(
           '[Project Service] :: Wrong file type for Project Card Photo',
           projectCardPhoto
         );
@@ -107,7 +109,7 @@ const projectService = ({
       }
 
       if (!projectCoverPhoto || !this.checkCoverPhotoType(projectCoverPhoto)) {
-        fastify.log.error(
+        logger.error(
           '[Project Service] :: Wrong file type for Project Cover Photo',
           projectCoverPhoto
         );
@@ -118,7 +120,7 @@ const projectService = ({
       }
 
       if (!this.checkPhotoSize(projectCardPhoto)) {
-        fastify.log.error(
+        logger.error(
           '[Project Service] :: Size of Project Card Photo too high',
           projectCardPhoto
         );
@@ -130,7 +132,7 @@ const projectService = ({
       }
 
       if (!this.checkPhotoSize(projectCoverPhoto)) {
-        fastify.log.error(
+        logger.error(
           '[Project Service] :: Size of Project Cover Photo too high',
           projectCoverPhoto
         );
@@ -145,7 +147,7 @@ const projectService = ({
         !projectMilestones ||
         !this.checkMilestonesFileType(projectMilestones)
       ) {
-        fastify.log.error(
+        logger.error(
           '[Project Service] :: Wrong file type for Project Milestones file',
           projectMilestones
         );
@@ -155,9 +157,9 @@ const projectService = ({
         };
       }
 
-      const savedProject = await projectDao.saveProject(newProject);
+      const savedProject = await this.projectDao.saveProject(newProject);
 
-      fastify.log.info('[Project Service] :: Project created:', savedProject);
+      logger.info('[Project Service] :: Project created:', savedProject);
 
       addPathToFilesProperties({
         projectId: savedProject.id,
@@ -176,21 +178,21 @@ const projectService = ({
         : '';
       const milestonesPath = projectMilestones.path;
 
-      fastify.log.info('[Project Service] :: Saving project files');
+      logger.info('[Project Service] :: Saving project files');
 
       // creates the directory where this project's files will be saved if not exists
       await mkdirp(
-        `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${this.fileServer.filePath}/projects/${savedProject.id}`
       );
 
       // saves the project's pictures and proposal
-      fastify.log.info(
+      logger.info(
         '[Project Service] :: Saving Project cover photo to:',
         coverPhotoPath
       );
       await savePhotoJpgFormat(projectCardPhoto, cardPhotoPath, cardPhotoSize);
 
-      fastify.log.info(
+      logger.info(
         '[Project Service] :: Saving Project card photo to:',
         cardPhotoPath
       );
@@ -200,21 +202,21 @@ const projectService = ({
         coverPhotoSize
       );
 
-      fastify.log.info(
+      logger.info(
         '[Project Service] :: Saving pitch proposal to:',
         pitchProposalPath
       );
       await projectProposal.mv(pitchProposalPath);
 
       if (projectAgreementPath) {
-        fastify.log.info(
+        logger.info(
           '[Project Service] :: Saving project agreement to:',
           projectAgreementPath
         );
         await projectAgreement.mv(projectAgreementPath);
       }
 
-      fastify.log.info(
+      logger.info(
         '[Milestone Service] :: Saving Milestone excel to:',
         milestonesPath
       );
@@ -222,17 +224,17 @@ const projectService = ({
       // saves the milestones excel file and reads it
       await projectMilestones.mv(milestonesPath);
 
-      fastify.log.info(
+      logger.info(
         '[Project Service] :: All files saved to:',
-        `${fastify.configs.fileServer.filePath}/projects/${savedProject.id}`
+        `${this.fileServer.filePath}/projects/${savedProject.id}`
       );
 
-      const savedCoverPhoto = await photoService.savePhoto(coverPhotoPath);
+      const savedCoverPhoto = await this.photoService.savePhoto(coverPhotoPath);
       if (savedCoverPhoto && savedCoverPhoto != null) {
         savedProject.coverPhoto = savedCoverPhoto.id;
       }
 
-      const savedCardPhoto = await photoService.savePhoto(cardPhotoPath);
+      const savedCardPhoto = await this.photoService.savePhoto(cardPhotoPath);
       if (savedCardPhoto && savedCardPhoto != null) {
         savedProject.cardPhoto = savedCardPhoto.id;
       }
@@ -243,18 +245,18 @@ const projectService = ({
 
       // updates project to include its files' path
 
-      fastify.log.info(
+      logger.info(
         '[Project Service] :: Creating Milestones for Project ID:',
         savedProject.id
       );
 
-      const milestones = await milestoneService.createMilestones(
+      const milestones = await this.milestoneService.createMilestones(
         milestonesPath,
         savedProject.id
       );
 
       if (isEmpty(milestones.errors)) {
-        const userOwner = await userDao.getUserById(ownerId);
+        const userOwner = await this.userDao.getUserById(ownerId);
         fastify.eth.createProject({
           projectId: savedProject.id,
           seAddress: userOwner.address,
@@ -263,19 +265,19 @@ const projectService = ({
         });
       }
 
-      fastify.log.info('[Project Service] :: Updating project:', savedProject);
-      const updatedProject = await projectDao.updateProject(
+      logger.info('[Project Service] :: Updating project:', savedProject);
+      const updatedProject = await this.projectDao.updateProject(
         savedProject,
         savedProject.id
       );
-      fastify.log.info('[Project Service] :: Project Updated:', updatedProject);
+      logger.info('[Project Service] :: Project Updated:', updatedProject);
 
       response.project = updatedProject;
       response.milestones = milestones;
 
       return response;
     } catch (err) {
-      fastify.log.error('[Project Service] :: Error creating Project:', err);
+      logger.error('[Project Service] :: Error creating Project:', err);
       throw Error('Error creating Project');
     }
   },
@@ -338,7 +340,7 @@ const projectService = ({
   async updateProject(project, projectCoverPhoto, projectCardPhoto, id, user) {
     try {
       const newProject = Object.assign({}, JSON.parse(project));
-      fastify.log.info('[Project Service] :: Updating project:', newProject);
+      logger.info('[Project Service] :: Updating project:', newProject);
 
       // remove fields that shouldn't be updated
       delete newProject.pitchProposal;
@@ -347,9 +349,9 @@ const projectService = ({
       delete newProject.transactionHash;
       delete newProject.creationTransactionHash;
 
-      const currentProject = await projectDao.getProjectById({ projectId: id });
+      const currentProject = await this.projectDao.getProjectById({ projectId: id });
       if (!currentProject) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${id} does not exist`
         );
         return {
@@ -364,13 +366,13 @@ const projectService = ({
           if (startedProject.error) {
             return startedProject;
           }
-          fastify.log.info(
+          logger.info(
             '[Project Service] :: Project started:',
             startedProject
           );
           delete newProject.status;
         } else if (user.role.id !== userRoles.BO_ADMIN) {
-          fastify.log.error(
+          logger.error(
             '[Project Service] :: Could not change project status. User is not an admin'
           );
           return {
@@ -384,7 +386,7 @@ const projectService = ({
         currentProject.status === projectStatus.IN_PROGRESS ||
         currentProject.startBlockchainStatus !== blockchainStatus.PENDING
       ) {
-        fastify.log.error(
+        logger.error(
           "[Project Service] :: Can't update project IN PROGRESS or SENT to the blockchain",
           id
         );
@@ -397,7 +399,7 @@ const projectService = ({
 
       if (projectCardPhoto || projectCoverPhoto) {
         // get current photos
-        const projectPhotos = await projectDao.getProjectPhotos(id);
+        const projectPhotos = await this.projectDao.getProjectPhotos(id);
         // create files' path
         addPathToFilesProperties({
           projectId: id,
@@ -406,15 +408,15 @@ const projectService = ({
         });
 
         // creates the directory where this project's files will be saved if not exists
-        await mkdirp(`${fastify.configs.fileServer.filePath}/projects/${id}`);
+        await mkdirp(`${this.fileServer.filePath}/projects/${id}`);
 
         // saves the project's pictures
         if (projectCoverPhoto) {
-          const currentCoverPhoto = await photoService.getPhotoById(
+          const currentCoverPhoto = await this.photoService.getPhotoById(
             projectPhotos.coverPhoto
           );
           const coverPhotoPath = projectCoverPhoto.path;
-          fastify.log.info(
+          logger.info(
             '[Project Service] :: Saving Project cover photo to:',
             coverPhotoPath
           );
@@ -427,7 +429,7 @@ const projectService = ({
 
           // update cover photo path in database
           if (!currentCoverPhoto.error) {
-            const updatedCoverPhoto = await photoService.updatePhoto(
+            const updatedCoverPhoto = await this.photoService.updatePhoto(
               projectPhotos.coverPhoto,
               coverPhotoPath
             );
@@ -435,7 +437,7 @@ const projectService = ({
               newProject.coverPhoto = updatedCoverPhoto.id;
             }
           } else {
-            const savedCoverPhoto = await photoService.savePhoto(
+            const savedCoverPhoto = await this.photoService.savePhoto(
               coverPhotoPath
             );
             if (savedCoverPhoto && savedCoverPhoto != null) {
@@ -445,11 +447,11 @@ const projectService = ({
         }
 
         if (projectCardPhoto) {
-          const currentCardPhoto = await photoService.getPhotoById(
+          const currentCardPhoto = await this.photoService.getPhotoById(
             projectPhotos.cardPhoto
           );
           const cardPhotoPath = projectCardPhoto.path;
-          fastify.log.info(
+          logger.info(
             '[Project Service] :: Saving Project card photo to:',
             cardPhotoPath
           );
@@ -462,7 +464,7 @@ const projectService = ({
 
           // update card photo path in database
           if (!currentCardPhoto.error) {
-            const updatedCardPhoto = await photoService.updatePhoto(
+            const updatedCardPhoto = await this.photoService.updatePhoto(
               projectPhotos.cardPhoto,
               cardPhotoPath
             );
@@ -470,25 +472,25 @@ const projectService = ({
               newProject.cardPhoto = updatedCardPhoto.id;
             }
           } else {
-            const savedCardPhoto = await photoService.savePhoto(cardPhotoPath);
+            const savedCardPhoto = await this.photoService.savePhoto(cardPhotoPath);
             if (savedCardPhoto && savedCardPhoto != null) {
               newProject.cardPhoto = savedCardPhoto.id;
             }
           }
         }
 
-        fastify.log.info(
+        logger.info(
           '[Project Service] :: All files saved to:',
-          `${fastify.configs.fileServer.filePath}/projects/${id}`
+          `${this.fileServer.filePath}/projects/${id}`
         );
       }
 
-      fastify.log.info('[Project Service] :: Updating project:', newProject);
-      const savedProject = await projectDao.updateProject(newProject, id);
-      fastify.log.info('[Project Service] :: Project Updated:', savedProject);
+      logger.info('[Project Service] :: Updating project:', newProject);
+      const savedProject = await this.projectDao.updateProject(newProject, id);
+      logger.info('[Project Service] :: Project Updated:', savedProject);
 
       if (!savedProject || savedProject == null) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${id} does not exist`,
           savedProject
         );
@@ -498,17 +500,17 @@ const projectService = ({
         };
       }
 
-      fastify.log.info('[Project Service] :: Project updated:', savedProject);
+      logger.info('[Project Service] :: Project updated:', savedProject);
 
       return savedProject;
     } catch (error) {
-      fastify.log.error('[Project Service] :: Error updating Project:', error);
+      logger.error('[Project Service] :: Error updating Project:', error);
       throw Error('Error updating Project');
     }
   },
 
   async getProjectList() {
-    const projects = await projectDao.getProjecListWithStatusFrom({
+    const projects = await this.projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PENDING_APPROVAL
     });
     return projects;
@@ -518,7 +520,7 @@ const projectService = ({
    * Returns a list of active projects, with status == 1
    */
   async getActiveProjectList() {
-    const projects = await projectDao.getProjecListWithStatusFrom({
+    const projects = await this.projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PUBLISHED
     });
     return projects;
@@ -528,15 +530,16 @@ const projectService = ({
    * Returns a list of projects with limited info for preview
    */
   async getProjectsPreview() {
-    const projects = await projectDao.getProjecListWithStatusFrom({
+    const projects = await this.projectDao.getProjecListWithStatusFrom({
       status: projectStatus.PUBLISHED
     });
 
+    // TODO : refactor
     projects.map(async project => {
       const {
         milestoneProgress,
         hasOpenMilestones
-      } = await milestoneService.getMilestonePreviewInfoOfProject(project);
+      } = await this.milestoneService.getMilestonePreviewInfoOfProject(project);
       return {
         ...project,
         milestoneProgress,
@@ -549,11 +552,11 @@ const projectService = ({
 
   async getProjectWithId({ projectId }) {
     try {
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project) {
-        fastify.log.error('[Project Service] :: Project not found:', projectId);
-        return { error: 'Project not found', status: 404 };
+        logger.error('[Project Service] :: Project not found:', projectId);
+        throw Errors.ProjectNotFoundError;
       }
 
       const totalFunded = await this.getTotalFunded(projectId);
@@ -561,18 +564,18 @@ const projectService = ({
 
       return project;
     } catch (error) {
-      fastify.log.error('[Project Service] :: Error getting project:', error);
-      throw Error('Error getting project');
+      logger.error('[Project Service] :: Error getting project:', error);
+      throw Errors.CouldNotReadProject;
     }
   },
 
   async deleteProject({ projectId }) {
-    const projectDeleted = await projectDao.deleteProject({ projectId });
+    const projectDeleted = await this.projectDao.deleteProject({ projectId });
     return projectDeleted;
   },
 
   async getProjectMilestones(projectId) {
-    const projectMilestones = await projectDao.getProjectMilestones({
+    const projectMilestones = await this.projectDao.getProjectMilestones({
       projectId
     });
 
@@ -583,7 +586,7 @@ const projectService = ({
       (milestone, context) =>
         new Promise(resolve => {
           process.nextTick(async () => {
-            const milestoneActivities = await milestoneService.getMilestoneActivities(
+            const milestoneActivities = await this.milestoneService.getMilestoneActivities(
               milestone
             );
             const milestoneWithType = {
@@ -596,7 +599,7 @@ const projectService = ({
           });
         }),
       milestones
-    );
+    ); 
 
     return milestones;
   },
@@ -618,7 +621,7 @@ const projectService = ({
         const filestream = fs.createReadStream(filepath);
 
         filestream.on('error', error => {
-          fastify.log.error(
+          logger.error(
             '[Project Service] :: Error reading milestones template file',
             error
           );
@@ -636,7 +639,7 @@ const projectService = ({
         return response;
       }
 
-      fastify.log.error(
+      logger.error(
         `[Project Service] :: Milestones template file could not be found in ${filepath}`
       );
       return {
@@ -644,7 +647,7 @@ const projectService = ({
         status: 404
       };
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error reading milestones template file',
         error
       );
@@ -672,7 +675,7 @@ const projectService = ({
         const filestream = fs.createReadStream(filepath);
 
         filestream.on('error', error => {
-          fastify.log.error(
+          logger.error(
             '[Project Service] :: Error reading project proposal template file',
             error
           );
@@ -690,7 +693,7 @@ const projectService = ({
         return response;
       }
 
-      fastify.log.error(
+      logger.error(
         `[Project Service] :: Project proposal template file could not be found in ${filepath}`
       );
       return {
@@ -698,7 +701,7 @@ const projectService = ({
         status: 404
       };
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error reading project proposal template file',
         error
       );
@@ -710,7 +713,7 @@ const projectService = ({
   },
 
   async getProjectMilestonesPath(projectId) {
-    const milestonesFilePath = await projectDao.getProjectMilestonesFilePath(
+    const milestonesFilePath = await this.projectDao.getProjectMilestonesFilePath(
       projectId
     );
 
@@ -735,10 +738,10 @@ const projectService = ({
   async uploadAgreement(projectAgreement, projectId) {
     try {
       // check if project exists in database
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${projectId} not found`
         );
         return { error: 'ERROR: Project not found', status: 404 };
@@ -746,41 +749,41 @@ const projectService = ({
 
       // creates the directory where this project's agreement will be saved if not exists
       // (it should've been created during the project creation though)
-      mkdirp(`${fastify.configs.fileServer.filePath}/projects/${project.id}`);
+      mkdirp(`${this.fileServer.filePath}/projects/${project.id}`);
 
       const filename = `agreement${path.extname(projectAgreement.name)}`;
 
       // saves the project's agreement
-      fastify.log.info(
+      logger.info(
         '[Project Service] :: Saving Project agreement to:',
-        `${fastify.configs.fileServer.filePath}/projects/${
+        `${this.fileServer.filePath}/projects/${
           project.id
         }/${filename}`
       );
       await projectAgreement.mv(
-        `${fastify.configs.fileServer.filePath}/projects/${
+        `${this.fileServer.filePath}/projects/${
           project.id
         }/${filename}`
       );
 
       // update database
       const projectAgreementPath = `${
-        fastify.configs.fileServer.filePath
+        this.fileServer.filePath
       }/projects/${project.id}/${filename}`;
 
-      const updatedProject = await projectDao.updateProjectAgreement({
+      const updatedProject = await this.projectDao.updateProjectAgreement({
         projectAgreement: projectAgreementPath,
         projectId: project.id
       });
 
-      fastify.log.info(
+      logger.info(
         '[Project Service] :: Project successfully updated:',
         updatedProject
       );
 
       return updatedProject;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error uploading agreement:',
         error
       );
@@ -796,10 +799,10 @@ const projectService = ({
   async downloadAgreement(projectId) {
     try {
       // check if project exists in database
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${projectId} not found`
         );
         return { error: 'ERROR: Project not found', status: 404 };
@@ -810,7 +813,7 @@ const projectService = ({
         project.projectAgreement == null ||
         isEmpty(project.projectAgreement)
       ) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${projectId} doesn't have an agreement uploaded`
         );
         return {
@@ -826,7 +829,7 @@ const projectService = ({
       const filestream = fs.createReadStream(filepath);
 
       filestream.on('error', error => {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Agreement file not found for Project ID ${projectId}:`,
           error
         );
@@ -843,7 +846,7 @@ const projectService = ({
 
       return response;
     } catch (error) {
-      fastify.log.error('[Project Service] :: Error getting agreement:', error);
+      logger.error('[Project Service] :: Error getting agreement:', error);
       throw Error('Error getting agreement');
     }
   },
@@ -856,10 +859,10 @@ const projectService = ({
   async downloadProposal(projectId) {
     try {
       // check if project exists in database
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${projectId} not found`
         );
         return { error: 'ERROR: Project not found', status: 404 };
@@ -870,7 +873,7 @@ const projectService = ({
         project.pitchProposal == null ||
         isEmpty(project.pitchProposal)
       ) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${projectId} doesn't have a pitch proposal uploaded`
         );
         return {
@@ -885,7 +888,7 @@ const projectService = ({
       const filestream = fs.createReadStream(filepath);
 
       filestream.on('error', error => {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Pitch proposal file not found for Project ID ${projectId}:`,
           error
         );
@@ -902,7 +905,7 @@ const projectService = ({
 
       return response;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error getting pitch proposal:',
         error
       );
@@ -917,22 +920,22 @@ const projectService = ({
    * @returns total funded amount || error
    */
   async getTotalFunded(projectId) {
-    fastify.log.info(
+    logger.info(
       '[Project Service] :: Getting already funded amount for Project ID',
       projectId
     );
 
     try {
-      const totalAmount = await transferService.getTotalFundedByProject(
+      const totalAmount = await this.transferService.getTotalFundedByProject(
         projectId
       );
 
-      fastify.log.info(
+      logger.info(
         `[Project Service] :: Total funded amount for Project ID ${projectId} is ${totalAmount}`
       );
       return totalAmount;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error getting funded amount:',
         error
       );
@@ -947,7 +950,7 @@ const projectService = ({
    * @returns updated project || error
    */
   async startProject(project) {
-    fastify.log.info(
+    logger.info(
       `[Project Service] :: Updating Project ID ${
         project.id
       } status to In Progress`
@@ -958,7 +961,7 @@ const projectService = ({
         project.status !== projectStatus.PUBLISHED &&
         project.status !== projectStatus.IN_PROGRESS
       ) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${project.id} is not published`
         );
         return { error: 'Project needs to be published', status: 409 };
@@ -968,7 +971,7 @@ const projectService = ({
         project.status === projectStatus.IN_PROGRESS ||
         project.startBlockchainStatus !== blockchainStatus.PENDING
       ) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${
             project.id
           } already in progress or sent to the blockchain`
@@ -981,7 +984,7 @@ const projectService = ({
 
       const projectWithOracles = await this.isFullyAssigned(project.id);
       if (!projectWithOracles) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${
             project.id
           } has activities with no oracles assigned`
@@ -992,19 +995,19 @@ const projectService = ({
         };
       }
 
-      fastify.log.info(
+      logger.info(
         `[Project Service] :: Starting milestones on blockchain of project Project ID ${
           project.id
         }`
       );
-      await milestoneService.startMilestonesOfProject(project);
-      const startPendingProject = await projectDao.updateStartBlockchainStatus(
+      await this.milestoneService.startMilestonesOfProject(project);
+      const startPendingProject = await this.projectDao.updateStartBlockchainStatus(
         project.id,
         blockchainStatus.SENT
       );
       return startPendingProject;
     } catch (error) {
-      fastify.log.error('[Project Service] :: Error starting project:', error);
+      logger.error('[Project Service] :: Error starting project:', error);
       throw Error('Error starting project');
     }
   },
@@ -1016,7 +1019,7 @@ const projectService = ({
    */
   async isFullyAssigned(projectId) {
     let isFullyAssigned = true;
-    const milestones = await milestoneService.getMilestonesByProject(projectId);
+    const milestones = await this.milestoneService.getMilestonesByProject(projectId);
 
     if (!milestones || milestones == null || isEmpty(milestones)) {
       return false;
@@ -1041,23 +1044,23 @@ const projectService = ({
    * @return object with the oracle and its projects } | error
    */
   async getProjectsAsOracle(oracleId) {
-    fastify.log.info(
+    logger.info(
       '[Project Service] :: Getting Projects for Oracle ID',
       oracleId
     );
     try {
-      const projects = await milestoneService.getProjectsAsOracle(oracleId);
+      const projects = await this.milestoneService.getProjectsAsOracle(oracleId);
       if (projects.error) {
         return projects;
       }
 
       const uniqueProjects = uniq(projects);
-      fastify.log.info(
+      logger.info(
         `[Project Service] :: Projects found for Oracle ID ${oracleId}: ${uniqueProjects}`
       );
       return { projects: uniqueProjects, oracle: oracleId };
     } catch (error) {
-      fastify.log.error('[Project Service] :: Error getting Projects:', error);
+      logger.error('[Project Service] :: Error getting Projects:', error);
       throw Error('Error getting Projects');
     }
   },
@@ -1069,8 +1072,9 @@ const projectService = ({
    */
   async getProjectOwner(projectId) {
     try {
-      const project = await projectDao.getProjectById({ projectId });
-      const user = await userDao.getUserById(project.ownerId);
+      // TODO : this can be done with a single query.
+      const project = await this.projectDao.getProjectById({ projectId });
+      const user = await this.userDao.getUserById(project.ownerId);
       return user;
     } catch (error) {
       throw Error('Error getting project owner');
@@ -1085,7 +1089,7 @@ const projectService = ({
    */
   async isProjectTransactionConfirmed(projectId) {
     try {
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
       return fastify.eth.isTransactionConfirmed(project.transactionHash);
     } catch (error) {
       throw Error('Error getting confirmation of transaction');
@@ -1099,7 +1103,7 @@ const projectService = ({
    */
   async getProjectsOfOwner(ownerId) {
     try {
-      const projects = await projectDao.getProjectsByOwner(ownerId);
+      const projects = await this.projectDao.getProjectsByOwner(ownerId);
       return projects;
     } catch (error) {
       return {
@@ -1115,7 +1119,7 @@ const projectService = ({
    * @param {array} projectsId
    */
   async getAllProjectsById(projectsId) {
-    return projectDao.getAllProjectsById(projectsId);
+    return this.projectDao.getAllProjectsById(projectsId);
   },
 
   /**
@@ -1127,17 +1131,17 @@ const projectService = ({
    * @returns saved experience | error msg
    */
   async uploadExperience(projectId, experience, files) {
-    fastify.log.info(
+    logger.info(
       `[Project Service] :: Uploading experience to Project ID ${projectId}:`,
       experience,
       files
     );
 
     try {
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${projectId} not found`
         );
         return {
@@ -1146,10 +1150,10 @@ const projectService = ({
         };
       }
 
-      const user = await userDao.getUserById(experience.user);
+      const user = await this.userDao.getUserById(experience.user);
 
       if (!user) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: User ID ${experience.user} not found`
         );
         return {
@@ -1160,12 +1164,12 @@ const projectService = ({
 
       const newExperience = { ...experience, project: projectId };
 
-      const savedExperience = await projectExperienceDao.saveProjectExperience(
+      const savedExperience = await this.projectExperienceDao.saveProjectExperience(
         newExperience
       );
 
       if (!savedExperience) {
-        fastify.log.error(
+        logger.error(
           '[Project Service] :: Error saving experience in database:',
           newExperience
         );
@@ -1205,7 +1209,7 @@ const projectService = ({
 
       return savedExperience;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error uploading experience:',
         error
       );
@@ -1217,7 +1221,7 @@ const projectService = ({
     const filetype = mime.lookup(file.name);
 
     if (!filetype) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error getting mime type of file:',
         file
       );
@@ -1225,16 +1229,16 @@ const projectService = ({
     }
 
     if (!filetype.includes('image/')) {
-      fastify.log.error('[Project Service] :: File type is invalid:', file);
+      logger.error('[Project Service] :: File type is invalid:', file);
       return { error: 'File type is invalid', status: 409 };
     }
 
-    fastify.log.info('[Project Service] :: Saving file:', file);
+    logger.info('[Project Service] :: Saving file:', file);
 
     const filename = addTimestampToFilename(file.name);
 
     const filepath = `${
-      fastify.configs.fileServer.filePath
+      this.fileServer.filePath
     }/projects/${projectId}/experiences/${filename}`;
 
     if (fs.existsSync(filepath)) {
@@ -1242,19 +1246,19 @@ const projectService = ({
     }
 
     await mkdirp(
-      `${fastify.configs.fileServer.filePath}/projects/${projectId}/experiences`
+      `${this.fileServer.filePath}/projects/${projectId}/experiences`
     );
     await file.mv(filepath);
 
     try {
-      const savedFile = await photoService.savePhoto(
+      const savedFile = await this.photoService.savePhoto(
         filepath,
         projectExperienceId
       );
-      fastify.log.info('[Project Service] :: File saved in', filepath);
+      logger.info('[Project Service] :: File saved in', filepath);
       return savedFile;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error saving file in database:',
         error
       );
@@ -1275,15 +1279,15 @@ const projectService = ({
    * @returns list of experiences | error
    */
   async getExperiences(projectId) {
-    fastify.log.info(
+    logger.info(
       `[Project Service] :: Getting experiences of Project ID ${projectId}`
     );
 
     try {
-      const project = await projectDao.getProjectById({ projectId });
+      const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Project ID ${projectId} not found`
         );
         return {
@@ -1292,12 +1296,12 @@ const projectService = ({
         };
       }
 
-      const experiences = await projectExperienceDao.getExperiencesByProject(
+      const experiences = await this.projectExperienceDao.getExperiencesByProject(
         projectId
       );
 
       if (!experiences) {
-        fastify.log.error(
+        logger.error(
           `[Project Service] :: Error getting the experiences for project ID ${projectId}`
         );
         return {
@@ -1307,14 +1311,14 @@ const projectService = ({
       }
 
       if (isEmpty(experiences)) {
-        fastify.log.info(
+        logger.info(
           `[Project Service] :: Project ID ${projectId} does not have any experiences uploaded`
         );
       }
 
       return experiences;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Project Service] :: Error getting experiences:',
         error
       );
@@ -1326,7 +1330,7 @@ const projectService = ({
     if (!Object.values(blockchainStatus).includes(status)) {
       return { error: 'Invalid Blockchain status' };
     }
-    return projectDao.updateBlockchainStatus(projectId, status);
+    return this.projectDao.updateBlockchainStatus(projectId, status);
   },
 
   async allActivitiesAreConfirmed(projectId, activityDao) {
@@ -1346,6 +1350,4 @@ const projectService = ({
       return { error };
     }
   }
-});
-
-module.exports = projectService;
+};
