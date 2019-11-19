@@ -9,7 +9,6 @@
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
 const {
-  userRegistrationStatus,
   userRoles,
   blockchainStatus,
   projectStatus
@@ -69,18 +68,11 @@ module.exports = {
           username: user.username,
           email: user.email,
           id: user.id,
-          role: user.role,
-          registrationStatus: user.registrationStatus
+          role: user.role
         };
 
-        if (
-          user.registrationStatus === userRegistrationStatus.PENDING_APPROVAL
-        ) {
-          logger.error(
-            `[User Service] :: User ID ${
-              user.id
-            } registration status is Pending Approval`
-          );
+        if (user.blocked) {
+          logger.error(`[User Service] :: User ID ${user.id} is blocked`);
 
           throw new UserStillNeedsApprovalError(
             'User registration is still pending approval by the admin'
@@ -156,13 +148,6 @@ module.exports = {
       throw new UserAlreadyExistsError('A user with that email already exists');
     }
 
-    const validRole = await this.roleDao.getRoleById(role);
-
-    if (!validRole) {
-      logger.error(`[User Service] :: Role ID ${role} does not exist.`);
-      throw new UserRoleDoesNotExistsError('User role does not exist');
-    }
-
     // TODO : address, privkey
     const user = {
       username,
@@ -176,13 +161,6 @@ module.exports = {
     };
 
     const savedUser = await this.userDao.createUser(user);
-    // if (this.roleCreationMap[role]) {
-    //   const savedInfo = await this.roleCreationMap[role].create({
-    //     user: savedUser.id,
-    //     ...detail
-    //   });
-    //   logger.info('[User Service] :: User Info saved', savedInfo);
-    // }
 
     if (!savedUser || savedUser == null) {
       logger.error(
@@ -191,12 +169,6 @@ module.exports = {
       );
       throw new COAError('There was an unexpected error creating the user');
     }
-
-    // if (questionnaire)
-    //   await questionnaireService.saveQuestionnaireOfUser(
-    //     savedUser.id,
-    //     questionnaire
-    //   );
 
     // sends welcome email
     await this.mailService.sendMail(
@@ -251,8 +223,8 @@ module.exports = {
       throw new UserNotFoundError('User does not exist');
     }
 
-    const { pwd, email, registrationStatus } = user;
-    const newUser = { ...user };
+      const { pwd, email } = user;
+      const newUser = { ...user };
 
     if (pwd) {
       const hashedPwd = await bcrypt.hash(pwd, 10);
@@ -271,22 +243,6 @@ module.exports = {
         );
       }
     }
-
-    // if (registrationStatus) {
-    //   const existingStatus = await this.userRegistrationStatusDao.getUserRegistrationStatusById(
-    //     registrationStatus
-    //   );
-
-    //   if (!existingStatus) {
-    //     logger.error(
-    //       `[User Service] :: Registration Status ID ${registrationStatus} does not exist`
-    //     );
-    //     return {
-    //       status: 404,
-    //       error: 'Registration status is not valid'
-    //     };
-    //   }
-    // }
 
     let updatedUser = newUser;
 
@@ -354,31 +310,6 @@ module.exports = {
     }
 
     return updatedUser;
-  },
-
-  /**
-   * Gets all valid user registration status
-   * @returns registration status list | error
-   */
-  async getAllRegistrationStatus() {
-    logger.info('[User Service] :: Getting all User Registration Status');
-    try {
-      const userRegistrationStatusList = await this.userRegistrationStatusDao.getAllRegistrationStatus();
-
-      if (userRegistrationStatusList.length === 0) {
-        logger.info('[User Service] :: No User Registration Status loaded');
-      }
-
-      return userRegistrationStatusList;
-    } catch (error) {
-      logger.error(
-        '[User Service] :: Error getting all User Registration Status:',
-        error
-      );
-      // TODO in the future this error should not be thrown nor catch
-      // TODO because it will be a specific dao error
-      throw new COAError('Error getting all User Registration Status');
-    }
   },
 
   /**
@@ -525,10 +456,6 @@ module.exports = {
   async validUser(user, roleId) {
     const existentUser = await this.userDao.getUserById(user.id);
     const role = roleId ? existentUser.role.id === roleId : true;
-    return (
-      existentUser &&
-      existentUser.registrationStatus === userRegistrationStatus.APPROVED &&
-      role
-    );
+    return existentUser && !existentUser.blocked && role;
   }
 };

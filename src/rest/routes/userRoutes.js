@@ -214,52 +214,6 @@ const routes = {
     handler: handlers.getUserRole
   },
 
-  getRegistrationStatus: {
-    method: 'get',
-    path: `${basePath}/registrationStatus`,
-    options: {
-      schema: {
-        tags: [routeTags.USER.name, routeTags.GET.name],
-        description: 'Returns all available registration status for a COA user',
-        summary: 'Get all registration status',
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              registrationStatus: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' }
-                  }
-                }
-              }
-            },
-            description:
-              'Returns an array of objects with each available registration status'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.getRegistrationStatus
-  },
-
   getAllRoles: {
     method: 'get',
     path: `${basePath}/roles`,
