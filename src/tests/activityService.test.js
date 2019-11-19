@@ -1,14 +1,14 @@
 /**
  * AGPL License
  * Circle of Angels aims to democratize social impact financing.
- * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ * It facilitate the investment process by utilizing smart
+ * contracts to develop impact milestones agreed
+ * upon by funders and the social entrepenuers.
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-jest.mock('sha256');
-const fs = require('fs');
-let sha256 = require('sha256');
+const sha256 = require('sha256');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const { projectStatus, activityStatus } = require('../rest/util/constants');
@@ -21,6 +21,8 @@ const fastify = {
     uploadHashEvidenceToActivity: ethServicesMock.uploadHashEvidenceToActivity
   }
 };
+
+jest.mock('sha256');
 
 describe.skip('Testing activityService createActivities', () => {
   let activityDao;
@@ -376,11 +378,10 @@ describe.skip('Testing activityService updateStatus', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should throw an error if an exception is caught', async () => {
-    return expect(
+  it('should throw an error if an exception is caught', async () =>
+    expect(
       activityService.updateStatus(activityStatus.VERIFIED, '')
-    ).rejects.toEqual(Error('Error updating Activity status'));
-  });
+    ).rejects.toEqual(Error('Error updating Activity status')));
 });
 
 describe.skip('Testing ActivityService addEvidenceFiles', () => {
@@ -413,11 +414,10 @@ describe.skip('Testing ActivityService addEvidenceFiles', () => {
       };
     };
 
-    activityService.getProjectByActivity = () => {
-      return testHelper.buildProject(1, 1, {
+    activityService.getProjectByActivity = () =>
+      testHelper.buildProject(1, 1, {
         status: projectStatus.IN_PROGRESS
       });
-    };
   });
 
   it('user oracle add evidences files should update database and blockchain', async () => {
@@ -442,10 +442,10 @@ describe.skip('Testing ActivityService addEvidenceFiles', () => {
 describe.skip('Testing ActivityService addEvidence', () => {
   let activityService;
   let activity;
-  let fileId = 1;
-  let photoId = 2;
-  let activityPhotoId = 1;
-  let activityFileId = 1;
+  const fileId = 1;
+  const photoId = 2;
+  const activityPhotoId = 1;
+  const activityFileId = 1;
   const image = testHelper.getMockFiles().projectCoverPhoto;
   const file = testHelper.getMockFiles().projectAgreement;
 
@@ -568,7 +568,7 @@ describe.skip('Testing ActivityService assignOracleToActivity', () => {
       //FIXME
       activityDao
     });
-    activityService.unassignOracleToActivity = activityId => true;
+    activityService.unassignOracleToActivity = () => true;
   });
   it('must return oracle user object when assign a valid oracle to an activity', async () => {
     const response = await activityService.assignOracleToActivity(
