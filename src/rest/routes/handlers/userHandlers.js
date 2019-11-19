@@ -64,27 +64,7 @@ module.exports = {
       });
     }
   },
-
-  getRegistrationStatus: fastify => async (request, reply) => {
-    try {
-      fastify.log.info(
-        `[User Routes] :: GET request at ${basePath}/registrationStatus`
-      );
-
-      const registrationStatus = await userService.getAllRegistrationStatus();
-      reply.status(200).send({ registrationStatus });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all user registration status:',
-        error
-      );
-      reply.status(500).send({
-        error:
-          'There was an unexpected error getting all user registration status'
-      });
-    }
-  },
-
+  
   getAllRoles: fastify => async (request, reply) => {
     try {
       fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
@@ -127,7 +107,7 @@ module.exports = {
             expires: expirationDate
             // secure: true
           })
-          .send(user);
+          .redirect('/explore-projects')
       }
     } catch (err) {
       reply

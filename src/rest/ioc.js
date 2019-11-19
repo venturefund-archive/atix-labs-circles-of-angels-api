@@ -17,13 +17,11 @@ const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
 const milestoneDao = require('./dao/milestoneDao');
 const userDao = require('./dao/userDao');
-const roleDao = require('./dao/roleDao');
-const { injectDependencies } = require('./util/injection');
+const passRecoveryService = require('./services/passRecoveryService');
 
-// const injectLocator = instance => {
-//   Object.defineProperty(instance, 'serviceLocator', { value: serviceLocator });
-// };
-//
+const passRecoveryDao = require('./dao/passRecoveryDao');
+
+const { injectDependencies } = require('./util/injection');
 
 module.exports = fastify => {
   // Injects a model into a dao instance as the property `model`
@@ -57,8 +55,6 @@ module.exports = fastify => {
       mailService,
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
-      userRegistrationStatusDao: undefined,
-      roleDao,
       questionnaireService: undefined
     };
 
@@ -74,6 +70,16 @@ module.exports = fastify => {
       transferService: undefined,
       userDao,
       projectExperienceDao: undefined
+    };
+
+    injectDependencies(service, dependencies);
+  }
+
+  function configurePasssRecoveryService(service) {
+    const dependencies = {
+      mailService,
+      passRecoveryDao,
+      userDao
     };
     injectDependencies(service, dependencies);
   }
@@ -95,13 +101,18 @@ module.exports = fastify => {
     injectModel(milestoneDao, models.milestone);
     injectModel(projectDao, models.project);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
+    injectModel(projectDao, models.project);
+    injectModel(passRecoveryDao, models.passRecovery);
   }
+
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
     configureMilestoneService(milestoneService);
     configureProjectService(projectService);
+    configurePasssRecoveryService(passRecoveryService);
   }
+
   function init(fastify) {
     configureDAOs(fastify.models);
     configureServices();
