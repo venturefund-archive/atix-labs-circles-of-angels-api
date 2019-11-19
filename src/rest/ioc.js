@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const activityService = require('./services/activityService');
 
 const userProjectService = require('./services/userProjectService');
 const transferService = require('./services/transferService');
@@ -18,6 +19,8 @@ const milestoneService = require('./services/milestoneService');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
+
+const activityDao = require('./dao/activityDao');
 const userProjectDao = require('./dao/userProjectDao');
 const transferDao = require('./dao/transferDao');
 const milestoneDao = require('./dao/milestoneDao');
@@ -79,14 +82,27 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureActivityService(service) {
+    const dependencies = {
+      activityDao,
+      fileService: undefined,
+      photoService: undefined,
+      activityFileDao: undefined,
+      activityPhotoDao: undefined,
+      oracleActivityDao: undefined,
+      userService
+    };
+    injectDependencies(service, dependencies);
+  }
+
   function configureUserProjectService(service) {
     const dependencies = {
       userProjectDao
     };
 
     injectDependencies(service, dependencies);
-  }
-
+    }
+    
   function configureTransferService(service) {
     const dependencies = { transferDao };
 
@@ -113,8 +129,6 @@ module.exports = fastify => {
     injectDependencies(milestoneService, dependencies);
   }
 
->>>>>>> src/rest/ioc.js
->>>>>>> src/rest/ioc.js
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(roleDao, models.role);
@@ -130,6 +144,7 @@ module.exports = fastify => {
     configureUserService(userService);
     configureMilestoneService(milestoneService);
     configureProjectService(projectService);
+    configureActivityService(activityService);
     configureUserProjectService(userProjectService);
     configureTransferService(transferService);
     configurePasssRecoveryService(passRecoveryService);
