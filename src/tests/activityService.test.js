@@ -12,7 +12,7 @@ const sha256 = require('sha256');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const { projectStatus, activityStatus } = require('../rest/util/constants');
-const activityServiceBuilder = require('../rest/core/activityService');
+const { injectMocks } = require('../rest/util/injection');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
@@ -37,8 +37,8 @@ describe.skip('Testing activityService createActivities', () => {
         return toSave;
       }
     };
-    activityService = activityServiceBuilder({
-      fastify,
+    activityService = require('../rest/services/activityService');
+    injectMocks(activityService, {
       activityDao
     });
   });
@@ -142,8 +142,8 @@ describe.skip('Testing activityService createActivity', () => {
         return toSave;
       }
     };
-    activityService = activityServiceBuilder({
-      fastify,
+    activityService = require('../rest/services/activityService');
+    injectMocks(activityService, {
       activityDao
     });
   });
@@ -210,8 +210,8 @@ describe.skip('Testing activityService updateActivity', () => {
         return activity;
       }
     };
-    activityService = activityServiceBuilder({
-      fastify,
+    activityService = require('../rest/services/activityService');
+    injectMocks(activityService, {
       activityDao
     });
 
@@ -312,8 +312,8 @@ describe.skip('Testing activityService updateStatus', () => {
         return { ...mockActivity, status };
       }
     };
-    activityService = activityServiceBuilder({
-      fastify,
+    activityService = require('../rest/services/activityService');
+    injectMocks(activityService, {
       activityDao
     });
 
@@ -401,14 +401,18 @@ describe.skip('Testing ActivityService addEvidenceFiles', () => {
         return testHelper.buildActivity({ id });
       }
     };
-    activityService = activityServiceBuilder({
-      fastify,
-      activityDao,
-      userService: {
-        getUserById: () => user
-      }
+
+    activityService = require('../rest/services/activityService');
+    injectMocks(activityService, {
+      //FIXME
+      activityDao
     });
-    activityService.addEvidence = () => ({ fileHash: '23kfek32kek3edd' });
+
+    activityService.addEvidence = () => {
+      return {
+        fileHash: '23kfek32kek3edd'
+      };
+    };
 
     activityService.getProjectByActivity = () =>
       testHelper.buildProject(1, 1, {
@@ -447,43 +451,57 @@ describe.skip('Testing ActivityService addEvidence', () => {
 
   beforeEach(() => {
     activity = testHelper.buildActivity({ id: 1 });
-    activityService = activityServiceBuilder({
-      fastify,
-      activityDao: {
-        getActivityById: () => activity
-      },
-      fileService: {
-        saveFile: () => ({
-          id: fileId
-        }),
-        checkEvidenceFileType: f => {
-          const type = f.name.split('.')[1];
-          return type !== 'error';
-        }
-      },
-      photoService: {
-        savePhoto: () => ({ id: photoId }),
-        checkEvidencePhotoType: f => {
-          const type = f.name.split('.')[1];
-          return type !== 'error';
-        }
-      },
-      activityPhotoDao: {
-        saveActivityPhoto: (activityId, savedPhotoId, fileHash) => ({
-          activity: activityId,
-          photo: savedPhotoId,
-          id: activityPhotoId,
-          fileHash
-        })
-      },
-      activityFileDao: {
-        saveActivityFile: (activityId, savedFileId, fileHash) => ({
-          activity: activityId,
-          file: savedFileId,
-          id: activityFileId,
-          fileHash
-        })
-      }
+    // activityService = activityServiceBuilder({
+    //   fastify,
+    //   activityDao: {
+    //     getActivityById: activityId => {
+    //       return activity;
+    //     }
+    //   },
+    //   fileService: {
+    //     saveFile: filePath => {
+    //       return { id: fileId };
+    //     },
+    //     checkEvidenceFileType: f => {
+    //       const type = f.name.split('.')[1];
+    //       return type !== 'error';
+    //     }
+    //   },
+    //   photoService: {
+    //     savePhoto: filePath => {
+    //       return { id: photoId };
+    //     },
+    //     checkEvidencePhotoType: f => {
+    //       const type = f.name.split('.')[1];
+    //       return type !== 'error';
+    //     }
+    //   },
+    //   activityPhotoDao: {
+    //     saveActivityPhoto: (activityId, savedPhotoId, fileHash) => {
+    //       return {
+    //         activity: activityId,
+    //         photo: savedPhotoId,
+    //         id: activityPhotoId,
+    //         fileHash
+    //       };
+    //     }
+    //   },
+    //   activityFileDao: {
+    //     saveActivityFile: (activityId, savedFileId, fileHash) => {
+    //       return {
+    //         activity: activityId,
+    //         file: savedFileId,
+    //         id: activityFileId,
+    //         fileHash
+    //       };
+    //     }
+    //   }
+    // });
+
+    activityService = require('../rest/services/activityService');
+    injectMocks(activityService, {
+      //FIXME
+      activityDao
     });
     activityService.readFile = jest.fn();
     sha256.mockReturnValue('sha256mockreturnvalue');
@@ -521,22 +539,34 @@ describe.skip('Testing ActivityService assignOracleToActivity', () => {
 
   beforeEach(() => {
     activity = testHelper.buildActivity({ id: 1 });
-    activityService = activityServiceBuilder({
-      fastify,
-      activityDao: {
-        getActivityById: () => activity
-      },
-      userService: {
-        getUserById: id => {
-          if (id === oracle.id) return oracle;
-          if (id === user.id) return user;
-          return null;
-        }
-      },
-      oracleActivityDao: {
-        getOracleFromActivity: () => ({ user: activity.oracle }),
-        assignOracleToActivity: () => oracle
-      }
+    // activityService = activityServiceBuilder({
+    //   fastify,
+    //   activityDao: {
+    //     getActivityById: activityId => {
+    //       return activity;
+    //     }
+    //   },
+    //   userService: {
+    //     getUserById: id => {
+    //       if (id === oracle.id) return oracle;
+    //       if (id === user.id) return user;
+    //       return null;
+    //     }
+    //   },
+    //   oracleActivityDao: {
+    //     getOracleFromActivity: activityId => {
+    //       return { user: activity.oracle };
+    //     },
+    //     assignOracleToActivity: (userId, activityId) => {
+    //       return oracle;
+    //     }
+    //   }
+    // });
+
+    activityService = require('../rest/services/activityService');
+    injectMocks(activityService, {
+      //FIXME
+      activityDao
     });
     activityService.unassignOracleToActivity = () => true;
   });

@@ -9,7 +9,6 @@
  */
 
 const bcrypt = require('bcrypt');
-const { userRegistrationStatus, userRoles } = require('../rest/util/constants');
 const testHelper = require('./testHelper');
 const { injectMocks } = require('../rest/util/injection');
 
@@ -31,9 +30,12 @@ describe('Testing userService login', () => {
         if (email === '') {
           return undefined;
         }
+        const userSe = testHelper.buildUserSe(userId);
+        const blockedUser = testHelper.buildBlockedUser(userId);
+        const users = [userSe, blockedUser];
+        const filteredUsers = users.filter(user => user.email === email);
 
-        const user = testHelper.buildUserSe(userId);
-        return user;
+        return filteredUsers[0];
       }
     };
 
@@ -87,6 +89,16 @@ describe('Testing userService login', () => {
     const response = await userService.login(email);
 
     return expect(response).toEqual(mockError);
+  });
+
+  it('should return an error with blocked by an admin message ', async () => {
+    bcrypt.compare.mockReturnValueOnce(true);
+
+    const mockUser = testHelper.buildBlockedUser(userId);
+    const expected = 'User was blocked by an admin';
+
+    const { error } = await userService.login(mockUser.email);
+    expect(error).toEqual(expected);
   });
 });
 
@@ -290,7 +302,6 @@ describe('Testing userService getUserRole', () => {
 
 describe('Testing userService updateUser', () => {
   let userDao;
-  let userRegistrationStatusDao;
   let userService;
 
   const mockUser = testHelper.buildUserSe(1);
@@ -323,22 +334,9 @@ describe('Testing userService updateUser', () => {
       }
     };
 
-    userRegistrationStatusDao = {
-      async getUserRegistrationStatusById(registrationStatus) {
-        if (
-          Object.values(userRegistrationStatus).indexOf(registrationStatus) !==
-          -1
-        ) {
-          return registrationStatus;
-        }
-        return undefined;
-      }
-    };
-
     userService = require('../rest/services/userService');
     injectMocks(userService, {
-      userDao,
-      userRegistrationStatusDao
+      userDao
     });
 
     bcrypt.hash = jest.fn();
@@ -349,7 +347,7 @@ describe('Testing userService updateUser', () => {
       ...mockUser,
       pwd: 'atix2019',
       email: 'updated@test.com',
-      registrationStatus: userRegistrationStatus.APPROVED
+      blocked: false
     };
 
     const hashedPwd = '$2b$ae321f';
@@ -369,7 +367,7 @@ describe('Testing userService updateUser', () => {
     const toUpdateUser = {
       pwd: 'atix2019',
       email: 'updated@test.com',
-      registrationStatus: userRegistrationStatus.APPROVED
+      blocked: false
     };
 
     const expected = {
@@ -385,7 +383,7 @@ describe('Testing userService updateUser', () => {
     const toUpdateUser = {
       pwd: 'atix2019',
       email: 'existing@test.com',
-      registrationStatus: userRegistrationStatus.APPROVED
+      blocked: false
     };
 
     const expected = {
@@ -414,8 +412,14 @@ describe('Testing userService updateUser', () => {
     return expect(response).toEqual(expected);
   });
 
-  it('should throw an error if the user could not be updated', async () =>
-    expect(userService.updateUser(-1)).rejects.toEqual(
+  it('should throw an error if the user could not be updated', async () => {
+    const toUpdateUser = {
+      pwd: 'atix2019',
+      email: 'updated@test.com',
+      blocked: false
+    };
+
+    return expect(userService.updateUser(-1)).rejects.toEqual(
       Error('Error updating User')
     ));
 });

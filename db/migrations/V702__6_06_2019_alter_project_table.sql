@@ -1,1 +1,0 @@
-ALTER TABLE public."project" ADD COLUMN "startBlockchainStatus" int4 NOT NULL DEFAULT 1;

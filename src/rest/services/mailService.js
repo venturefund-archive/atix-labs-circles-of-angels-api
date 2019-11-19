@@ -7,8 +7,8 @@
  */
 
 const { isEmpty } = require('lodash');
+const logger = require("../logger");
 
-console.log('MailService loading up...');
 module.exports = {
   /**
    * Sends an email.
