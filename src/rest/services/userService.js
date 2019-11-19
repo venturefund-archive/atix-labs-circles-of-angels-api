@@ -36,10 +36,6 @@ const logger = {
 };
 
 module.exports = {
-  // roleCreationMap: {
-  //   [userRoles.IMPACT_FUNDER]: userFunderDao,
-  //   [userRoles.SOCIAL_ENTREPRENEUR]: userSocialEntrepreneurDao
-  // },
 
   async getUserById(id) {
     return this.userDao.getUserById(id);
@@ -126,10 +122,14 @@ module.exports = {
   }) {
     const hashedPwd = await bcrypt.hash(password, 10);
 
-    const account = {
-      address: '0x2131321',
-      privateKey: '0x12313'
-    }; /* await fastify.eth.createAccount();
+    try {
+      // FIXME unmock this
+      const account = {
+        address: '0x2131321',
+        privateKey: '0x12313'
+      };
+      /*
+      await fastify.eth.createAccount();
       if (!account.address || !account.privateKey) {
         fastify.log.error(
           '[User Service] :: Error creating account on blockchain'
@@ -349,21 +349,11 @@ module.exports = {
     logger.info('[User Service] :: Getting all Users');
     try {
       // get users
-      const userList = await this.userDao.getUsers();
-      userList.forEach(async user => {
-        try {
-          const answers = await questionnaireService.getAnswersOfUser(user);
-          user.answers = answers;
-        } catch (error) {
-          logger.error('Questionnaire not found for user:', user.id);
-          throw new QuestionnaireNotFoundError(
-            `Questionnaire not found for user: ${user.id}`
-          );
-        }
-      });
+      const users = await this.userDao.getUsers();
+      return users;
 
       if (!userList || userList.length === 0) {
-        logger.info(
+        fastify.log.info(
           '[User Service] :: There are currently no non-admin users in the database'
         );
         return [];

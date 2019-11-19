@@ -10,13 +10,17 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const activityService = require('./services/activityService');
+const milestoneService = require('./services/milestoneService');
 
-const userDao = require('./dao/userDao');
+const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
-const roleDao = require('./dao/roleDao');
+const milestoneDao = require('./dao/milestoneDao');
+const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
 
 const passRecoveryDao = require('./dao/passRecoveryDao');
+
 const { injectDependencies } = require('./util/injection');
 
 module.exports = fastify => {
@@ -80,9 +84,23 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureMilestoneService(milestoneService) {
+    const dependencies = {
+      milestoneDao,
+      activityService: undefined,
+      milestoneBudgetStatusDao,
+      projectDao,
+      userDao
+    };
+    injectDependencies(milestoneService, dependencies);
+  }
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(roleDao, models.role);
+    injectModel(milestoneDao, models.milestone);
+    injectModel(projectDao, models.project);
+    injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
     injectModel(projectDao, models.project);
     injectModel(passRecoveryDao, models.passRecovery);
   }
@@ -90,6 +108,7 @@ module.exports = fastify => {
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
+    configureMilestoneService(milestoneService);
     configureProjectService(projectService);
     configurePasssRecoveryService(passRecoveryService);
   }
