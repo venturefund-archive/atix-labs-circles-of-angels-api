@@ -33,7 +33,6 @@ const milestoneDao = require('./dao/milestoneDao');
 const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
 const passRecoveryDao = require('./dao/passRecoveryDao');
->>>>>>> src/rest/ioc.js
 
 const { injectDependencies } = require('./util/injection');
 
