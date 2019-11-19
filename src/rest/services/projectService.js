@@ -14,32 +14,6 @@ const mime = require('mime');
 const { isEmpty, uniq } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 const {
-  InvalidFileTypeError,
-  ImageSizeNotValidError,
-  ProjectNotFoundError,
-  ProjectNotCreatedError,
-  ProjectNotUpdatedError,
-  ActionDeniedForUserError,
-  ReadingFileError,
-  UpdatingAgreementError,
-  ProjectWithNoAgreementError,
-  ProjectWithNoPitchProposalError,
-  DownloadingAgreementError,
-  DownloadingProposalError,
-  GettingTotalFundedError,
-  GettingProjectOwnerError,
-  GettingProjectsError,
-  GettingTransactionConfirmationError,
-  UserNotFoundError,
-  UploadingExperienceError,
-  UploadingFileError,
-  UpdatingBlockchainStatusError,
-  InvalidBlockchainStatusError,
-  GettingProjectExperiencesError,
-  SavingFileError
-} = require('../errors/exporter/ErrorExporter');
-
-const {
   addPathToFilesProperties,
   addTimestampToFilename
 } = require('../util/files');
@@ -48,6 +22,9 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+
+const { Errors } = require('./errors');
+
 const MAX_PHOTO_SIZE = 500000;
 
 const { savePhotoJpgFormat } = require('../util/files');
@@ -103,13 +80,10 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Agreement',
           projectAgreement
         );
-        // return {
-        //   status: 409,
-        //   error: 'Invalid file type for the uploaded Agreement'
-        // };
-        throw new InvalidFileTypeError(
-          'Invalid file type for the uploaded Agreement'
-        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded Agreement'
+        };
       }
 
       if (!projectProposal || !this.checkProposalType(projectProposal)) {
@@ -117,13 +91,10 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Proposal',
           projectProposal
         );
-        // return {
-        //   status: 409,
-        //   error: 'Invalid file type for the uploaded Proposal'
-        // };
-        throw new InvalidFileTypeError(
-          'Invalid file type for the uploaded Proposal'
-        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded Proposal'
+        };
       }
 
       if (!projectCardPhoto || !this.checkCardPhotoType(projectCardPhoto)) {
@@ -131,13 +102,10 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Card Photo',
           projectCardPhoto
         );
-        // return {
-        //   status: 409,
-        //   error: 'Invalid file type for the uploaded card photo'
-        // };
-        throw new InvalidFileTypeError(
-          'Invalid file type for the uploaded card photo'
-        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded card photo'
+        };
       }
 
       if (!projectCoverPhoto || !this.checkCoverPhotoType(projectCoverPhoto)) {
@@ -145,13 +113,10 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Cover Photo',
           projectCoverPhoto
         );
-        // return {
-        //   status: 409,
-        //   error: 'Invalid file type for the uploaded cover photo'
-        // };
-        throw new InvalidFileTypeError(
-          'Invalid file type for the uploaded cover photo'
-        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded cover photo'
+        };
       }
 
       if (!this.checkPhotoSize(projectCardPhoto)) {
@@ -159,14 +124,11 @@ module.exports = {
           '[Project Service] :: Size of Project Card Photo too high',
           projectCardPhoto
         );
-        // return {
-        //   status: 409,
-        //   error: `Invalid size for the uploaded card photo, higher than ${MAX_PHOTO_SIZE /
-        //     1000} MB`
-        // };
-        throw new ImageSizeNotValidError(
-          `Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE} /1000} MB`
-        );
+        return {
+          status: 409,
+          error: `Invalid size for the uploaded card photo, higher than ${MAX_PHOTO_SIZE /
+            1000} MB`
+        };
       }
 
       if (!this.checkPhotoSize(projectCoverPhoto)) {
@@ -174,14 +136,11 @@ module.exports = {
           '[Project Service] :: Size of Project Cover Photo too high',
           projectCoverPhoto
         );
-        // return {
-        //   status: 409,
-        //   error: `Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE /
-        //     1000} MB`
-        // };
-        throw new ImageSizeNotValidError(
-          `Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE} /1000} MB`
-        );
+        return {
+          status: 409,
+          error: `Invalid size for the uploaded cover photo, higher than ${MAX_PHOTO_SIZE /
+            1000} MB`
+        };
       }
 
       if (
@@ -192,13 +151,10 @@ module.exports = {
           '[Project Service] :: Wrong file type for Project Milestones file',
           projectMilestones
         );
-        // return {
-        //   status: 409,
-        //   error: 'Invalid file type for the uploaded Milestones file'
-        // };
-        throw new InvalidFileTypeError(
-          'Invalid file type for the uploaded Milestones file'
-        );
+        return {
+          status: 409,
+          error: 'Invalid file type for the uploaded Milestones file'
+        };
       }
 
       const savedProject = await this.projectDao.saveProject(newProject);
@@ -225,7 +181,9 @@ module.exports = {
       logger.info('[Project Service] :: Saving project files');
 
       // creates the directory where this project's files will be saved if not exists
-      await mkdirp(`${this.fileServer.filePath}/projects/${savedProject.id}`);
+      await mkdirp(
+        `${this.fileServer.filePath}/projects/${savedProject.id}`
+      );
 
       // saves the project's pictures and proposal
       logger.info(
@@ -320,8 +278,7 @@ module.exports = {
       return response;
     } catch (err) {
       logger.error('[Project Service] :: Error creating Project:', err);
-      // throw Error('Error creating Project');
-      throw new ProjectNotCreatedError('Error creating Project');
+      throw Error('Error creating Project');
     }
   },
 
@@ -392,16 +349,15 @@ module.exports = {
       delete newProject.transactionHash;
       delete newProject.creationTransactionHash;
 
-      const currentProject = await this.projectDao.getProjectById({
-        projectId: id
-      });
+      const currentProject = await this.projectDao.getProjectById({ projectId: id });
       if (!currentProject) {
-        logger.error(`[Project Service] :: Project ID ${id} does not exist`);
-        // return {
-        //   status: 404,
-        //   error: 'Project does not exist'
-        // };
-        throw new ProjectNotFoundError('Project does not exist');
+        logger.error(
+          `[Project Service] :: Project ID ${id} does not exist`
+        );
+        return {
+          status: 404,
+          error: 'Project does not exist'
+        };
       }
 
       if (newProject.status) {
@@ -410,19 +366,19 @@ module.exports = {
           if (startedProject.error) {
             return startedProject;
           }
-          logger.info('[Project Service] :: Project started:', startedProject);
+          logger.info(
+            '[Project Service] :: Project started:',
+            startedProject
+          );
           delete newProject.status;
         } else if (user.role.id !== userRoles.BO_ADMIN) {
           logger.error(
             '[Project Service] :: Could not change project status. User is not an admin'
           );
-          // return {
-          //   status: 403,
-          //   error: 'User needs admin privileges to perform this action'
-          // };
-          throw new ActionDeniedForUserError(
-            'User needs admin privileges to perform this action'
-          );
+          return {
+            status: 403,
+            error: 'User needs admin privileges to perform this action'
+          };
         }
       }
 
@@ -434,14 +390,11 @@ module.exports = {
           "[Project Service] :: Can't update project IN PROGRESS or SENT to the blockchain",
           id
         );
-        // return {
-        //   status: 409,
-        //   error:
-        //     'Project cannot be updated. It has already started or sent to the blockchain.'
-        // };
-        throw new ProjectNotUpdatedError(
-          'Project cannot be updated. It has already started or sent to the blockchain'
-        );
+        return {
+          status: 409,
+          error:
+            'Project cannot be updated. It has already started or sent to the blockchain.'
+        };
       }
 
       if (projectCardPhoto || projectCoverPhoto) {
@@ -519,9 +472,7 @@ module.exports = {
               newProject.cardPhoto = updatedCardPhoto.id;
             }
           } else {
-            const savedCardPhoto = await this.photoService.savePhoto(
-              cardPhotoPath
-            );
+            const savedCardPhoto = await this.photoService.savePhoto(cardPhotoPath);
             if (savedCardPhoto && savedCardPhoto != null) {
               newProject.cardPhoto = savedCardPhoto.id;
             }
@@ -543,11 +494,10 @@ module.exports = {
           `[Project Service] :: Project ID ${id} does not exist`,
           savedProject
         );
-        // return {
-        //   status: 404,
-        //   error: 'Project does not exist'
-        // };
-        throw new ProjectNotFoundError('Project does not exist');
+        return {
+          status: 404,
+          error: 'Project does not exist'
+        };
       }
 
       logger.info('[Project Service] :: Project updated:', savedProject);
@@ -555,8 +505,7 @@ module.exports = {
       return savedProject;
     } catch (error) {
       logger.error('[Project Service] :: Error updating Project:', error);
-      // throw Error('Error updating Project');
-      throw new ProjectNotUpdatedError('Error updating Project');
+      throw Error('Error updating Project');
     }
   },
 
@@ -608,6 +557,7 @@ module.exports = {
       if (!project) {
         logger.error('[Project Service] :: Project not found:', projectId);
         // return { error: 'Project not found', status: 404 };
+        throw Errors.ProjectNotFoundError;
       }
 
       const totalFunded = await this.getTotalFunded(projectId);
@@ -617,7 +567,7 @@ module.exports = {
     } catch (error) {
       logger.error('[Project Service] :: Error getting project:', error);
       // throw Error('Error getting project');
-      throw new GettingProjectsError('Error getting project');
+      throw Errors.CouldNotReadProject;
     }
   },
 
@@ -651,7 +601,7 @@ module.exports = {
           });
         }),
       milestones
-    );
+    ); 
 
     return milestones;
   },
@@ -677,11 +627,10 @@ module.exports = {
             '[Project Service] :: Error reading milestones template file',
             error
           );
-          // return {
-          //   error: 'ERROR: Error reading milestones template file',
-          //   status: 404
-          // };
-          throw new ReadingFileError('Error reading milestones template file');
+          return {
+            error: 'ERROR: Error reading milestones template file',
+            status: 404
+          };
         });
 
         const response = {
@@ -695,21 +644,19 @@ module.exports = {
       logger.error(
         `[Project Service] :: Milestones template file could not be found in ${filepath}`
       );
-      // return {
-      //   error: 'ERROR: Milestones template file could not be found',
-      //   status: 404
-      // };
-      throw new ReadingFileError('Milestones template file could not be found');
+      return {
+        error: 'ERROR: Milestones template file could not be found',
+        status: 404
+      };
     } catch (error) {
       logger.error(
         '[Project Service] :: Error reading milestones template file',
         error
       );
-      // return {
-      //   error: 'ERROR: Error reading milestones template file',
-      //   status: 404
-      // };
-      throw new ReadingFileError('Error reading milestones template file');
+      return {
+        error: 'ERROR: Error reading milestones template file',
+        status: 404
+      };
     }
   },
 
@@ -734,13 +681,10 @@ module.exports = {
             '[Project Service] :: Error reading project proposal template file',
             error
           );
-          // return {
-          //   error: 'ERROR: Error reading project proposal template file',
-          //   status: 404
-          // };
-          throw new ReadingFileError(
-            'Error reading project proposal template file'
-          );
+          return {
+            error: 'ERROR: Error reading project proposal template file',
+            status: 404
+          };
         });
 
         const response = {
@@ -754,25 +698,19 @@ module.exports = {
       logger.error(
         `[Project Service] :: Project proposal template file could not be found in ${filepath}`
       );
-      // return {
-      //   error: 'ERROR: Project proposal template file could not be found',
-      //   status: 404
-      // };
-      throw new ReadingFileError(
-        'Project proposal template file could not be found'
-      );
+      return {
+        error: 'ERROR: Project proposal template file could not be found',
+        status: 404
+      };
     } catch (error) {
       logger.error(
         '[Project Service] :: Error reading project proposal template file',
         error
       );
-      // return {
-      //   error: 'ERROR: Error reading project proposal template file',
-      //   status: 404
-      // };
-      throw new ReadingFileError(
-        'Error reading project proposal template file'
-      );
+      return {
+        error: 'ERROR: Error reading project proposal template file',
+        status: 404
+      };
     }
   },
 
@@ -782,8 +720,7 @@ module.exports = {
     );
 
     if (!milestonesFilePath || milestonesFilePath == null) {
-      // throw Error('Error getting milestones file');
-      throw new ReadingFileError('Error getting milestones file');
+      throw Error('Error getting milestones file');
     }
 
     const response = {
@@ -806,9 +743,10 @@ module.exports = {
       const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
-        logger.error(`[Project Service] :: Project ID ${projectId} not found`);
-        // return { error: 'ERROR: Project not found', status: 404 };
-        throw new ProjectNotFoundError('Project not found');
+        logger.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
       }
 
       // creates the directory where this project's agreement will be saved if not exists
@@ -820,16 +758,20 @@ module.exports = {
       // saves the project's agreement
       logger.info(
         '[Project Service] :: Saving Project agreement to:',
-        `${this.fileServer.filePath}/projects/${project.id}/${filename}`
+        `${this.fileServer.filePath}/projects/${
+          project.id
+        }/${filename}`
       );
       await projectAgreement.mv(
-        `${this.fileServer.filePath}/projects/${project.id}/${filename}`
+        `${this.fileServer.filePath}/projects/${
+          project.id
+        }/${filename}`
       );
 
       // update database
-      const projectAgreementPath = `${this.fileServer.filePath}/projects/${
-        project.id
-      }/${filename}`;
+      const projectAgreementPath = `${
+        this.fileServer.filePath
+      }/projects/${project.id}/${filename}`;
 
       const updatedProject = await this.projectDao.updateProjectAgreement({
         projectAgreement: projectAgreementPath,
@@ -843,9 +785,11 @@ module.exports = {
 
       return updatedProject;
     } catch (error) {
-      logger.error('[Project Service] :: Error uploading agreement:', error);
-      // throw Error('Error uploading agreement');
-      throw new UpdatingAgreementError('Error uploading agreement');
+      logger.error(
+        '[Project Service] :: Error uploading agreement:',
+        error
+      );
+      throw Error('Error uploading agreement');
     }
   },
 
@@ -860,9 +804,10 @@ module.exports = {
       const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
-        logger.error(`[Project Service] :: Project ID ${projectId} not found`);
-        // return { error: 'ERROR: Project not found', status: 404 };
-        throw new ProjectNotFoundError(`Project ID ${projectId} not found`);
+        logger.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
       }
 
       if (
@@ -873,14 +818,11 @@ module.exports = {
         logger.error(
           `[Project Service] :: Project ID ${projectId} doesn't have an agreement uploaded`
         );
-        // return {
-        //   // eslint-disable-next-line prettier/prettier
-        //   error: "ERROR: Project doesn't have an agreement uploaded",
-        //   status: 409
-        // };
-        throw new ProjectWithNoAgreementError(
-          'Project does not have an agreement uploaded'
-        );
+        return {
+          // eslint-disable-next-line prettier/prettier
+          error: "ERROR: Project doesn't have an agreement uploaded",
+          status: 409
+        };
       }
 
       const filepath = project.projectAgreement;
@@ -893,11 +835,10 @@ module.exports = {
           `[Project Service] :: Agreement file not found for Project ID ${projectId}:`,
           error
         );
-        // return {
-        //   error: 'ERROR: Agreement file not found',
-        //   status: 404
-        // };
-        throw new ReadingFileError('Agreement file not found');
+        return {
+          error: 'ERROR: Agreement file not found',
+          status: 404
+        };
       });
 
       const response = {
@@ -908,8 +849,7 @@ module.exports = {
       return response;
     } catch (error) {
       logger.error('[Project Service] :: Error getting agreement:', error);
-      // throw Error('Error getting agreement');
-      throw new DownloadingAgreementError('Error getting agreement');
+      throw Error('Error getting agreement');
     }
   },
 
@@ -924,9 +864,10 @@ module.exports = {
       const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project || project == null) {
-        logger.error(`[Project Service] :: Project ID ${projectId} not found`);
-        // return { error: 'ERROR: Project not found', status: 404 };
-        throw new ProjectNotFoundError('Project not found');
+        logger.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return { error: 'ERROR: Project not found', status: 404 };
       }
 
       if (
@@ -937,14 +878,11 @@ module.exports = {
         logger.error(
           `[Project Service] :: Project ID ${projectId} doesn't have a pitch proposal uploaded`
         );
-        // return {
-        //   // eslint-disable-next-line prettier/prettier
-        //   error: "ERROR: Project doesn't have a pitch proposal uploaded",
-        //   status: 409
-        // };
-        throw new ProjectWithNoPitchProposalError(
-          'Project does not have a pitch proposal uploaded'
-        );
+        return {
+          // eslint-disable-next-line prettier/prettier
+          error: "ERROR: Project doesn't have a pitch proposal uploaded",
+          status: 409
+        };
       }
       const filepath = project.pitchProposal;
 
@@ -956,11 +894,10 @@ module.exports = {
           `[Project Service] :: Pitch proposal file not found for Project ID ${projectId}:`,
           error
         );
-        // return {
-        //   error: 'ERROR: Pitch proposal file not found',
-        //   status: 404
-        // };
-        throw new ReadingFileError('Pitch proposal file not found');
+        return {
+          error: 'ERROR: Pitch proposal file not found',
+          status: 404
+        };
       });
 
       const response = {
@@ -970,9 +907,11 @@ module.exports = {
 
       return response;
     } catch (error) {
-      logger.error('[Project Service] :: Error getting pitch proposal:', error);
-      // throw Error('Error getting pitch proposal');
-      throw new DownloadingProposalError('Error downaloading pitch proposal');
+      logger.error(
+        '[Project Service] :: Error getting pitch proposal:',
+        error
+      );
+      throw Error('Error getting pitch proposal');
     }
   },
 
@@ -998,9 +937,11 @@ module.exports = {
       );
       return totalAmount;
     } catch (error) {
-      logger.error('[Project Service] :: Error getting funded amount:', error);
-      // throw Error('Error getting funded amount');
-      throw new GettingTotalFundedError('Error getting funded amount');
+      logger.error(
+        '[Project Service] :: Error getting funded amount:',
+        error
+      );
+      throw Error('Error getting funded amount');
     }
   },
 
@@ -1025,8 +966,7 @@ module.exports = {
         logger.error(
           `[Project Service] :: Project ID ${project.id} is not published`
         );
-        // return { error: 'Project needs to be published', status: 409 };
-        throw new ProjectStatusError('Project needs to be published');
+        return { error: 'Project needs to be published', status: 409 };
       }
 
       if (
@@ -1038,11 +978,10 @@ module.exports = {
             project.id
           } already in progress or sent to the blockchain`
         );
-        // return {
-        //   error: 'Project has already started or sent to the blockchain',
-        //   status: 409
-        // };
-        throw new ProjectAlreadyStartedError('Project has already started');
+        return {
+          error: 'Project has already started or sent to the blockchain',
+          status: 409
+        };
       }
 
       const projectWithOracles = await this.isFullyAssigned(project.id);
@@ -1052,13 +991,10 @@ module.exports = {
             project.id
           } has activities with no oracles assigned`
         );
-        // return {
-        //   error: 'Project has activities with no oracles assigned',
-        //   status: 409
-        // };
-        throw new ProjectActivitiesWithNoOracle(
-          'Project has activities with no oracles assigned'
-        );
+        return {
+          error: 'Project has activities with no oracles assigned',
+          status: 409
+        };
       }
 
       logger.info(
@@ -1074,8 +1010,7 @@ module.exports = {
       return startPendingProject;
     } catch (error) {
       logger.error('[Project Service] :: Error starting project:', error);
-      // throw Error('Error starting project');
-      throw new StartingProjectError('Error starting project');
+      throw Error('Error starting project');
     }
   },
 
@@ -1086,9 +1021,7 @@ module.exports = {
    */
   async isFullyAssigned(projectId) {
     let isFullyAssigned = true;
-    const milestones = await this.milestoneService.getMilestonesByProject(
-      projectId
-    );
+    const milestones = await this.milestoneService.getMilestonesByProject(projectId);
 
     if (!milestones || milestones == null || isEmpty(milestones)) {
       return false;
@@ -1118,9 +1051,7 @@ module.exports = {
       oracleId
     );
     try {
-      const projects = await this.milestoneService.getProjectsAsOracle(
-        oracleId
-      );
+      const projects = await this.milestoneService.getProjectsAsOracle(oracleId);
       if (projects.error) {
         return projects;
       }
@@ -1132,8 +1063,7 @@ module.exports = {
       return { projects: uniqueProjects, oracle: oracleId };
     } catch (error) {
       logger.error('[Project Service] :: Error getting Projects:', error);
-      throw new GettingProjectsError('Error getting Projects');
-      // throw Error('Error getting Projects');
+      throw Error('Error getting Projects');
     }
   },
 
@@ -1149,8 +1079,7 @@ module.exports = {
       const user = await this.userDao.getUserById(project.ownerId);
       return user;
     } catch (error) {
-      // throw Error('Error getting project owner');
-      throw new GettingProjectOwnerError('Error getting project owner');
+      throw Error('Error getting project owner');
     }
   },
 
@@ -1165,10 +1094,7 @@ module.exports = {
       const project = await this.projectDao.getProjectById({ projectId });
       return fastify.eth.isTransactionConfirmed(project.transactionHash);
     } catch (error) {
-      throw new GettingTransactionConfirmationError(
-        'Error getting confirmation of transaction'
-      );
-      // throw Error('Error getting confirmation of transaction');
+      throw Error('Error getting confirmation of transaction');
     }
   },
 
@@ -1182,13 +1108,10 @@ module.exports = {
       const projects = await this.projectDao.getProjectsByOwner(ownerId);
       return projects;
     } catch (error) {
-      // return {
-      //   status: 500,
-      //   error: `Error getting Projects of owner: ${ownerId}`
-      // };
-      throw new GettingProjectOwnerError(
-        `Error getting Projects of owner: ${ownerId}`
-      );
+      return {
+        status: 500,
+        error: `Error getting Projects of owner: ${ownerId}`
+      };
     }
   },
 
@@ -1220,12 +1143,13 @@ module.exports = {
       const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project) {
-        logger.error(`[Project Service] :: Project ID ${projectId} not found`);
-        // return {
-        //   status: 404,
-        //   error: 'Project not found'
-        // };
-        throw new ProjectNotFoundError('Project not found');
+        logger.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return {
+          status: 404,
+          error: 'Project not found'
+        };
       }
 
       const user = await this.userDao.getUserById(experience.user);
@@ -1234,11 +1158,10 @@ module.exports = {
         logger.error(
           `[Project Service] :: User ID ${experience.user} not found`
         );
-        // return {
-        //   status: 404,
-        //   error: 'User not found'
-        // };
-        throw new UserNotFoundError('User not found');
+        return {
+          status: 404,
+          error: 'User not found'
+        };
       }
 
       const newExperience = { ...experience, project: projectId };
@@ -1253,13 +1176,10 @@ module.exports = {
           newExperience
         );
 
-        // return {
-        //   status: 500,
-        //   error: 'There was an error uploading the experience'
-        // };
-        throw new UploadingExperienceError(
-          'There was an error uploading the experience'
-        );
+        return {
+          status: 500,
+          error: 'There was an error uploading the experience'
+        };
       }
 
       const errors = [];
@@ -1291,10 +1211,11 @@ module.exports = {
 
       return savedExperience;
     } catch (error) {
-      logger.error('[Project Service] :: Error uploading experience:', error);
-      throw new UploadingExperienceError(
-        'There was an error uploading the experience'
+      logger.error(
+        '[Project Service] :: Error uploading experience:',
+        error
       );
+      throw Error('Error uploading experience');
     }
   },
 
@@ -1306,14 +1227,12 @@ module.exports = {
         '[Project Service] :: Error getting mime type of file:',
         file
       );
-      // return { error: 'Error uploading file', status: 409 };
-      throw new UploadingFileError('Error uploading file');
+      return { error: 'Error uploading file', status: 409 };
     }
 
     if (!filetype.includes('image/')) {
       logger.error('[Project Service] :: File type is invalid:', file);
-      // return { error: 'File type is invalid', status: 409 };
-      throw new InvalidFileTypeError('File type is invalid');
+      return { error: 'File type is invalid', status: 409 };
     }
 
     logger.info('[Project Service] :: Saving file:', file);
@@ -1348,11 +1267,10 @@ module.exports = {
       if (fs.existsSync(filepath)) {
         await unlinkPromise(filepath);
       }
-      // return {
-      //   status: 409,
-      //   error: 'Error saving file'
-      // };
-      throw new SavingFileError('Error saving file');
+      return {
+        status: 409,
+        error: 'Error saving file'
+      };
     }
   },
 
@@ -1371,12 +1289,13 @@ module.exports = {
       const project = await this.projectDao.getProjectById({ projectId });
 
       if (!project) {
-        logger.error(`[Project Service] :: Project ID ${projectId} not found`);
-        // return {
-        //   status: 404,
-        //   error: 'Project not found'
-        // };
-        throw new ProjectNotFoundError('Project not found');
+        logger.error(
+          `[Project Service] :: Project ID ${projectId} not found`
+        );
+        return {
+          status: 404,
+          error: 'Project not found'
+        };
       }
 
       const experiences = await this.projectExperienceDao.getExperiencesByProject(
@@ -1387,13 +1306,10 @@ module.exports = {
         logger.error(
           `[Project Service] :: Error getting the experiences for project ID ${projectId}`
         );
-        // return {
-        //   status: 500,
-        //   error: 'There was an error getting the project experiences'
-        // };
-        throw new GettingProjectExperiencesError(
-          'There was an error getting the project experiences'
-        );
+        return {
+          status: 500,
+          error: 'There was an error getting the project experiences'
+        };
       }
 
       if (isEmpty(experiences)) {
@@ -1404,16 +1320,17 @@ module.exports = {
 
       return experiences;
     } catch (error) {
-      logger.error('[Project Service] :: Error getting experiences:', error);
-      // throw Error('Error getting experiences');
-      throw new GettingProjectExperiencesError('Error getting experiences');
+      logger.error(
+        '[Project Service] :: Error getting experiences:',
+        error
+      );
+      throw Error('Error getting experiences');
     }
   },
 
   async updateBlockchainStatus(projectId, status) {
     if (!Object.values(blockchainStatus).includes(status)) {
-      // return { error: 'Invalid Blockchain status' };
-      throw new InvalidBlockchainStatusError('Invalid Blockchain status');
+      return { error: 'Invalid Blockchain status' };
     }
     return this.projectDao.updateBlockchainStatus(projectId, status);
   },
@@ -1432,10 +1349,7 @@ module.exports = {
       );
       return isEmpty(activities);
     } catch (error) {
-      // return { error };
-      throw new UpdatingBlockchainStatusError(
-        'Updating Blockchain Status Error'
-      );
+      return { error };
     }
   }
 };
