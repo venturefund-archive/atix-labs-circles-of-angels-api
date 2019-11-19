@@ -6,19 +6,15 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const getRoleById = roleModel => async id => {
-  const role = await roleModel.findOne({
-    id
-  });
-  return role;
+module.exports = {
+  async getRoleById(id) {
+    const role = await this.model.findOne({
+      id
+    });
+    return role;
+  },
+  async getAllRoles() {
+    const roleList = await this.model.find();
+    return roleList || [];
+  }
 };
-
-const getAllRoles = roleModel => async () => {
-  const roleList = await roleModel.find();
-  return roleList || [];
-};
-
-module.exports = roleModel => ({
-  getRoleById: getRoleById(roleModel),
-  getAllRoles: getAllRoles(roleModel)
-});

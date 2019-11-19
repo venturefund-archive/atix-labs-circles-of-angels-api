@@ -4,3 +4,5 @@ logs/*
 
 # dot environment variables
 .env
+#flyway
+flyway*

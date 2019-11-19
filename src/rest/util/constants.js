@@ -33,10 +33,10 @@ const activityStatus = {
 };
 
 const userRoles = {
-  BO_ADMIN: 1,
-  SOCIAL_ENTREPRENEUR: 2,
-  IMPACT_FUNDER: 3,
-  ORACLE: 4
+  BO_ADMIN: 'admin',
+  ENTREPRENEUR: 'entrepreneur',
+  FUNDER: 'funder',
+  ORACLE: 'oracle'
 };
 
 const milestoneBudgetStatus = {
@@ -44,12 +44,6 @@ const milestoneBudgetStatus = {
   CLAIMED: 2,
   FUNDED: 3,
   BLOCKED: 4
-};
-
-const userRegistrationStatus = {
-  PENDING_APPROVAL: 1,
-  APPROVED: 2,
-  REJECTED: 3
 };
 
 const blockchainStatus = {
@@ -91,11 +85,11 @@ const transactionTypes = {
   milestoneCreation: 'milestoneCreation',
   activityCreation: 'activityCreation',
   milestoneClaimed: 'milestoneClaimed',
-  projectStarted:'projectStarted',
+  projectStarted: 'projectStarted',
   milestoneFunded: 'milestoneFunded',
   validateActivity: 'validateActivity',
   updateEvidence: 'updateEvidence'
-}
+};
 
 module.exports = {
   evidenceFileTypes,
@@ -104,7 +98,6 @@ module.exports = {
   activityStatus,
   userRoles,
   milestoneBudgetStatus,
-  userRegistrationStatus,
   blockchainStatus,
   xlsxConfigs,
   transactionTypes
