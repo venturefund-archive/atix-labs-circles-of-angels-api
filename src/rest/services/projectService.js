@@ -14,13 +14,12 @@ const mime = require('mime');
 const { isEmpty, uniq } = require('lodash');
 const { forEachPromise } = require('../util/promises');
 const {
-  FileTypeNotValidError,
+  InvalidFileTypeError,
   ImageSizeNotValidError,
   ProjectNotFoundError,
   ProjectNotCreatedError,
   ProjectNotUpdatedError,
   ActionDeniedForUserError,
-  ReadingProjectError,
   ReadingFileError,
   UpdatingAgreementError,
   ProjectWithNoAgreementError,
@@ -33,8 +32,13 @@ const {
   GettingTransactionConfirmationError,
   UserNotFoundError,
   UploadingExperienceError,
-  UploadingFileError
+  UploadingFileError,
+  UpdatingBlockchainStatusError,
+  InvalidBlockchainStatusError,
+  GettingProjectExperiencesError,
+  SavingFileError
 } = require('../errors/exporter/ErrorExporter');
+
 const {
   addPathToFilesProperties,
   addTimestampToFilename
@@ -103,7 +107,7 @@ module.exports = {
         //   status: 409,
         //   error: 'Invalid file type for the uploaded Agreement'
         // };
-        throw new FileTypeNotValidError(
+        throw new InvalidFileTypeError(
           'Invalid file type for the uploaded Agreement'
         );
       }
@@ -117,7 +121,7 @@ module.exports = {
         //   status: 409,
         //   error: 'Invalid file type for the uploaded Proposal'
         // };
-        throw new FileTypeNotValidError(
+        throw new InvalidFileTypeError(
           'Invalid file type for the uploaded Proposal'
         );
       }
@@ -131,7 +135,7 @@ module.exports = {
         //   status: 409,
         //   error: 'Invalid file type for the uploaded card photo'
         // };
-        throw new FileTypeNotValidError(
+        throw new InvalidFileTypeError(
           'Invalid file type for the uploaded card photo'
         );
       }
@@ -145,7 +149,7 @@ module.exports = {
         //   status: 409,
         //   error: 'Invalid file type for the uploaded cover photo'
         // };
-        throw new FileTypeNotValidError(
+        throw new InvalidFileTypeError(
           'Invalid file type for the uploaded cover photo'
         );
       }
@@ -192,7 +196,7 @@ module.exports = {
         //   status: 409,
         //   error: 'Invalid file type for the uploaded Milestones file'
         // };
-        throw new FileTypeNotValidError(
+        throw new InvalidFileTypeError(
           'Invalid file type for the uploaded Milestones file'
         );
       }
@@ -613,7 +617,7 @@ module.exports = {
     } catch (error) {
       logger.error('[Project Service] :: Error getting project:', error);
       // throw Error('Error getting project');
-      throw new ReadingProjectError('Error getting project');
+      throw new GettingProjectsError('Error getting project');
     }
   },
 
@@ -1308,7 +1312,8 @@ module.exports = {
 
     if (!filetype.includes('image/')) {
       logger.error('[Project Service] :: File type is invalid:', file);
-      return { error: 'File type is invalid', status: 409 };
+      // return { error: 'File type is invalid', status: 409 };
+      throw new InvalidFileTypeError('File type is invalid');
     }
 
     logger.info('[Project Service] :: Saving file:', file);
@@ -1343,10 +1348,11 @@ module.exports = {
       if (fs.existsSync(filepath)) {
         await unlinkPromise(filepath);
       }
-      return {
-        status: 409,
-        error: 'Error saving file'
-      };
+      // return {
+      //   status: 409,
+      //   error: 'Error saving file'
+      // };
+      throw new SavingFileError('Error saving file');
     }
   },
 
@@ -1366,10 +1372,11 @@ module.exports = {
 
       if (!project) {
         logger.error(`[Project Service] :: Project ID ${projectId} not found`);
-        return {
-          status: 404,
-          error: 'Project not found'
-        };
+        // return {
+        //   status: 404,
+        //   error: 'Project not found'
+        // };
+        throw new ProjectNotFoundError('Project not found');
       }
 
       const experiences = await this.projectExperienceDao.getExperiencesByProject(
@@ -1380,10 +1387,13 @@ module.exports = {
         logger.error(
           `[Project Service] :: Error getting the experiences for project ID ${projectId}`
         );
-        return {
-          status: 500,
-          error: 'There was an error getting the project experiences'
-        };
+        // return {
+        //   status: 500,
+        //   error: 'There was an error getting the project experiences'
+        // };
+        throw new GettingProjectExperiencesError(
+          'There was an error getting the project experiences'
+        );
       }
 
       if (isEmpty(experiences)) {
@@ -1395,13 +1405,15 @@ module.exports = {
       return experiences;
     } catch (error) {
       logger.error('[Project Service] :: Error getting experiences:', error);
-      throw Error('Error getting experiences');
+      // throw Error('Error getting experiences');
+      throw new GettingProjectExperiencesError('Error getting experiences');
     }
   },
 
   async updateBlockchainStatus(projectId, status) {
     if (!Object.values(blockchainStatus).includes(status)) {
-      return { error: 'Invalid Blockchain status' };
+      // return { error: 'Invalid Blockchain status' };
+      throw new InvalidBlockchainStatusError('Invalid Blockchain status');
     }
     return this.projectDao.updateBlockchainStatus(projectId, status);
   },
@@ -1420,7 +1432,10 @@ module.exports = {
       );
       return isEmpty(activities);
     } catch (error) {
-      return { error };
+      // return { error };
+      throw new UpdatingBlockchainStatusError(
+        'Updating Blockchain Status Error'
+      );
     }
   }
 };

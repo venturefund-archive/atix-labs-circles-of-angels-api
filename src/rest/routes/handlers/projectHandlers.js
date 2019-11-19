@@ -19,7 +19,12 @@ const {
   UpdatingAgreementError,
   ProjectWithNoAgreementError,
   DownloadingAgreementError,
-  GettingProjectsError
+  GettingProjectsError,
+  ProjectWithNoPitchProposalError,
+  DownloadingProposalError,
+  UserNotFoundError,
+  UploadingExperienceError,
+  GettingProjectExperiencesError
 } = require('../../errors/exporter/ErrorExporter');
 
 module.exports = {
@@ -408,15 +413,15 @@ module.exports = {
       }
     } catch (error) {
       fastify.log.error('[Project Routes] :: Error getting proposal:', error);
-      if (error instanceof DownloadingAgreementError) {
-        reply.status(400).send({ error: error.errorDescription });
-      } else if (
+      if (
         error instanceof ProjectNotFoundError ||
         error instanceof ReadingFileError
       ) {
         reply.status(404).send({ error: error.errorDescription });
-      } else if (error instanceof ProjectWithNoAgreementError) {
+      } else if (error instanceof ProjectWithNoPitchProposalError) {
         reply.status(409).send({ error: error.errorDescription });
+      } else if (error instanceof DownloadingProposalError) {
+        reply.status(500).send({ error: error.errorDescription });
       } else {
         reply.status(500).send({ error: 'Error getting proposal' });
       }
@@ -548,9 +553,18 @@ module.exports = {
         '[Project Routes] :: Error uploading project experience: ',
         error
       );
-      reply.status(500).send({
-        error: 'There was an unexpected error uploading the experience'
-      });
+      if (
+        error instanceof ProjectNotFoundError ||
+        error instanceof UserNotFoundError
+      ) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else if (error instanceof UploadingExperienceError) {
+        reply.status(500).send({ error: error.errorDescription });
+      } else {
+        reply.status(500).send({
+          error: 'There was an unexpected error uploading the experience'
+        });
+      }
     }
   },
 
@@ -579,9 +593,17 @@ module.exports = {
         '[Project Routes] :: Error getting the project experiences: ',
         error
       );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting the experiences'
-      });
+      if (error instanceof ProjectNotFoundError) {
+        reply.status(404).send({ error: error.errorDescription });
+      } else if (error instanceof GettingProjectExperiencesError) {
+        reply.status(500).send({
+          error: error.errorDescription
+        });
+      } else {
+        reply.status(500).send({
+          error: 'There was an unexpected error getting the experiences'
+        });
+      }
     }
   }
 };

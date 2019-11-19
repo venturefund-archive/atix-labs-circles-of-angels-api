@@ -1,7 +1,7 @@
-const COAError = require('./COAError');
+const COAError = require('./COAError').default;
 
-module.exports =  class ImageSizeNotValidError extends COAError {
-    constructor(errorDescription) {
-        super('Invalid Image Size', errorDescription);
-    }
-}
+module.exports = class ImageSizeNotValidError extends COAError {
+  constructor(errorDescription) {
+    super('Invalid Image Size', errorDescription);
+  }
+};

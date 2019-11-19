@@ -1,4 +1,4 @@
-const COAError = require('./COAError');
+const COAError = require('./COAError').default;
 
 module.exports = class UserNotFoundError extends COAError {
   constructor(errorDescription) {

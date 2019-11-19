@@ -12,7 +12,7 @@ const configs = require('config');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 
-const projectServiceBuilder = require('../rest/core/projectService');
+const projectServiceBuilder = require('../rest/services/projectService');
 const { projectStatus, blockchainStatus } = require('../rest/util/constants');
 
 const { injectMocks } = require('../rest/util/injection');
