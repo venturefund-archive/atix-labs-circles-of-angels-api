@@ -14,7 +14,7 @@ const {
   projectStatus
 } = require('../util/constants');
 
-const logger = require("../logger");
+const logger = require('../logger');
 
 const {
   COAError,
@@ -30,7 +30,6 @@ const {
 } = require('../errors/exporter/ErrorExporter');
 
 module.exports = {
-
   async getUserById(id) {
     return this.userDao.getUserById(id);
   },
@@ -116,13 +115,12 @@ module.exports = {
   }) {
     const hashedPwd = await bcrypt.hash(password, 10);
 
-    try {
-      // FIXME unmock this
-      const account = {
-        address: '0x2131321',
-        privateKey: '0x12313'
-      };
-      /*
+    // FIXME unmock this
+    const account = {
+      address: '0x2131321',
+      privateKey: '0x12313'
+    };
+    /*
       await fastify.eth.createAccount();
       if (!account.address || !account.privateKey) {
         fastify.log.error(
@@ -217,8 +215,8 @@ module.exports = {
       throw new UserNotFoundError('User does not exist');
     }
 
-      const { pwd, email } = user;
-      const newUser = { ...user };
+    const { pwd, email } = user;
+    const newUser = { ...user };
 
     if (pwd) {
       const hashedPwd = await bcrypt.hash(pwd, 10);
@@ -341,64 +339,7 @@ module.exports = {
    */
   async getUsers() {
     logger.info('[User Service] :: Getting all Users');
-    try {
-      // get users
-      const users = await this.userDao.getUsers();
-      return users;
-
-      if (!userList || userList.length === 0) {
-        fastify.log.info(
-          '[User Service] :: There are currently no non-admin users in the database'
-        );
-        return [];
-      }
-
-      const allUsersWithDetail = await Promise.all(
-        userList.map(async user => {
-          // if se or funder get details
-          if (this.roleCreationMap[user.role.id]) {
-            // const detail = await this.roleCreationMap[user.role.id].getByUserId(
-            //   user.id
-            // );
-
-            // add details to user
-            const userWithDetail = {
-              ...user
-              // detail
-            };
-
-            return userWithDetail;
-          }
-
-          return user;
-        })
-      );
-
-      // const allUsersWithDetail = await Promise.all(
-      //   userList.map(async user => {
-      //     // if se or funder get details
-      //     if (this.roleCreationMap[user.role.id]) {
-      //       // const detail = await this.roleCreationMap[user.role.id].getByUserId(
-      //       //   user.id
-      //       // );
-
-      //       // add details to user
-      //       const userWithDetail = {
-      //         ...user
-      //         // detail
-      //       };
-
-      //       return userWithDetail;
-      //     }
-
-      //     return user;
-      //   })
-      // );
-      // return allUsersWithDetail;
-    } catch (error) {
-      logger.error('[User Service] :: Error getting all Users:', error);
-      throw new COAError('Error getting all Users');
-    }
+    return this.userDao.getUsers();
   },
 
   // TODO FIXME: fix this.
