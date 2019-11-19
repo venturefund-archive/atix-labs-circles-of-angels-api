@@ -6,7 +6,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const userProjectService = ({ fastify, userProjectDao }) => ({
+// TODO : replace with a logger;
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
+
+module.exports = {
   /**
    * Receives a user id and a project id.
    *
@@ -16,15 +23,14 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
    * @returns updated userProject row
    */
   async signAgreement({ userProjectId, status }) {
-    const userProject = await userProjectDao.findUserProjectById(userProjectId);
-
-    fastify.log.info(
-      '[User Project Service] :: userProject found:',
-      userProject
+    const userProject = await this.userProjectDao.findUserProjectById(
+      userProjectId
     );
 
+    logger.info('[User Project Service] :: userProject found:', userProject);
+
     if (!userProject && userProject == null) {
-      fastify.log.info(
+      logger.info(
         '[User Project Service] :: UserProject ID not found:',
         userProjectId
       );
@@ -32,19 +38,19 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
     }
 
     if (userProject.status === 1) {
-      fastify.log.info(
+      logger.info(
         '[User Project Service] :: Agreement already signed for:',
         userProject
       );
       return { error: 'Agreement already signed', status: 409 };
     }
 
-    const updatedUserProject = await userProjectDao.updateStatus({
+    const updatedUserProject = await this.userProjectDao.updateStatus({
       userProject,
       newStatus: status
     });
 
-    fastify.log.info(
+    logger.info(
       '[User Project Service] :: userProject status updated:',
       updatedUserProject
     );
@@ -59,42 +65,36 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
    * @returns list of userProjects with the users information
    */
   async getUsers(projectId) {
-    const userProjects = await userProjectDao.getUserProjects(projectId);
+    const userProjects = await this.userProjectDao.getUserProjects(projectId);
 
-    fastify.log.info(
-      '[User Project Service] :: UsersProjects found:',
-      userProjects
-    );
+    logger.info('[User Project Service] :: UsersProjects found:', userProjects);
 
     if (!userProjects && userProjects == null) {
-      fastify.log.info(
+      logger.info(
         '[User Project Service] :: Users not found for Project ID:',
         projectId
       );
       return { error: 'Users not found', status: 404 };
     }
 
-    fastify.log.info(
-      '[User Project Service] :: UsersProject found:',
-      userProjects
-    );
+    logger.info('[User Project Service] :: UsersProject found:', userProjects);
 
     return userProjects;
   },
 
   async createUserProject(userId, projectId) {
-    fastify.log.info(
+    logger.info(
       `[User Project Service] :: Creating User-Project relation: User ${userId} - Project ${projectId}`
     );
     // check if already exists
-    const userProject = await userProjectDao.findUserProject({
+    const userProject = await this.userProjectDao.findUserProject({
       userId,
       projectId
     });
 
     if (userProject) {
       // relation already exists
-      fastify.log.info(
+      logger.info(
         '[User Project Service] :: User-Project relation already exists:',
         userProject
       );
@@ -108,12 +108,12 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
     };
 
     try {
-      const savedUserProject = await userProjectDao.createUserProject(
+      const savedUserProject = await this.userProjectDao.createUserProject(
         newUserProject
       );
 
       if (!savedUserProject || savedUserProject == null) {
-        fastify.log.error(
+        logger.error(
           '[User Project Service] :: There was an error creating the User-Project: ',
           newUserProject
         );
@@ -124,14 +124,14 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
         };
       }
 
-      fastify.log.info(
+      logger.info(
         '[User Project Service] :: User-Project relation created succesfully: ',
         savedUserProject
       );
 
       return savedUserProject;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[User Project Service] :: There was an error creating the User-Project: ',
         newUserProject
       );
@@ -141,17 +141,15 @@ const userProjectService = ({ fastify, userProjectDao }) => ({
 
   async getProjectsOfUser(userId) {
     try {
-      const userProjects = await userProjectDao.getProjectsOfUser(userId);
+      const userProjects = await this.userProjectDao.getProjectsOfUser(userId);
       const projects = userProjects.map(userProject => userProject.project);
       return projects;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[User Project Service] :: Error geting projects of user.',
         error
       );
       return { status: 500, error: 'Error getting projects of user: ', userId };
     }
   }
-});
-
-module.exports = userProjectService;
+};

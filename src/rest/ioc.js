@@ -10,17 +10,19 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+
+const userProjectService = require('./services/userProjectService');
 const transferService = require('./services/transferService');
 const activityService = require('./services/activityService');
 const milestoneService = require('./services/milestoneService');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
+const userProjectDao = require('./dao/userProjectDao');
 const transferDao = require('./dao/transferDao');
 const milestoneDao = require('./dao/milestoneDao');
 const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
-
 const passRecoveryDao = require('./dao/passRecoveryDao');
 
 const { injectDependencies } = require('./util/injection');
@@ -77,6 +79,14 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureUserProjectService(service) {
+    const dependencies = {
+      userProjectDao
+    };
+
+    injectDependencies(service, dependencies);
+  }
+
   function configureTransferService(service) {
     const dependencies = { transferDao };
 
@@ -104,6 +114,7 @@ module.exports = fastify => {
   }
 
 >>>>>>> src/rest/ioc.js
+>>>>>>> src/rest/ioc.js
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(roleDao, models.role);
@@ -119,6 +130,7 @@ module.exports = fastify => {
     configureUserService(userService);
     configureMilestoneService(milestoneService);
     configureProjectService(projectService);
+    configureUserProjectService(userProjectService);
     configureTransferService(transferService);
     configurePasssRecoveryService(passRecoveryService);
   }
