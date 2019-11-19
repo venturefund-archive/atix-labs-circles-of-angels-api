@@ -7,11 +7,12 @@
  */
 
 const basePath = '/milestones';
-const apiHelper = require('../../services/helper');
+
+const milestoneService = require('../../services/milestoneService');
+const userService = require('../../services/userService');
 
 module.exports = {
   getMilestones: fastify => async (request, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
     fastify.log.info('[Milestone Routes] :: GET request at /milestones');
     try {
       const milestones = await milestoneService.getAllMilestones();
@@ -26,7 +27,6 @@ module.exports = {
   },
 
   getBudgetStatus: fastify => async (req, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
     fastify.log.info(
       `[Milestone Routes] :: GET request at ${basePath}/budgetStatus`
     );
@@ -45,7 +45,6 @@ module.exports = {
   },
 
   deleteMilestone: fastify => async (request, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
     const { milestoneId } = request.params;
     fastify.log.info(
       `[Milestone Routes] Deleting milestone with id: ${milestoneId}`
@@ -60,7 +59,6 @@ module.exports = {
   },
 
   createMilestone: fastify => async (req, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
     fastify.log.info(
       '[Milestone Routes] :: POST request at /milestones:',
       req.body
@@ -93,7 +91,6 @@ module.exports = {
   },
 
   updateMilestone: fastify => async (req, reply) => {
-    const { milestoneService, userService } = apiHelper.helper.services;
     fastify.log.info(
       `[Milestone Routes] :: PUT request at /milestones/${
         req.params.milestoneId

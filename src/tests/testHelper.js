@@ -16,11 +16,13 @@ const {
   userFunder,
   userAdmin,
   userSE,
+  blockedUser,
   userSeDetails,
   userFunderDetails,
   userFunderAnswers,
   userSeAnswers,
-  userProject
+  userProject,
+  genericUser
 } = require('./mockModels');
 
 const {
@@ -28,6 +30,10 @@ const {
   blockchainStatus,
   userRoles
 } = require('../rest/util/constants');
+
+exports.buildGenericUserWithEmail = email => {
+  return genericUser(email);
+};
 
 exports.buildUserOracle = id => {
   const user = JSON.parse(JSON.stringify(userOracle));
@@ -85,6 +91,13 @@ exports.buildUserFunderWithDetails = id => {
   // const answers = {}; //this.buildUserFunderAnswers(user.id);
   // const detail = {}; // this.buildUserFunderDetails(user.id);
   return { ...user };
+};
+
+exports.buildBlockedUser = id => {
+  const user = JSON.parse(JSON.stringify(blockedUser));
+  user.id = id || user.id;
+  user.blocked = true;
+  return user;
 };
 
 exports.populateUserRole = user => {

@@ -17,12 +17,15 @@ const {
   projectStatus
 } = require('../util/constants');
 
-const milestoneService = ({
-  fastify,
-  milestoneDao,
-  activityService,
-  milestoneBudgetStatusDao
-}) => ({
+const logger = {
+  log: () => {},
+  error: (key, msg) => {
+    console.error(key, msg);
+  },
+  info: () => {}
+};
+
+module.exports = {
   /**
    * Creates a Milestone for an existing Project.
    *
@@ -32,7 +35,7 @@ const milestoneService = ({
    */
   async createMilestone(milestone, projectId) {
     try {
-      fastify.log.info(
+      logger.info(
         `[Milestone Service] :: Creating a new Milestone for Project ID ${projectId}: `,
         milestone
       );
@@ -42,12 +45,12 @@ const milestoneService = ({
         !this.isMilestoneEmpty(milestone) &&
         this.isMilestoneValid(milestone)
       ) {
-        const savedMilestone = await milestoneDao.saveMilestone({
+        const savedMilestone = await this.milestoneDao.saveMilestone({
           milestone,
           projectId
         });
 
-        fastify.log.info(
+        logger.info(
           '[Milestone Service] :: Milestone created:',
           savedMilestone
         );
@@ -55,19 +58,13 @@ const milestoneService = ({
         return savedMilestone;
       }
 
-      fastify.log.error(
-        '[Milestone Service] :: Milestone not valid',
-        milestone
-      );
+      logger.error('[Milestone Service] :: Milestone not valid', milestone);
       return {
         status: 409,
         error: 'Milestone is missing mandatory fields'
       };
     } catch (error) {
-      fastify.log.error(
-        '[Milestone Service] :: Error creating Milestone:',
-        error
-      );
+      logger.error('[Milestone Service] :: Error creating Milestone:', error);
       return { status: 500, error: 'Error creating Milestone' };
     }
   },
@@ -85,7 +82,7 @@ const milestoneService = ({
       const response = await this.readMilestones(milestonesPath);
 
       if (response.errors.length > 0) {
-        fastify.log.error(
+        logger.error(
           '[Milestone Service] :: Found errors while reading the excel file:',
           response.errors
         );
@@ -93,7 +90,7 @@ const milestoneService = ({
       }
 
       const { milestones } = response;
-      fastify.log.info(
+      logger.info(
         '[Milestone Service] :: Creating Milestones for Project ID:',
         projectId
       );
@@ -106,23 +103,23 @@ const milestoneService = ({
           process.nextTick(async () => {
             if (!this.isMilestoneEmpty(milestone)) {
               const isFirstMilestone = isEmpty(
-                await milestoneDao.getMilestonesByProject(projectId)
+                await this.milestoneDao.getMilestonesByProject(projectId)
               );
               const activityList = milestone.activityList.slice(0);
-              const savedMilestone = await milestoneDao.saveMilestone({
+              const savedMilestone = await this.milestoneDao.saveMilestone({
                 milestone,
                 projectId,
                 budgetStatus: isFirstMilestone
                   ? milestoneBudgetStatus.CLAIMABLE
                   : milestoneBudgetStatus.BLOCKED
               });
-              fastify.log.info(
+              logger.info(
                 '[Milestone Service] :: Milestone created:',
                 savedMilestone
               );
               context.push(savedMilestone);
               // create the activities for this milestone
-              await activityService.createActivities(
+              await this.activityService.createActivities(
                 activityList,
                 savedMilestone.id
               );
@@ -134,10 +131,7 @@ const milestoneService = ({
 
       return savedMilestones;
     } catch (err) {
-      fastify.log.error(
-        '[Milestone Service] :: Error creating Milestones:',
-        err
-      );
+      logger.error('[Milestone Service] :: Error creating Milestones:', err);
       throw Error('Error creating Milestone from file');
     }
   },
@@ -151,7 +145,7 @@ const milestoneService = ({
    */
   async updateMilestone(milestone, id, user) {
     try {
-      fastify.log.info('[Milestone Service] :: Updating milestone:', milestone);
+      logger.info('[Milestone Service] :: Updating milestone:', milestone);
 
       if (milestone.budgetStatus) {
         const updatedBudgetStatus = await this.updateBudgetStatus(
@@ -160,7 +154,7 @@ const milestoneService = ({
           user
         );
         if (updatedBudgetStatus.error) {
-          fastify.log.error(
+          logger.error(
             '[Milestone Service] :: Error updating budget status:',
             updatedBudgetStatus.error
           );
@@ -173,12 +167,12 @@ const milestoneService = ({
       delete toUpdateMilestone.budgetStatus;
 
       if (!isEmpty(toUpdateMilestone)) {
-        const existingMilestone = await milestoneDao.getMilestoneByIdWithProject(
+        const existingMilestone = await this.milestoneDao.getMilestoneByIdWithProject(
           id
         );
 
         if (!existingMilestone || existingMilestone == null) {
-          fastify.log.error(
+          logger.error(
             `[Milestone Service] :: Milestone ID ${id} does not exist`
           );
           return {
@@ -192,7 +186,7 @@ const milestoneService = ({
           project.status === projectStatus.IN_PROGRESS ||
           project.startBlockchainStatus !== blockchainStatus.PENDING
         ) {
-          fastify.log.error(
+          logger.error(
             `[Milestone Service] :: Project ${
               project.id
             } is IN PROGRESS or sent to the blockchain`
@@ -205,13 +199,13 @@ const milestoneService = ({
         }
 
         if (this.canMilestoneUpdate(toUpdateMilestone)) {
-          const savedMilestone = await milestoneDao.updateMilestone(
+          const savedMilestone = await this.milestoneDao.updateMilestone(
             toUpdateMilestone,
             id
           );
 
           if (!savedMilestone || savedMilestone == null) {
-            fastify.log.error(
+            logger.error(
               `[Milestone Service] :: Milestone ID ${id} could not be updated`,
               savedMilestone
             );
@@ -221,7 +215,7 @@ const milestoneService = ({
             };
           }
 
-          fastify.log.info(
+          logger.info(
             '[Milestone Service] :: Milestone updated:',
             savedMilestone
           );
@@ -229,7 +223,7 @@ const milestoneService = ({
           return savedMilestone;
         }
 
-        fastify.log.error(
+        logger.error(
           '[Milestone Service] :: Milestone not valid',
           toUpdateMilestone
         );
@@ -241,16 +235,13 @@ const milestoneService = ({
 
       return toUpdateMilestone;
     } catch (error) {
-      fastify.log.error(
-        '[Milestone Service] :: Error updating Milestone:',
-        error
-      );
+      logger.error('[Milestone Service] :: Error updating Milestone:', error);
       return { status: 500, error: 'Error updating Milestone' };
     }
   },
 
   async milestoneHasActivities(milestoneId) {
-    const milestoneActivities = await milestoneDao.getMilestoneActivities(
+    const milestoneActivities = await this.milestoneDao.getMilestoneActivities(
       milestoneId
     );
     return !isEmpty(milestoneActivities.activities);
@@ -263,7 +254,7 @@ const milestoneService = ({
    * @returns milestone with activities
    */
   async getMilestoneActivities(milestone) {
-    const milestoneActivities = await milestoneDao.getMilestoneActivities(
+    const milestoneActivities = await this.milestoneDao.getMilestoneActivities(
       milestone.id
     );
     const activities = [];
@@ -273,7 +264,7 @@ const milestoneService = ({
       (activity, context) =>
         new Promise(resolve => {
           process.nextTick(async () => {
-            const oracle = await activityService.getOracleFromActivity(
+            const oracle = await this.activityService.getOracleFromActivity(
               activity.id
             );
             const activityWithType = {
@@ -312,20 +303,15 @@ const milestoneService = ({
 
     let workbook = null;
     try {
-      fastify.log.info('[Milestone Service] :: Reading Milestone excel:', file);
+      logger.info('[Milestone Service] :: Reading Milestone excel:', file);
       workbook = XLSX.readFile(file, { raw: true });
     } catch (err) {
-      fastify.log.error(
-        '[Milestone Service] :: Error reading excel file:',
-        err
-      );
+      logger.error('[Milestone Service] :: Error reading excel file:', err);
       throw Error('Error reading excel file');
     }
 
     if (workbook == null) {
-      fastify.log.error(
-        '[Milestone Service] :: Error reading Milestone excel file'
-      );
+      logger.error('[Milestone Service] :: Error reading Milestone excel file');
       throw Error('Error reading excel file');
     }
 
@@ -511,7 +497,7 @@ const milestoneService = ({
    * @param milestoneId
    */
   deleteMilestone(milestoneId) {
-    return milestoneDao.deleteMilestone(milestoneId);
+    return this.milestoneDao.deleteMilestone(milestoneId);
   },
 
   /**
@@ -522,12 +508,12 @@ const milestoneService = ({
    * @returns array of project ids | error
    */
   async getProjectsAsOracle(oracleId) {
-    fastify.log.info(
+    logger.info(
       '[Milestone Service] :: Getting Milestones for Oracle ID',
       oracleId
     );
     try {
-      const milestones = await activityService.getMilestonesAsOracle(oracleId);
+      const milestones = await this.activityService.getMilestonesAsOracle(oracleId);
 
       if (milestones.error) {
         return milestones;
@@ -535,28 +521,25 @@ const milestoneService = ({
 
       const projects = await Promise.all(
         milestones.map(async milestoneId => {
-          const milestone = await milestoneDao.getMilestoneById(milestoneId);
+          const milestone = await this.milestoneDao.getMilestoneById(milestoneId);
           return milestone.project;
         })
       );
 
       return projects;
     } catch (error) {
-      fastify.log.error(
-        '[Milestone Service] :: Error getting Milestones:',
-        error
-      );
+      logger.error('[Milestone Service] :: Error getting Milestones:', error);
       throw Error('Error getting Milestones');
     }
   },
 
   async getMilestonesByProject(projectId) {
-    fastify.log.info(
+    logger.info(
       '[Milestone Service] :: Getting milestones for Project',
       projectId
     );
     try {
-      const milestones = await milestoneDao.getMilestonesByProject(projectId);
+      const milestones = await this.milestoneDao.getMilestonesByProject(projectId);
 
       if (!milestones || milestones == null) {
         return milestones;
@@ -573,21 +556,18 @@ const milestoneService = ({
 
       return milestonesWithActivities;
     } catch (error) {
-      fastify.log.error(
-        '[Milestone Service] :: Error getting Milestones:',
-        error
-      );
+      logger.error('[Milestone Service] :: Error getting Milestones:', error);
       throw Error('Error getting Milestones');
     }
   },
 
   async tryCompleteMilestone(milestoneId) {
     try {
-      fastify.log.info(
+      logger.info(
         '[Milestone Service] :: Check if milestone is complete with id: ',
         milestoneId
       );
-      const { activities } = await milestoneDao.getMilestoneActivities(
+      const { activities } = await this.milestoneDao.getMilestoneActivities(
         milestoneId
       );
       let isCompleted = true;
@@ -605,23 +585,20 @@ const milestoneService = ({
       });
 
       if (!isCompleted) {
-        fastify.log.info(
+        logger.info(
           '[Milestone Service] :: Milestone not completed. ID: ',
           milestoneId
         );
         return false;
       }
 
-      fastify.log.info(
-        '[Milestone Service] :: milestone complete: ',
-        milestoneId
-      );
-      return milestoneDao.updateMilestoneStatus(
+      logger.info('[Milestone Service] :: milestone complete: ', milestoneId);
+      return this.milestoneDao.updateMilestoneStatus(
         milestoneId,
         activityStatus.COMPLETED
       );
     } catch (error) {
-      fastify.log.error('Error trying complete milestone', error);
+      logger.error('Error trying complete milestone', error);
     }
   },
 
@@ -631,24 +608,21 @@ const milestoneService = ({
   },
 
   async getMilestoneById(milestoneId) {
-    return milestoneDao.getMilestoneById(milestoneId);
+    return this.milestoneDao.getMilestoneById(milestoneId);
   },
 
   async getAllMilestones() {
-    fastify.log.info('[Milestone Service] :: Getting all milestones');
+    logger.info('[Milestone Service] :: Getting all milestones');
     try {
-      const milestones = await milestoneDao.getAllMilestones();
+      const milestones = await this.milestoneDao.getAllMilestones();
 
       if (milestones.length === 0) {
-        fastify.log.info('[Milestone Service] :: There are no milestones');
+        logger.info('[Milestone Service] :: There are no milestones');
       }
 
       return milestones;
     } catch (error) {
-      fastify.log.error(
-        '[Milestone Service] :: Error getting Milestones:',
-        error
-      );
+      logger.error('[Milestone Service] :: Error getting Milestones:', error);
       throw Error('Error getting Milestones');
     }
   },
@@ -660,13 +634,13 @@ const milestoneService = ({
    * @returns updated milestone | error
    */
   async updateBudgetStatus(milestoneId, budgetStatusId, user) {
-    fastify.log.info(
+    logger.info(
       `[Milestone Service] :: Updating Milestone ID ${milestoneId} budget status. 
       New status ID: ${budgetStatusId}`
     );
     try {
       if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
-        fastify.log.error(
+        logger.error(
           `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
         );
         return {
@@ -675,12 +649,12 @@ const milestoneService = ({
         };
       }
 
-      const milestone = await milestoneDao.getMilestoneByIdWithProject(
+      const milestone = await this.milestoneDao.getMilestoneByIdWithProject(
         milestoneId
       );
 
       if (!milestone || milestone == null) {
-        fastify.log.error(
+        logger.error(
           `[Milestone Service] :: Milestone ID ${milestoneId} does not exist`
         );
         return {
@@ -691,7 +665,7 @@ const milestoneService = ({
 
       const { project } = milestone;
       if (project.status !== projectStatus.IN_PROGRESS) {
-        fastify.log.error(
+        logger.error(
           `[Milestone Service] :: Project ${project.id} is not IN PROGRESS`
         );
         return {
@@ -712,7 +686,7 @@ const milestoneService = ({
             milestones[previousMilestone].budgetStatus.id !==
               milestoneBudgetStatus.FUNDED))
       ) {
-        fastify.log.error(
+        logger.error(
           `[Milestone Service] :: Milestone ID ${milestoneId} is not blocked 
           or previous milestones are not funded`
         );
@@ -727,7 +701,7 @@ const milestoneService = ({
         budgetStatusId === milestoneBudgetStatus.CLAIMED &&
         milestone.budgetStatus !== milestoneBudgetStatus.CLAIMABLE
       ) {
-        fastify.log.error(
+        logger.error(
           `[Milestone Service] :: Milestone ID ${milestoneId} is not claimable.`
         );
         return {
@@ -740,7 +714,7 @@ const milestoneService = ({
         budgetStatusId === milestoneBudgetStatus.FUNDED &&
         milestone.budgetStatus !== milestoneBudgetStatus.CLAIMED
       ) {
-        fastify.log.error(
+        logger.error(
           `[Milestone Service] :: Milestone ID ${milestoneId} needs to be claimed 
           in order to set the budget status to Funded`
         );
@@ -752,7 +726,7 @@ const milestoneService = ({
       }
 
       if (budgetStatusId === milestoneBudgetStatus.CLAIMED) {
-        fastify.log.info(
+        logger.info(
           `[Milestone Service] :: set claimed Milestone ID ${milestoneId} on Blockchain`
         );
         await fastify.eth.claimMilestone({
@@ -764,7 +738,7 @@ const milestoneService = ({
       }
 
       if (budgetStatusId === milestoneBudgetStatus.FUNDED) {
-        fastify.log.info(
+        logger.info(
           `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
         );
         await fastify.eth.setMilestoneFunded({
@@ -775,7 +749,7 @@ const milestoneService = ({
 
       return milestone;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Milestone Service] :: Error updating Milestone budget status:',
         error
       );
@@ -784,20 +758,18 @@ const milestoneService = ({
   },
 
   async getAllBudgetStatus() {
-    fastify.log.info(
-      '[Milestone Service] :: Getting all available budget status'
-    );
+    logger.info('[Milestone Service] :: Getting all available budget status');
 
     try {
-      const budgetStatus = milestoneBudgetStatusDao.findAll();
+      const budgetStatus = this.milestoneBudgetStatusDao.findAll();
 
       if (budgetStatus.length === 0) {
-        fastify.log.info('[Milestone Service] :: No budget status loaded');
+        logger.info('[Milestone Service] :: No budget status loaded');
       }
 
       return budgetStatus;
     } catch (error) {
-      fastify.log.error(
+      logger.error(
         '[Milestone Service] :: Error getting all available budget status:',
         error
       );
@@ -809,7 +781,7 @@ const milestoneService = ({
     if (!Object.values(blockchainStatus).includes(status)) {
       return { error: 'Invalid Blockchain status' };
     }
-    return milestoneDao.updateBlockchainStatus(milestoneId, status);
+    return this.milestoneDao.updateBlockchainStatus(milestoneId, status);
   },
 
   async getMilestonePreviewInfoOfProject(project) {
@@ -828,6 +800,4 @@ const milestoneService = ({
       return { error };
     }
   }
-});
-
-module.exports = milestoneService;
+};

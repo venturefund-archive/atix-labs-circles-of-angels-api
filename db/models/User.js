@@ -35,10 +35,7 @@ module.exports = {
       validations: { isIn: Object.values(userRoles) },
       required: true
     },
-    registrationStatus: {
-      columnName: 'registrationStatus',
-      model: 'user_registration_status'
-    },
+    blocked: { type: 'boolean', defaultsTo: false, required: false },
     privKey: { type: 'string', required: true },
     transferBlockchainStatus: { type: 'number', required: true }
   },

@@ -11,6 +11,7 @@ function getDescriptors(values, mockable = false) {
     {}
   );
 }
+
 module.exports = {
   injectMocks(instance, mocks) {
     Object.defineProperties(instance, getDescriptors(mocks, true));

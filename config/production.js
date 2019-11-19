@@ -9,6 +9,8 @@
 const COAProjectAdmin = require('../../circles-of-angels-solidity/build/contracts/COAProjectAdmin.json');
 const COAOracle = require('../../circles-of-angels-solidity/build/contracts/COAOracle.json');
 
+require('dotenv').config()
+
 module.exports = {
   server: {
     host: process.env.HOST
