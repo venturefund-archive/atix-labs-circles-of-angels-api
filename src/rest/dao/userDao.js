@@ -10,11 +10,11 @@ const { userRoles } = require('../util/constants');
 
 module.exports = {
   async getUserById(id) {
-    return this.model.findOne({ id }).populate('role');
+    return this.model.findOne({ id });
   },
 
   async getUserByEmail(email) {
-    return this.model.findOne({ email: email.toLowerCase() }).populate('role');
+    return this.model.findOne({ email: email.toLowerCase() });
   },
 
   async createUser(user) {
@@ -23,7 +23,7 @@ module.exports = {
   },
 
   async getOracles() {
-    return this.model.find({ role: 4 }).populate('role');
+    return this.model.find({ role: userRoles.ORACLE });
   },
 
   async updateUser(id, user) {
@@ -36,7 +36,6 @@ module.exports = {
       .find({
         where: { role: { '!=': userRoles.BO_ADMIN } }
       })
-      .populate('role')
       .populate('registrationStatus');
   },
 

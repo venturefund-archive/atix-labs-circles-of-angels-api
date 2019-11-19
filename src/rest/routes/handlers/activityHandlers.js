@@ -6,11 +6,11 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const apiHelper = require('../../services/helper');
+const activityService = require('../../services/activityService');
+const milestoneService = require('../../services/milestoneService'); // this wont work until milestoneService MR is merged
 
 module.exports = {
   createActivity: fastify => async (req, reply) => {
-    const { activityService } = apiHelper.helper.services;
     fastify.log.info(
       '[Activity Routes] :: POST request at /activities:',
       req.body
@@ -43,7 +43,6 @@ module.exports = {
   },
 
   updateActivity: fastify => async (req, reply) => {
-    const { activityService } = apiHelper.helper.services;
     fastify.log.info(
       `[Activity Routes] :: PUT request at /activities/${
         req.params.activityId
@@ -79,8 +78,6 @@ module.exports = {
   },
 
   updateStatus: fastify => async (req, reply) => {
-    const { activityService } = apiHelper.helper.services;
-
     fastify.log.info(
       `[Activity Routes] :: PUT request at /activities/${
         req.params.activityId
@@ -113,7 +110,6 @@ module.exports = {
   },
 
   deleteActivity: fastify => async (request, reply) => {
-    const { activityService } = apiHelper.helper.services;
     const { activityId } = request.params;
     fastify.log.info(
       `[Activity Routes] Deleting activity with id: ${activityId}`
@@ -128,7 +124,6 @@ module.exports = {
   },
 
   uploadEvidence: fastify => async (req, reply) => {
-    const { activityService } = apiHelper.helper.services;
     const { activityId } = req.params;
     fastify.log.info(
       `[Activity Routes] :: POST request at /activities/${activityId}/evidence:`,
@@ -162,7 +157,6 @@ module.exports = {
   },
 
   deleteEvidence: fastify => async (request, reply) => {
-    const { activityService } = apiHelper.helper.services;
     const { activityId, evidenceId, fileType } = request.params;
     fastify.log.info(
       `[Activity Routes] :: DELETE request activities/${activityId}/evidence/${evidenceId}/${fileType}`
@@ -187,7 +181,6 @@ module.exports = {
   },
 
   getActivity: fastify => async (request, reply) => {
-    const { activityService } = apiHelper.helper.services;
     const { activityId } = request.params;
 
     fastify.log.info(
@@ -210,7 +203,6 @@ module.exports = {
   },
 
   assignOracle: fastify => async (request, reply) => {
-    const { activityService } = apiHelper.helper.services;
     const { activityId, userId } = request.params;
     fastify.log.info(
       `[Activity Routes] :: POST request at /activities/${activityId}/oracle/${userId}`
@@ -237,7 +229,6 @@ module.exports = {
   },
 
   unassignOracle: fastify => async (request, reply) => {
-    const { activityService } = apiHelper.helper.services;
     const { activityId } = request.params;
     fastify.log.info(
       `[Activity Routes] :: DELETE request at /activities/${activityId}/oracle`
@@ -259,7 +250,6 @@ module.exports = {
   },
 
   downloadEvidence: fastify => async (request, reply) => {
-    const { activityService } = apiHelper.helper.services;
     const { activityId, evidenceId, fileType } = request.params;
     fastify.log.info(
       `[Activity Routes] :: GET request at /activities/${activityId}/evidence/${evidenceId}/${fileType}`
@@ -293,7 +283,6 @@ module.exports = {
   },
 
   completeActivity: fastify => async (request, reply) => {
-    const { activityService, milestoneService } = apiHelper.helper.services;
     const { activityId } = request.params;
     fastify.log.info(`[Activity Routes] Completing activity ${activityId}`);
     try {

@@ -1,2 +1,0 @@
-ALTER TABLE public."user" ADD COLUMN "registrationStatus" int4 NOT NULL DEFAULT 1;
-ALTER TABLE public."user" ADD CONSTRAINT fk_user_registration_status FOREIGN KEY ("registrationStatus") REFERENCES user_registration_status (id);
