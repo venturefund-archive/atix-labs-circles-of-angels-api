@@ -64,27 +64,7 @@ module.exports = {
       });
     }
   },
-
-  getRegistrationStatus: fastify => async (request, reply) => {
-    try {
-      fastify.log.info(
-        `[User Routes] :: GET request at ${basePath}/registrationStatus`
-      );
-
-      const registrationStatus = await userService.getAllRegistrationStatus();
-      reply.status(200).send({ registrationStatus });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all user registration status:',
-        error
-      );
-      reply.status(500).send({
-        error:
-          'There was an unexpected error getting all user registration status'
-      });
-    }
-  },
-
+  
   getAllRoles: fastify => async (request, reply) => {
     try {
       fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
@@ -127,7 +107,7 @@ module.exports = {
             expires: expirationDate
             // secure: true
           })
-          .send(user);
+          .redirect('/explore-projects')
       }
     } catch (err) {
       reply
@@ -138,24 +118,8 @@ module.exports = {
 
   signupUser: fastify => async (request, reply) => {
     try {
-      const {
-        email,
-        pwd,
-        username,
-        role,
-        detail,
-        questionnaire
-      } = request.body;
-
       fastify.log.info('[User Routes] :: Creating new user:', request.body);
-      const user = await userService.createUser(
-        username,
-        email,
-        pwd,
-        role,
-        detail,
-        questionnaire
-      );
+      const user = await userService.createUser(request.body);
 
       if (user.error) {
         fastify.log.error('[User Routes] :: User creation failed', user);
@@ -257,10 +221,7 @@ module.exports = {
   },
 
   getUserProjects: fastify => async (request, reply) => {
-    const {
-      userProjectService,
-      projectService
-    } = apiHelper.helper.services;
+    const { userProjectService, projectService } = apiHelper.helper.services;
     const { userId } = request.params;
     fastify.log.info('[User Routes] :: getting list of oracles');
     try {

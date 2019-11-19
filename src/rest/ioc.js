@@ -10,11 +10,20 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
-const userProjectService = require('./services/userProjectService');
 
-const userDao = require('./dao/userDao');
+const userProjectService = require('./services/userProjectService');
+const transferService = require('./services/transferService');
+const activityService = require('./services/activityService');
+const milestoneService = require('./services/milestoneService');
+
+const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
 const userProjectDao = require('./dao/userProjectDao');
+const transferDao = require('./dao/transferDao');
+const milestoneDao = require('./dao/milestoneDao');
+const userDao = require('./dao/userDao');
+const passRecoveryService = require('./services/passRecoveryService');
+const passRecoveryDao = require('./dao/passRecoveryDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -50,8 +59,6 @@ module.exports = fastify => {
       mailService,
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
-      userRegistrationStatusDao: undefined,
-      roleDao: undefined,
       questionnaireService: undefined
     };
 
@@ -68,6 +75,7 @@ module.exports = fastify => {
       userDao,
       projectExperienceDao: undefined
     };
+
     injectDependencies(service, dependencies);
   }
 
@@ -79,15 +87,54 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureTransferService(service) {
+    const dependencies = { transferDao };
+
+    injectDependencies(service, dependencies);
+  }
+
+  function configurePasssRecoveryService(service) {
+    const dependencies = {
+      mailService,
+      passRecoveryDao,
+      userDao
+    };
+    injectDependencies(service, dependencies);
+  }
+
+  function configureMilestoneService(milestoneService) {
+    const dependencies = {
+      milestoneDao,
+      activityService: undefined,
+      milestoneBudgetStatusDao,
+      projectDao,
+      userDao
+    };
+    injectDependencies(milestoneService, dependencies);
+  }
+
+>>>>>>> src/rest/ioc.js
+>>>>>>> src/rest/ioc.js
   function configureDAOs(models) {
     injectModel(userDao, models.user);
+    injectModel(roleDao, models.role);
+    injectModel(milestoneDao, models.milestone);
+    injectModel(projectDao, models.project);
+    injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
+    injectModel(projectDao, models.project);
+    injectModel(passRecoveryDao, models.passRecovery);
   }
+
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
+    configureMilestoneService(milestoneService);
     configureProjectService(projectService);
     configureUserProjectService(userProjectService);
+    configureTransferService(transferService);
+    configurePasssRecoveryService(passRecoveryService);
   }
+
   function init(fastify) {
     configureDAOs(fastify.models);
     configureServices();
