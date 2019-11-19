@@ -13,7 +13,14 @@ const { getBase64htmlFromPath } = require('../util/images');
 
 const unlinkPromise = promisify(unlink);
 
-const photoService = ({ fastify, photoDao }) => ({
+// TODO : replace with a logger;
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
+
+module.exports = {
   /**
    * Returns a record from the Photo table
    *
@@ -21,13 +28,13 @@ const photoService = ({ fastify, photoDao }) => ({
    * @returns photo object | error
    */
   async getPhotoById(photoId) {
-    fastify.log.info('[Photo Service] :: Getting photo ID:', photoId);
+    logger.info('[Photo Service] :: Getting photo ID:', photoId);
 
     try {
-      const photo = await photoDao.getPhotoById(photoId);
+      const photo = await this.photoDao.getPhotoById(photoId);
 
       if (!photo || photo == null) {
-        fastify.log.error(
+        logger.error(
           `[Photo Service] :: Photo ID ${photoId} could not be found in database`
         );
         return {
@@ -36,10 +43,10 @@ const photoService = ({ fastify, photoDao }) => ({
         };
       }
 
-      fastify.log.info('[Photo Service] :: Photo found:', photo);
+      logger.info('[Photo Service] :: Photo found:', photo);
       return photo;
     } catch (error) {
-      fastify.log.error('[Photo Service] :: Error getting photo:', error);
+      logger.error('[Photo Service] :: Error getting photo:', error);
       throw Error('Error getting photo');
     }
   },
@@ -51,13 +58,13 @@ const photoService = ({ fastify, photoDao }) => ({
    * @returns base64 encoded photo | error message
    */
   async getBase64Photo(photoId) {
-    fastify.log.info('[Photo Service] :: Getting photo ID:', photoId);
+    logger.info('[Photo Service] :: Getting photo ID:', photoId);
 
     try {
-      const photo = await photoDao.getPhotoById(photoId);
+      const photo = await this.photoDao.getPhotoById(photoId);
 
       if (!photo || photo == null) {
-        fastify.log.error(
+        logger.error(
           `[Photo Service] :: Photo ID ${photoId} could not be found in database`
         );
         return {
@@ -66,11 +73,11 @@ const photoService = ({ fastify, photoDao }) => ({
         };
       }
 
-      fastify.log.info('[Photo Service] :: Photo found:', photo);
+      logger.info('[Photo Service] :: Photo found:', photo);
       const encodedPhoto = getBase64htmlFromPath(photo.path);
 
       if (!encodedPhoto || encodedPhoto == null || encodedPhoto === '') {
-        fastify.log.error(
+        logger.error(
           `[Photo Service] :: There was an error encoding the photo ID ${
             photo.id
           }`
@@ -81,10 +88,10 @@ const photoService = ({ fastify, photoDao }) => ({
         };
       }
 
-      fastify.log.info(`[Photo Service] :: Photo ID ${photo.id} encoded`);
+      logger.info(`[Photo Service] :: Photo ID ${photo.id} encoded`);
       return encodedPhoto;
     } catch (error) {
-      fastify.log.error('[Photo Service] :: Error getting photo:', error);
+      logger.error('[Photo Service] :: Error getting photo:', error);
       throw Error('Error getting photo');
     }
   },
@@ -96,22 +103,19 @@ const photoService = ({ fastify, photoDao }) => ({
    * @returns saved photo
    */
   async savePhoto(path, projectExperienceId) {
-    fastify.log.info('[Photo Service] :: Saving photo in database:', path);
+    logger.info('[Photo Service] :: Saving photo in database:', path);
 
     try {
       const newPhoto = { path };
       if (projectExperienceId) {
         newPhoto.projectExperience = projectExperienceId;
       }
-      const photo = await photoDao.savePhoto(newPhoto);
+      const photo = await this.photoDao.savePhoto(newPhoto);
 
-      fastify.log.info('[Photo Service] :: Photo saved:', photo);
+      logger.info('[Photo Service] :: Photo saved:', photo);
       return photo;
     } catch (error) {
-      fastify.log.error(
-        '[Photo Service] :: Error saving photo to database:',
-        error
-      );
+      logger.error('[Photo Service] :: Error saving photo to database:', error);
       throw Error('Error saving photo');
     }
   },
@@ -124,13 +128,13 @@ const photoService = ({ fastify, photoDao }) => ({
    * @returns updated photo
    */
   async updatePhoto(photoId, path) {
-    fastify.log.info(`[Photo Service] :: Updating photo ID ${photoId}:`, path);
+    logger.info(`[Photo Service] :: Updating photo ID ${photoId}:`, path);
 
     try {
-      const updatedPhoto = await photoDao.updatePhoto(photoId, path);
+      const updatedPhoto = await this.photoDao.updatePhoto(photoId, path);
 
       if (!updatedPhoto || updatedPhoto == null) {
-        fastify.log.error(
+        logger.error(
           `[Photo Service] :: Photo ID ${photoId} not found in database:`
         );
         return {
@@ -139,10 +143,10 @@ const photoService = ({ fastify, photoDao }) => ({
         };
       }
 
-      fastify.log.info('[Photo Service] :: Photo updated:', updatedPhoto);
+      logger.info('[Photo Service] :: Photo updated:', updatedPhoto);
       return updatedPhoto;
     } catch (error) {
-      fastify.log.error('[Photo Service] :: Error updating photo:', error);
+      logger.error('[Photo Service] :: Error updating photo:', error);
       throw Error('Error updating photo');
     }
   },
@@ -154,15 +158,15 @@ const photoService = ({ fastify, photoDao }) => ({
    * @returns deleted photo
    */
   async deletePhoto(photoId) {
-    fastify.log.info(`[Photo Service] :: Deleting photo ID ${photoId}`);
+    logger.info(`[Photo Service] :: Deleting photo ID ${photoId}`);
 
     try {
-      const deletedPhoto = await photoDao.deletePhoto(photoId);
+      const deletedPhoto = await this.photoDao.deletePhoto(photoId);
 
       await unlinkPromise(deletedPhoto.path);
 
       if (!deletedPhoto || deletedPhoto == null) {
-        fastify.log.error(
+        logger.error(
           `[Photo Service] :: Photo ID ${photoId} not found in database:`
         );
         return {
@@ -171,10 +175,10 @@ const photoService = ({ fastify, photoDao }) => ({
         };
       }
 
-      fastify.log.info('[Photo Service] :: Photo deleted:', deletedPhoto);
+      logger.info('[Photo Service] :: Photo deleted:', deletedPhoto);
       return deletedPhoto;
     } catch (error) {
-      fastify.log.error('[Photo Service] :: Error deleting photo:', error);
+      logger.error('[Photo Service] :: Error deleting photo:', error);
       throw Error('Error deleting photo');
     }
   },
@@ -183,6 +187,4 @@ const photoService = ({ fastify, photoDao }) => ({
     const fileType = mime.lookup(photo.name);
     return fileType.includes('image/');
   }
-});
-
-module.exports = photoService;
+};
