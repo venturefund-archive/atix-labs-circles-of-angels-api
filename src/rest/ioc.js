@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const photoService = require('./services/photoService');
 const fileService = require('./services/fileService');
 const activityService = require('./services/activityService');
 
@@ -20,6 +21,7 @@ const milestoneService = require('./services/milestoneService');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
+const photoDao = require('./dao/photoDao');
 const fileDao = require('./dao/fileDao');
 
 const activityDao = require('./dao/activityDao');
@@ -29,6 +31,7 @@ const milestoneDao = require('./dao/milestoneDao');
 const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
 const passRecoveryDao = require('./dao/passRecoveryDao');
+>>>>>>> src/rest/ioc.js
 
 const { injectDependencies } = require('./util/injection');
 
@@ -119,6 +122,11 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configurePhotoService(service) {
+    const dependencies = { photoDao };
+    injectDependencies(service, dependencies);
+  }
+
   function configurePasssRecoveryService(service) {
     const dependencies = {
       mailService,
@@ -141,6 +149,7 @@ module.exports = fastify => {
 
   function configureDAOs(models) {
     injectModel(userDao, models.user);
+    injectModel(photoDao, models.photo);
     injectModel(fileDao, models.file);
     injectModel(milestoneDao, models.milestone);
     injectModel(projectDao, models.project);
@@ -154,12 +163,12 @@ module.exports = fastify => {
     configureUserService(userService);
     configureMilestoneService(milestoneService);
     configureProjectService(projectService);
+    configurePhotoService(photoService);
     configureFileService(fileService);
     configureActivityService(activityService);
     configureUserProjectService(userProjectService);
     configureTransferService(transferService);
     configurePasssRecoveryService(passRecoveryService);
->>>>>>> src/rest/ioc.js
   }
 
   function init(fastify) {
