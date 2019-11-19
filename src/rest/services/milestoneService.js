@@ -17,13 +17,7 @@ const {
   projectStatus
 } = require('../util/constants');
 
-const logger = {
-  log: () => {},
-  error: (key, msg) => {
-    console.error(key, msg);
-  },
-  info: () => {}
-};
+const logger = require('../logger');
 
 module.exports = {
   /**
