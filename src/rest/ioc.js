@@ -51,8 +51,6 @@ module.exports = fastify => {
       mailService,
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
-      userRegistrationStatusDao: undefined,
-      roleDao,
       questionnaireService: undefined
     };
 
