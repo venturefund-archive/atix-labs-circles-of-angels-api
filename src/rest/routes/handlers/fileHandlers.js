@@ -6,11 +6,10 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const apiHelper = require('../../services/helper');
+const fileService = require('../../services/fileService');
 
 module.exports = {
   deleteFile: fastify => async (request, reply) => {
-    const { fileService } = apiHelper.helper.services;
     const { fileId } = request.params;
     fastify.log.info(`[File Routes] :: Deleting file ID ${fileId}`);
 

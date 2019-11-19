@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const fileService = require('./services/fileService');
 const activityService = require('./services/activityService');
 
 const userProjectService = require('./services/userProjectService');
@@ -19,6 +20,7 @@ const milestoneService = require('./services/milestoneService');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
+const fileDao = require('./dao/fileDao');
 
 const activityDao = require('./dao/activityDao');
 const userProjectDao = require('./dao/userProjectDao');
@@ -45,6 +47,14 @@ module.exports = fastify => {
         pass: password
       }
     });
+  }
+
+  function configureFileService(service) {
+    const dependencies = {
+      fileDao
+    };
+
+    injectDependencies(service, dependencies);
   }
 
   // Configure the mail service.
@@ -131,7 +141,7 @@ module.exports = fastify => {
 
   function configureDAOs(models) {
     injectModel(userDao, models.user);
-    injectModel(roleDao, models.role);
+    injectModel(fileDao, models.file);
     injectModel(milestoneDao, models.milestone);
     injectModel(projectDao, models.project);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
@@ -144,10 +154,12 @@ module.exports = fastify => {
     configureUserService(userService);
     configureMilestoneService(milestoneService);
     configureProjectService(projectService);
+    configureFileService(fileService);
     configureActivityService(activityService);
     configureUserProjectService(userProjectService);
     configureTransferService(transferService);
     configurePasssRecoveryService(passRecoveryService);
+>>>>>>> src/rest/ioc.js
   }
 
   function init(fastify) {
