@@ -12,7 +12,14 @@ const { promisify } = require('util');
 
 const unlinkPromise = promisify(unlink);
 
-const fileService = ({ fastify, fileDao }) => ({
+// TODO : replace with a logger;
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
+
+module.exports = {
   /**
    * Returns a record from the File table
    *
@@ -20,13 +27,13 @@ const fileService = ({ fastify, fileDao }) => ({
    * @returns file object | error
    */
   async getFileById(fileId) {
-    fastify.log.info('[File Service] :: Getting file ID:', fileId);
+    logger.info('[File Service] :: Getting file ID:', fileId);
 
     try {
-      const file = await fileDao.getFileById(fileId);
+      const file = await this.fileDao.getFileById(fileId);
 
       if (!file || file == null) {
-        fastify.log.error(
+        logger.error(
           `[File Service] :: File ID ${fileId} could not be found in database`
         );
         return {
@@ -35,10 +42,10 @@ const fileService = ({ fastify, fileDao }) => ({
         };
       }
 
-      fastify.log.info('[File Service] :: File found:', file);
+      logger.info('[File Service] :: File found:', file);
       return file;
     } catch (error) {
-      fastify.log.error('[File Service] :: Error getting file:', error);
+      logger.error('[File Service] :: Error getting file:', error);
       throw Error('Error getting file');
     }
   },
@@ -50,18 +57,15 @@ const fileService = ({ fastify, fileDao }) => ({
    * @returns saved file
    */
   async saveFile(path) {
-    fastify.log.info('[File Service] :: Saving file in database:', path);
+    logger.info('[File Service] :: Saving file in database:', path);
 
     try {
-      const file = await fileDao.saveFile(path);
+      const file = await this.fileDao.saveFile(path);
 
-      fastify.log.info('[File Service] :: File saved:', file);
+      logger.info('[File Service] :: File saved:', file);
       return file;
     } catch (error) {
-      fastify.log.error(
-        '[File Service] :: Error saving file to database:',
-        error
-      );
+      logger.error('[File Service] :: Error saving file to database:', error);
       throw Error('Error saving file');
     }
   },
@@ -73,13 +77,13 @@ const fileService = ({ fastify, fileDao }) => ({
    * @returns deleted file
    */
   async deleteFile(fileId) {
-    fastify.log.info(`[File Service] :: Deleting file ID ${fileId}`);
+    logger.info(`[File Service] :: Deleting file ID ${fileId}`);
 
     try {
-      const deletedFile = await fileDao.deleteFile(fileId);
+      const deletedFile = await this.fileDao.deleteFile(fileId);
 
       if (!deletedFile || deletedFile == null) {
-        fastify.log.error(
+        logger.error(
           `[File Service] :: File ID ${fileId} not found in database:`
         );
         return {
@@ -90,10 +94,10 @@ const fileService = ({ fastify, fileDao }) => ({
 
       await unlinkPromise(deletedFile.path);
 
-      fastify.log.info('[File Service] :: File deleted:', deletedFile);
+      logger.info('[File Service] :: File deleted:', deletedFile);
       return deletedFile;
     } catch (error) {
-      fastify.log.error('[File Service] :: Error deleting file:', error);
+      logger.error('[File Service] :: Error deleting file:', error);
       throw Error('Error deleting file');
     }
   },
@@ -110,6 +114,4 @@ const fileService = ({ fastify, fileDao }) => ({
 
     return validTypes.includes(fileType);
   }
-});
-
-module.exports = fileService;
+};
