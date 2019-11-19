@@ -13,6 +13,9 @@ const {
   blockchainStatus,
   projectStatus
 } = require('../util/constants');
+
+const logger = require("../logger");
+
 const {
   COAError,
   InvalidEmailError,
@@ -25,15 +28,6 @@ const {
   UserStillNeedsApprovalError,
   UserWithoutRoleError
 } = require('../errors/exporter/ErrorExporter');
-
-// TODO : replace with a logger;
-const logger = {
-  log: () => {},
-  error: (key, msg) => {
-    console.error(key, msg);
-  },
-  info: () => {}
-};
 
 module.exports = {
 
