@@ -13,6 +13,18 @@ const {
   blockchainStatus,
   projectStatus
 } = require('../util/constants');
+const {
+  COAError,
+  InvalidEmailError,
+  QuestionnaireNotFoundError,
+  UpdateUserError,
+  UserAlreadyExistsError,
+  UserNotFoundError,
+  UserRejectedError,
+  UserRoleDoesNotExistsError,
+  UserStillNeedsApprovalError,
+  UserWithoutRoleError
+} = require('../errors/exporter/ErrorExporter');
 
 // TODO : replace with a logger;
 const logger = {
@@ -62,11 +74,21 @@ module.exports = {
         if (user.blocked) {
           logger.error(`[User Service] :: User ID ${user.id} is blocked`);
 
-          return {
-            status: 409,
-            error: 'User was blocked by an admin',
-            user: authenticatedUser
-          };
+          throw new UserStillNeedsApprovalError(
+            'User registration is still pending approval by the admin'
+          );
+        }
+
+        if (user.registrationStatus === userRegistrationStatus.REJECTED) {
+          logger.error(
+            `[User Service] :: User ID ${
+              user.id
+            } registration status is Rejected`
+          );
+
+          throw new UserRejectedError(
+            'User registration was rejected by the admin'
+          );
         }
 
         return authenticatedUser;
@@ -104,12 +126,10 @@ module.exports = {
   }) {
     const hashedPwd = await bcrypt.hash(password, 10);
 
-    try {
-      // FIXME unmock this
-      const account = {
-        address: '0x2131321',
-        privateKey: '0x12313'
-      }; /* await fastify.eth.createAccount();
+    const account = {
+      address: '0x2131321',
+      privateKey: '0x12313'
+    }; /* await fastify.eth.createAccount();
       if (!account.address || !account.privateKey) {
         fastify.log.error(
           '[User Service] :: Error creating account on blockchain'
@@ -119,84 +139,49 @@ module.exports = {
           error: 'Error creating account on blockchain'
         };
       } */
-      const existingUser = await this.userDao.getUserByEmail(email);
+    const existingUser = await this.userDao.getUserByEmail(email);
 
-      if (existingUser) {
-        logger.error(
-          `[User Service] :: User with email ${email} already exists.`
-        );
-        return {
-          status: 409,
-          error: 'A user with that email already exists'
-        };
-      }
-
-      const validRole = Object.values(userRoles).includes(role);
-
-      if (!validRole) {
-        logger.error(`[User Service] :: Role ID ${role} does not exist.`);
-        return {
-          status: 404,
-          error: 'User role does not exist'
-        };
-      }
-
-      // TODO : address, privkey
-      const user = {
-        firstname: firstName,
-        lastname: lastName,
-        email: email.toLowerCase(),
-        pwd: hashedPwd,
-        role,
-        address: '0x0', //account.address,
-        transferBlockchainStatus: blockchainStatus.SENT,
-        privKey: account.privateKey
-      };
-
-      const savedUser = await this.userDao.createUser(user);
-      // if (this.roleCreationMap[role]) {
-      //   const savedInfo = await this.roleCreationMap[role].create({
-      //     user: savedUser.id,
-      //     ...detail
-      //   });
-      //   logger.info('[User Service] :: User Info saved', savedInfo);
-      // }
-
-      if (!savedUser || savedUser == null) {
-        logger.error(
-          '[User Service] :: There was an unexpected error creating the user:',
-          user
-        );
-        return {
-          status: 500,
-          error: 'There was an unexpected error creating the user'
-        };
-      }
-
-      // if (questionnaire)
-      //   await questionnaireService.saveQuestionnaireOfUser(
-      //     savedUser.id,
-      //     questionnaire
-      //   );
-
-      // sends welcome email
-      // await this.mailService.sendMail(
-      //   '"Circles of Angels Support" <coa@support.com>',
-      //   email,
-      //   'Circles of Angels - Welcome!',
-      //   `<p>Your Circles Of Angels account was created successfully! </br></p>
-      //     <p>We are reviewing your account details. You will be notified once we are done. </br></p>
-      //     <p>Thank you for your support. </br></p>`
-      // );
-
-      return savedUser;
-    } catch (error) {
-      logger.error(error);
-      logger.error('[User Service] :: Error creating User:', error);
-      throw Error('Error creating User');
+    if (existingUser) {
+      logger.error(
+        `[User Service] :: User with email ${email} already exists.`
+      );
+      throw new UserAlreadyExistsError('A user with that email already exists');
     }
-  },
 
+    // TODO : address, privkey
+    const user = {
+      username,
+      email: email.toLowerCase(),
+      pwd: hashedPwd,
+      role,
+      address: '0x0', //account.address,
+      registrationStatus: 1,
+      transferBlockchainStatus: blockchainStatus.SENT,
+      privKey: account.privateKey
+    };
+
+    const savedUser = await this.userDao.createUser(user);
+
+    if (!savedUser || savedUser == null) {
+      logger.error(
+        '[User Service] :: There was an unexpected error creating the user:',
+        user
+      );
+      throw new COAError('There was an unexpected error creating the user');
+    }
+
+    // sends welcome email
+    await this.mailService.sendMail(
+      '"Circles of Angels Support" <coa@support.com>',
+      email,
+      'Circles of Angels - Welcome!',
+      `<p>Your Circles Of Angels account was created successfully! </br></p>
+          <p>We are reviewing your account details. You will be notified once we are done. </br></p>
+          <p>Thank you for your support. </br></p>`
+    );
+
+    return savedUser;
+  },
   /**
    * Receives a User's id and returns their role
    *
@@ -208,7 +193,7 @@ module.exports = {
 
     if (!user || user == null) {
       logger.error(`[User Service] :: User ID ${userId} not found in database`);
-      return { error: 'User not found' };
+      throw new UserNotFoundError('User not found');
     }
 
     if (user.role && user.role != null) {
@@ -219,7 +204,7 @@ module.exports = {
     }
 
     logger.error(`[User Service] :: User ID ${userId} doesn't have a role`);
-    return { error: "User doesn't have a role" };
+    throw new UserWithoutRoleError("User doesn't have a role");
   },
 
   /**
@@ -230,106 +215,101 @@ module.exports = {
    */
   async updateUser(userId, user) {
     logger.info('[User Service] :: Updating User:', user);
-    try {
-      // check user existence
-      const existingUser = await this.userDao.getUserById(userId);
+    // check user existence
+    const existingUser = await this.userDao.getUserById(userId);
 
-      if (!existingUser) {
-        logger.error(`[User Service] :: User ID ${userId} does not exist`);
-        return {
-          status: 404,
-          error: 'User does not exist'
-        };
-      }
+    if (!existingUser) {
+      logger.error(`[User Service] :: User ID ${userId} does not exist`);
+      throw new UserNotFoundError('User does not exist');
+    }
 
       const { pwd, email } = user;
       const newUser = { ...user };
 
-      if (pwd) {
-        const hashedPwd = await bcrypt.hash(pwd, 10);
-        newUser.pwd = hashedPwd;
+    if (pwd) {
+      const hashedPwd = await bcrypt.hash(pwd, 10);
+      newUser.pwd = hashedPwd;
+    }
+
+    if (email) {
+      const anotherUser = await this.userDao.getUserByEmail(email);
+
+      if (anotherUser && anotherUser.id !== existingUser.id) {
+        logger.error(
+          `[User Service] :: User with email ${email} already exists.`
+        );
+        throw new UserAlreadyExistsError(
+          'A user with that email already exists'
+        );
       }
+    }
 
-      if (email) {
-        const anotherUser = await this.userDao.getUserByEmail(email);
+    let updatedUser = newUser;
 
-        if (anotherUser && anotherUser.id !== existingUser.id) {
-          logger.error(
-            `[User Service] :: User with email ${email} already exists.`
-          );
-          return {
-            status: 409,
-            error: 'A user with that email already exists'
-          };
-        }
-      }
-
-      let updatedUser = newUser;
-
-      if (!user.blocked) {
-        const onConfirm = async () => {
-          try {
-            updatedUser = await this.userDao.updateUser(userId, newUser);
-            const info = await this.mailService.sendMail(
-              '"Circles of Angels Support" <coa@support.com>',
-              updatedUser.email,
-              'Circles of Angels - Account Confirmation',
-              'Account Approved',
-              `<p>Your Circles Of Angels account has been approved! </br></p>
-              <p>You can log in and start using our 
-              <a href='${frontendUrl}/login'>platform.</a></br></p>
-              <p>Thank you for your support </br></p>`
-            );
-            if (!isEmpty(info.rejected))
-              return { status: 409, error: 'Invalid Email' };
-            await this.userDao.updateTransferBlockchainStatus(
-              existingUser.id,
-              blockchainStatus.CONFIRMED
-            );
-
-            return updatedUser;
-          } catch (error) {
-            logger.error(error);
-          }
-        };
-        // await fastify.eth.transferInitialFundsToAccount(
-        //   existingUser.address,
-        //   onConfirm
-        // );
-      }
-
-      if (user.blocked) {
+    if (
+      registrationStatus &&
+      registrationStatus === userRegistrationStatus.APPROVED
+    ) {
+      const onConfirm = async () => {
         updatedUser = await this.userDao.updateUser(userId, newUser);
         const info = await this.mailService.sendMail(
           '"Circles of Angels Support" <coa@support.com>',
           updatedUser.email,
-          'Circles of Angels - Account Rejected',
-          'Account Rejected',
-          `<p>We are sorry to inform you that your Circles Of Angels account has been rejected </br></p>
+          'Circles of Angels - Account Confirmation',
+          'Account Approved',
+          `<p>Your Circles Of Angels account has been approved! </br></p>
+              <p>You can log in and start using our 
+              <a href='${frontendUrl}/login'>platform.</a></br></p>
+              <p>Thank you for your support </br></p>`
+        );
+        if (!isEmpty(info.rejected)) {
+          logger.error('[User Service] :: Invalid email');
+          throw new InvalidEmailError('Invalid email');
+        }
+        await this.userDao.updateTransferBlockchainStatus(
+          existingUser.id,
+          blockchainStatus.CONFIRMED
+        );
+
+        return updatedUser;
+      };
+      // await fastify.eth.transferInitialFundsToAccount(
+      //   existingUser.address,
+      //   onConfirm
+      // );
+    }
+
+    if (
+      // FIXME, ESTO ESTA MAL HECHO
+      registrationStatus &&
+      registrationStatus === userRegistrationStatus.REJECTED
+    ) {
+      updatedUser = await this.userDao.updateUser(userId, newUser);
+      const info = await this.mailService.sendMail(
+        '"Circles of Angels Support" <coa@support.com>',
+        updatedUser.email,
+        'Circles of Angels - Account Rejected',
+        'Account Rejected',
+        `<p>We are sorry to inform you that your Circles Of Angels account has been rejected </br></p>
             <p>If you think there was an error, please contact us at:
             <a href="mailto:hello@circlesofangels.com">
               hello@circlesofangels.com
             </a></br></p>
             <p>Thank you for your support </br></p>`
-        );
+      );
 
-        if (!updatedUser) {
-          logger.error('[User Service] :: User could not be updated', newUser);
-          return {
-            status: 500,
-            error: 'User could not be updated'
-          };
-        }
-
-        if (!isEmpty(info.rejected))
-          return { status: 409, error: 'Invalid Email' };
+      if (!updatedUser) {
+        logger.error('[User Service] :: User could not be updated', newUser);
+        throw new UpdateUserError('User could not be updated');
       }
 
-      return updatedUser;
-    } catch (error) {
-      logger.error('[User Service] :: Error updating User:', error);
-      throw Error('Error updating User');
+      if (!isEmpty(info.rejected)) {
+        logger.error('[User Service] :: Invalid email');
+        throw new InvalidEmailError('Invalid email');
+      }
     }
+
+    return updatedUser;
   },
 
   /**
@@ -349,7 +329,7 @@ module.exports = {
       return userRoleWithoutAdmin;
     } catch (error) {
       logger.error('[User Service] :: Error getting all User Roles:', error);
-      throw Error('Error getting all User Roles');
+      throw new COAError('Error getting all User Roles');
     }
   },
 
@@ -369,23 +349,46 @@ module.exports = {
     logger.info('[User Service] :: Getting all Users');
     try {
       // get users
-      const users = await this.userDao.getUsers();
-      return users;
-      // userList.forEach(async user => {
-      //   try {
-      //     const answers = await questionnaireService.getAnswersOfUser(user);
-      //     user.answers = answers;
-      //   } catch (error) {
-      //     logger.error('Questionnaire not found for user:', user.id);
-      //   }
-      // });
+      const userList = await this.userDao.getUsers();
+      userList.forEach(async user => {
+        try {
+          const answers = await questionnaireService.getAnswersOfUser(user);
+          user.answers = answers;
+        } catch (error) {
+          logger.error('Questionnaire not found for user:', user.id);
+          throw new QuestionnaireNotFoundError(
+            `Questionnaire not found for user: ${user.id}`
+          );
+        }
+      });
 
-      // if (!userList || userList.length === 0) {
-      //   logger.info(
-      //     '[User Service] :: There are currently no non-admin users in the database'
-      //   );
-      //   return [];
-      // }
+      if (!userList || userList.length === 0) {
+        logger.info(
+          '[User Service] :: There are currently no non-admin users in the database'
+        );
+        return [];
+      }
+
+      const allUsersWithDetail = await Promise.all(
+        userList.map(async user => {
+          // if se or funder get details
+          if (this.roleCreationMap[user.role.id]) {
+            // const detail = await this.roleCreationMap[user.role.id].getByUserId(
+            //   user.id
+            // );
+
+            // add details to user
+            const userWithDetail = {
+              ...user
+              // detail
+            };
+
+            return userWithDetail;
+          }
+
+          return user;
+        })
+      );
 
       // const allUsersWithDetail = await Promise.all(
       //   userList.map(async user => {
@@ -410,44 +413,44 @@ module.exports = {
       // return allUsersWithDetail;
     } catch (error) {
       logger.error('[User Service] :: Error getting all Users:', error);
-      throw Error('Error getting all Users');
+      throw new COAError('Error getting all Users');
     }
   },
 
-  // FIXME : fix this.
+  // TODO FIXME: fix this.
   async getProjectsOfUser(userId, userProjectService, projectService) {
     return [];
-    try {
-      const user = await this.getUserById(userId);
-      let response = [];
-      if (!user) {
-        return { status: 404, error: 'Nonexistent User' };
-      }
-      switch (user.role.id) {
-        case userRoles.IMPACT_FUNDER:
-          response = (await userProjectService.getProjectsOfUser(
-            userId
-          )).filter(
-            project =>
-              project.status === projectStatus.PUBLISHED ||
-              project.status === projectStatus.IN_PROGRESS
-          );
-          break;
-        case userRoles.ORACLE:
-          response = await projectService.getAllProjectsById(
-            (await projectService.getProjectsAsOracle(userId)).projects
-          );
-          break;
-        case userRoles.SOCIAL_ENTREPRENEUR:
-          response = await projectService.getProjectsOfOwner(userId);
-          break;
-        default:
-          return { status: 409, error: 'Invalid User' };
-      }
-      return response;
-    } catch (error) {
-      return { status: 500, error: 'Error getting projects of user' };
-    }
+    // try {
+    //   const user = await this.getUserById(userId);
+    //   let response = [];
+    //   if (!user) {
+    //     throw new UserNotFoundError('Nonexistent User');
+    //   }
+    //   switch (user.role.id) {
+    //     case userRoles.IMPACT_FUNDER:
+    //       response = (await userProjectService.getProjectsOfUser(
+    //         userId
+    //       )).filter(
+    //         project =>
+    //           project.status === projectStatus.PUBLISHED ||
+    //           project.status === projectStatus.IN_PROGRESS
+    //       );
+    //       break;
+    //     case userRoles.ORACLE:
+    //       response = await projectService.getAllProjectsById(
+    //         (await projectService.getProjectsAsOracle(userId)).projects
+    //       );
+    //       break;
+    //     case userRoles.SOCIAL_ENTREPRENEUR:
+    //       response = await projectService.getProjectsOfOwner(userId);
+    //       break;
+    //     default:
+    //       throw new InvalidUserError('Invalid User');
+    //   }
+    //   return response;
+    // } catch (error) {
+    //   throw new COAUserServiceError('Error getting projects of user');
+    // }
   },
 
   async validUser(user, roleId) {

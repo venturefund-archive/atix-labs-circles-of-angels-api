@@ -13,7 +13,10 @@ const projectService = require('./services/projectService');
 
 const userDao = require('./dao/userDao');
 const projectDao = require('./dao/projectDao');
+const roleDao = require('./dao/roleDao');
+const passRecoveryService = require('./services/passRecoveryService');
 
+const passRecoveryDao = require('./dao/passRecoveryDao');
 const { injectDependencies } = require('./util/injection');
 
 module.exports = fastify => {
@@ -64,17 +67,33 @@ module.exports = fastify => {
       userDao,
       projectExperienceDao: undefined
     };
+
+    injectDependencies(service, dependencies);
+  }
+
+  function configurePasssRecoveryService(service) {
+    const dependencies = {
+      mailService,
+      passRecoveryDao,
+      userDao
+    };
     injectDependencies(service, dependencies);
   }
 
   function configureDAOs(models) {
     injectModel(userDao, models.user);
+    injectModel(roleDao, models.role);
+    injectModel(projectDao, models.project);
+    injectModel(passRecoveryDao, models.passRecovery);
   }
+
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
     configureProjectService(projectService);
+    configurePasssRecoveryService(passRecoveryService);
   }
+
   function init(fastify) {
     configureDAOs(fastify.models);
     configureServices();

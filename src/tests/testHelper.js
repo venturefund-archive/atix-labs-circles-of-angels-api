@@ -21,7 +21,8 @@ const {
   userFunderDetails,
   userFunderAnswers,
   userSeAnswers,
-  userProject
+  userProject,
+  genericUser
 } = require('./mockModels');
 
 const {
@@ -29,6 +30,10 @@ const {
   blockchainStatus,
   userRoles
 } = require('../rest/util/constants');
+
+exports.buildGenericUserWithEmail = email => {
+  return genericUser(email);
+};
 
 exports.buildUserOracle = id => {
   const user = JSON.parse(JSON.stringify(userOracle));
