@@ -68,18 +68,6 @@ module.exports = {
           );
         }
 
-        if (user.registrationStatus === userRegistrationStatus.REJECTED) {
-          logger.error(
-            `[User Service] :: User ID ${
-              user.id
-            } registration status is Rejected`
-          );
-
-          throw new UserRejectedError(
-            'User registration was rejected by the admin'
-          );
-        }
-
         return authenticatedUser;
       }
 
@@ -142,7 +130,8 @@ module.exports = {
 
     // TODO : address, privkey
     const user = {
-      username,
+      firstName,
+      lastName,
       email: email.toLowerCase(),
       pwd: hashedPwd,
       role,
@@ -209,7 +198,7 @@ module.exports = {
     logger.info('[User Service] :: Updating User:', user);
     // check user existence
     const existingUser = await this.userDao.getUserById(userId);
-
+    
     if (!existingUser) {
       logger.error(`[User Service] :: User ID ${userId} does not exist`);
       throw new UserNotFoundError('User does not exist');
@@ -237,69 +226,6 @@ module.exports = {
     }
 
     let updatedUser = newUser;
-
-    if (
-      registrationStatus &&
-      registrationStatus === userRegistrationStatus.APPROVED
-    ) {
-      const onConfirm = async () => {
-        updatedUser = await this.userDao.updateUser(userId, newUser);
-        const info = await this.mailService.sendMail(
-          '"Circles of Angels Support" <coa@support.com>',
-          updatedUser.email,
-          'Circles of Angels - Account Confirmation',
-          'Account Approved',
-          `<p>Your Circles Of Angels account has been approved! </br></p>
-              <p>You can log in and start using our 
-              <a href='${frontendUrl}/login'>platform.</a></br></p>
-              <p>Thank you for your support </br></p>`
-        );
-        if (!isEmpty(info.rejected)) {
-          logger.error('[User Service] :: Invalid email');
-          throw new InvalidEmailError('Invalid email');
-        }
-        await this.userDao.updateTransferBlockchainStatus(
-          existingUser.id,
-          blockchainStatus.CONFIRMED
-        );
-
-        return updatedUser;
-      };
-      // await fastify.eth.transferInitialFundsToAccount(
-      //   existingUser.address,
-      //   onConfirm
-      // );
-    }
-
-    if (
-      // FIXME, ESTO ESTA MAL HECHO
-      registrationStatus &&
-      registrationStatus === userRegistrationStatus.REJECTED
-    ) {
-      updatedUser = await this.userDao.updateUser(userId, newUser);
-      const info = await this.mailService.sendMail(
-        '"Circles of Angels Support" <coa@support.com>',
-        updatedUser.email,
-        'Circles of Angels - Account Rejected',
-        'Account Rejected',
-        `<p>We are sorry to inform you that your Circles Of Angels account has been rejected </br></p>
-            <p>If you think there was an error, please contact us at:
-            <a href="mailto:hello@circlesofangels.com">
-              hello@circlesofangels.com
-            </a></br></p>
-            <p>Thank you for your support </br></p>`
-      );
-
-      if (!updatedUser) {
-        logger.error('[User Service] :: User could not be updated', newUser);
-        throw new UpdateUserError('User could not be updated');
-      }
-
-      if (!isEmpty(info.rejected)) {
-        logger.error('[User Service] :: Invalid email');
-        throw new InvalidEmailError('Invalid email');
-      }
-    }
 
     return updatedUser;
   },
