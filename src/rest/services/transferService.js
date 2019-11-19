@@ -6,9 +6,15 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { transferStatus } = require('../../rest/util/constants');
+const { transferStatus } = require('../util/constants');
 
-const transferService = ({ fastify, transferDao }) => ({
+const logger = {
+  log: () => {},
+  error: () => {},
+  info: () => {}
+};
+
+module.exports = {
   async sendTransferToVerification({
     transferId,
     amount,
@@ -17,7 +23,7 @@ const transferService = ({ fastify, transferDao }) => ({
     projectId,
     destinationAccount
   }) {
-    return transferDao.createOrUpdateTransfer({
+    return this.transferDao.createOrUpdateTransfer({
       transferId,
       amount,
       currency,
@@ -28,15 +34,15 @@ const transferService = ({ fastify, transferDao }) => ({
   },
 
   async updateTransferState({ transferId, state }) {
-    return transferDao.updateTransferState({ transferId, state });
+    return this.transferDao.updateTransferState({ transferId, state });
   },
 
   async getTransferById({ transferId }) {
-    return transferDao.findTransferById(transferId);
+    return this.transferDao.findTransferById(transferId);
   },
 
   async getTransferStatusByUserAndProject({ senderId, projectId }) {
-    const transfer = await transferDao.getTransferStatusByUserAndProject({
+    const transfer = await this.transferDao.getTransferStatusByUserAndProject({
       senderId,
       projectId
     });
@@ -44,7 +50,7 @@ const transferService = ({ fastify, transferDao }) => ({
   },
 
   async getTransferList({ projectId }) {
-    return transferDao.getTransferByProjectId({ projectId });
+    return this.transferDao.getTransferByProjectId({ projectId });
   },
 
   /**
@@ -54,19 +60,19 @@ const transferService = ({ fastify, transferDao }) => ({
    * @returns total funded amount || error
    */
   async getTotalFundedByProject(projectId) {
-    fastify.log.info(
+    logger.info(
       '[Transfer Service] :: Getting total transfers amount for Project ID',
       projectId
     );
     try {
-      const transfers = await transferDao.getTransfersByProjectAndState(
+      const transfers = await this.transferDao.getTransfersByProjectAndState(
         projectId,
         transferStatus.VERIFIED
       );
 
       // project doesn't have any transfers
       if (!transfers || transfers.length === 0) {
-        fastify.log.info(
+        logger.info(
           `[Transfer Service] :: Project ID ${projectId} does not have any funds transferred`
         );
         return 0;
@@ -78,19 +84,14 @@ const transferService = ({ fastify, transferDao }) => ({
         0
       );
 
-      fastify.log.info(
+      logger.info(
         `[Transfer Service] :: Project ID ${projectId} total funds: ${totalAmount}`
       );
 
       return totalAmount;
     } catch (error) {
-      fastify.log.error(
-        '[Transfer Service] :: Error getting transfers:',
-        error
-      );
+      logger.error('[Transfer Service] :: Error getting transfers:', error);
       throw Error('Error getting transfers');
     }
   }
-});
-
-module.exports = transferService;
+};
