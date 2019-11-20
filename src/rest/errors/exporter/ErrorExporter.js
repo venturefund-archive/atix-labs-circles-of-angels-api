@@ -1,12 +1,17 @@
 module.exports = {
-    COAError: require('../COAError'),
-    InvalidEmailError: require('../InvalidEmailError'),
-    QuestionnaireNotFoundError: require('../QuestionnaireNotFoundError'),
-    UpdateUserError: require('../UpdateUserError'),
-    UserAlreadyExistsError: require('../UserAlreadyExistsError'),
-    UserNotFoundError: require('../UserNotFoundError'),
-    UserRejectedError: require('../UserRejectedError'),
-    UserRoleDoesNotExistsError: require('../UserRoleDoesNotExistsError'),
-    UserStillNeedsApprovalError: require('../UserStillNeedsApprovalError'),
-    UserWithoutRoleError: require('../UserWithoutRoleError')
+    InvalidEmail: {
+        message: 'Invalid email'
+    },
+    EmailAlreadyInUse: {
+        message: 'The email is already in use'
+    },
+    UserNotFound: {
+        message: 'User is not found'
+    },
+    UserRejected: {
+        message: 'User is blocked'
+    },
+    UserUpdateError: {
+        message: 'Unable to update the user'
+    }    
 }
