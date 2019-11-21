@@ -32,11 +32,9 @@ const serverErrorResponse = () => ({
   }
 });
 
-const successResponse = ({ properties, description }) => ({
+const successResponse = response => ({
   200: {
-    type: 'object',
-    properties,
-    description
+    ...response
   }
 });
 
@@ -47,16 +45,46 @@ const projectThumbnailProperties = {
   goalAmount: { type: 'number' },
   thumbnailImgHash: { type: 'string' }
 };
+const projectDetailProperties = {
+  projectMission: { type: 'string' },
+  theProblem: { type: 'string' }
+};
+const projectProposalProperties = {
+  projectProposal: { type: 'string' }
+};
+const milestoneIdProperties = {
+  milestoneId: { type: 'integer' }
+};
+const projectMilestonesProperties = {
+  // TODO
+};
+const activityProperties = {
+  // TODO
+};
 
-const projectIdParam = {
+const idParam = description => ({
   type: 'object',
   properties: {
     projectId: {
       type: 'integer',
-      description: 'Project identification'
+      description
     }
   }
+});
+
+const projectIdParam = idParam('Project identification');
+const milestoneIdParam = idParam('Milestone identification');
+const activityIdParam = idParam('Activity identification');
+
+const successWithProjectIdResponse = {
+  type: 'object',
+  properties: {
+    projectId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project'
 };
+
+const successWithProjectMilestoneProcess = {}; // TODO
 
 const projectThumbnailRoutes = {
   // create project thumbnail
@@ -77,12 +105,7 @@ const projectThumbnailRoutes = {
           }
         },
         response: {
-          ...successResponse({
-            properties: {
-              projectId: { type: 'integer' }
-            },
-            description: 'Returns the id of the project'
-          }),
+          ...successResponse(successWithProjectIdResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
@@ -108,12 +131,7 @@ const projectThumbnailRoutes = {
         },
         params: projectIdParam,
         response: {
-          ...successResponse({
-            properties: {
-              projectId: { type: 'integer' }
-            },
-            description: 'Returns the id of the project'
-          }),
+          ...successResponse(successWithProjectIdResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
@@ -136,12 +154,7 @@ const projectThumbnailRoutes = {
           files: { type: 'object' }
         },
         response: {
-          ...successResponse({
-            properties: {
-              thumbnailImgHash: { type: 'string' }
-            },
-            description: 'Returns the thumbnailImg hash'
-          }),
+          ...successResponse(successWithProjectIdResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
@@ -162,6 +175,7 @@ const projectThumbnailRoutes = {
         params: projectIdParam,
         response: {
           ...successResponse({
+            type: 'object',
             properties: projectThumbnailProperties,
             description: 'Returns the project description'
           }),
@@ -170,39 +184,396 @@ const projectThumbnailRoutes = {
         }
       }
     },
-    handler: handlers.getThumbnail // TODO implement in handler
+    handler: handlers.getProjectThumbnail // TODO implement in handler
   }
 };
 
 const projectDetailRoutes = {
-  createProjectDetail: {},
-  updateProjectDetail: {},
-  getProjectDetail: {}
+  createProjectDetail: {
+    method: 'post',
+    path: `${basePath}/detail`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Creates new project and adds project detail to it.',
+        summary: 'Create new project and project detail',
+        type: 'multipart/form-data',
+        raw: {
+          body: {
+            type: 'object',
+            properties: projectDetailProperties
+          }
+        },
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.createProjectDetail // TODO implement in handler
+  },
+  updateProjectDetail: {
+    method: 'put',
+    path: `${basePath}/:projectId/detail`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        raw: {
+          body: {
+            type: 'object',
+            properties: projectDetailProperties
+          }
+        },
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.updateProjectDetail // TODO implement in handler
+  },
+  getProjectDetail: {
+    method: 'get',
+    path: `${basePath}/:projectId/description`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        params: projectIdParam,
+        response: {
+          ...successResponse({
+            type: 'object',
+            properties: projectDetailProperties,
+            description: 'Returns the project detail'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.getProjectDetail // TODO implement in handler
+  }
 };
 
 const projectProposalRoutes = {
-  createProjectProposal: {},
-  updateProjectProposal: {},
-  getProjectProposal: {}
+  createProjectProposal: {
+    method: 'post',
+    path: `${basePath}/proposal`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Creates new project and adds project proposal to it.',
+        summary: 'Create new project and project proposal',
+        type: 'multipart/form-data',
+        raw: {
+          body: {
+            type: 'object',
+            properties: projectProposalProperties
+          }
+        },
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.createProjectProposal // TODO implement in handler
+  },
+  updateProjectProposal: {
+    method: 'put',
+    path: `${basePath}/:projectId/proposal`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        raw: {
+          body: {
+            type: 'object',
+            properties: projectProposalProperties
+          }
+        },
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.updateProjectProposal // TODO implement in handler
+  },
+  getProjectProposal: {
+    method: 'get',
+    path: `${basePath}/:projectId/description`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        params: projectIdParam,
+        response: {
+          ...successResponse({
+            type: 'object',
+            properties: projectProposalProperties,
+            description: 'Returns the project proposal'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.getProjectProposal // TODO implement in handler
+  }
 };
 
 const milestoneRoutes = {
-  deleteMilestone: {},
-  editActivityOfMilestone: {},
-  deleteActivityOfMilestone: {},
-  addActivityOnAMilestone: {}
+  deleteMilestone: {
+    method: 'delete',
+    path: `${basePath}/:projectId/milestones/:milestoneId`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        params: { projectIdParam, milestoneIdParam },
+        response: {
+          ...successResponse({
+            type: 'object',
+            properties: projectMilestonesProperties,
+            description: 'Returns the project proposal'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.deleteMilestoneOfProjectId // TODO implement in handler
+  },
+  editActivityOfMilestone: {
+    method: 'put',
+    path: `${basePath}/:projectId/milestones/:milestoneId`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        params: { projectIdParam, milestoneIdParam },
+        raw: {
+          body: {
+            type: 'object',
+            properties: activityProperties
+          }
+        },
+        response: {
+          ...successResponse({
+            type: 'object',
+            properties: milestoneIdProperties,
+            description: 'Returns the milestoneId'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.editActivityOfMilestone // TODO implement in handler
+  },
+  deleteActivityOfMilestone: {
+    method: 'delete',
+    path: '/milestones/:milestoneId/activities/:activityId',
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        params: { milestoneIdParam, activityIdParam },
+        response: {
+          ...successResponse({
+            type: 'object',
+            properties: milestoneIdProperties,
+            description: 'Returns the milestoneId'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.deleteActivityOfMilestone // TODO implement in handler
+  },
+  addActivityOnMilestone: {
+    method: 'put',
+    path: '/milestones/:milestoneId/activities',
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        params: milestoneIdParam,
+        raw: {
+          body: {
+            type: 'object',
+            properties: activityProperties
+          }
+        },
+        response: {
+          ...successResponse({
+            type: 'object',
+            properties: milestoneIdProperties,
+            description: 'Returns the milestoneId'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.addActivityOnMilestone // TODO implement in handler
+  }
 };
 
 const projectMilestonesRoute = {
-  getMilestoneTemplate: {},
-  uploadsMilestonesFile: {},
-  processMilestonesFile: {},
-  getMilestones: {},
+  getMilestonesTemplate: {
+    method: 'get',
+    path: '/templates/milestones',
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        params: projectIdParam,
+        response: {
+          ...successResponse({
+            type: 'array',
+            items: {
+              ...projectMilestonesProperties
+            },
+            description: 'Returns the project milestones'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.getProjectMilestonesTemplate // TODO implement in handler
+  },
+  uploadsMilestonesFile: {
+    method: 'put',
+    path: `${basePath}/:projectId/milestones/file`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        raw: {
+          files: { type: 'object' }
+        },
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.uploadMilestoneFile // TODO implement in handler
+  },
+  processMilestonesFile: {
+    method: 'post',
+    path: `${basePath}/:projectId/milestones`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Creates new project and adds project proposal to it.',
+        summary: 'Create new project and project proposal',
+        type: 'multipart/form-data',
+        response: {
+          ...successResponse(successWithProjectMilestoneProcess),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.processMilestonesFile // TODO implement in handler
+  },
+  getMilestones: {
+    method: 'get',
+    path: `${basePath}/:projectId/milestones`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: '',
+        summary: '',
+        type: 'multipart/form-data',
+        params: projectIdParam,
+        response: {
+          ...successResponse({
+            type: 'array',
+            items: {
+              ...projectMilestonesProperties
+            },
+            description: 'Returns the project milestones'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.getProjectMilestones // TODO implement in handler
+  },
   ...milestoneRoutes
 };
 
 const createProjectRoute = {
-  createProject: {}
+  createProject: {
+    method: 'put',
+    path: `${basePath}/:projectId`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Creates new project and adds project proposal to it.',
+        summary: 'Create new project and project proposal',
+        type: 'multipart/form-data',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.publishProject // TODO implement in handler
+  }
 };
 
 const routes = {
