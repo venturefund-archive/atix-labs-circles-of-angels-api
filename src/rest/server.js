@@ -51,6 +51,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     module.exports.fastify = fastify;
   } catch (err) {
     // TODO add logger
+    console.log('error', err);
     process.exit(1);
   }
 };

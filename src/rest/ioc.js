@@ -18,7 +18,6 @@ const activityService = require('./services/activityService');
 
 const userProjectService = require('./services/userProjectService');
 const transferService = require('./services/transferService');
-const activityService = require('./services/activityService');
 const milestoneService = require('./services/milestoneService');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
@@ -115,8 +114,8 @@ module.exports = fastify => {
     };
 
     injectDependencies(service, dependencies);
-    }
-    
+  }
+
   function configureTransferService(service) {
     const dependencies = { transferDao };
 
@@ -137,7 +136,7 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
-  function configureMilestoneService(milestoneService) {
+  function configureMilestoneService(service) {
     const dependencies = {
       milestoneDao,
       activityService: undefined,
@@ -145,7 +144,7 @@ module.exports = fastify => {
       projectDao,
       userDao
     };
-    injectDependencies(milestoneService, dependencies);
+    injectDependencies(service, dependencies);
   }
 
   function configureDAOs(models) {
