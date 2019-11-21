@@ -40,6 +40,24 @@ const successResponse = ({ properties, description }) => ({
   }
 });
 
+const projectThumbnailProperties = {
+  projectName: { type: 'string' },
+  countryOfImpact: { type: 'string' },
+  timeframe: { type: 'string' },
+  goalAmount: { type: 'number' },
+  thumbnailImgHash: { type: 'string' }
+};
+
+const projectIdParam = {
+  type: 'object',
+  properties: {
+    projectId: {
+      type: 'integer',
+      description: 'Project identification'
+    }
+  }
+};
+
 const projectThumbnailRoutes = {
   // create project thumbnail
   createProjectThumbnail: {
@@ -55,29 +73,22 @@ const projectThumbnailRoutes = {
         raw: {
           body: {
             type: 'object',
-            properties: {
-              projectName: { type: 'string' },
-              countryOfImpact: { type: 'string' },
-              timeframe: { type: 'string' },
-              goalAmount: { type: 'number' },
-              thumbnailImgHash: { type: 'string' }
-            }
+            properties: projectThumbnailProperties
           }
         },
         response: {
           ...successResponse({
             properties: {
-              projectId: { type: 'number' } // TODO number? long? integer?
+              projectId: { type: 'integer' }
             },
-            description:
-              'Returns an array of objects with the information of the projects'
+            description: 'Returns the id of the project'
           }),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
         }
       }
     },
-    handler: handlers.createThumbnail // TODO FIXME change this
+    handler: handlers.createThumbnail // TODO implement in handler
   },
   updateProjectThumbnail: {
     method: 'put',
@@ -92,17 +103,23 @@ const projectThumbnailRoutes = {
         raw: {
           body: {
             type: 'object',
-            properties: {}
+            properties: projectThumbnailProperties
           }
         },
+        params: projectIdParam,
         response: {
-          ...successResponse(),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
+          ...successResponse({
+            properties: {
+              projectId: { type: 'integer' }
+            },
+            description: 'Returns the id of the project'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
         }
       }
     },
-    handler: handlers.updateThumbnail // TODO FIXME change this
+    handler: handlers.updateThumbnail // TODO implement in handler
   },
   uploadsThumbnailFile: {
     method: 'put',
@@ -114,20 +131,23 @@ const projectThumbnailRoutes = {
         description: '',
         summary: '',
         type: 'multipart/form-data',
+        params: projectIdParam,
         raw: {
-          body: {
-            type: 'object',
-            properties: {}
-          }
+          files: { type: 'object' }
         },
         response: {
-          ...successResponse(),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
+          ...successResponse({
+            properties: {
+              thumbnailImgHash: { type: 'string' }
+            },
+            description: 'Returns the thumbnailImg hash'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
         }
       }
     },
-    handler: handlers.uploadThumbnailFile // TODO FIXME change this
+    handler: handlers.uploadThumbnailFile // TODO implement in handler
   },
   getThumbnail: {
     method: 'get',
@@ -139,20 +159,18 @@ const projectThumbnailRoutes = {
         description: '',
         summary: '',
         type: 'multipart/form-data',
-        raw: {
-          body: {
-            type: 'object',
-            properties: {}
-          }
-        },
+        params: projectIdParam,
         response: {
-          ...successResponse(),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
+          ...successResponse({
+            properties: projectThumbnailProperties,
+            description: 'Returns the project description'
+          }),
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
         }
       }
     },
-    handler: handlers.getThumbnail // TODO FIXME change this
+    handler: handlers.getThumbnail // TODO implement in handler
   }
 };
 
