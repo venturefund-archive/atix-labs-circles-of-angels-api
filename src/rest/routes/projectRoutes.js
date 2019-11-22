@@ -42,8 +42,7 @@ const projectThumbnailProperties = {
   projectName: { type: 'string' },
   countryOfImpact: { type: 'string' },
   timeframe: { type: 'string' },
-  goalAmount: { type: 'number' },
-  thumbnailImgHash: { type: 'string' }
+  goalAmount: { type: 'number' }
 };
 const projectDetailProperties = {
   projectMission: { type: 'string' },
@@ -100,13 +99,14 @@ const projectThumbnailRoutes = {
     method: 'post',
     path: `${basePath}/description`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project thumbnail to it.',
         summary: 'Create new project and project thumbnail',
         type: 'multipart/form-data',
         raw: {
+          files: { type: 'object' },
           body: {
             type: 'object',
             properties: projectThumbnailProperties
@@ -132,6 +132,7 @@ const projectThumbnailRoutes = {
         summary: 'summaryHard',
         type: 'multipart/form-data',
         raw: {
+          files: { type: 'object' },
           body: {
             type: 'object',
             properties: projectThumbnailProperties
@@ -146,29 +147,6 @@ const projectThumbnailRoutes = {
       }
     },
     handler: handlers.updateProjectThumbnail // TODO implement in handler
-  },
-  uploadsThumbnailFile: {
-    method: 'put',
-    path: `${basePath}/:projectId/description/file`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        type: 'multipart/form-data',
-        params: projectIdParam,
-        raw: {
-          files: { type: 'object' }
-        },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(), // TODO add correct params
-          ...serverErrorResponse() // TODO add correct params
-        }
-      }
-    },
-    handler: handlers.uploadProjectThumbnailFile // TODO implement in handler
   },
   getThumbnail: {
     method: 'get',
@@ -206,6 +184,7 @@ const projectDetailRoutes = {
         description: 'Creates new project and adds project detail to it.',
         summary: 'Create new project and project detail',
         raw: {
+          files: { type: 'object' },
           body: {
             type: 'object',
             properties: projectDetailProperties
@@ -230,6 +209,7 @@ const projectDetailRoutes = {
         description: 'descriptionHard',
         summary: 'summaryHard',
         raw: {
+          files: { type: 'object' },
           body: {
             type: 'object',
             properties: projectDetailProperties
@@ -466,9 +446,8 @@ const projectMilestonesRoute = {
         params: projectIdParam,
         response: {
           ...successResponse({
-            type: 'object',
-            properties: { file: { type: 'object' } },
-            description: 'Returns the project milestone template'
+            type: 'string',
+            description: 'Returns the project milestone template stream'
           }),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
@@ -481,14 +460,17 @@ const projectMilestonesRoute = {
     method: 'put',
     path: `${basePath}/:projectId/milestones/file`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
         summary: 'summaryHard',
         type: 'multipart/form-data',
         raw: {
-          files: { type: 'object' }
+          type: 'object',
+          properties: {
+            files: { type: 'object' }
+          }
         },
         params: projectIdParam,
         response: {
