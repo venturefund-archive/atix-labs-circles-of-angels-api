@@ -9,12 +9,8 @@
 const apiHelper = require('../../services/helper');
 
 module.exports = {
-  createProjectThumbnail: fastify => async (request, reply) => {
-    console.log('request', request);
-    reply.send('DALE QUE VA');
-  },
+  createProjectThumbnail: fastify => async (request, reply) => {},
   updateProjectThumbnail: fastify => async (request, reply) => {},
-  uploadProjectThumbnailFile: fastify => async (request, reply) => {},
   getProjectThumbnail: fastify => async (request, reply) => {},
   createProjectDetail: fastify => async (request, reply) => {},
   updateProjectDetail: fastify => async (request, reply) => {},
