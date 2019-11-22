@@ -9,23 +9,26 @@
 const apiHelper = require('../../services/helper');
 
 module.exports = {
-  createProjectThumbnail: async (request, reply) => {},
-  updateProjectThumbnail: async (request, reply) => {},
-  uploadProjectThumbnailFile: async (request, reply) => {},
-  getProjectThumbnail: async (request, reply) => {},
-  createProjectDetail: async (request, reply) => {},
-  updateProjectDetail: async (request, reply) => {},
-  getProjectDetail: async (request, reply) => {},
-  createProjectProposal: async (request, reply) => {},
-  updateProjectProposal: async (request, reply) => {},
-  getProjectProposal: async (request, reply) => {},
-  deleteMilestoneOfProject: async (request, reply) => {},
-  editActivityOfMilestone: async (request, reply) => {},
-  deleteActivityOfMilestone: async (request, reply) => {},
-  addActivityOnMilestone: async (request, reply) => {},
-  getTemplateOfProjectMilestone: async (request, reply) => {},
-  uploadMilestoneFile: async (request, reply) => {},
-  processMilestonesFile: async (request, reply) => {},
-  getProjectMilestones: async (request, reply) => {},
-  publishProject: async (request, reply) => {}
+  createProjectThumbnail: fastify => async (request, reply) => {
+    console.log('request', request);
+    reply.send('DALE QUE VA');
+  },
+  updateProjectThumbnail: fastify => async (request, reply) => {},
+  uploadProjectThumbnailFile: fastify => async (request, reply) => {},
+  getProjectThumbnail: fastify => async (request, reply) => {},
+  createProjectDetail: fastify => async (request, reply) => {},
+  updateProjectDetail: fastify => async (request, reply) => {},
+  getProjectDetail: fastify => async (request, reply) => {},
+  createProjectProposal: fastify => async (request, reply) => {},
+  updateProjectProposal: fastify => async (request, reply) => {},
+  getProjectProposal: fastify => async (request, reply) => {},
+  deleteMilestoneOfProject: fastify => async (request, reply) => {},
+  editActivityOfMilestone: fastify => async (request, reply) => {},
+  deleteActivityOfMilestone: fastify => async (request, reply) => {},
+  addActivityOnMilestone: fastify => async (request, reply) => {},
+  getTemplateOfProjectMilestone: fastify => async (request, reply) => {},
+  uploadMilestoneFile: fastify => async (request, reply) => {},
+  processMilestonesFile: fastify => async (request, reply) => {},
+  getProjectMilestones: fastify => async (request, reply) => {},
+  publishProject: fastify => async (request, reply) => {}
 };
