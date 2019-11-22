@@ -102,7 +102,7 @@ const projectThumbnailRoutes = {
     method: 'post',
     path: `${basePath}/description`,
     options: {
-      // beforeHandler: ['generalAuth'],
+      // // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project thumbnail to it.',
@@ -128,7 +128,7 @@ const projectThumbnailRoutes = {
     method: 'put',
     path: `${basePath}/:projectId/description`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -155,7 +155,7 @@ const projectThumbnailRoutes = {
     method: 'get',
     path: `${basePath}/:projectId/description`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -185,7 +185,7 @@ const projectDetailRoutes = {
     method: 'post',
     path: `${basePath}/detail`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project detail to it.',
@@ -210,7 +210,7 @@ const projectDetailRoutes = {
     method: 'put',
     path: `${basePath}/:projectId/detail`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -236,7 +236,7 @@ const projectDetailRoutes = {
     method: 'get',
     path: `${basePath}/:projectId/detail`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -262,7 +262,7 @@ const projectProposalRoutes = {
     method: 'post',
     path: `${basePath}/proposal`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project proposal to it.',
@@ -286,7 +286,7 @@ const projectProposalRoutes = {
     method: 'put',
     path: `${basePath}/:projectId/proposal`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -311,7 +311,7 @@ const projectProposalRoutes = {
     method: 'get',
     path: `${basePath}/:projectId/proposal`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -341,7 +341,7 @@ const milestoneRoutes = {
     method: 'delete',
     path: `${basePath}/:projectId/milestones/:milestoneId`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -364,7 +364,7 @@ const milestoneRoutes = {
     method: 'put',
     path: `${basePath}/:projectId/milestones/:milestoneId`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -393,7 +393,7 @@ const milestoneRoutes = {
     method: 'delete',
     path: '/milestones/:milestoneId/activities/:activityId',
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -416,7 +416,7 @@ const milestoneRoutes = {
     method: 'put',
     path: '/milestones/:milestoneId/activities',
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -449,7 +449,7 @@ const projectMilestonesRoute = {
     method: 'get',
     path: '/templates/milestones',
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -471,7 +471,7 @@ const projectMilestonesRoute = {
     method: 'put',
     path: `${basePath}/:projectId/milestones/file`,
     options: {
-      // beforeHandler: ['generalAuth'],
+      // // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -497,7 +497,7 @@ const projectMilestonesRoute = {
     method: 'post',
     path: `${basePath}/:projectId/milestones`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project proposal to it.',
@@ -515,7 +515,7 @@ const projectMilestonesRoute = {
     method: 'get',
     path: `${basePath}/:projectId/milestones`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
@@ -542,7 +542,7 @@ const createProjectRoute = {
     method: 'put',
     path: `${basePath}/:projectId`,
     options: {
-      beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project proposal to it.',
