@@ -10,13 +10,12 @@ const basePath = '/projects';
 const handlers = require('./handlers/projectHandlers');
 const routeTags = require('../util/routeTags');
 
-const clientErrorResponse = ({ errors }) => ({
+const clientErrorResponse = () => ({
   '4xx': {
     type: 'object',
     properties: {
       status: { type: 'integer' },
-      error: { type: 'string' },
-      errors
+      error: { type: 'string' }
     },
     description: 'Returns a message describing the error'
   }
@@ -26,6 +25,7 @@ const serverErrorResponse = () => ({
   500: {
     type: 'object',
     properties: {
+      status: { type: 'integer' },
       error: { type: 'string' }
     },
     description: 'Returns a message describing the error'
@@ -57,9 +57,11 @@ const milestoneIdProperties = {
 };
 const projectMilestonesProperties = {
   // TODO
+  milestoneId: { type: 'integer' }
 };
 const activityProperties = {
   // TODO
+  milestoneId: { type: 'integer' }
 };
 
 const idParam = description => ({
@@ -84,7 +86,13 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
-const successWithProjectMilestoneProcess = {}; // TODO
+const successWithProjectMilestoneProcess = {
+  type: 'object',
+  properties: {
+    projectId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project'
+}; // TODO
 
 const projectThumbnailRoutes = {
   // create project thumbnail
@@ -120,8 +128,8 @@ const projectThumbnailRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         type: 'multipart/form-data',
         raw: {
           body: {
@@ -146,8 +154,8 @@ const projectThumbnailRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         type: 'multipart/form-data',
         params: projectIdParam,
         raw: {
@@ -169,9 +177,8 @@ const projectThumbnailRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: projectIdParam,
         response: {
           ...successResponse({
@@ -198,7 +205,6 @@ const projectDetailRoutes = {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project detail to it.',
         summary: 'Create new project and project detail',
-        type: 'multipart/form-data',
         raw: {
           body: {
             type: 'object',
@@ -221,9 +227,8 @@ const projectDetailRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         raw: {
           body: {
             type: 'object',
@@ -242,14 +247,13 @@ const projectDetailRoutes = {
   },
   getProjectDetail: {
     method: 'get',
-    path: `${basePath}/:projectId/description`,
+    path: `${basePath}/:projectId/detail`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: projectIdParam,
         response: {
           ...successResponse({
@@ -276,7 +280,6 @@ const projectProposalRoutes = {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project proposal to it.',
         summary: 'Create new project and project proposal',
-        type: 'multipart/form-data',
         raw: {
           body: {
             type: 'object',
@@ -299,9 +302,8 @@ const projectProposalRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         raw: {
           body: {
             type: 'object',
@@ -320,14 +322,13 @@ const projectProposalRoutes = {
   },
   getProjectProposal: {
     method: 'get',
-    path: `${basePath}/:projectId/description`,
+    path: `${basePath}/:projectId/proposal`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: projectIdParam,
         response: {
           ...successResponse({
@@ -352,9 +353,8 @@ const milestoneRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: { projectIdParam, milestoneIdParam },
         response: {
           ...successResponse({
@@ -376,9 +376,8 @@ const milestoneRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: { projectIdParam, milestoneIdParam },
         raw: {
           body: {
@@ -406,9 +405,8 @@ const milestoneRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: { milestoneIdParam, activityIdParam },
         response: {
           ...successResponse({
@@ -430,9 +428,8 @@ const milestoneRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: milestoneIdParam,
         raw: {
           body: {
@@ -457,23 +454,21 @@ const milestoneRoutes = {
 
 const projectMilestonesRoute = {
   getMilestonesTemplate: {
+    // this endpoint should be in any other place and serve the static file
     method: 'get',
     path: '/templates/milestones',
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: projectIdParam,
         response: {
           ...successResponse({
-            type: 'array',
-            items: {
-              ...projectMilestonesProperties
-            },
-            description: 'Returns the project milestones'
+            type: 'object',
+            properties: { file: { type: 'object' } },
+            description: 'Returns the project milestone template'
           }),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
@@ -489,8 +484,8 @@ const projectMilestonesRoute = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         type: 'multipart/form-data',
         raw: {
           files: { type: 'object' }
@@ -514,7 +509,6 @@ const projectMilestonesRoute = {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project proposal to it.',
         summary: 'Create new project and project proposal',
-        type: 'multipart/form-data',
         response: {
           ...successResponse(successWithProjectMilestoneProcess),
           ...clientErrorResponse(), // TODO add correct params
@@ -531,16 +525,13 @@ const projectMilestonesRoute = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: '',
-        summary: '',
-        type: 'multipart/form-data',
+        description: 'descriptionHard',
+        summary: 'summaryHard',
         params: projectIdParam,
         response: {
           ...successResponse({
-            type: 'array',
-            items: {
-              ...projectMilestonesProperties
-            },
+            type: 'object',
+            properties: {}, // TODO
             description: 'Returns the project milestones'
           }),
           ...clientErrorResponse(), // TODO add correct params
@@ -581,7 +572,7 @@ const routes = {
   ...projectDetailRoutes,
   ...projectProposalRoutes,
   ...projectMilestonesRoute,
-  createProjectRoute
+  ...createProjectRoute
 };
 
 module.exports = routes;
