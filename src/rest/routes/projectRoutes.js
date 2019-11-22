@@ -44,6 +44,9 @@ const projectThumbnailProperties = {
   timeframe: { type: 'string' },
   goalAmount: { type: 'number' }
 };
+const imgHashProperty = {
+  imgHash: { type: 'string' }
+};
 const projectDetailProperties = {
   projectMission: { type: 'string' },
   theProblem: { type: 'string' }
@@ -161,7 +164,11 @@ const projectThumbnailRoutes = {
         response: {
           ...successResponse({
             type: 'object',
-            properties: projectThumbnailProperties,
+            properties: Object.assign(
+              {},
+              projectThumbnailProperties,
+              imgHashProperty
+            ),
             description: 'Returns the project description'
           }),
           ...clientErrorResponse(), // TODO add correct params
@@ -313,7 +320,11 @@ const projectProposalRoutes = {
         response: {
           ...successResponse({
             type: 'object',
-            properties: projectProposalProperties,
+            properties: Object.assign(
+              {},
+              projectProposalProperties,
+              imgHashProperty
+            ),
             description: 'Returns the project proposal'
           }),
           ...clientErrorResponse(), // TODO add correct params
@@ -513,7 +524,7 @@ const projectMilestonesRoute = {
         response: {
           ...successResponse({
             type: 'object',
-            properties: {}, // TODO
+            properties: {}, // TODO define project milestones object schema
             description: 'Returns the project milestones'
           }),
           ...clientErrorResponse(), // TODO add correct params
