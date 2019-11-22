@@ -111,7 +111,7 @@ const projectThumbnailRoutes = {
         }
       }
     },
-    handler: handlers.createThumbnail // TODO implement in handler
+    handler: handlers.createProjectThumbnail // TODO implement in handler
   },
   updateProjectThumbnail: {
     method: 'put',
@@ -137,7 +137,7 @@ const projectThumbnailRoutes = {
         }
       }
     },
-    handler: handlers.updateThumbnail // TODO implement in handler
+    handler: handlers.updateProjectThumbnail // TODO implement in handler
   },
   uploadsThumbnailFile: {
     method: 'put',
@@ -160,7 +160,7 @@ const projectThumbnailRoutes = {
         }
       }
     },
-    handler: handlers.uploadThumbnailFile // TODO implement in handler
+    handler: handlers.uploadProjectThumbnailFile // TODO implement in handler
   },
   getThumbnail: {
     method: 'get',
@@ -367,7 +367,7 @@ const milestoneRoutes = {
         }
       }
     },
-    handler: handlers.deleteMilestoneOfProjectId // TODO implement in handler
+    handler: handlers.deleteMilestoneOfProject // TODO implement in handler
   },
   editActivityOfMilestone: {
     method: 'put',
@@ -480,7 +480,7 @@ const projectMilestonesRoute = {
         }
       }
     },
-    handler: handlers.getProjectMilestonesTemplate // TODO implement in handler
+    handler: handlers.getTemplateOfProjectMilestone // TODO implement in handler
   },
   uploadsMilestonesFile: {
     method: 'put',
