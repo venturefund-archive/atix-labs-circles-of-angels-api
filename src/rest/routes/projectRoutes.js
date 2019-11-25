@@ -44,8 +44,8 @@ const projectThumbnailProperties = {
   timeframe: { type: 'string' },
   goalAmount: { type: 'number' }
 };
-const imgHashProperty = {
-  imgHash: { type: 'string' }
+const imgPathProperty = {
+  imgPath: { type: 'string' }
 };
 const projectDetailProperties = {
   projectMission: { type: 'string' },
@@ -167,7 +167,7 @@ const projectThumbnailRoutes = {
             properties: Object.assign(
               {},
               projectThumbnailProperties,
-              imgHashProperty
+              imgPathProperty
             ),
             description: 'Returns the project description'
           }),
@@ -323,7 +323,7 @@ const projectProposalRoutes = {
             properties: Object.assign(
               {},
               projectProposalProperties,
-              imgHashProperty
+              imgPathProperty
             ),
             description: 'Returns the project proposal'
           }),
