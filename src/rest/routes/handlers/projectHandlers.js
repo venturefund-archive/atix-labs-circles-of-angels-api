@@ -36,7 +36,7 @@ module.exports = {
   createProjectDetail: fastify => async (request, reply) => {
     const { projectMission, theProblem } = request.raw.body;
     const { file } = request.raw.files;
-    console.log('body', request.ray.body);
+    console.log('body', request.raw.body);
     console.log('file', file.name);
     reply.send('DALE QUE VA createProjectDetail');
   },
