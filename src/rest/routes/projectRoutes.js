@@ -38,6 +38,9 @@ const successResponse = response => ({
   }
 });
 
+const ownerIdProperty = {
+  ownerId: { type: 'integer' }
+};
 const projectThumbnailProperties = {
   projectName: { type: 'string' },
   countryOfImpact: { type: 'string' },
@@ -112,7 +115,11 @@ const projectThumbnailRoutes = {
           files: { type: 'object' },
           body: {
             type: 'object',
-            properties: projectThumbnailProperties
+            properties: Object.assign(
+              {},
+              projectThumbnailProperties,
+              ownerIdProperty
+            )
           }
         },
         response: {
@@ -138,7 +145,11 @@ const projectThumbnailRoutes = {
           files: { type: 'object' },
           body: {
             type: 'object',
-            properties: projectThumbnailProperties
+            properties: Object.assign(
+              {},
+              projectThumbnailProperties,
+              ownerIdProperty
+            )
           }
         },
         params: projectIdParam,
@@ -166,7 +177,7 @@ const projectThumbnailRoutes = {
             type: 'object',
             properties: Object.assign(
               {},
-              projectThumbnailProperties,
+              Object.assign({}, projectThumbnailProperties, ownerIdProperty),
               imgPathProperty
             ),
             description: 'Returns the project description'
@@ -194,7 +205,11 @@ const projectDetailRoutes = {
           files: { type: 'object' },
           body: {
             type: 'object',
-            properties: projectDetailProperties
+            properties: Object.assign(
+              {},
+              projectDetailProperties,
+              ownerIdProperty
+            )
           }
         },
         response: {
@@ -219,7 +234,11 @@ const projectDetailRoutes = {
           files: { type: 'object' },
           body: {
             type: 'object',
-            properties: projectDetailProperties
+            properties: Object.assign(
+              {},
+              projectDetailProperties,
+              ownerIdProperty
+            )
           }
         },
         params: projectIdParam,
@@ -245,7 +264,11 @@ const projectDetailRoutes = {
         response: {
           ...successResponse({
             type: 'object',
-            properties: projectDetailProperties,
+            properties: Object.assign(
+              {},
+              projectDetailProperties,
+              ownerIdProperty
+            ),
             description: 'Returns the project detail'
           }),
           ...clientErrorResponse(), // TODO add correct params
@@ -270,7 +293,11 @@ const projectProposalRoutes = {
         raw: {
           body: {
             type: 'object',
-            properties: projectProposalProperties
+            properties: Object.assign(
+              {},
+              projectProposalProperties,
+              ownerIdProperty
+            )
           }
         },
         response: {
@@ -294,7 +321,11 @@ const projectProposalRoutes = {
         raw: {
           body: {
             type: 'object',
-            properties: projectProposalProperties
+            properties: Object.assign(
+              {},
+              projectProposalProperties,
+              ownerIdProperty
+            )
           }
         },
         params: projectIdParam,
@@ -322,7 +353,7 @@ const projectProposalRoutes = {
             type: 'object',
             properties: Object.assign(
               {},
-              projectProposalProperties,
+              Object.assign({}, projectProposalProperties, ownerIdProperty),
               imgPathProperty
             ),
             description: 'Returns the project proposal'
