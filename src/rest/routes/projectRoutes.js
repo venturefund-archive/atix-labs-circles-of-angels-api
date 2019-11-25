@@ -102,7 +102,7 @@ const projectThumbnailRoutes = {
     method: 'post',
     path: `${basePath}/description`,
     options: {
-      // // beforeHandler: ['generalAuth'],
+      // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project thumbnail to it.',
