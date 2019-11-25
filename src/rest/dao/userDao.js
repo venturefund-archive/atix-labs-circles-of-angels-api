@@ -10,6 +10,11 @@ const { userRoles } = require('../util/constants');
 
 module.exports = {
   async getUserById(id) {
+    // TODO delete this
+    return this.model.findOne({ id });
+  },
+
+  async findById(id) {
     return this.model.findOne({ id });
   },
 

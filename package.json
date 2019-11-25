@@ -19,6 +19,8 @@
   "dependencies": {
     "@truffle/hdwallet-provider": "^1.0.22",
     "bcrypt": "3.0.5",
+    "md5-file": "^4.0.0",
+    "blueimp-md5": "^2.12.0",
     "bunyan": "1.8.12",
     "bunyan-format": "0.2.1",
     "config": "3.1.0",

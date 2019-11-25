@@ -7,92 +7,38 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 const configs = require('config');
 const sharp = require('sharp');
+const mkdirp = require('mkdirp-promise');
 
 exports.getFileFromPath = filepath => {
   const file = fs.createReadStream(filepath, 'utf8');
   return file;
 };
 
-const getCoverPhotoPath = projectId =>
-  `${configs.fileServer.filePath}/projects/${projectId}/coverPhoto.jpg`;
+const getCoverPhotoPath = () =>
+  `${configs.fileServer.filePath}/projects/coverPhotos/`;
 
-const getCardPhotoPath = projectId =>
-  `${configs.fileServer.filePath}/projects/${projectId}/cardPhoto.jpg`;
+const getCardPhotoPath = () =>
+  `${configs.fileServer.filePath}/projects/cardPhotos/`;
 
-const getPitchProposalPath = (projectId, proposalName) =>
-  `${
-    configs.fileServer.filePath
-  }/projects/${projectId}/pitchProposal${path.extname(proposalName)}`;
+// const getPitchProposalPath = (projectId, proposalName) =>
+//   `${
+//     configs.fileServer.filePath
+//   }/projects/${projectId}/pitchProposal${path.extname(proposalName)}`;
 
-const getProjectAgreementPath = (projectId, agreementName) =>
-  `${configs.fileServer.filePath}/projects/${projectId}/agreement${path.extname(
-    agreementName
-  )}`;
+// const getProjectAgreementPath = (projectId, agreementName) =>
+//   `${configs.fileServer.filePath}/projects/${projectId}/agreement${path.extname(
+//     agreementName
+//   )}`;
 
-const getMilestonesPath = (projectId, milestoneName) =>
-  `${
-    configs.fileServer.filePath
-  }/projects/${projectId}/milestones${path.extname(milestoneName)}`;
+// const getMilestonesPath = (projectId, milestoneName) =>
+//   `${
+//     configs.fileServer.filePath
+//   }/projects/${projectId}/milestones${path.extname(milestoneName)}`;
 
-exports.addPathToFilesProperties = ({
-  projectId,
-  coverPhoto,
-  cardPhoto,
-  pitchProposal,
-  projectAgreement,
-  milestones
-}) => {
-  if (coverPhoto) {
-    coverPhoto.path = getCoverPhotoPath(projectId);
-  }
-  if (cardPhoto) {
-    cardPhoto.path = getCardPhotoPath(projectId);
-  }
-  if (pitchProposal) {
-    pitchProposal.path = getPitchProposalPath(projectId, pitchProposal.name);
-  }
-  if (projectAgreement) {
-    projectAgreement.path = getProjectAgreementPath(
-      projectId,
-      projectAgreement.name
-    );
-  }
-  if (milestones) {
-    milestones.path = getMilestonesPath(projectId, milestones.name);
-  }
-};
-
-exports.addTimestampToFilename = filename => {
-  const fileExtension = path.extname(filename);
-  const currentDate = new Date();
-  const timeString = `${`0${currentDate.getUTCHours()}`.slice(
-    -2
-  )}${`0${currentDate.getUTCMinutes()}`.slice(
-    -2
-  )}${`0${currentDate.getUTCSeconds()}`.slice(
-    -2
-  )}${`0${currentDate.getUTCMilliseconds()}`.slice(-2)}`;
-
-  const timestampString = [
-    currentDate.getUTCFullYear(),
-    `0${currentDate.getUTCMonth() + 1}`.slice(-2),
-    `0${currentDate.getUTCDate()}`.slice(-2),
-    timeString
-  ].join('-');
-
-  const nameWithTimestamp = filename.replace(
-    fileExtension,
-    `_${timestampString}`.concat(fileExtension)
-  );
-
-  return nameWithTimestamp;
-};
-
-exports.savePhotoJpgFormat = async (image, savePath, maxWidth) => {
-  return new Promise((resolve, reject) => {
+const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
+  new Promise((resolve, reject) => {
     sharp(image.data)
       .resize({
         width: maxWidth,
@@ -109,4 +55,21 @@ exports.savePhotoJpgFormat = async (image, savePath, maxWidth) => {
         resolve(res);
       });
   });
+
+const fileSaver = {
+  // milestone: { saver: milestoneSaver, getPath: getMilestonesPath }, // TODO
+  thumbnail: { saver: savePhotoJpgFormat, getBasePath: getCardPhotoPath },
+  coverPhoto: { saver: savePhotoJpgFormat, getBasePath: getCoverPhotoPath }
+};
+
+exports.saveFile = async (type, { file, maxWidth }) => {
+  const saver = fileSaver[type];
+  const hash = file.md5;
+  const fileExtension = hash.concat('.jpeg');
+  const path = saver
+    .getBasePath()
+    .concat(hash.charAt(0))
+    .concat('/');
+  await mkdirp(path);
+  await savePhotoJpgFormat(file, path.concat(fileExtension));
 };
