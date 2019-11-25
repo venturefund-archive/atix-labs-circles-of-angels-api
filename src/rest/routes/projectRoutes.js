@@ -362,7 +362,7 @@ const milestoneRoutes = {
   },
   editActivityOfMilestone: {
     method: 'put',
-    path: `${basePath}/:projectId/milestones/:milestoneId`,
+    path: '/milestones/:milestoneId/activities/:activityId',
     options: {
       // beforeHandler: ['generalAuth'],
       schema: {
