@@ -12,7 +12,8 @@ module.exports = {
       projectName,
       countryOfImpact,
       timeframe,
-      goalAmount
+      goalAmount,
+      ownerId
     } = request.raw.body;
     const { file } = request.raw.files;
     this.projectService.createProjectThumbnail({
@@ -20,7 +21,8 @@ module.exports = {
       countryOfImpact,
       timeframe,
       goalAmount,
-      file
+      file,
+      ownerId
     });
     reply.send('DALE QUE VA createProjectThumbnail');
   },
@@ -30,7 +32,8 @@ module.exports = {
       projectName,
       countryOfImpact,
       timeframe,
-      goalAmount
+      goalAmount,
+      ownerId
     } = request.raw.body;
     const { file } = request.raw.files;
     this.projectService.updateProjectThumbnail(projectId, {
@@ -38,7 +41,8 @@ module.exports = {
       countryOfImpact,
       timeframe,
       goalAmount,
-      file
+      file,
+      ownerId
     });
     reply.send('DALE QUE VA updateProjectThumbnail');
   },
@@ -49,20 +53,21 @@ module.exports = {
     reply.send('DALE QUE VA getProjectThumbnail');
   },
   createProjectDetail: fastify => async (request, reply) => {
-    const { projectMission, theProblem } = request.raw.body;
+    const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
     console.log('body', request.raw.body);
     console.log('file', file.name);
     this.projectService.createProjectDetail({
       projectMission,
       theProblem,
-      file
+      file,
+      ownerId
     });
     reply.send('DALE QUE VA createProjectDetail');
   },
   updateProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const { projectMission, theProblem } = request.raw.body;
+    const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
     console.log('projectId', projectId);
     console.log('body', request.raw.body);
@@ -70,7 +75,8 @@ module.exports = {
     this.projectService.updateProjectDetail(projectId, {
       projectMission,
       theProblem,
-      file
+      file,
+      ownerId
     });
     reply.send('DALE QUE VA updateProjectDetail');
   },
@@ -81,17 +87,20 @@ module.exports = {
     reply.send('DALE QUE VA getProjectDetail');
   },
   createProjectProposal: fastify => async (request, reply) => {
-    const { projectProposal } = request.raw.body;
+    const { projectProposal, ownerId } = request.raw.body;
     console.log('projectProposal', projectProposal);
-    this.projectService.createProjectProposal(projectProposal);
+    this.projectService.createProjectProposal({ projectProposal, ownerId });
     reply.send('DALE QUE VA createProjectProposal');
   },
   updateProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const { projectProposal } = request.raw.body;
+    const { projectProposal, ownerId } = request.raw.body;
     console.log('projectId', projectId);
     console.log('projectProposal', projectProposal);
-    this.projectService.updateProjectProposal(projectId, projectProposal);
+    this.projectService.updateProjectProposal(projectId, {
+      projectProposal,
+      ownerId
+    });
     reply.send('DALE QUE VA updateProjectProposal');
   },
   getProjectProposal: fastify => async (request, reply) => {
