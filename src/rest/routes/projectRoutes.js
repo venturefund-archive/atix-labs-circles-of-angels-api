@@ -64,7 +64,7 @@ const projectMilestonesProperties = {
   // TODO
   milestoneId: { type: 'integer' }
 };
-const activityProperties = {
+const taskProperties = {
   // TODO
   milestoneId: { type: 'integer' }
 };
@@ -81,7 +81,7 @@ const idParam = description => ({
 
 const projectIdParam = idParam('Project identification');
 const milestoneIdParam = idParam('Milestone identification');
-const activityIdParam = idParam('Activity identification');
+const taskIdParam = idParam('Task identification');
 
 const successWithProjectIdResponse = {
   type: 'object',
@@ -391,9 +391,9 @@ const milestoneRoutes = {
     },
     handler: handlers.deleteMilestoneOfProject // TODO implement in handler
   },
-  editActivityOfMilestone: {
+  editTaskOfMilestone: {
     method: 'put',
-    path: '/milestones/:milestoneId/activities/:activityId',
+    path: '/milestones/:milestoneId/activities/:taskId',
     options: {
       // beforeHandler: ['generalAuth'],
       schema: {
@@ -404,7 +404,7 @@ const milestoneRoutes = {
         raw: {
           body: {
             type: 'object',
-            properties: activityProperties
+            properties: taskProperties
           }
         },
         response: {
@@ -418,18 +418,18 @@ const milestoneRoutes = {
         }
       }
     },
-    handler: handlers.editActivityOfMilestone // TODO implement in handler
+    handler: handlers.editTaskOfMilestone // TODO implement in handler
   },
-  deleteActivityOfMilestone: {
+  deleteTaskOfMilestone: {
     method: 'delete',
-    path: '/milestones/:milestoneId/activities/:activityId',
+    path: '/milestones/:milestoneId/activities/:taskId',
     options: {
       // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'descriptionHard',
         summary: 'summaryHard',
-        params: { milestoneIdParam, activityIdParam },
+        params: { milestoneIdParam, taskIdParam },
         response: {
           ...successResponse({
             type: 'object',
@@ -441,9 +441,9 @@ const milestoneRoutes = {
         }
       }
     },
-    handler: handlers.deleteActivityOfMilestone // TODO implement in handler
+    handler: handlers.deleteTaskOfMilestone // TODO implement in handler
   },
-  addActivityOnMilestone: {
+  addTaskOnMilestone: {
     method: 'put',
     path: '/milestones/:milestoneId/activities',
     options: {
@@ -456,7 +456,7 @@ const milestoneRoutes = {
         raw: {
           body: {
             type: 'object',
-            properties: activityProperties
+            properties: taskProperties
           }
         },
         response: {
@@ -470,7 +470,7 @@ const milestoneRoutes = {
         }
       }
     },
-    handler: handlers.addActivityOnMilestone // TODO implement in handler
+    handler: handlers.addTaskOnMilestone // TODO implement in handler
   }
 };
 

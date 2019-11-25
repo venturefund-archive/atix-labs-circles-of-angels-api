@@ -19,10 +19,11 @@ const transferStatus = {
 };
 
 const projectStatus = {
-  REJECTED: 1,
-  PENDING_APPROVAL: 0,
-  PUBLISHED: 2,
-  IN_PROGRESS: 3
+  REJECTED: 2,
+  EDITING: 0,
+  PENDING_APPROVAL: 1,
+  PUBLISHED: 3,
+  IN_PROGRESS: 4
 };
 
 const activityStatus = {
