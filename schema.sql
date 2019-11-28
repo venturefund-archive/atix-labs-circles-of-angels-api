@@ -17,7 +17,7 @@ CREATE TABLE public.user (
     email varchar(40) NOT NULL,
     password varchar(80) NOT NULL,
     -- TODO : is there any way to use `role` as field name.
-    "roleName" ROLE NOT NULL,
+    "role" ROLE NOT NULL,
     "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
     "privKey" varchar(80) NOT NULL,
