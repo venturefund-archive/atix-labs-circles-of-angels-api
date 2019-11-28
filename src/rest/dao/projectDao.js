@@ -9,14 +9,14 @@
 const { forEachPromise } = require('../util/promises');
 const { projectStatus } = require('../util/constants');
 
-const ProjectDao = ({ projectModel, userDao }) => ({
+module.exports = {
   async saveProject(project) {
-    const createdProject = await projectModel.create(project);
+    const createdProject = await this.model.create(project);
     return createdProject;
   },
 
   async getProjecListWithStatusFrom({ status }) {
-    const projects = await projectModel.find({
+    const projects = await this.model.find({
       where: { status: { '>=': status } },
       sort: 'id DESC'
     });
@@ -27,19 +27,19 @@ const ProjectDao = ({ projectModel, userDao }) => ({
   },
 
   async updateProjectStatus({ projectId, status }) {
-    const response = projectModel.updateOne({ id: projectId }).set({ status });
+    const response = this.model.updateOne({ id: projectId }).set({ status });
     return response;
   },
 
   async updateProjectTransaction({ projectId, transactionHash }) {
-    const response = projectModel
+    const response = this.model
       .updateOne({ id: projectId })
       .set({ transactionHash });
     return response;
   },
 
   async getProjectById({ projectId }) {
-    const project = await projectModel.findOne({ id: projectId });
+    const project = await this.model.findOne({ id: projectId });
 
     // returns undefined if not found
     if (!project || project == null) {
@@ -57,26 +57,26 @@ const ProjectDao = ({ projectModel, userDao }) => ({
   },
 
   async deleteProject({ projectId }) {
-    const deletedProject = projectModel.destroy({ id: projectId }).fetch();
+    const deletedProject = this.model.destroy({ id: projectId }).fetch();
     return deletedProject;
   },
 
   async getProjectMilestones({ projectId }) {
-    const projectMilestones = await projectModel
+    const projectMilestones = await this.model
       .findOne({ id: projectId })
       .populate('milestones');
     return projectMilestones ? projectMilestones.milestones : [];
   },
 
   async getProjectMilestonesFilePath(projectId) {
-    return projectModel.findOne({
+    return this.model.findOne({
       where: { id: projectId },
       select: ['milestonesFile']
     });
   },
 
   async updateProjectAgreement({ projectAgreement, projectId }) {
-    const updated = projectModel
+    const updated = this.model
       .update({ id: projectId })
       .set({ projectAgreement });
     return updated;
@@ -90,7 +90,7 @@ const ProjectDao = ({ projectModel, userDao }) => ({
     delete toUpdate.blockchainStatus;
     delete toUpdate.startBlockchainStatus;
 
-    const savedProject = await projectModel
+    const savedProject = await this.model
       .updateOne({ id })
       .set({ ...toUpdate });
 
@@ -98,7 +98,7 @@ const ProjectDao = ({ projectModel, userDao }) => ({
   },
 
   async getProjectPhotos(projectId) {
-    return projectModel.findOne({
+    return this.model.findOne({
       where: { id: projectId },
       select: ['coverPhoto', 'cardPhoto']
     });
@@ -115,34 +115,32 @@ const ProjectDao = ({ projectModel, userDao }) => ({
   },
 
   async getProjectsByOwner(ownerId) {
-    return projectModel.find({
+    return this.model.find({
       ownerId,
       status: { '>=': projectStatus.PUBLISHED }
     });
   },
 
   async getAllProjectsById(projectsId) {
-    return projectModel.find({
+    return this.model.find({
       id: projectsId,
       status: { '>=': projectStatus.PUBLISHED }
     });
   },
 
   async updateBlockchainStatus(id, blockchainStatus) {
-    return projectModel.updateOne({ id }).set({ blockchainStatus });
+    return this.model.updateOne({ id }).set({ blockchainStatus });
   },
 
   async updateStartBlockchainStatus(id, startBlockchainStatus) {
-    return projectModel.updateOne({ id }).set({ startBlockchainStatus });
+    return this.model.updateOne({ id }).set({ startBlockchainStatus });
   },
 
   async updateCreationTransactionHash(id, creationTransactionHash) {
-    return projectModel.updateOne({ id }).set({ creationTransactionHash }); 
+    return this.model.updateOne({ id }).set({ creationTransactionHash });
   },
 
   async updateStartTransactionHash(id, transactionHash) {
-    return projectModel.updateOne({ id }).set({ transactionHash });
+    return this.model.updateOne({ id }).set({ transactionHash });
   }
-});
-
-module.exports = ProjectDao;
+};
