@@ -6,7 +6,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const projectServiceBuilder = require('../core/projectService');
 const questionnaireServiceBuilder = require('../core/questionnaireService');
 
 const activityDaoBuilder = require('../dao/activityDao');
@@ -87,7 +86,7 @@ const helperBuilder = async fastify => {
   exports.helper = {
     services: {
       projectService,
-      questionnaireService,
+      questionnaireService
     },
     daos: {
       activityDao,
