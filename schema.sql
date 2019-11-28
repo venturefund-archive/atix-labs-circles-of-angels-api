@@ -21,6 +21,7 @@ CREATE TABLE public.user (
     "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
     "privKey" varchar(80) NOT NULL,
+    blocked BOOLEAN NOT NULL DEFAULT false,
     PRIMARY KEY (id),
     UNIQUE (email)
 );
