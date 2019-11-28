@@ -591,12 +591,33 @@ const createProjectRoute = {
   }
 };
 
+const commonProjectRoutes = {
+  getProjects: {
+    method: 'get',
+    path: `${basePath}/`,
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Gets all projects.',
+        summary: 'Gets all project',
+        response: {
+          ...successResponse(successWithProjectIdResponse), // TODO change to proper get projects response
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.getProjects
+  }
+};
+
 const routes = {
   ...projectThumbnailRoutes,
   ...projectDetailRoutes,
   ...projectProposalRoutes,
   ...projectMilestonesRoute,
-  ...createProjectRoute
+  ...createProjectRoute,
+  ...commonProjectRoutes
 };
 
 module.exports = routes;
