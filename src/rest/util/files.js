@@ -72,4 +72,5 @@ exports.saveFile = async (type, { file, maxWidth }) => {
     .concat('/');
   await mkdirp(path);
   await savePhotoJpgFormat(file, path.concat(fileExtension));
+  return path.concat(fileExtension);
 };

@@ -48,6 +48,10 @@ module.exports = {
     return this.addUserInfoOnProject(project);
   },
 
+  async findById(id) {
+    return this.model.findOne({ id });
+  },
+
   async addUserInfoOnProject(project) {
     const user = await userDao.getUserById(project.ownerId);
     if (!user) return project;
@@ -84,11 +88,10 @@ module.exports = {
 
   async updateProject(project, id) {
     const toUpdate = { ...project };
+    console.log('toUpdate', toUpdate);
 
     delete toUpdate.id;
     delete toUpdate.ownerId;
-    delete toUpdate.blockchainStatus;
-    delete toUpdate.startBlockchainStatus;
 
     const savedProject = await this.model
       .updateOne({ id })
