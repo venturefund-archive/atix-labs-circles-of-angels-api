@@ -16,18 +16,8 @@ const {
 
 const logger = require('../logger');
 
-const {
-  COAError,
-  InvalidEmailError,
-  QuestionnaireNotFoundError,
-  UpdateUserError,
-  UserAlreadyExistsError,
-  UserNotFoundError,
-  UserRejectedError,
-  UserRoleDoesNotExistsError,
-  UserStillNeedsApprovalError,
-  UserWithoutRoleError
-} = require('../errors/exporter/ErrorExporter');
+const COAError = require('../errors/COAError');
+const errors = require("../errors/exporter/ErrorExporter");
 
 module.exports = {
   async getUserById(id) {
@@ -62,10 +52,7 @@ module.exports = {
 
         if (user.blocked) {
           logger.error(`[User Service] :: User ID ${user.id} is blocked`);
-
-          throw new UserStillNeedsApprovalError(
-            'User registration is still pending approval by the admin'
-          );
+          throw new COAError(errors.UserNotFound);
         }
 
         return authenticatedUser;
@@ -125,7 +112,7 @@ module.exports = {
       logger.error(
         `[User Service] :: User with email ${email} already exists.`
       );
-      throw new UserAlreadyExistsError('A user with that email already exists');
+      throw new COAError(errors.EmailAlreadyInUse)
     }
 
     // TODO : address, privkey
@@ -174,18 +161,10 @@ module.exports = {
 
     if (!user || user == null) {
       logger.error(`[User Service] :: User ID ${userId} not found in database`);
-      throw new UserNotFoundError('User not found');
+      throw new COAError(errors.UserNotFound);
     }
 
-    if (user.role && user.role != null) {
-      logger.info(
-        `[User Service] :: Found User ID ${user.id} with Role ${user.role.name}`
-      );
-      return user.role;
-    }
-
-    logger.error(`[User Service] :: User ID ${userId} doesn't have a role`);
-    throw new UserWithoutRoleError("User doesn't have a role");
+    return user.role;
   },
 
   /**
@@ -196,12 +175,14 @@ module.exports = {
    */
   async updateUser(userId, user) {
     logger.info('[User Service] :: Updating User:', user);
+    
     // check user existence
     const existingUser = await this.userDao.getUserById(userId);
     
+    // TODO : duplicate logic, should we extract it?
     if (!existingUser) {
       logger.error(`[User Service] :: User ID ${userId} does not exist`);
-      throw new UserNotFoundError('User does not exist');
+      throw new COAError(errors.UserNotFound)
     }
 
     const { pwd, email } = user;
@@ -219,9 +200,7 @@ module.exports = {
         logger.error(
           `[User Service] :: User with email ${email} already exists.`
         );
-        throw new UserAlreadyExistsError(
-          'A user with that email already exists'
-        );
+        throw new COAError(errors.EmailAlreadyInUse)
       }
     }
 
@@ -234,6 +213,7 @@ module.exports = {
    * Gets all valid user roles
    * @returns role list | error
    */
+  // TODO : i'd say this function does not make sense anymore.
   getAllRoles() {
     logger.info('[User Service] :: Getting all User Roles');
     try {
