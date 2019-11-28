@@ -107,14 +107,14 @@ module.exports = {
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
-    const filePath = await files.saveFile(thumbnailType, { file });
+    const cardPhotoPath = await files.saveFile(thumbnailType, { file });
 
     const project = {
       projectName,
       countryOfImpact,
       timeframe,
       goalAmount,
-      filePath,
+      cardPhotoPath,
       ownerId
     };
 
@@ -142,14 +142,14 @@ module.exports = {
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
-    const filePath = file ? await files.saveFile(file) : project.filePath;
+    const cardPhotoPath = file ? await files.saveFile(file) : project.filePath;
 
     return this.updateProject(projectId, {
       projectName,
       countryOfImpact,
       timeframe,
       goalAmount,
-      filePath
+      cardPhotoPath
     });
   },
 
@@ -171,18 +171,13 @@ module.exports = {
     };
   },
 
-  async createProjectDetail({
-    projectMission,
-    theProblem,
-    backgroundImg,
-    ownerId
-  }) {
-    validateParams(projectMission, theProblem, backgroundImg, ownerId);
+  async createProjectDetail({ projectMission, theProblem, file, ownerId }) {
+    validateParams(projectMission, theProblem, file, ownerId);
     await validateExistence(this.userDao, ownerId);
-    validateMtype(coverPhotoType)(backgroundImg);
-    validatePhotoSize(backgroundImg);
+    validateMtype(coverPhotoType)(file);
+    validatePhotoSize(file);
 
-    const filePath = await files.saveFile(backgroundImg);
+    const filePath = await files.saveFile(coverPhotoType, { file });
 
     const project = {
       projectMission,
@@ -196,23 +191,17 @@ module.exports = {
 
   async updateProjectDetail(
     projectId,
-    { projectMission, theProblem, backgroundImg, ownerId }
+    { projectMission, theProblem, file, ownerId }
   ) {
-    validateParams(
-      projectMission,
-      theProblem,
-      backgroundImg,
-      ownerId,
-      projectId
-    );
+    validateParams(projectMission, theProblem, ownerId, projectId);
 
     await validateExistence(this.userDao, ownerId);
     const project = await validateExistence(this.projectDao, projectId);
-    validateMtype(coverPhotoType)(backgroundImg);
-    validatePhotoSize(backgroundImg);
+    validateMtype(coverPhotoType)(file);
+    validatePhotoSize(file);
 
-    const filePath = backgroundImg
-      ? await files.saveFile(backgroundImg)
+    const filePath = file
+      ? await files.saveFile(coverPhotoType, { file })
       : project.filePath;
 
     return this.updateProject(projectId, {
@@ -239,7 +228,7 @@ module.exports = {
     await validateExistence(this.userDao, ownerId, 'user');
 
     const project = {
-      projectProposal,
+      proposal: projectProposal,
       ownerId
     };
 
@@ -250,7 +239,7 @@ module.exports = {
     validateParams(projectProposal, ownerId, projectId);
     await validateExistence(this.projectDao, projectId, 'project');
 
-    return this.updateProject(projectId, { projectProposal });
+    return this.updateProject(projectId, { proposal: projectProposal });
   },
 
   async getProjectProposal(projectId) {
