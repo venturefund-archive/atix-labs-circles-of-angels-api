@@ -160,14 +160,14 @@ module.exports = {
       countryOfImpact,
       timeframe,
       goalAmount,
-      thumbnail
-    } = await validateExistence(projectId);
+      cardPhotoPath
+    } = await validateExistence(this.projectDao, projectId, 'project');
     return {
       projectName,
       countryOfImpact,
       timeframe,
       goalAmount,
-      thumbnail
+      cardPhotoPath
     };
   },
 
@@ -214,12 +214,12 @@ module.exports = {
   async getProjectDetail(projectId) {
     validateParams(projectId);
     const {
-      projectMission,
-      theProblem,
-      backgroundImg
+      mission,
+      problemAddressed,
+      coverPhotoPath
     } = await validateExistence(this.projectDao, projectId, 'project');
 
-    return { projectMission, theProblem, backgroundImg };
+    return { mission, problemAddressed, coverPhotoPath };
   },
 
   async createProjectProposal({ projectProposal, ownerId }) {
@@ -244,12 +244,13 @@ module.exports = {
 
   async getProjectProposal(projectId) {
     validateParams(projectId);
-    const { projectProposal } = await validateExistence(
+    const { proposal } = await validateExistence(
       this.projectDao,
-      projectId
+      projectId,
+      'project'
     );
 
-    return { projectProposal };
+    return { proposal };
   },
 
   async deleteMilestoneOfProject(projectId, milestoneId) {

@@ -18,7 +18,7 @@ module.exports = {
       ownerId
     } = request.raw.body;
     const { file } = request.raw.files;
-    const response = projectService.createProjectThumbnail({
+    const response = await projectService.createProjectThumbnail({
       projectName,
       countryOfImpact,
       timeframe,
@@ -40,7 +40,7 @@ module.exports = {
       ownerId
     } = request.raw.body;
     const { file } = request.raw.files;
-    const response = projectService.updateProjectThumbnail(projectId, {
+    const response = await projectService.updateProjectThumbnail(projectId, {
       projectName,
       countryOfImpact,
       timeframe,
@@ -52,13 +52,13 @@ module.exports = {
   },
   getProjectThumbnail: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const response = projectService.getProjectThumbnail(projectId);
+    const response = await projectService.getProjectThumbnail(projectId);
     reply.send(response);
   },
   createProjectDetail: fastify => async (request, reply) => {
     const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
-    const response = projectService.createProjectDetail({
+    const response = await projectService.createProjectDetail({
       projectMission,
       theProblem,
       file,
@@ -70,7 +70,7 @@ module.exports = {
     const { projectId } = request.params;
     const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
-    const response = projectService.updateProjectDetail(projectId, {
+    const response = await projectService.updateProjectDetail(projectId, {
       projectMission,
       theProblem,
       file,
@@ -80,12 +80,12 @@ module.exports = {
   },
   getProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const response = projectService.getProjectDetail(projectId);
+    const response = await projectService.getProjectDetail(projectId);
     reply.send(response);
   },
   createProjectProposal: fastify => async (request, reply) => {
     const { projectProposal, ownerId } = request.raw.body;
-    const response = projectService.createProjectProposal({
+    const response = await projectService.createProjectProposal({
       projectProposal,
       ownerId
     });
@@ -94,7 +94,7 @@ module.exports = {
   updateProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { projectProposal, ownerId } = request.raw.body;
-    const response = projectService.updateProjectProposal(projectId, {
+    const response = await projectService.updateProjectProposal(projectId, {
       projectProposal,
       ownerId
     });
@@ -102,22 +102,22 @@ module.exports = {
   },
   getProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const response = projectService.getProjectProposal(projectId);
+    const response = await projectService.getProjectProposal(projectId);
     reply.send(response);
   },
   deleteMilestoneOfProject: fastify => async (request, reply) => {
     const { projectId, milestoneId } = request.params;
-    projectService.deleteMilestoneOfProject({ projectId, milestoneId });
+    await projectService.deleteMilestoneOfProject({ projectId, milestoneId });
     reply.send('DALE QUE VA deleteMilestoneOfProject');
   },
   editTaskOfMilestone: fastify => async (request, reply) => {
     const { milestoneId, taskId } = request.params;
-    projectService.editTaskOfMilestone({ milestoneId, taskId });
+    await projectService.editTaskOfMilestone({ milestoneId, taskId });
     reply.send('DALE QUE VA editTaskOfMilestone');
   },
   deleteTaskOfMilestone: fastify => async (request, reply) => {
     const { milestoneId, taskId } = request.params;
-    projectService.deleteTaskOfMilestone({ milestoneId, taskId });
+    await projectService.deleteTaskOfMilestone({ milestoneId, taskId });
     reply.send('DALE QUE VA deleteTaskOfMilestone');
   },
   addTaskOnMilestone: fastify => async (request, reply) => {
@@ -133,28 +133,28 @@ module.exports = {
   uploadMilestoneFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { file } = request.raw.files;
-    projectService.uploadMilestoneFile(projectId, file);
+    await projectService.uploadMilestoneFile(projectId, file);
     reply.send('DALE QUE VA uploadMilestoneFile');
   },
   processMilestonesFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    projectService.processMilestoneFile(projectId);
+    await projectService.processMilestoneFile(projectId);
     reply.send('DALE QUE VA processMilestonesFile');
   },
   getProjectMilestones: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    projectService.getProjectMilestones(projectId);
+    await projectService.getProjectMilestones(projectId);
     reply.send('DALE QUE VA getProjectMilestones');
   },
   publishProject: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    projectService.publishProject(projectId);
+    await projectService.publishProject(projectId);
     reply.send('DALE QUE VA publishProject');
   },
 
   // FIXME
   getProjects: fastify => async (request, reply) => {
-    const projects = projectService.getProjects();
+    const projects = await projectService.getProjects();
   },
 
   // FIXME
