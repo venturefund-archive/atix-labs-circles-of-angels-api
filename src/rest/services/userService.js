@@ -120,11 +120,9 @@ module.exports = {
       firstName,
       lastName,
       email: email.toLowerCase(),
-      pwd: hashedPwd,
+      password: hashedPwd,
       role,
       address: '0x0', //account.address,
-      registrationStatus: 1,
-      transferBlockchainStatus: blockchainStatus.SENT,
       privKey: account.privateKey
     };
 

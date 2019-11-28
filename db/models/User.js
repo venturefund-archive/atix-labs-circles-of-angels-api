@@ -34,6 +34,7 @@ module.exports = {
       validations: { isIn: Object.values(userRoles) },
       required: true
     },
+    blocked: { type: 'boolean', defaultsTo: false, required: false },
     privKey: { type: 'string', required: true }
   },
   async findById(id) {
