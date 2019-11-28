@@ -27,27 +27,6 @@ const validateExistence = (dao, id, model) => {
   }
 };
 
-const saveProject = project => {
-  const savedProject = this.projectDao.saveProject(project);
-  if (!savedProject) throw new Error('Cant save project');
-  return savedProject.id;
-};
-
-const updateProject = (projectId, fields) => {
-  const updatedProject = this.projectDao.updateProject(fields, projectId);
-  if (!updatedProject) throw new Error('Cant update project');
-  return updatedProject.id;
-};
-
-const updateMilestone = (milestoneId, fields) => {
-  const updatedMilestone = this.milestoneDao.updateMilestone(
-    fields,
-    milestoneId
-  );
-  if (!updatedMilestone) throw new Error('Cant update milestone');
-  return updatedMilestone.id;
-};
-
 const validateParams = (...params) => {
   if (!params.reduce((prev, current) => prev && current, true))
     throw new Error('Params are not valid');
@@ -86,6 +65,27 @@ const validatePhotoSize = file => {
 };
 
 module.exports = {
+  async updateProject(projectId, fields) {
+    const updatedProject = await this.projectDao.updateProject(
+      fields,
+      projectId
+    );
+    if (!updatedProject) throw new Error('Cant update project');
+    return updatedProject.id;
+  },
+  async updateMilestone(milestoneId, fields) {
+    const updatedMilestone = await this.milestoneDao.updateMilestone(
+      fields,
+      milestoneId
+    );
+    if (!updatedMilestone) throw new Error('Cant update milestone');
+    return updatedMilestone.id;
+  },
+  async saveProject(project) {
+    const savedProject = await this.projectDao.saveProject(project);
+    if (!savedProject) throw new Error('Cant save project');
+    return savedProject.id;
+  },
   async createProjectThumbnail({
     projectName,
     countryOfImpact,
@@ -103,7 +103,6 @@ module.exports = {
       file
     );
     const user = await validateExistence(this.userDao, ownerId, 'user');
-    console.log('user', user);
     // FIXME ROLE VALIDATION
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
@@ -119,7 +118,7 @@ module.exports = {
       ownerId
     };
 
-    return saveProject(project);
+    return this.saveProject(project);
   },
 
   async updateProjectThumbnail(
@@ -135,13 +134,17 @@ module.exports = {
       projectId
     );
     await validateExistence(this.userDao, ownerId, 'user');
-    const project = await validateExistence(this.projectDao, projectId, 'project');
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
     const filePath = file ? await files.saveFile(file) : project.filePath;
 
-    return updateProject(projectId, {
+    return this.updateProject(projectId, {
       projectName,
       countryOfImpact,
       timeframe,
@@ -188,7 +191,7 @@ module.exports = {
       ownerId
     };
 
-    return saveProject(project);
+    return this.saveProject(project);
   },
 
   async updateProjectDetail(
@@ -212,7 +215,7 @@ module.exports = {
       ? await files.saveFile(backgroundImg)
       : project.filePath;
 
-    return updateProject(projectId, {
+    return this.updateProject(projectId, {
       projectMission,
       theProblem,
       filePath
@@ -221,11 +224,11 @@ module.exports = {
 
   async getProjectDetail(projectId) {
     validateParams(projectId);
-    const { projectMission, theProblem, backgroundImg } = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
+    const {
+      projectMission,
+      theProblem,
+      backgroundImg
+    } = await validateExistence(this.projectDao, projectId, 'project');
 
     return { projectMission, theProblem, backgroundImg };
   },
@@ -240,19 +243,22 @@ module.exports = {
       ownerId
     };
 
-    return saveProject(project);
+    return this.saveProject(project);
   },
 
   async updateProjectProposal(projectId, { projectProposal, ownerId }) {
     validateParams(projectProposal, ownerId, projectId);
     await validateExistence(this.projectDao, projectId, 'project');
 
-    return updateProject(projectId, { projectProposal });
+    return this.updateProject(projectId, { projectProposal });
   },
 
   async getProjectProposal(projectId) {
     validateParams(projectId);
-    const { projectProposal } = await validateExistence(this.projectDao, projectId);
+    const { projectProposal } = await validateExistence(
+      this.projectDao,
+      projectId
+    );
 
     return { projectProposal };
   },
@@ -266,7 +272,7 @@ module.exports = {
       'project'
     );
 
-    return updateProject(
+    return this.updateProject(
       projectId,
       milestones.filter(({ id }) => id !== milestoneId)
     );
@@ -283,7 +289,7 @@ module.exports = {
     );
     await validateExistence(this.taskDao, taskId, 'task');
 
-    return updateMilestone(
+    return this.updateMilestone(
       milestoneId,
       tasks.filter(({ id }) => taskId !== id)
     );
@@ -291,14 +297,18 @@ module.exports = {
 
   async uploadMilestoneFile(projectId, milestoneFile) {
     validateParams(projectId, milestoneFile);
-    const project = await validateExistence(this.projectDao, projectId, 'project');
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
     if (project.milestone) throw Error();
 
     validateMtype(milestonesType)(milestoneFile);
 
     const milestonesFile = await files.saveFile(milestoneFile);
 
-    return updateProject(projectId, milestonesFile);
+    return this.updateProject(projectId, milestonesFile);
   },
 
   // TODO
@@ -316,8 +326,14 @@ module.exports = {
 
   async publishProject(projectId) {
     validateParams(projectId);
-    const { status } = await validateExistence(this.projectDao, projectId, 'project');
+    const { status } = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
     if (status !== projectStatus.EDITING) throw Error();
-    return updateProject(projectId, { status: projectStatus.PENDING_APPROVAL });
+    return this.updateProject(projectId, {
+      status: projectStatus.PENDING_APPROVAL
+    });
   }
 };

@@ -25,6 +25,8 @@
  *@attribute `projectAgreement`: project consensus file
  */
 
+const { projectStatusType } = require('../../src/rest/util/constants');
+
 module.exports = {
   identity: 'project',
   primaryKey: 'id',
@@ -34,15 +36,14 @@ module.exports = {
     problemAddressed: { type: 'string', required: false },
     location: { type: 'string', required: false },
     timeframe: { type: 'string', required: false },
-    pitchProposal: { type: 'string', required: false },
+    proposal: { type: 'string', required: false },
     faqLink: { type: 'string', required: false },
     coverPhotoPath: { type: 'string', required: false },
     cardPhotoPath: { type: 'string', required: false },
     goalAmount: { type: 'number', required: false },
-    status: { type: 'number', defaultsTo: 0 },
+    status: { type: 'string', defaultsTo: projectStatusType.EDITING },
     ownerId: { type: 'number', required: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     transactionHash: { type: 'string', required: false },
     milestones: {
       collection: 'milestone',

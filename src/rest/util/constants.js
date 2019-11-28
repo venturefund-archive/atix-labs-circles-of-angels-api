@@ -19,11 +19,19 @@ const transferStatus = {
 };
 
 const projectStatus = {
+  // TODO delete this one
   REJECTED: 2,
   EDITING: 0,
   PENDING_APPROVAL: 1,
   PUBLISHED: 3,
   IN_PROGRESS: 4
+};
+
+const projectStatusType = {
+  EDITING: 'editing',
+  PENDING: 'pending',
+  CONSENSUS: 'consensus',
+  ONGOING: 'ongoing'
 };
 
 const activityStatus = {
@@ -101,5 +109,6 @@ module.exports = {
   milestoneBudgetStatus,
   blockchainStatus,
   xlsxConfigs,
+  projectStatusType,
   transactionTypes
 };
