@@ -18,7 +18,7 @@ module.exports = {
       ownerId
     } = request.raw.body;
     const { file } = request.raw.files;
-    projectService.createProjectThumbnail({
+    const response = projectService.createProjectThumbnail({
       projectName,
       countryOfImpact,
       timeframe,
@@ -26,7 +26,9 @@ module.exports = {
       file,
       ownerId
     });
-    reply.send('DALE QUE VA createProjectThumbnail');
+    reply.send(
+      `Project thumbnail addded to new project with projectId ${response}`
+    );
   },
   updateProjectThumbnail: fastify => async (request, reply) => {
     const { projectId } = request.params;
@@ -38,7 +40,7 @@ module.exports = {
       ownerId
     } = request.raw.body;
     const { file } = request.raw.files;
-    projectService.updateProjectThumbnail(projectId, {
+    const response = projectService.updateProjectThumbnail(projectId, {
       projectName,
       countryOfImpact,
       timeframe,
@@ -46,59 +48,62 @@ module.exports = {
       file,
       ownerId
     });
-    reply.send('DALE QUE VA updateProjectThumbnail');
+    reply.send(`Project thumbnail updated of project with id ${response}`);
   },
   getProjectThumbnail: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    projectService.getProjectThumbnail(projectId);
-    reply.send('DALE QUE VA getProjectThumbnail');
+    const response = projectService.getProjectThumbnail(projectId);
+    reply.send(response);
   },
   createProjectDetail: fastify => async (request, reply) => {
     const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
-    projectService.createProjectDetail({
+    const response = projectService.createProjectDetail({
       projectMission,
       theProblem,
       file,
       ownerId
     });
-    reply.send('DALE QUE VA createProjectDetail');
+    reply.send(`Project detail added to new project with id ${response}`);
   },
   updateProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
-    projectService.updateProjectDetail(projectId, {
+    const response = projectService.updateProjectDetail(projectId, {
       projectMission,
       theProblem,
       file,
       ownerId
     });
-    reply.send('DALE QUE VA updateProjectDetail');
+    reply.send(`Project detail updated of project with id ${response}`);
   },
   getProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    projectService.getProjectDetail(projectId);
-    reply.send('DALE QUE VA getProjectDetail');
+    const response = projectService.getProjectDetail(projectId);
+    reply.send(response);
   },
   createProjectProposal: fastify => async (request, reply) => {
     const { projectProposal, ownerId } = request.raw.body;
-    projectService.createProjectProposal({ projectProposal, ownerId });
-    reply.send('DALE QUE VA createProjectProposal');
+    const response = projectService.createProjectProposal({
+      projectProposal,
+      ownerId
+    });
+    reply.send(`Project proposal added to new project with id ${response}`);
   },
   updateProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { projectProposal, ownerId } = request.raw.body;
-    projectService.updateProjectProposal(projectId, {
+    const response = projectService.updateProjectProposal(projectId, {
       projectProposal,
       ownerId
     });
-    reply.send('DALE QUE VA updateProjectProposal');
+    reply.send(`Project proposal updated of project with id ${response}`);
   },
   getProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    projectService.getProjectProposal(projectId);
-    reply.send('DALE QUE VA getProjectProposal');
+    const response = projectService.getProjectProposal(projectId);
+    reply.send(response);
   },
   deleteMilestoneOfProject: fastify => async (request, reply) => {
     const { projectId, milestoneId } = request.params;

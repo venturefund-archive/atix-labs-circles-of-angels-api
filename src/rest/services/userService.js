@@ -17,7 +17,7 @@ const {
 const logger = require('../logger');
 
 const COAError = require('../errors/COAError');
-const errors = require("../errors/exporter/ErrorExporter");
+const errors = require('../errors/exporter/ErrorExporter');
 
 module.exports = {
   async getUserById(id) {
@@ -112,7 +112,7 @@ module.exports = {
       logger.error(
         `[User Service] :: User with email ${email} already exists.`
       );
-      throw new COAError(errors.EmailAlreadyInUse)
+      throw new COAError(errors.EmailAlreadyInUse);
     }
 
     // TODO : address, privkey
@@ -173,14 +173,14 @@ module.exports = {
    */
   async updateUser(userId, user) {
     logger.info('[User Service] :: Updating User:', user);
-    
+
     // check user existence
     const existingUser = await this.userDao.getUserById(userId);
-    
+
     // TODO : duplicate logic, should we extract it?
     if (!existingUser) {
       logger.error(`[User Service] :: User ID ${userId} does not exist`);
-      throw new COAError(errors.UserNotFound)
+      throw new COAError(errors.UserNotFound);
     }
 
     const { pwd, email } = user;
@@ -198,7 +198,7 @@ module.exports = {
         logger.error(
           `[User Service] :: User with email ${email} already exists.`
         );
-        throw new COAError(errors.EmailAlreadyInUse)
+        throw new COAError(errors.EmailAlreadyInUse);
       }
     }
 
