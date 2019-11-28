@@ -22,22 +22,19 @@ module.exports = {
   identity: 'user',
   primaryKey: 'id',
   attributes: {
-    firstname: { type: 'string', required: true },
-    lastname: { type: 'string', required: true },
+    firstName: { type: 'string', required: true },
+    lastName: { type: 'string', required: true },
     email: { type: 'string', required: true },
-    pwd: { type: 'string', required: true },
+    password: { type: 'string', required: true },
     address: { type: 'string', allowNull: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
     role: {
       type: 'string',
       validations: { isIn: Object.values(userRoles) },
       required: true
     },
-    blocked: { type: 'boolean', defaultsTo: false, required: false },
-    privKey: { type: 'string', required: true },
-    transferBlockchainStatus: { type: 'number', required: true }
+    privKey: { type: 'string', required: true }
   },
   async findById(id) {
     return this.findOne(id);
