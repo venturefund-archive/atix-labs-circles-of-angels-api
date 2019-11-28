@@ -12,15 +12,15 @@ CREATE TYPE ROLE AS ENUM (
 
 CREATE TABLE public.user (
     id SERIAL NOT NULL,
-    firstName varchar(80) NOT NULL,
-    lastName varchar(80),
+    "firstName" varchar(80) NOT NULL,
+    "lastName" varchar(80),
     email varchar(40) NOT NULL,
     password varchar(80) NOT NULL,
     -- TODO : is there any way to use `role` as field name.
-    roleName ROLE NOT NULL,
-    createdAt date DEFAULT now(),
+    "roleName" ROLE NOT NULL,
+    "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
-    privKey varchar(80) NOT NULL,
+    "privKey" varchar(80) NOT NULL,
     PRIMARY KEY (id),
     UNIQUE (email)
 );
@@ -34,50 +34,50 @@ CREATE TYPE ProjectStatus AS ENUM (
 
 CREATE TABLE public.project (
     id SERIAL NOT NULL,
-    projectName varchar(50) NOT NULL,
-    ownerId integer NOT NULL,
-    createdAt date DEFAULT NOW(),
-    transactionHash varchar(80) NOT NULL,
+    "projectName" varchar(50) NOT NULL,
+    "ownerId" integer NOT NULL,
+    "createdAt" date DEFAULT NOW(),
+    "transactionHash" varchar(80) NOT NULL,
     mission text,
     location text,
-    problemAddressed text,
+    "problemAddressed" text,
     timeframe text,
     status ProjectStatus DEFAULT 'editing',
-    goalAmount real NOT NULL,
-    faqLink text,
-    coverPhotoPath varchar(100),
-    cardPhotoPath varchar(100),
+    "goalAmount" real NOT NULL,
+    "faqLink" text,
+    "coverPhotoPath" varchar(100),
+    "cardPhotoPath" varchar(100),
     proposal text,
-    agreementPath varchar(100),
+    "agreementPath" varchar(100),
     PRIMARY KEY (id),
-    FOREIGN KEY (ownerId) REFERENCES public.user (id)
+    FOREIGN KEY ("ownerId") REFERENCES public.user (id)
 );
 
 CREATE TABLE public.milestone (
     id SERIAL NOT NULL,
-    projectId int,
-    createdAt date DEFAULT NOW(),
+    "projectId" int,
+    "createdAt" date DEFAULT NOW(),
     description text,
     category text,
     PRIMARY KEY (id),
-    FOREIGN KEY (projectId) REFERENCES public.project (id)
+    FOREIGN KEY ("projectId") REFERENCES public.project (id)
 );
 
 -- CREATE TABLE public.activity (
 CREATE TABLE public.task (
     id SERIAL NOT NULL,
-    milestoneId int,
-    createdAt date DEFAULT NOW(),
-    taskHash varchar(80) DEFAULT NULL,
-    oracleAddress varchar(42) NOT NULL,
+    "milestoneId" int,
+    "createdAt" date DEFAULT NOW(),
+    "taskHash" varchar(80) DEFAULT NULL,
+    "oracleAddress" varchar(42) NOT NULL,
     description text, -- TODO : should be NOT NULL
-    reviewCriteria text,
+    "reviewCriteria" text,
     category text,
-    keyPersonnel text,
+    "keyPersonnel" text,
     budget text,
     PRIMARY KEY (id),
-    FOREIGN KEY (milestoneId) REFERENCES public.milestone (id),
-    FOREIGN KEY (oracleAddress) REFERENCES public.user (address)
+    FOREIGN KEY ("milestoneId") REFERENCES public.milestone (id),
+    FOREIGN KEY ("oracleAddress") REFERENCES public.user (address)
 );
 
 CREATE TABLE public.transaction (
@@ -89,13 +89,13 @@ CREATE TABLE public.transaction (
 
 CREATE TABLE public.project_experience (
     id SERIAL NOT NULL,
-    projectId int NOT NULL,
-    userId int NOT NULL,
+    "projectId" int NOT NULL,
+    "userId" int NOT NULL,
     comment text NOT NULL,
-    createdAt timestamp with time zone NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (projectId) REFERENCES public.project (id),
-    FOREIGN KEY (userId) REFERENCES public.user (id)
+    FOREIGN KEY ("projectId") REFERENCES public.project (id),
+    FOREIGN KEY ("userId") REFERENCES public.user (id)
 );
 
 CREATE TABLE public.pass_recovery (
