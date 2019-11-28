@@ -15,6 +15,10 @@ module.exports = {
     return createdProject;
   },
 
+  async findAllByProps(props) {
+    return this.model.find({ ...props });
+  },
+
   async getProjecListWithStatusFrom({ status }) {
     const projects = await this.model.find({
       where: { status: { '>=': status } },

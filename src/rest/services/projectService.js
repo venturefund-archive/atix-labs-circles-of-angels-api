@@ -180,8 +180,8 @@ module.exports = {
     const filePath = await files.saveFile(coverPhotoType, { file });
 
     const project = {
-      projectMission,
-      theProblem,
+      mission: projectMission,
+      problemAddressed: theProblem,
       filePath,
       ownerId
     };
@@ -205,8 +205,8 @@ module.exports = {
       : project.filePath;
 
     return this.updateProject(projectId, {
-      projectMission,
-      theProblem,
+      mission: projectMission,
+      problemAddressed: theProblem,
       filePath
     });
   },
@@ -324,5 +324,9 @@ module.exports = {
     return this.updateProject(projectId, {
       status: projectStatus.PENDING_APPROVAL
     });
+  },
+
+  async getProjects() {
+    return this.projectDao.findAllByProps();
   }
 };
