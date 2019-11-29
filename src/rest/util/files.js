@@ -22,20 +22,8 @@ const getCoverPhotoPath = () =>
 const getCardPhotoPath = () =>
   `${configs.fileServer.filePath}/projects/cardPhotos/`;
 
-// const getPitchProposalPath = (projectId, proposalName) =>
-//   `${
-//     configs.fileServer.filePath
-//   }/projects/${projectId}/pitchProposal${path.extname(proposalName)}`;
-
-// const getProjectAgreementPath = (projectId, agreementName) =>
-//   `${configs.fileServer.filePath}/projects/${projectId}/agreement${path.extname(
-//     agreementName
-//   )}`;
-
-// const getMilestonesPath = (projectId, milestoneName) =>
-//   `${
-//     configs.fileServer.filePath
-//   }/projects/${projectId}/milestones${path.extname(milestoneName)}`;
+const getMilestonesPath = () =>
+  `${configs.fileServer.filePath}/projects/milestones/`;
 
 const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
   new Promise((resolve, reject) => {
@@ -56,21 +44,36 @@ const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
       });
   });
 
+const milestoneSaver = async (file, savePath) => file.mv(savePath);
+
 const fileSaver = {
-  // milestone: { saver: milestoneSaver, getPath: getMilestonesPath }, // TODO
-  thumbnail: { saver: savePhotoJpgFormat, getBasePath: getCardPhotoPath },
-  coverPhoto: { saver: savePhotoJpgFormat, getBasePath: getCoverPhotoPath }
+  milestones: {
+    save: milestoneSaver,
+    getBasePath: getMilestonesPath,
+    fileExtension: '.xlsx'
+  },
+  thumbnail: {
+    save: savePhotoJpgFormat,
+    getBasePath: getCardPhotoPath,
+    fileExtension: '.jpeg'
+  },
+  coverPhoto: {
+    save: savePhotoJpgFormat,
+    getBasePath: getCoverPhotoPath,
+    fileExtension: '.jpeg'
+  }
 };
 
-exports.saveFile = async (type, { file, maxWidth }) => {
+exports.saveFile = async (type, file) => {
   const saver = fileSaver[type];
   const hash = file.md5;
-  const fileExtension = hash.concat('.jpeg');
-  const path = saver
+  const fileExtension = hash.concat(saver.fileExtension);
+  let path = saver
     .getBasePath()
     .concat(hash.charAt(0))
     .concat('/');
   await mkdirp(path);
-  await savePhotoJpgFormat(file, path.concat(fileExtension));
-  return path.concat(fileExtension);
+  path = path.concat(fileExtension);
+  await saver.save(file, path);
+  return path;
 };

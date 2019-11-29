@@ -299,9 +299,9 @@ module.exports = {
     };
   },
 
-  async uploadMilestoneFile(projectId, milestoneFile) {
+  async uploadMilestoneFile(projectId, file) {
     //FIXME ADD OWNER VALIDATION
-    validateParams(projectId, milestoneFile);
+    validateParams(projectId, file);
     const project = await validateExistence(
       this.projectDao,
       projectId,
@@ -309,17 +309,30 @@ module.exports = {
     );
     if (project.milestone) throw Error();
 
-    validateMtype(milestonesType)(milestoneFile);
+    validateMtype(milestonesType)(file);
 
-    const milestonesFile = await files.saveFile(milestoneFile);
+    const milestonePath = await files.saveFile(milestonesType, file);
 
     return {
-      projectId: await this.updateProject(projectId, milestonesFile)
+      projectId: await this.updateProject(projectId, { milestonePath })
     };
   },
 
   // TODO
-  async processMilestoneFile(projectId) {},
+  async processMilestoneFile(projectId) {
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
+    console.log('project.milestonePath', project.milestonePath);
+    const milestones = await this.milestoneService.createMilestones(
+      project.milestonePath,
+      projectId
+    );
+    console.log('milestones', milestones);
+    return { projectId: await this.updateProject(projectId, { milestones }) };
+  },
 
   async getProjectMilestones(projectId) {
     validateParams(projectId);

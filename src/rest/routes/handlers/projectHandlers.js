@@ -52,9 +52,7 @@ module.exports = {
         file,
         ownerId
       });
-      reply
-        .status(200)
-        .send(`Project thumbnail updated of project with id ${response}`);
+      reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(error);
     }
@@ -78,9 +76,7 @@ module.exports = {
         file,
         ownerId
       });
-      reply
-        .status(200)
-        .send(`Project detail added to new project with id ${response}`);
+      reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(error);
     }
@@ -96,9 +92,7 @@ module.exports = {
         file,
         ownerId
       });
-      reply
-        .status(200)
-        .send(`Project detail updated of project with id ${response}`);
+      reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(error);
     }

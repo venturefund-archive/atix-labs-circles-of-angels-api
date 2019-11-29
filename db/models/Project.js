@@ -40,6 +40,7 @@ module.exports = {
     faqLink: { type: 'string', required: false },
     coverPhotoPath: { type: 'string', required: false },
     cardPhotoPath: { type: 'string', required: false },
+    milestonePath: { type: 'string', required: false },
     goalAmount: { type: 'number', required: false },
     status: { type: 'string', defaultsTo: projectStatusType.EDITING },
     ownerId: { type: 'number', required: true },

@@ -88,6 +88,7 @@ module.exports = {
       new Promise(resolve => {
         process.nextTick(async () => {
           if (!values(activity).every(isEmpty)) {
+            console.log('activity', activity);
             const savedActivity = await this.activityDao.saveActivity(
               activity,
               milestoneId
