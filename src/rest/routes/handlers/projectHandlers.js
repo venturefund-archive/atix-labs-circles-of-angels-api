@@ -7,6 +7,7 @@
  */
 
 const projectService = require('../../services/projectService');
+const { projectStatusType } = require('../../util/constants');
 
 module.exports = {
   createProjectThumbnail: fastify => async (request, reply) => {
@@ -18,17 +19,19 @@ module.exports = {
       ownerId
     } = request.raw.body;
     const { file } = request.raw.files;
-    const response = await projectService.createProjectThumbnail({
-      projectName,
-      countryOfImpact,
-      timeframe,
-      goalAmount,
-      file,
-      ownerId
-    });
-    reply.send(
-      `Project thumbnail addded to new project with projectId ${response}`
-    );
+    try {
+      const response = await projectService.createProjectThumbnail({
+        projectName,
+        countryOfImpact,
+        timeframe,
+        goalAmount,
+        file,
+        ownerId
+      });
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   updateProjectThumbnail: fastify => async (request, reply) => {
     const { projectId } = request.params;
@@ -40,86 +43,146 @@ module.exports = {
       ownerId
     } = request.raw.body;
     const { file } = request.raw.files;
-    const response = await projectService.updateProjectThumbnail(projectId, {
-      projectName,
-      countryOfImpact,
-      timeframe,
-      goalAmount,
-      file,
-      ownerId
-    });
-    reply.send(`Project thumbnail updated of project with id ${response}`);
+    try {
+      const response = await projectService.updateProjectThumbnail(projectId, {
+        projectName,
+        countryOfImpact,
+        timeframe,
+        goalAmount,
+        file,
+        ownerId
+      });
+      reply
+        .status(200)
+        .send(`Project thumbnail updated of project with id ${response}`);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   getProjectThumbnail: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const response = await projectService.getProjectThumbnail(projectId);
-    reply.send(response);
+    try {
+      const response = await projectService.getProjectThumbnail(projectId);
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   createProjectDetail: fastify => async (request, reply) => {
     const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
-    const response = await projectService.createProjectDetail({
-      projectMission,
-      theProblem,
-      file,
-      ownerId
-    });
-    reply.send(`Project detail added to new project with id ${response}`);
+    try {
+      const response = await projectService.createProjectDetail({
+        projectMission,
+        theProblem,
+        file,
+        ownerId
+      });
+      reply
+        .status(200)
+        .send(`Project detail added to new project with id ${response}`);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   updateProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
-    const response = await projectService.updateProjectDetail(projectId, {
-      projectMission,
-      theProblem,
-      file,
-      ownerId
-    });
-    reply.send(`Project detail updated of project with id ${response}`);
+    try {
+      const response = await projectService.updateProjectDetail(projectId, {
+        projectMission,
+        theProblem,
+        file,
+        ownerId
+      });
+      reply
+        .status(200)
+        .send(`Project detail updated of project with id ${response}`);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   getProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const response = await projectService.getProjectDetail(projectId);
-    console.log('response', response);
-    reply.send(response);
+    try {
+      const response = await projectService.getProjectDetail(projectId);
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   createProjectProposal: fastify => async (request, reply) => {
     const { projectProposal, ownerId } = request.raw.body;
-    const response = await projectService.createProjectProposal({
-      projectProposal,
-      ownerId
-    });
-    reply.send(`Project proposal added to new project with id ${response}`);
+    try {
+      const response = await projectService.createProjectProposal({
+        projectProposal,
+        ownerId
+      });
+      reply
+        .status(200)
+        .send(`Project proposal added to new project with id ${response}`);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   updateProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { projectProposal, ownerId } = request.raw.body;
-    const response = await projectService.updateProjectProposal(projectId, {
-      projectProposal,
-      ownerId
-    });
-    reply.send(`Project proposal updated of project with id ${response}`);
+    try {
+      const response = await projectService.updateProjectProposal(projectId, {
+        projectProposal,
+        ownerId
+      });
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   getProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const response = await projectService.getProjectProposal(projectId);
-    reply.send(response);
+    try {
+      const response = await projectService.getProjectProposal(projectId);
+      reply.stauts(200).send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   deleteMilestoneOfProject: fastify => async (request, reply) => {
     const { projectId, milestoneId } = request.params;
-    await projectService.deleteMilestoneOfProject({ projectId, milestoneId });
-    reply.send('DALE QUE VA deleteMilestoneOfProject');
+    try {
+      const response = await projectService.deleteMilestoneOfProject({
+        projectId,
+        milestoneId
+      });
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(200).send(error);
+    }
   },
   editTaskOfMilestone: fastify => async (request, reply) => {
     const { milestoneId, taskId } = request.params;
-    await projectService.editTaskOfMilestone({ milestoneId, taskId });
-    reply.send('DALE QUE VA editTaskOfMilestone');
+    try {
+      const response = await projectService.editTaskOfMilestone({
+        milestoneId,
+        taskId
+      });
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   deleteTaskOfMilestone: fastify => async (request, reply) => {
     const { milestoneId, taskId } = request.params;
-    await projectService.deleteTaskOfMilestone({ milestoneId, taskId });
-    reply.send('DALE QUE VA deleteTaskOfMilestone');
+    try {
+      const response = await projectService.deleteTaskOfMilestone({
+        milestoneId,
+        taskId
+      });
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   addTaskOnMilestone: fastify => async (request, reply) => {
     // TODO
@@ -134,33 +197,64 @@ module.exports = {
   uploadMilestoneFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { file } = request.raw.files;
-    await projectService.uploadMilestoneFile(projectId, file);
-    reply.send('DALE QUE VA uploadMilestoneFile');
+    try {
+      const response = await projectService.uploadMilestoneFile(
+        projectId,
+        file
+      );
+      reply.send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   processMilestonesFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    await projectService.processMilestoneFile(projectId);
-    reply.send('DALE QUE VA processMilestonesFile');
+    try {
+      const response = await projectService.processMilestoneFile(projectId);
+      reply.send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   getProjectMilestones: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    await projectService.getProjectMilestones(projectId);
-    reply.send('DALE QUE VA getProjectMilestones');
+    try {
+      const response = await projectService.getProjectMilestones(projectId);
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
   publishProject: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    await projectService.publishProject(projectId);
-    reply.send('DALE QUE VA publishProject');
+    try {
+      const response = await projectService.publishProject(projectId);
+      reply.send(response);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
 
-  // FIXME
   getProjects: fastify => async (request, reply) => {
-    const projects = await projectService.getProjects();
+    try {
+      const projects = await projectService.getProjects();
+      reply.status(200).send(projects);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
   },
 
-  // FIXME
-  getActiveProjects: fastify => async (request, reply) => {},
+  getActiveProjects: fastify => async (request, reply) => {
+    try {
+      const projects = await projectService.getProjects({
+        status: projectStatusType.ONGOING
+      });
+      reply.status(200).send(projects);
+    } catch (error) {
+      reply.status(500).send(error);
+    }
+  },
 
-  // FIXME
+  // FIXME --> thumbnail?
   getProjectsPreview: fastify => async (request, reply) => {}
 };
