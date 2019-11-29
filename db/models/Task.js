@@ -7,18 +7,22 @@
  */
 
 module.exports = {
-  identity: 'milestone',
+  identity: 'task',
   primaryKey: 'id',
   attributes: {
-    category: { type: 'string', required: true },
+    taskHash: { type: 'string', required: false },
     description: { type: 'string', required: true },
-    project: {
-      columnName: 'projectId',
-      model: 'project'
+    reviewCriteria: { type: 'string', required: false },
+    category: { type: 'string', required: true },
+    keyPersonnel: { type: 'string', required: false },
+    budget: { type: 'string', required: true },
+    milestone: {
+      columnName: 'milestoneId',
+      model: 'milestone'
     },
-    tasks: {
-      collection: 'task',
-      via: 'milestone'
+    oracle: {
+      columnName: 'oracleAddress',
+      model: 'user'
     },
     createdAt: { type: 'string', autoCreatedAt: true },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }

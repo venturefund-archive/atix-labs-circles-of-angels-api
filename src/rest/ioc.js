@@ -85,11 +85,9 @@ module.exports = fastify => {
     const dependencies = {
       fileServer: fastify.configs.fileServer,
       projectDao,
-      milestoneService: undefined,
-      photoService: undefined,
-      transferService: undefined,
+      milestoneService,
       userDao,
-      projectExperienceDao: undefined
+      activityService
     };
 
     injectDependencies(service, dependencies);
@@ -139,7 +137,7 @@ module.exports = fastify => {
   function configureMilestoneService(service) {
     const dependencies = {
       milestoneDao,
-      activityService: undefined,
+      activityService,
       milestoneBudgetStatusDao,
       projectDao,
       userDao
@@ -155,6 +153,7 @@ module.exports = fastify => {
     injectModel(projectDao, models.project);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
     injectModel(passRecoveryDao, models.passRecovery);
+    injectModel(activityDao, models.task);
   }
 
   function configureServices() {
