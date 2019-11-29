@@ -10,6 +10,9 @@ const mime = require('mime');
 const { projectStatus } = require('../util/constants');
 const files = require('../util/files');
 
+const COAError = require('../errors/COAError');
+const errors = require('../errors/exporter/ErrorExporter');
+
 const MAX_PHOTO_SIZE = 500000;
 
 const thumbnailType = 'thumbnail';
@@ -20,19 +23,19 @@ const validateExistence = (dao, id, model) => {
   try {
     return dao.findById(id);
   } catch (error) {
-    throw new Error(`Cant find ${model} with id ${id}`); // TODO throw COAError
+    throw new COAError(`Cant find ${model} with id ${id}`);
   }
 };
 
 const validateParams = (...params) => {
   if (!params.reduce((prev, current) => prev && current, true))
-    throw new Error('Params are not valid');
+    throw new COAError(errors.CreateProjectFieldsNotValid);
 };
 
 const imgValidator = file => {
   const fileType = mime.lookup(file.name);
   if (!fileType.includes('image/'))
-    throw new Error('File type is not valid (img)'); // FIXME
+    throw new COAError(errors.ImgFileTyPeNotValid);
 };
 
 const xslValidator = file => {
@@ -44,7 +47,7 @@ const xslValidator = file => {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
   )
-    throw new Error('File tpye is not valid (xls)'); // FIXME
+    throw new COAError(errors.MilestoneFileTypeNotValid);
 };
 
 const mtypesValidator = {
@@ -57,7 +60,7 @@ const validateMtype = type => file => mtypesValidator[type](file);
 
 const validatePhotoSize = file => {
   if (file.size > MAX_PHOTO_SIZE) {
-    throw new Error('Photo size is bigger than allowed'); // FIXME
+    throw new COAError(errors.ImgSizeBiggerThanAllowed);
   }
 };
 
@@ -67,7 +70,8 @@ module.exports = {
       fields,
       projectId
     );
-    if (!updatedProject) throw new Error('Cant update project'); // fixme
+    if (!updatedProject)
+      throw new COAError(`Cant update project with id ${projectId}`);
     return updatedProject.id;
   },
   async updateMilestone(milestoneId, fields) {
@@ -75,12 +79,13 @@ module.exports = {
       fields,
       milestoneId
     );
-    if (!updatedMilestone) throw new Error('Cant update milestone'); //fixme
+    if (!updatedMilestone)
+      throw new COAError(`Cant update milestone with id ${milestoneId}`);
     return updatedMilestone.id;
   },
   async saveProject(project) {
     const savedProject = await this.projectDao.saveProject(project);
-    if (!savedProject) throw new Error('Cant save project'); //fixme
+    if (!savedProject) throw new COAError(errors.CantSaveProject);
     return savedProject.id;
   },
   async createProjectThumbnail({
@@ -100,7 +105,7 @@ module.exports = {
       file
     );
     const user = await validateExistence(this.userDao, ownerId, 'user');
-    // FIXME ROLE VALIDATION
+    // TODO ROLE VALIDATION
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
@@ -115,7 +120,7 @@ module.exports = {
       ownerId
     };
 
-    return this.saveProject(project);
+    return { projectId: this.saveProject(project) };
   },
 
   async updateProjectThumbnail(
@@ -141,13 +146,15 @@ module.exports = {
 
     const cardPhotoPath = file ? await files.saveFile(file) : project.filePath;
 
-    return this.updateProject(projectId, {
-      projectName,
-      countryOfImpact,
-      timeframe,
-      goalAmount,
-      imgPath: cardPhotoPath
-    });
+    return {
+      projectId: this.updateProject(projectId, {
+        projectName,
+        countryOfImpact,
+        timeframe,
+        goalAmount,
+        imgPath: cardPhotoPath
+      })
+    };
   },
 
   async getProjectThumbnail(projectId) {
@@ -183,7 +190,7 @@ module.exports = {
       ownerId
     };
 
-    return this.saveProject(project);
+    return { projectId: this.saveProject(project) };
   },
 
   async updateProjectDetail(
@@ -201,11 +208,13 @@ module.exports = {
       ? await files.saveFile(coverPhotoType, { file })
       : project.filePath;
 
-    return this.updateProject(projectId, {
-      mission: projectMission,
-      problemAddressed: theProblem,
-      imgPath: filePath
-    });
+    return {
+      projectId: this.updateProject(projectId, {
+        mission: projectMission,
+        problemAddressed: theProblem,
+        imgPath: filePath
+      })
+    };
   },
 
   async getProjectDetail(projectId) {
@@ -228,14 +237,16 @@ module.exports = {
       ownerId
     };
 
-    return this.saveProject(project);
+    return { projectId: this.saveProject(project) };
   },
 
   async updateProjectProposal(projectId, { projectProposal, ownerId }) {
     validateParams(projectProposal, ownerId, projectId);
     await validateExistence(this.projectDao, projectId, 'project');
 
-    return this.updateProject(projectId, { proposal: projectProposal });
+    return {
+      projectId: this.updateProject(projectId, { proposal: projectProposal })
+    };
   },
 
   async getProjectProposal(projectId) {
@@ -257,10 +268,12 @@ module.exports = {
       'project'
     );
 
-    return this.updateProject(
-      projectId,
-      milestones.filter(({ id }) => id !== milestoneId)
-    );
+    return {
+      milestoneId: this.updateProject(
+        projectId,
+        milestones.filter(({ id }) => id !== milestoneId)
+      )
+    };
   },
 
   async editTaskOfMilestone(milestoneId, taskId, taskParams) {}, // TODO
@@ -274,10 +287,12 @@ module.exports = {
     );
     await validateExistence(this.taskDao, taskId, 'task');
 
-    return this.updateMilestone(
-      milestoneId,
-      tasks.filter(({ id }) => taskId !== id)
-    );
+    return {
+      milestoneId: this.updateMilestone(
+        milestoneId,
+        tasks.filter(({ id }) => taskId !== id)
+      )
+    };
   },
 
   async uploadMilestoneFile(projectId, milestoneFile) {
@@ -293,7 +308,7 @@ module.exports = {
 
     const milestonesFile = await files.saveFile(milestoneFile);
 
-    return this.updateProject(projectId, milestonesFile);
+    return { projectId: this.updateProject(projectId, milestonesFile) };
   },
 
   // TODO
@@ -316,10 +331,13 @@ module.exports = {
       projectId,
       'project'
     );
-    if (status !== projectStatus.EDITING) throw Error(); //fixme
-    return this.updateProject(projectId, {
-      status: projectStatus.PENDING_APPROVAL
-    });
+    if (status !== projectStatus.EDITING)
+      throw COAError(errors.ProjectIsNotPublishable);
+    return {
+      projectId: this.updateProject(projectId, {
+        status: projectStatus.PENDING_APPROVAL
+      })
+    };
   },
 
   async getProjects() {
