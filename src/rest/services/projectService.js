@@ -120,7 +120,7 @@ module.exports = {
       ownerId
     };
 
-    return { projectId: this.saveProject(project) };
+    return { projectId: await this.saveProject(project) };
   },
 
   async updateProjectThumbnail(
@@ -147,7 +147,7 @@ module.exports = {
     const cardPhotoPath = file ? await files.saveFile(file) : project.filePath;
 
     return {
-      projectId: this.updateProject(projectId, {
+      projectId: await this.updateProject(projectId, {
         projectName,
         countryOfImpact,
         timeframe,
@@ -190,7 +190,7 @@ module.exports = {
       ownerId
     };
 
-    return { projectId: this.saveProject(project) };
+    return { projectId: await this.saveProject(project) };
   },
 
   async updateProjectDetail(
@@ -209,7 +209,7 @@ module.exports = {
       : project.filePath;
 
     return {
-      projectId: this.updateProject(projectId, {
+      projectId: await this.updateProject(projectId, {
         mission: projectMission,
         problemAddressed: theProblem,
         imgPath: filePath
@@ -237,7 +237,7 @@ module.exports = {
       ownerId
     };
 
-    return { projectId: this.saveProject(project) };
+    return { projectId: await this.saveProject(project) };
   },
 
   async updateProjectProposal(projectId, { projectProposal, ownerId }) {
@@ -245,7 +245,9 @@ module.exports = {
     await validateExistence(this.projectDao, projectId, 'project');
 
     return {
-      projectId: this.updateProject(projectId, { proposal: projectProposal })
+      projectId: await this.updateProject(projectId, {
+        proposal: projectProposal
+      })
     };
   },
 
@@ -260,6 +262,7 @@ module.exports = {
   },
 
   async deleteMilestoneOfProject(projectId, milestoneId) {
+    //FIXME ADD OWNER VALIDATION
     validateParams(projectId, milestoneId);
     await validateExistence(this.milestoneId, milestoneId, 'milestone');
     const { milestones } = await validateExistence(
@@ -279,6 +282,7 @@ module.exports = {
   async editTaskOfMilestone(milestoneId, taskId, taskParams) {}, // TODO
 
   async deleteTaskOfMilestone(milestoneId, taskId) {
+    // FIXME ADD OWNER VALIDATION
     validateParams(milestoneId, taskId);
     const { tasks } = await validateExistence(
       this.milestoneDao,
@@ -296,6 +300,7 @@ module.exports = {
   },
 
   async uploadMilestoneFile(projectId, milestoneFile) {
+    //FIXME ADD OWNER VALIDATION
     validateParams(projectId, milestoneFile);
     const project = await validateExistence(
       this.projectDao,
@@ -308,7 +313,9 @@ module.exports = {
 
     const milestonesFile = await files.saveFile(milestoneFile);
 
-    return { projectId: this.updateProject(projectId, milestonesFile) };
+    return {
+      projectId: await this.updateProject(projectId, milestonesFile)
+    };
   },
 
   // TODO
@@ -325,6 +332,7 @@ module.exports = {
   },
 
   async publishProject(projectId) {
+    //FIXME ADD OWNER VALIDATION
     validateParams(projectId);
     const { status } = await validateExistence(
       this.projectDao,
@@ -334,7 +342,7 @@ module.exports = {
     if (status !== projectStatus.EDITING)
       throw COAError(errors.ProjectIsNotPublishable);
     return {
-      projectId: this.updateProject(projectId, {
+      projectId: await this.updateProject(projectId, {
         status: projectStatus.PENDING_APPROVAL
       })
     };
