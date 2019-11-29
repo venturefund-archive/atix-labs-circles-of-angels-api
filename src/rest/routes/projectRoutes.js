@@ -91,6 +91,32 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
+const projectsResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      projectName: { type: 'string' },
+      mission: { type: 'string' },
+      problemAddressed: { type: 'string' },
+      location: { type: 'string' },
+      timeframe: { type: 'string' },
+      proposal: { type: 'string' },
+      faqLink: { type: 'string' },
+      coverPhotoPath: { type: 'string' },
+      cardPhotoPath: { type: 'string' },
+      goalAmount: { type: 'number' },
+      status: { type: 'string' },
+      ownerId: { type: 'number' },
+      createdAt: { type: 'string' },
+      transactionHash: { type: 'string' },
+      milestones: { type: 'object' },
+      id: { type: 'number' }
+    }
+  },
+  description: 'Returns all projects'
+};
+
 const successWithProjectMilestoneProcess = {
   type: 'object',
   properties: {
@@ -601,7 +627,7 @@ const commonProjectRoutes = {
         description: 'Gets all projects.',
         summary: 'Gets all project',
         response: {
-          ...successResponse(successWithProjectIdResponse), // TODO change to proper get projects response
+          ...successResponse(projectsResponse), // TODO change to proper get projects response
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
