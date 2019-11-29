@@ -51,11 +51,11 @@ const imgPathProperty = {
   imgPath: { type: 'string' }
 };
 const projectDetailProperties = {
-  projectMission: { type: 'string' },
-  theProblem: { type: 'string' }
+  mission: { type: 'string' },
+  problemAddressed: { type: 'string' }
 };
 const projectProposalProperties = {
-  projectProposal: { type: 'string' }
+  proposal: { type: 'string' }
 };
 const milestoneIdProperties = {
   milestoneId: { type: 'integer' }
@@ -276,7 +276,7 @@ const projectDetailRoutes = {
         }
       }
     },
-    handler: handlers.getProjectDetail // TODO implement in handler
+    handler: handlers.getProjectDetail
   }
 };
 
