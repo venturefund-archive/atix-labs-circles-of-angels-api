@@ -81,6 +81,7 @@ module.exports = {
   getProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const response = await projectService.getProjectDetail(projectId);
+    console.log('response', response);
     reply.send(response);
   },
   createProjectProposal: fastify => async (request, reply) => {

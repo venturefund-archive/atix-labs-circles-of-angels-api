@@ -6,9 +6,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const mkdirp = require('mkdirp-promise');
-const { promisify } = require('util');
-const fs = require('fs');
 const mime = require('mime');
 const { projectStatus } = require('../util/constants');
 const files = require('../util/files');
@@ -70,7 +67,7 @@ module.exports = {
       fields,
       projectId
     );
-    if (!updatedProject) throw new Error('Cant update project');
+    if (!updatedProject) throw new Error('Cant update project'); // fixme
     return updatedProject.id;
   },
   async updateMilestone(milestoneId, fields) {
@@ -78,12 +75,12 @@ module.exports = {
       fields,
       milestoneId
     );
-    if (!updatedMilestone) throw new Error('Cant update milestone');
+    if (!updatedMilestone) throw new Error('Cant update milestone'); //fixme
     return updatedMilestone.id;
   },
   async saveProject(project) {
     const savedProject = await this.projectDao.saveProject(project);
-    if (!savedProject) throw new Error('Cant save project');
+    if (!savedProject) throw new Error('Cant save project'); //fixme
     return savedProject.id;
   },
   async createProjectThumbnail({
@@ -149,7 +146,7 @@ module.exports = {
       countryOfImpact,
       timeframe,
       goalAmount,
-      cardPhotoPath
+      imgPath: cardPhotoPath
     });
   },
 
@@ -167,7 +164,7 @@ module.exports = {
       countryOfImpact,
       timeframe,
       goalAmount,
-      cardPhotoPath
+      imgPath: cardPhotoPath
     };
   },
 
@@ -207,7 +204,7 @@ module.exports = {
     return this.updateProject(projectId, {
       mission: projectMission,
       problemAddressed: theProblem,
-      filePath
+      imgPath: filePath
     });
   },
 
@@ -218,8 +215,7 @@ module.exports = {
       problemAddressed,
       coverPhotoPath
     } = await validateExistence(this.projectDao, projectId, 'project');
-
-    return { mission, problemAddressed, coverPhotoPath };
+    return { mission, problemAddressed, imgPath: coverPhotoPath };
   },
 
   async createProjectProposal({ projectProposal, ownerId }) {
@@ -249,8 +245,7 @@ module.exports = {
       projectId,
       'project'
     );
-
-    return { proposal };
+    return proposal;
   },
 
   async deleteMilestoneOfProject(projectId, milestoneId) {
@@ -321,7 +316,7 @@ module.exports = {
       projectId,
       'project'
     );
-    if (status !== projectStatus.EDITING) throw Error();
+    if (status !== projectStatus.EDITING) throw Error(); //fixme
     return this.updateProject(projectId, {
       status: projectStatus.PENDING_APPROVAL
     });
