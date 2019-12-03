@@ -69,6 +69,32 @@ const taskProperties = {
   milestoneId: { type: 'integer' }
 };
 
+const milestonesResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      category: { type: 'string' },
+      description: { type: 'string' },
+      tasks: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            taskHash: { type: 'string' },
+            description: { type: 'string' },
+            reviewCriteria: { type: 'string' },
+            category: { type: 'string' },
+            keyPersonnel: { type: 'string' },
+            budget: { type: 'string' }
+          }
+        }
+      }
+    }
+  },
+  description: 'Returns all milestones of a project'
+};
+
 const idParam = description => ({
   type: 'object',
   properties: {
@@ -110,20 +136,11 @@ const projectsResponse = {
       ownerId: { type: 'number' },
       createdAt: { type: 'string' },
       transactionHash: { type: 'string' },
-      milestones: { type: 'object' },
       id: { type: 'number' }
     }
   },
   description: 'Returns all projects'
 };
-
-const successWithProjectMilestoneProcess = {
-  type: 'object',
-  properties: {
-    projectId: { type: 'integer' }
-  },
-  description: 'Returns the id of the project'
-}; // TODO
 
 const projectThumbnailRoutes = {
   // create project thumbnail
@@ -405,11 +422,7 @@ const milestoneRoutes = {
         summary: 'summaryHard',
         params: { projectIdParam, milestoneIdParam },
         response: {
-          ...successResponse({
-            type: 'object',
-            properties: projectMilestonesProperties,
-            description: 'Returns the project proposal'
-          }),
+          ...successResponse(successWithProjectIdResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
@@ -434,11 +447,7 @@ const milestoneRoutes = {
           }
         },
         response: {
-          ...successResponse({
-            type: 'object',
-            properties: milestoneIdProperties,
-            description: 'Returns the milestoneId'
-          }),
+          ...successResponse(successWithProjectIdResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
@@ -457,11 +466,7 @@ const milestoneRoutes = {
         summary: 'summaryHard',
         params: { milestoneIdParam, taskIdParam },
         response: {
-          ...successResponse({
-            type: 'object',
-            properties: milestoneIdProperties,
-            description: 'Returns the milestoneId'
-          }),
+          ...successResponse(successWithProjectIdResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
@@ -486,11 +491,7 @@ const milestoneRoutes = {
           }
         },
         response: {
-          ...successResponse({
-            type: 'object',
-            properties: milestoneIdProperties,
-            description: 'Returns the milestoneId'
-          }),
+          ...successResponse(successWithProjectIdResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
@@ -560,7 +561,7 @@ const projectMilestonesRoute = {
         description: 'Creates new project and adds project proposal to it.',
         summary: 'Create new project and project proposal',
         response: {
-          ...successResponse(successWithProjectMilestoneProcess),
+          ...successResponse(successWithProjectIdResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }
@@ -579,11 +580,7 @@ const projectMilestonesRoute = {
         summary: 'summaryHard',
         params: projectIdParam,
         response: {
-          ...successResponse({
-            type: 'object',
-            properties: {}, // TODO define project milestones object schema
-            description: 'Returns the project milestones'
-          }),
+          ...successResponse(milestonesResponse),
           ...clientErrorResponse(), // TODO add correct params
           ...serverErrorResponse() // TODO add correct params
         }

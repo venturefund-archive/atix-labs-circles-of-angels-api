@@ -325,23 +325,17 @@ module.exports = {
       projectId,
       'project'
     );
-    console.log('project.milestonePath', project.milestonePath);
     const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId
     )).map(({ id }) => id);
-    console.log('milestones', milestones);
     return { projectId: await this.updateProject(projectId, { milestones }) };
   },
 
   async getProjectMilestones(projectId) {
     validateParams(projectId);
-    const { milestones } = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
-    return milestones;
+    await validateExistence(this.projectDao, projectId, 'project');
+    return this.milestoneDao.getMilestoneByProjectId(projectId);
   },
 
   async publishProject(projectId) {
@@ -352,8 +346,9 @@ module.exports = {
       projectId,
       'project'
     );
-    if (status !== projectStatus.EDITING)
+    if (status !== projectStatus.EDITING) {
       throw COAError(errors.ProjectIsNotPublishable);
+    }
     return {
       projectId: await this.updateProject(projectId, {
         status: projectStatus.PENDING_APPROVAL

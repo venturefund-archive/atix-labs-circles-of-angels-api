@@ -20,6 +20,9 @@ module.exports = {
 
     return milestone;
   },
+  async getMilestoneByProjectId(project) {
+    return this.model.find({ project }).populate('tasks');
+  },
   async saveMilestone({ milestone, projectId, budgetStatus }) {
     const toSave = {
       ...milestone,
