@@ -69,8 +69,10 @@ module.exports = {
   createProjectDetail: fastify => async (request, reply) => {
     const { projectMission, theProblem, ownerId } = request.raw.body;
     const { file } = request.raw.files;
+    const { projectId } = request.params;
+
     try {
-      const response = await projectService.createProjectDetail({
+      const response = await projectService.createProjectDetail(projectId, {
         projectMission,
         theProblem,
         file,
@@ -107,15 +109,14 @@ module.exports = {
     }
   },
   createProjectProposal: fastify => async (request, reply) => {
+    const { projectId } = request.params;
     const { projectProposal, ownerId } = request.raw.body;
     try {
-      const response = await projectService.createProjectProposal({
+      const response = await projectService.createProjectProposal(projectId, {
         projectProposal,
         ownerId
       });
-      reply
-        .status(200)
-        .send(`Project proposal added to new project with id ${response}`);
+      reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(error);
     }
@@ -137,7 +138,7 @@ module.exports = {
     const { projectId } = request.params;
     try {
       const response = await projectService.getProjectProposal(projectId);
-      reply.stauts(200).send(response);
+      reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(error);
     }
@@ -186,7 +187,9 @@ module.exports = {
   },
   getTemplateOfProjectMilestone: fastify => async (request, reply) => {
     // TODO
-    reply.send('DALE QUE VA getTemplateOfProjectMilestone');
+    reply.send(
+      'Inside getTemplateOfProjectMilestone, this should return a stream to template file, but not today :)'
+    );
   },
   uploadMilestoneFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
