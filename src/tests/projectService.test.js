@@ -34,7 +34,7 @@ describe('Project service helper', () => {
     });
   });
 
-  describe('ValidateParams', () => {
+  describe('- ValidateParams', () => {
     it('Whenever one param is undefined, validateParams should throw COAError', async () => {
       const params = undefined;
       const notParamUndefined = 'this is not undefined';
@@ -56,4 +56,11 @@ describe('Project service helper', () => {
       expect(() => validateParams(params, params2)).not.toThrow(COAError);
     });
   });
+
+  describe('- ValidateExistence', () => {});
+  describe('- ValidateMtype', () => {});
+  describe('- ValidatePhotoSize', () => {});
+  describe('- XslValidator', () => {});
+  describe('- ImgValidator', () => {});
+  
 });
