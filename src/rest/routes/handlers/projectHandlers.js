@@ -214,6 +214,7 @@ module.exports = {
     const { projectId } = request.params;
     try {
       const response = await projectService.getProjectMilestones(projectId);
+      console.log('response', response);
       reply.status(200).send(response);
     } catch (error) {
       reply.status(500).send(error);

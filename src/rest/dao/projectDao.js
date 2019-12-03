@@ -45,7 +45,6 @@ module.exports = {
   async getProjectById({ projectId }) {
     const project = await this.model.findOne({ id: projectId });
 
-    // returns undefined if not found
     if (!project || project == null) {
       return project;
     }
@@ -92,7 +91,6 @@ module.exports = {
 
   async updateProject(project, id) {
     const toUpdate = { ...project };
-    console.log('toUpdate', toUpdate);
 
     delete toUpdate.id;
     delete toUpdate.ownerId;
