@@ -326,10 +326,10 @@ module.exports = {
       'project'
     );
     console.log('project.milestonePath', project.milestonePath);
-    const milestones = await this.milestoneService.createMilestones(
+    const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId
-    );
+    )).map(({ id }) => id);
     console.log('milestones', milestones);
     return { projectId: await this.updateProject(projectId, { milestones }) };
   },
