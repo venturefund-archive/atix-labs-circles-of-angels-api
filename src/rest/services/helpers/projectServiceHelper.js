@@ -1,5 +1,6 @@
 const mime = require('mime');
 const errors = require('../../errors/exporter/ErrorExporter');
+const COAError = require('../../errors/COAError');
 
 const MAX_PHOTO_SIZE = 500000;
 
@@ -52,5 +53,7 @@ module.exports = {
   validateExistence,
   validateParams,
   validateMtype,
-  validatePhotoSize
+  validatePhotoSize,
+  xslValidator,
+  imgValidator
 };
