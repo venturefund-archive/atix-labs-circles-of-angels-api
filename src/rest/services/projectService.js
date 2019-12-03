@@ -109,7 +109,7 @@ module.exports = {
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
-    const cardPhotoPath = await files.saveFile(thumbnailType, { file });
+    const cardPhotoPath = await files.saveFile(thumbnailType, file);
 
     const project = {
       projectName,
@@ -144,7 +144,9 @@ module.exports = {
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
-    const cardPhotoPath = file ? await files.saveFile(file) : project.filePath;
+    const cardPhotoPath = file
+      ? await files.saveFile(thumbnailType, file)
+      : project.filePath;
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -152,7 +154,7 @@ module.exports = {
         countryOfImpact,
         timeframe,
         goalAmount,
-        imgPath: cardPhotoPath
+        cardPhotoPath
       })
     };
   },
@@ -175,22 +177,25 @@ module.exports = {
     };
   },
 
-  async createProjectDetail({ projectMission, theProblem, file, ownerId }) {
-    validateParams(projectMission, theProblem, file, ownerId);
-    await validateExistence(this.userDao, ownerId);
+  async createProjectDetail(
+    projectId,
+    { projectMission, theProblem, file, ownerId }
+  ) {
+    validateParams(projectMission, theProblem, file, ownerId, projectId);
+    await validateExistence(this.userDao, ownerId, 'user');
+    await validateExistence(this.projectDao, projectId, 'project');
     validateMtype(coverPhotoType)(file);
     validatePhotoSize(file);
 
-    const filePath = await files.saveFile(coverPhotoType, { file });
+    const filePath = await files.saveFile(coverPhotoType, file);
 
-    const project = {
-      mission: projectMission,
-      problemAddressed: theProblem,
-      filePath,
-      ownerId
+    return {
+      projectId: await this.updateProject(projectId, {
+        mission: projectMission,
+        problemAddressed: theProblem,
+        coverPhotoPath: filePath
+      })
     };
-
-    return { projectId: await this.saveProject(project) };
   },
 
   async updateProjectDetail(
@@ -205,14 +210,14 @@ module.exports = {
     validatePhotoSize(file);
 
     const filePath = file
-      ? await files.saveFile(coverPhotoType, { file })
+      ? await files.saveFile(coverPhotoType, file)
       : project.filePath;
 
     return {
       projectId: await this.updateProject(projectId, {
         mission: projectMission,
         problemAddressed: theProblem,
-        imgPath: filePath
+        coverPhotoPath: filePath
       })
     };
   },
@@ -227,22 +232,23 @@ module.exports = {
     return { mission, problemAddressed, imgPath: coverPhotoPath };
   },
 
-  async createProjectProposal({ projectProposal, ownerId }) {
-    validateParams(projectProposal, ownerId);
+  async createProjectProposal(projectId, { projectProposal, ownerId }) {
+    validateParams(projectId, projectProposal, ownerId);
 
     await validateExistence(this.userDao, ownerId, 'user');
+    await validateExistence(this.projectDao, projectId, 'project');
 
-    const project = {
-      proposal: projectProposal,
-      ownerId
+    return {
+      projectId: await this.updateProject(projectId, {
+        proposal: projectProposal
+      })
     };
-
-    return { projectId: await this.saveProject(project) };
   },
 
   async updateProjectProposal(projectId, { projectProposal, ownerId }) {
     validateParams(projectProposal, ownerId, projectId);
     await validateExistence(this.projectDao, projectId, 'project');
+    await validateExistence(this.userDao, ownerId, 'user');
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -258,7 +264,7 @@ module.exports = {
       projectId,
       'project'
     );
-    return proposal;
+    return { proposal };
   },
 
   async deleteMilestoneOfProject(projectId, milestoneId) {
@@ -318,7 +324,6 @@ module.exports = {
     };
   },
 
-  // TODO
   async processMilestoneFile(projectId) {
     const project = await validateExistence(
       this.projectDao,

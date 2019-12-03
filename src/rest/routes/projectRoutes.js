@@ -52,17 +52,11 @@ const imgPathProperty = {
 };
 const projectDetailProperties = {
   mission: { type: 'string' },
-  problemAddressed: { type: 'string' }
+  problemAddressed: { type: 'string' },
+  imgPath: { type: 'string' }
 };
 const projectProposalProperties = {
   proposal: { type: 'string' }
-};
-const milestoneIdProperties = {
-  milestoneId: { type: 'integer' }
-};
-const projectMilestonesProperties = {
-  // TODO
-  milestoneId: { type: 'integer' }
 };
 const taskProperties = {
   // TODO
@@ -237,13 +231,14 @@ const projectThumbnailRoutes = {
 const projectDetailRoutes = {
   createProjectDetail: {
     method: 'post',
-    path: `${basePath}/detail`,
+    path: `${basePath}/:projectId/detail`,
     options: {
       // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project detail to it.',
         summary: 'Create new project and project detail',
+        params: projectIdParam,
         raw: {
           files: { type: 'object' },
           body: {
@@ -326,13 +321,14 @@ const projectDetailRoutes = {
 const projectProposalRoutes = {
   createProjectProposal: {
     method: 'post',
-    path: `${basePath}/proposal`,
+    path: `${basePath}/:projectId/proposal`,
     options: {
       // beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Creates new project and adds project proposal to it.',
         summary: 'Create new project and project proposal',
+        params: projectIdParam,
         raw: {
           body: {
             type: 'object',
