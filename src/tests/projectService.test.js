@@ -9,19 +9,24 @@
  */
 
 const { find } = require('lodash');
+const assert = require('assert');
 
 const { projectStatus } = require('../rest/util/constants');
 
 const { injectMocks } = require('../rest/util/injection');
 
+const projectService = require('../rest/services/projectService');
+
 describe('Testing projectService createProject', () => {
   // here are the variables of dependencies to inject
   beforeAll(() => {
-    const projectService = require('../rest/services/projectService');
     injectMocks(projectService, {
       // dependencies
     });
   });
 
-  it.skip('', async () => {});
+  it('should not explode', async () => {
+    const params = undefined;
+    assert.fail(projectService.validateParams(params));
+  });
 });
