@@ -28,11 +28,6 @@ const projectService = require('../rest/services/projectService');
 
 describe('Project service helper', () => {
   // here are the variables of dependencies to inject
-  beforeAll(() => {
-    injectMocks(projectService, {
-      // dependencies
-    });
-  });
 
   describe('- ValidateParams', () => {
     it('Whenever one param is undefined, validateParams should throw COAError', async () => {
@@ -57,10 +52,45 @@ describe('Project service helper', () => {
     });
   });
 
-  describe('- ValidateExistence', () => {});
+  describe('- ValidateExistence', () => {
+    const projectDao = {
+      findById: async id => {
+        if (id === 1) {
+          return new Promise(resolve => resolve);
+        }
+        return new Promise(resolve => resolve(undefined));
+      }
+    };
+
+    beforeAll(() => {
+      injectMocks(projectService, {
+        projectDao
+      });
+    });
+
+    it('Should not throw an error whenever the object exists', async () => {
+      const idOfObjectThatExists = 1;
+      expect(
+        validateExistence(projectDao, idOfObjectThatExists, 'projectMock')
+      ).rejects.not.toThrow(COAError);
+    });
+
+    it('Should return an object whenever the object exists', async () => {
+      const idOfObjectThatExists = 1;
+      expect(
+        validateExistence(projectDao, idOfObjectThatExists, 'projectMock')
+      ).resolves.toHaveProperty('id', 1);
+    });
+
+    it('Should throw an error whenever the object queried does not exists', async () => {
+      const idOfObjectThatDoesntExists = 2;
+      expect(
+        validateExistence(projectDao, idOfObjectThatDoesntExists, 'projectMock')
+      ).rejects.toThrow(COAError);
+    });
+  });
   describe('- ValidateMtype', () => {});
   describe('- ValidatePhotoSize', () => {});
   describe('- XslValidator', () => {});
   describe('- ImgValidator', () => {});
-  
 });

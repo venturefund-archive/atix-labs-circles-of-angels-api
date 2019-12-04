@@ -4,12 +4,14 @@ const COAError = require('../../errors/COAError');
 
 const MAX_PHOTO_SIZE = 500000;
 
-const validateExistence = (dao, id, model) => {
-  try {
-    return dao.findById(id);
-  } catch (error) {
-    throw new COAError(`Cant find ${model} with id ${id}`);
+const validateExistence = async (dao, id, model) => {
+  const object = await dao.findById(id);
+  if (object) {
+    return new Promise(resolve => resolve(object));
   }
+  return new Promise((resolve, reject) =>
+    reject(new COAError(`Cant find ${model} with id ${id}`))
+  );
 };
 
 const validateParams = (...params) => {
