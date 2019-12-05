@@ -42,7 +42,7 @@ module.exports = {
     cardPhotoPath: { type: 'string', required: false },
     milestonePath: { type: 'string', required: false },
     goalAmount: { type: 'number', required: false },
-    status: { type: 'string', defaultsTo: projectStatusType.EDITING },
+    status: { type: 'string', defaultsTo: projectStatusType.DRAFT },
     ownerId: { type: 'number', required: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     transactionHash: { type: 'string', required: false },
