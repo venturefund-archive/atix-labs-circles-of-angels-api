@@ -23,6 +23,7 @@ const milestonesType = 'milestones';
 
 module.exports = {
   async updateProject(projectId, fields) {
+    // TODO updateProject = updateMilestone, is should abstract this like validateExistence, also change tests
     const updatedProject = await this.projectDao.updateProject(
       fields,
       projectId
