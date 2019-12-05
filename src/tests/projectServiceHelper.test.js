@@ -69,7 +69,7 @@ describe('Project service helper', () => {
       ).resolves.toHaveProperty('id', 1);
     });
 
-    it('Should throw an error whenever the object queried does not exists', async () => {
+    it('Should throw an error whenever the object queried does not exist', async () => {
       const idOfObjectThatDoesntExists = 2;
       expect(
         validateExistence(projectDao, idOfObjectThatDoesntExists, 'projectMock')

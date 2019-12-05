@@ -99,8 +99,11 @@ module.exports = {
       projectId,
       'project'
     );
-    validateMtype(thumbnailType)(file);
-    validatePhotoSize(file);
+
+    if (file) {
+      validateMtype(thumbnailType)(file);
+      validatePhotoSize(file);
+    }
 
     const cardPhotoPath = file
       ? await files.saveFile(thumbnailType, file)
