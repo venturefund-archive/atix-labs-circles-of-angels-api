@@ -308,7 +308,7 @@ module.exports = {
       projectId,
       'project'
     );
-    if (status !== projectStatus.EDITING) {
+    if (status !== projectStatus.DRAFT) {
       throw COAError(errors.ProjectIsNotPublishable);
     }
     return {

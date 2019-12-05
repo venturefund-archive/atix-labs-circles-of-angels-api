@@ -21,14 +21,14 @@ const transferStatus = {
 const projectStatus = {
   // TODO delete this one
   REJECTED: 2,
-  EDITING: 0,
+  DRAFT: 0,
   PENDING_APPROVAL: 1,
   PUBLISHED: 3,
   IN_PROGRESS: 4
 };
 
 const projectStatusType = {
-  EDITING: 'editing',
+  DRAFT: 'draft',
   PENDING: 'pending',
   CONSENSUS: 'consensus',
   ONGOING: 'ongoing'

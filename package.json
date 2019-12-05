@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "lint": "eslint src/**/*.js",
-    "test": "export NODE_ENV=test && jest -i tests/projectService.test.js",
+    "test": "export NODE_ENV=test && jest -i tests/projectServiceHelper.test.js",
     "test:coverage": "npm test -- --coverage",
     "start": "export NODE_ENV=development && node index",
     "prod": "export NODE_ENV=production && node index",

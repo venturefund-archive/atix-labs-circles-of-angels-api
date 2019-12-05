@@ -28,7 +28,7 @@ CREATE TABLE public.user (
 );
 
 CREATE TYPE ProjectStatus AS ENUM (
-    'editing',
+    'draft',
     'pending',
     'consensus',
     'ongoing'
@@ -44,7 +44,7 @@ CREATE TABLE public.project (
     location text,
     "problemAddressed" text,
     timeframe text,
-    status ProjectStatus DEFAULT 'editing',
+    status ProjectStatus DEFAULT 'draft',
     "goalAmount" real NOT NULL,
     "faqLink" text,
     "coverPhotoPath" varchar(200),
