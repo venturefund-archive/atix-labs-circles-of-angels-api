@@ -23,6 +23,7 @@ const milestonesType = 'milestones';
 
 module.exports = {
   async updateProject(projectId, fields) {
+    // TODO updateProject = updateMilestone, is should abstract this like validateExistence, also change tests
     const updatedProject = await this.projectDao.updateProject(
       fields,
       projectId
@@ -98,8 +99,11 @@ module.exports = {
       projectId,
       'project'
     );
-    validateMtype(thumbnailType)(file);
-    validatePhotoSize(file);
+
+    if (file) {
+      validateMtype(thumbnailType)(file);
+      validatePhotoSize(file);
+    }
 
     const cardPhotoPath = file
       ? await files.saveFile(thumbnailType, file)
@@ -125,6 +129,13 @@ module.exports = {
       goalAmount,
       cardPhotoPath
     } = await validateExistence(this.projectDao, projectId, 'project');
+    console.log(
+      projectName,
+      countryOfImpact,
+      timeframe,
+      goalAmount,
+      cardPhotoPath
+    );
     return {
       projectName,
       countryOfImpact,
