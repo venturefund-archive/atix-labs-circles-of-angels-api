@@ -167,9 +167,10 @@ module.exports = {
 
     await validateExistence(this.userDao, ownerId);
     const project = await validateExistence(this.projectDao, projectId);
-    validateMtype(coverPhotoType)(file);
-    validatePhotoSize(file);
-
+    if (file) {
+      validateMtype(coverPhotoType)(file);
+      validatePhotoSize(file);
+    }
     const filePath = file
       ? await files.saveFile(coverPhotoType, file)
       : project.filePath;
