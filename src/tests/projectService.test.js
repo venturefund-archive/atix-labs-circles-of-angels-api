@@ -16,6 +16,55 @@ const coverPhotoPath = 'detail.jpeg';
 const proposal = 'proposal';
 const ownerId = 2;
 const file = { name: 'project.jpeg', size: 1234 };
+const milestoneFile = { name: 'project.xlsx', size: 1234 };
+const milestone = { id: 2, tasks: [{ id: 1 }, { id: 2 }, { id: 3 }] };
+
+const pendingProject = {
+  id: 3,
+  projectName,
+  countryOfImpact,
+  timeframe,
+  goalAmount,
+  ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: 'pending',
+  milestones: [milestone],
+  milestonePath: 'milestonePath'
+};
+const draftProjectWithMilestone = {
+  id: 10,
+  projectName,
+  countryOfImpact,
+  timeframe,
+  goalAmount,
+  ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: 'draft',
+  milestones: [milestone],
+  milestonePath: 'milestonePath'
+};
+const draftProject = {
+  id: 1,
+  projectName,
+  countryOfImpact,
+  timeframe,
+  goalAmount,
+  ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: 'draft'
+};
 
 const userDao = {
   findById: id => {
@@ -38,7 +87,7 @@ const projectDao = {
     return undefined;
   },
   updateProject: (fields, projectId) => {
-    if (projectId === 1) {
+    if (projectId === 1 || projectId === 3) {
       return {
         projectName: 'projectUpdateado',
         ...fields,
@@ -49,21 +98,38 @@ const projectDao = {
   },
   findById: id => {
     if (id === 1) {
-      return {
-        id: 1,
-        projectName,
-        countryOfImpact,
-        timeframe,
-        goalAmount,
-        ownerId,
-        cardPhotoPath: 'cardPhotoPath',
-        coverPhotoPath,
-        problemAddressed,
-        proposal,
-        mission
-      };
+      return draftProject;
+    }
+    if (id === 3) {
+      return pendingProject;
+    }
+    if (id === 10) {
+      return draftProjectWithMilestone;
     }
     return undefined;
+  }
+};
+
+const milestoneDao = {
+  findById: id => {
+    if (id === 2) {
+      return milestone;
+    }
+    return undefined;
+  },
+  getMilestoneByProjectId: projectId => {
+    if (projectId === 3) {
+      return [milestone];
+    }
+    return undefined;
+  }
+};
+
+const milestoneService = {
+  createMilestones: (milestonePath, projectId) => {
+    if (projectId === 1) {
+      return [milestone];
+    }
   }
 };
 
@@ -301,11 +367,11 @@ describe('Project Service Test', () => {
     describe('Get project thumbnail', () => {
       it('Should return the project thumbnail when the project exists', async () => {
         const response = await projectService.getProjectThumbnail(1);
-        expect(response.projectName).toBeDefined();
-        expect(response.countryOfImpact).toBeDefined();
-        expect(response.timeframe).toBeDefined();
-        expect(response.goalAmount).toBeDefined();
-        expect(response.imgPath).toBeDefined();
+        expect(response.projectName).toEqual('validProjectName');
+        expect(response.countryOfImpact).toEqual('Argentina');
+        expect(response.timeframe).toEqual('12');
+        expect(response.goalAmount).toEqual(124123);
+        expect(response.imgPath).toEqual('cardPhotoPath');
       });
       it('Should throw an error when the project does not exist', () => {
         expect(projectService.getProjectThumbnail(4)).rejects.toThrow(COAError);
@@ -325,7 +391,7 @@ describe('Project Service Test', () => {
           ownerId: 2,
           file
         });
-        expect(projectId).toBeDefined();
+        expect(projectId).toEqual(1);
       });
       it('Should not create project detail when there are not all the needed fields, and throw an error', () => {
         expect(
@@ -382,7 +448,7 @@ describe('Project Service Test', () => {
           file,
           ownerId: 2
         });
-        expect(projectId).toBeDefined();
+        expect(projectId).toEqual(1);
       });
       it('Should update the project if it exists and have all the fields valids and file field is missing ', async () => {
         const { projectId } = await projectService.updateProjectDetail(1, {
@@ -390,7 +456,7 @@ describe('Project Service Test', () => {
           theProblem: problemAddressed,
           ownerId: 2
         });
-        expect(projectId).toBeDefined();
+        expect(projectId).toEqual(1);
       });
       it('Should not update the project if it does not exists, and throw an error', () => {
         expect(
@@ -446,9 +512,9 @@ describe('Project Service Test', () => {
     describe('Get project detail', () => {
       it('Should return the project detail when the project exists', async () => {
         const response = await projectService.getProjectDetail(1);
-        expect(response.mission).toBeDefined();
-        expect(response.problemAddressed).toBeDefined();
-        expect(response.imgPath).toBeDefined();
+        expect(response.mission).toEqual('mission');
+        expect(response.problemAddressed).toEqual('the problem');
+        expect(response.imgPath).toEqual('detail.jpeg');
       });
       it('Should throw an error when the project does not exist', () => {
         expect(projectService.getProjectDetail(4)).rejects.toThrow(COAError);
@@ -463,7 +529,7 @@ describe('Project Service Test', () => {
           ownerId: 2,
           projectProposal: proposal
         });
-        expect(projectId).toBeDefined();
+        expect(projectId).toEqual(1);
       });
       it('Should not create the project proposal when the project does not exist, and throw an error', () => {
         expect(
@@ -495,7 +561,7 @@ describe('Project Service Test', () => {
           projectProposal: proposal,
           ownerId: 2
         });
-        expect(projectId).toBeDefined();
+        expect(projectId).toEqual(1);
       });
       it('Should not update the project when it does not exist and throw an error', () => {
         expect(
@@ -519,12 +585,177 @@ describe('Project Service Test', () => {
         ).rejects.toThrow(COAError);
       });
     });
+
     describe('Get project proposal', () => {
-      it('Should return project proposal when the project exists', async () => {});
-      it('Should throw an error when the project does not exist', () => {});
+      it('Should return project proposal when the project exists', async () => {
+        const response = await projectService.getProjectProposal(1);
+        expect(response.proposal).toEqual('proposal');
+      });
+      it('Should throw an error when the project does not exist, and throw an error', () => {
+        expect(projectService.getProjectProposal(2)).rejects.toThrow(COAError);
+      });
     });
   });
 
-  // TODO whenever mail is answered describe('Project milestone', () => {});
+  describe('Publish project', () => {
+    it('Should publish project if it exists and its state is draft', async () => {
+      const { projectId } = await projectService.publishProject(1);
+      expect(projectId).toEqual(1);
+    });
+    it('Should not publish project if it does not exist, and throw an error', () => {
+      expect(projectService.publishProject(2)).rejects.toThrow(COAError);
+    });
+    it('Should not publish project if it exist but is already published, and throw an error', () => {
+      expect(projectService.publishProject(3)).rejects.toThrow(COAError);
+    });
+  });
+
+  describe('Get projects', () => {
+    beforeAll(() => {});
+    it('Should return an empty list if no projects are published', () => {
+      injectMocks(projectService, {
+        projectDao: Object.assign({}, projectDao, {
+          findAllByProps: () => []
+        })
+      });
+      expect(projectService.getProjects()).resolves.toHaveLength(0);
+    });
+    it('Should return an array of projects if there is any project published', () => {
+      injectMocks(projectService, {
+        projectDao: Object.assign({}, projectDao, {
+          findAllByProps: () => [pendingProject]
+        })
+      });
+      expect(projectService.getProjects()).resolves.toHaveLength(1);
+    });
+  });
+
+  describe('Project milestone', () => {
+    beforeAll(() => {
+      injectMocks(projectService, { milestoneDao, projectDao, userDao });
+    });
+    describe('Delete milestone of project', () => {
+      it('Should delete milestone of project if project exists and milestone belongs to project', async () => {
+        const { projectId } = await projectService.deleteMilestoneOfProject(
+          3,
+          2
+        );
+        expect(projectId).toEqual(3);
+      });
+      it('Should not delete milestone of project if project does not exist, and throw an error', () => {
+        expect(projectService.deleteMilestoneOfProject(2, 2)).rejects.toThrow(
+          COAError
+        );
+      });
+      it('Should not delete milestone of project if project exists and milestone does not belongs to project, and throw an error', () => {
+        expect(projectService.deleteMilestoneOfProject(3, 5)).rejects.toThrow(
+          COAError
+        );
+      });
+    });
+
+    describe('Filter milestones', () => {
+      it('Should filter milestone with id = milestoneId from milestones array', () => {
+        const milestones = [{ id: 1 }, { id: 2 }, { id: 3 }];
+        const milestonesFiltered = projectService.filterMilestones(
+          milestones,
+          2
+        );
+        expect(milestonesFiltered[0]).toEqual({ id: 1 });
+        expect(milestonesFiltered[1]).toEqual({ id: 3 });
+      });
+    });
+
+    describe('Edit task of milestone', () => {}); // TODO
+
+    describe('Delete task of milestone', () => {
+      // TODO
+      it('Should delete task of milestone if milestone exists and task belongs to milestone', () => {});
+      it('Should not delete task of milestone if milestone does not exist, and throw an error', () => {});
+      it('Should not delete task of milestone if milestone exists but task does not belongs to milestone, and throw an error', () => {});
+    });
+
+    describe('Upload milestone file', () => {
+      it('Should add milestone file to an existent project', async () => {
+        const { projectId } = await projectService.uploadMilestoneFile(
+          1,
+          milestoneFile
+        );
+        expect(projectId).toEqual(1);
+      });
+      it('Should not add milestone file to a non-existent project, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(5, milestoneFile)
+        ).rejects.toThrow(COAError);
+      });
+      it('Should not add milestone file to an existent project with a milestone file already uploaded, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(3, milestoneFile)
+        ).rejects.toThrow(COAError);
+      });
+      it('Should not add milestone file to an existent project if file has not a valid type, and throw an error', () => {
+        expect(projectService.uploadMilestoneFile(3, file)).rejects.toThrow(
+          COAError
+        );
+      });
+      it('Should not add milestone file to an existent project if file has not a valid size, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(3, {
+            name: 'name.xslx',
+            size: 1982319823
+          })
+        ).rejects.toThrow(COAError);
+      });
+      it('Should not add milestone file to an existent project if file field is missing, and throw an error', () => {
+        expect(projectService.uploadMilestoneFile(3)).rejects.toThrow(COAError);
+      });
+    });
+
+    describe('Process milestone file', () => {
+      beforeAll(() => {
+        injectMocks(projectService, {
+          milestoneDao,
+          projectDao,
+          milestoneService
+        });
+      });
+      it('Should create milestones and activities to an existent project without an already process file', async () => {
+        const { projectId } = await projectService.processMilestoneFile(1);
+        expect(projectId).toEqual(1);
+      });
+      it('Should not create milestones and activities to a non-existent project, and throw an error', () => {
+        expect(projectService.processMilestoneFile(2)).rejects.toThrow(
+          COAError
+        );
+      });
+      it('Should not create milestones and activities to an existent project with already a file that has been processed, and throw an error', () => {
+        expect(projectService.processMilestoneFile(10)).rejects.toThrow(
+          COAError
+        );
+      });
+      it('Should not create milestones and activities to an existent project with status different than draft', () => {
+        expect(projectService.processMilestoneFile(3)).rejects.toThrow(
+          COAError
+        );
+      });
+    });
+
+    describe('Get project milestones', () => {
+      beforeAll(() => {
+        injectMocks(projectService, { milestoneDao, projectDao, userDao });
+      });
+
+      it('Should return project milestones of an existent project', async () => {
+        const milestones = await projectService.getProjectMilestones(3);
+        expect(milestones).toHaveLength(1);
+        expect(milestones[0].id).toEqual(2);
+      });
+      it('Should not return project milestones of a non-existent project, and throw an error', () => {
+        expect(projectService.getProjectMilestones(4)).rejects.toThrow(
+          COAError
+        );
+      });
+    });
+  });
   // TODO whenever mail is answered describe('Project milestone activities', () => {});
 });

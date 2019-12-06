@@ -6,7 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { projectStatus } = require('../util/constants');
+const { projectStatusType } = require('../util/constants');
 const files = require('../util/files');
 const {
   validateExistence,
@@ -229,27 +229,29 @@ module.exports = {
     return { proposal };
   },
 
+  filterMilestones(milestones, milestoneIdToFilter) {
+    return milestones.filter(({ id }) => id !== milestoneIdToFilter);
+  },
+
   async deleteMilestoneOfProject(projectId, milestoneId) {
     //FIXME ADD OWNER VALIDATION
     validateParams(projectId, milestoneId);
-    await validateExistence(this.milestoneId, milestoneId, 'milestone');
+    await validateExistence(this.milestoneDao, milestoneId, 'milestone');
     const { milestones } = await validateExistence(
       this.projectDao,
       projectId,
       'project'
     );
-
     return {
-      milestoneId: this.updateProject(
-        projectId,
-        milestones.filter(({ id }) => id !== milestoneId)
-      )
+      projectId: await this.updateProject(projectId, {
+        milestones: this.filterMilestones(milestones, milestoneId)
+      })
     };
   },
 
   async editTaskOfMilestone(milestoneId, taskId, taskParams) {}, // TODO
 
-  async deleteTaskOfMilestone(milestoneId, taskId) {
+  async deleteTaskOfMilestone(milestoneId, taskId) { // TODO shouldnt this belong to milestoneService?
     // FIXME ADD OWNER VALIDATION
     validateParams(milestoneId, taskId);
     const { tasks } = await validateExistence(
@@ -275,7 +277,7 @@ module.exports = {
       projectId,
       'project'
     );
-    if (project.milestone) throw Error();
+    if (project.milestonePath) throw new COAError();
 
     validateMtype(milestonesType)(file);
 
@@ -292,6 +294,8 @@ module.exports = {
       projectId,
       'project'
     );
+    if (project.milestones || project.status !== projectStatusType.DRAFT)
+      throw new COAError();
     const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId
@@ -313,12 +317,12 @@ module.exports = {
       projectId,
       'project'
     );
-    if (status !== projectStatus.DRAFT) {
-      throw COAError(errors.ProjectIsNotPublishable);
+    if (status !== projectStatusType.DRAFT) {
+      throw new COAError(errors.ProjectIsNotPublishable);
     }
     return {
       projectId: await this.updateProject(projectId, {
-        status: projectStatus.PENDING_APPROVAL
+        status: projectStatusType.PENDING_APPROVAL
       })
     };
   },
