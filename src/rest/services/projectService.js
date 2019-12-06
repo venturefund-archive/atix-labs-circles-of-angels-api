@@ -129,13 +129,6 @@ module.exports = {
       goalAmount,
       cardPhotoPath
     } = await validateExistence(this.projectDao, projectId, 'project');
-    console.log(
-      projectName,
-      countryOfImpact,
-      timeframe,
-      goalAmount,
-      cardPhotoPath
-    );
     return {
       projectName,
       countryOfImpact,
@@ -174,9 +167,10 @@ module.exports = {
 
     await validateExistence(this.userDao, ownerId);
     const project = await validateExistence(this.projectDao, projectId);
-    validateMtype(coverPhotoType)(file);
-    validatePhotoSize(file);
-
+    if (file) {
+      validateMtype(coverPhotoType)(file);
+      validatePhotoSize(file);
+    }
     const filePath = file
       ? await files.saveFile(coverPhotoType, file)
       : project.filePath;
