@@ -64,7 +64,7 @@ module.exports = {
       });
     }
   },
-  
+
   getAllRoles: fastify => async (request, reply) => {
     try {
       fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
@@ -107,7 +107,7 @@ module.exports = {
             expires: expirationDate
             // secure: true
           })
-          .redirect('/explore-projects')
+          .redirect('/explore-projects');
       }
     } catch (err) {
       reply
