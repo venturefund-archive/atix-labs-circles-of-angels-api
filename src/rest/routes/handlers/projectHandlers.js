@@ -15,9 +15,11 @@ module.exports = {
       projectName,
       countryOfImpact,
       timeframe,
-      goalAmount,
-      ownerId
+      goalAmount
     } = request.raw.body;
+
+    // assuming it's already logged.
+    const ownerId = request.user.id;
     const { file } = request.raw.files;
     try {
       const response = await projectService.createProjectThumbnail({
