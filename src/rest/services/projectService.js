@@ -29,7 +29,7 @@ module.exports = {
       projectId
     );
     if (!updatedProject)
-      throw new COAError(`Cant update project with id ${projectId}`);
+      throw new COAError(errors.CantUpdateProject(projectId));
     return updatedProject.id;
   },
   async updateMilestone(milestoneId, fields) {
@@ -38,7 +38,7 @@ module.exports = {
       milestoneId
     );
     if (!updatedMilestone)
-      throw new COAError(`Cant update milestone with id ${milestoneId}`);
+      throw new COAError(errors.CantUpdateMilestone(milestoneId));
     return updatedMilestone.id;
   },
   async saveProject(project) {
@@ -251,7 +251,8 @@ module.exports = {
 
   async editTaskOfMilestone(milestoneId, taskId, taskParams) {}, // TODO
 
-  async deleteTaskOfMilestone(milestoneId, taskId) { // TODO shouldnt this belong to milestoneService?
+  async deleteTaskOfMilestone({ milestoneId, taskId }) {
+    // TODO shouldnt this belong to milestoneService?
     // FIXME ADD OWNER VALIDATION
     validateParams(milestoneId, taskId);
     const { tasks } = await validateExistence(
@@ -259,7 +260,7 @@ module.exports = {
       milestoneId,
       'milestone'
     );
-    await validateExistence(this.taskDao, taskId, 'task');
+    await validateExistence(this.activityDao, taskId, 'task');
 
     return {
       milestoneId: this.updateMilestone(
@@ -277,7 +278,8 @@ module.exports = {
       projectId,
       'project'
     );
-    if (project.milestonePath) throw new COAError();
+    if (project.milestonePath)
+      throw new COAError(errors.MilestoneFileHasBeenAlreadyUploaded);
 
     validateMtype(milestonesType)(file);
 
@@ -294,8 +296,8 @@ module.exports = {
       projectId,
       'project'
     );
-    if (project.milestones || project.status !== projectStatusType.DRAFT)
-      throw new COAError();
+    if (project.status !== projectStatusType.DRAFT)
+      throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
     const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId

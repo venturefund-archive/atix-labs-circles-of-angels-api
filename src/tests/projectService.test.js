@@ -1,4 +1,3 @@
-const errors = require('../rest/errors/exporter/ErrorExporter');
 const COAError = require('../rest/errors/COAError');
 const files = require('../rest/util/files');
 
@@ -168,7 +167,7 @@ describe('Project Service Test', () => {
 
   describe('Update milestone', () => {
     beforeAll(() => {
-      const milestoneDao = {
+      const newMilestoneDao = {
         updateMilestone: (fields, milestoneId) => {
           if (milestoneId === 1) {
             return { id: 1 };
@@ -176,7 +175,7 @@ describe('Project Service Test', () => {
           return undefined;
         }
       };
-      injectMocks(projectService, { milestoneDao });
+      injectMocks(projectService, { milestoneDao: newMilestoneDao });
     });
     it('When an update is done, it should return the id of the updated milestone', async () => {
       const projectUpdated = await projectService.updateMilestone(1, {
