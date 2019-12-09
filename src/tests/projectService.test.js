@@ -67,9 +67,9 @@ const draftProject = {
 
 const userDao = {
   findById: id => {
-    if (id === 2) {
+    if (id === 2 || id === 3) {
       return {
-        id: 1
+        id
       };
     }
     return undefined;
@@ -312,6 +312,18 @@ describe('Project Service Test', () => {
         ).rejects.toThrow(COAError);
       });
 
+      it('Should not update the project whenever the user that request the update is not the owner, and throw an error', () => {
+        expect(
+          projectService.updateProjectThumbnail(1, {
+            projectName,
+            countryOfImpact,
+            timeframe,
+            file,
+            ownerId: 3
+          })
+        ).rejects.toThrow(COAError);
+      });
+
       it('Should not update the project whenever the fields are valid but the project does not exist and throw an error', () => {
         expect(
           projectService.updateProjectThumbnail(2, {
@@ -320,6 +332,19 @@ describe('Project Service Test', () => {
             timeframe,
             goalAmount,
             ownerId,
+            file
+          })
+        ).rejects.toThrow(COAError);
+      });
+
+      it('Should not update the project whenever the fields are valid and the project does exist but user is not owner of the project, and throw an error', () => {
+        expect(
+          projectService.updateProjectThumbnail(2, {
+            projectName,
+            countryOfImpact,
+            timeframe,
+            goalAmount,
+            ownerId: 3,
             file
           })
         ).rejects.toThrow(COAError);
@@ -398,6 +423,16 @@ describe('Project Service Test', () => {
         ).rejects.toThrow(COAError);
       });
       it('Should not create project detail when the owner does not exist, and throw an error', () => {
+        expect(
+          projectService.createProjectDetail(1, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            ownerId: 34,
+            file
+          })
+        ).rejects.toThrow(COAError);
+      });
+      it('Should not create project detail when the user is not the owner of the project, and throw an error', () => {
         expect(
           projectService.createProjectDetail(1, {
             projectMission: mission,
@@ -502,7 +537,7 @@ describe('Project Service Test', () => {
             projectMission: mission,
             theProblem: problemAddressed,
             file: { name: 'hi.jpeg', size: 3123 },
-            ownerId: 3
+            ownerId: 34
           })
         ).rejects.toThrow(COAError);
       });
@@ -548,7 +583,7 @@ describe('Project Service Test', () => {
       it('Should not create the project proposal when the project exists but owner does not exist and throw an error', () => {
         expect(
           projectService.createProjectProposal(2, {
-            ownerId: 3,
+            ownerId: 34,
             projectProposal: proposal
           })
         ).rejects.toThrow(COAError);
@@ -579,7 +614,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.updateProjectProposal(1, {
             projectProposal: proposal,
-            ownerId: 3
+            ownerId: 34
           })
         ).rejects.toThrow(COAError);
       });
@@ -598,14 +633,31 @@ describe('Project Service Test', () => {
 
   describe('Publish project', () => {
     it('Should publish project if it exists and its state is draft', async () => {
-      const { projectId } = await projectService.publishProject(1);
+      const { projectId } = await projectService.publishProject(1, {
+        ownerId: 2
+      });
       expect(projectId).toEqual(1);
     });
     it('Should not publish project if it does not exist, and throw an error', () => {
-      expect(projectService.publishProject(2)).rejects.toThrow(COAError);
+      expect(
+        projectService.publishProject(2, {
+          ownerId: 2
+        })
+      ).rejects.toThrow(COAError);
     });
     it('Should not publish project if it exist but is already published, and throw an error', () => {
-      expect(projectService.publishProject(3)).rejects.toThrow(COAError);
+      expect(
+        projectService.publishProject(3, {
+          ownerId: 2
+        })
+      ).rejects.toThrow(COAError);
+    });
+    it('Should not publish project if it exist but user is not the owner of it, and throw an error', () => {
+      expect(
+        projectService.publishProject(3, {
+          ownerId: 15
+        })
+      ).rejects.toThrow(COAError);
     });
   });
 
@@ -676,37 +728,59 @@ describe('Project Service Test', () => {
 
     describe('Upload milestone file', () => {
       it('Should add milestone file to an existent project', async () => {
-        const { projectId } = await projectService.uploadMilestoneFile(
-          1,
-          milestoneFile
-        );
+        const { projectId } = await projectService.uploadMilestoneFile(1, {
+          file: milestoneFile,
+          ownerId: 2
+        });
         expect(projectId).toEqual(1);
       });
       it('Should not add milestone file to a non-existent project, and throw an error', () => {
         expect(
-          projectService.uploadMilestoneFile(5, milestoneFile)
+          projectService.uploadMilestoneFile(5, {
+            file: milestoneFile,
+            ownerId: 2
+          })
+        ).rejects.toThrow(COAError);
+      });
+      it('Should not add milestone file to an existent project if user is not owner, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(1, {
+            file: milestoneFile,
+            ownerId: 3
+          })
         ).rejects.toThrow(COAError);
       });
       it('Should not add milestone file to an existent project with a milestone file already uploaded, and throw an error', () => {
         expect(
-          projectService.uploadMilestoneFile(3, milestoneFile)
+          projectService.uploadMilestoneFile(3, {
+            file: milestoneFile,
+            ownerId: 2
+          })
         ).rejects.toThrow(COAError);
       });
       it('Should not add milestone file to an existent project if file has not a valid type, and throw an error', () => {
-        expect(projectService.uploadMilestoneFile(3, file)).rejects.toThrow(
-          COAError
-        );
+        expect(
+          projectService.uploadMilestoneFile(3, {
+            file: milestoneFile,
+            ownerId: 2
+          })
+        ).rejects.toThrow(COAError);
       });
       it('Should not add milestone file to an existent project if file has not a valid size, and throw an error', () => {
         expect(
           projectService.uploadMilestoneFile(3, {
-            name: 'name.xslx',
-            size: 1982319823
+            file: {
+              name: 'name.xslx',
+              size: 1982319823
+            },
+            ownerId: 2
           })
         ).rejects.toThrow(COAError);
       });
       it('Should not add milestone file to an existent project if file field is missing, and throw an error', () => {
-        expect(projectService.uploadMilestoneFile(3)).rejects.toThrow(COAError);
+        expect(projectService.uploadMilestoneFile(3, { file })).rejects.toThrow(
+          COAError
+        );
       });
     });
 
@@ -719,23 +793,30 @@ describe('Project Service Test', () => {
         });
       });
       it('Should create milestones and activities to an existent project without an already process file', async () => {
-        const { projectId } = await projectService.processMilestoneFile(1);
+        const { projectId } = await projectService.processMilestoneFile(1, {
+          ownerId: 2
+        });
         expect(projectId).toEqual(1);
       });
       it('Should not create milestones and activities to a non-existent project, and throw an error', () => {
-        expect(projectService.processMilestoneFile(2)).rejects.toThrow(
-          COAError
-        );
+        expect(
+          projectService.processMilestoneFile(2, { ownerId: 2 })
+        ).rejects.toThrow(COAError);
       });
       it('Should not create milestones and activities to an existent project with already a file that has been processed, and throw an error', () => {
-        expect(projectService.processMilestoneFile(10)).rejects.toThrow(
-          COAError
-        );
+        expect(
+          projectService.processMilestoneFile(10, { ownerId: 2 })
+        ).rejects.toThrow(COAError);
       });
       it('Should not create milestones and activities to an existent project with status different than draft', () => {
-        expect(projectService.processMilestoneFile(3)).rejects.toThrow(
-          COAError
-        );
+        expect(
+          projectService.processMilestoneFile(3, { ownerId: 2 })
+        ).rejects.toThrow(COAError);
+      });
+      it('Should not create milestones and activities to an existent project whenever user is not the owner of it', () => {
+        expect(
+          projectService.processMilestoneFile(3, { ownerId: 5 })
+        ).rejects.toThrow(COAError);
       });
     });
 

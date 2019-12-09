@@ -46,6 +46,10 @@ module.exports = {
     if (!savedProject) throw new COAError(errors.CantSaveProject);
     return savedProject.id;
   },
+  validateOwnership(realOwnerId, userId) {
+    if (realOwnerId !== userId)
+      throw new COAError(errors.UserIsNotOwnerOfProject);
+  },
   async createProjectThumbnail({
     projectName,
     countryOfImpact,
@@ -62,8 +66,7 @@ module.exports = {
       ownerId,
       file
     );
-    const user = await validateExistence(this.userDao, ownerId, 'user');
-    // TODO ROLE VALIDATION
+    await validateExistence(this.userDao, ownerId, 'user');
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
@@ -99,7 +102,7 @@ module.exports = {
       projectId,
       'project'
     );
-
+    this.validateOwnership(project.ownerId, ownerId);
     if (file) {
       validateMtype(thumbnailType)(file);
       validatePhotoSize(file);
@@ -144,9 +147,14 @@ module.exports = {
   ) {
     validateParams(projectMission, theProblem, file, ownerId, projectId);
     await validateExistence(this.userDao, ownerId, 'user');
-    await validateExistence(this.projectDao, projectId, 'project');
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
     validateMtype(coverPhotoType)(file);
     validatePhotoSize(file);
+    this.validateOwnership(project.ownerId, ownerId);
 
     const filePath = await files.saveFile(coverPhotoType, file);
 
@@ -167,6 +175,7 @@ module.exports = {
 
     await validateExistence(this.userDao, ownerId);
     const project = await validateExistence(this.projectDao, projectId);
+    this.validateOwnership(project.ownerId, ownerId);
     if (file) {
       validateMtype(coverPhotoType)(file);
       validatePhotoSize(file);
@@ -198,7 +207,12 @@ module.exports = {
     validateParams(projectId, projectProposal, ownerId);
 
     await validateExistence(this.userDao, ownerId, 'user');
-    await validateExistence(this.projectDao, projectId, 'project');
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
+    this.validateOwnership(project.ownerId, ownerId);
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -209,8 +223,13 @@ module.exports = {
 
   async updateProjectProposal(projectId, { projectProposal, ownerId }) {
     validateParams(projectProposal, ownerId, projectId);
-    await validateExistence(this.projectDao, projectId, 'project');
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
     await validateExistence(this.userDao, ownerId, 'user');
+    this.validateOwnership(project.ownerId, ownerId);
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -270,9 +289,8 @@ module.exports = {
     };
   },
 
-  async uploadMilestoneFile(projectId, file) {
-    //FIXME ADD OWNER VALIDATION
-    validateParams(projectId, file);
+  async uploadMilestoneFile(projectId, { file, ownerId }) {
+    validateParams(projectId, file, ownerId);
     const project = await validateExistence(
       this.projectDao,
       projectId,
@@ -280,6 +298,8 @@ module.exports = {
     );
     if (project.milestonePath)
       throw new COAError(errors.MilestoneFileHasBeenAlreadyUploaded);
+
+    this.validateOwnership(project.ownerId, ownerId);
 
     validateMtype(milestonesType)(file);
 
@@ -290,7 +310,8 @@ module.exports = {
     };
   },
 
-  async processMilestoneFile(projectId) {
+  async processMilestoneFile(projectId, { ownerId }) {
+    validateParams(projectId, ownerId);
     const project = await validateExistence(
       this.projectDao,
       projectId,
@@ -298,6 +319,7 @@ module.exports = {
     );
     if (project.status !== projectStatusType.DRAFT)
       throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
+    this.validateOwnership(project.ownerId, ownerId);
     const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId
@@ -311,15 +333,15 @@ module.exports = {
     return this.milestoneDao.getMilestoneByProjectId(projectId);
   },
 
-  async publishProject(projectId) {
-    //FIXME ADD OWNER VALIDATION
-    validateParams(projectId);
-    const { status } = await validateExistence(
+  async publishProject(projectId, { ownerId }) {
+    validateParams(projectId, ownerId);
+    const project = await validateExistence(
       this.projectDao,
       projectId,
       'project'
     );
-    if (status !== projectStatusType.DRAFT) {
+    this.validateOwnership(project.ownerId, ownerId);
+    if (project.status !== projectStatusType.DRAFT) {
       throw new COAError(errors.ProjectIsNotPublishable);
     }
     return {

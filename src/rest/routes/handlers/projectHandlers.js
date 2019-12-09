@@ -200,11 +200,12 @@ module.exports = {
   uploadMilestoneFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { file } = request.raw.files;
+    const ownerId = request.user.id;
     try {
-      const response = await projectService.uploadMilestoneFile(
-        projectId,
-        file
-      );
+      const response = await projectService.uploadMilestoneFile(projectId, {
+        file,
+        ownerId
+      });
       reply.send(response);
     } catch (error) {
       reply.status(error.statusCode).send(error.message);
@@ -212,8 +213,12 @@ module.exports = {
   },
   processMilestonesFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
+    const ownerId = request.user.id;
     try {
-      const response = await projectService.processMilestoneFile(projectId);
+      const response = await projectService.processMilestoneFile(
+        projectId,
+        ownerId
+      );
       reply.send(response);
     } catch (error) {
       reply.status(error.statusCode).send(error.message);
@@ -231,8 +236,9 @@ module.exports = {
   },
   publishProject: fastify => async (request, reply) => {
     const { projectId } = request.params;
+    const ownerId = request.user.id;
     try {
-      const response = await projectService.publishProject(projectId);
+      const response = await projectService.publishProject(projectId, ownerId);
       reply.send(response);
     } catch (error) {
       reply.status(error.statusCode).send(error.message);

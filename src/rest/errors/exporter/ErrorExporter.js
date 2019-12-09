@@ -58,5 +58,9 @@ module.exports = {
   CantFindModelWithId: (model, id) => ({
     message: `Cant find ${model} with id ${id}`,
     statusCode: 400
-  })
+  }),
+  UserIsNotOwnerOfProject: {
+    message: 'The user is not the project´s owner',
+    statusCode: 403
+  }
 };
