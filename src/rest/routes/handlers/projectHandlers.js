@@ -41,9 +41,9 @@ module.exports = {
       projectName,
       countryOfImpact,
       timeframe,
-      goalAmount,
-      ownerId
+      goalAmount
     } = request.raw.body;
+    const ownerId = request.user.id;
     const { file } = request.raw.files;
     try {
       const response = await projectService.updateProjectThumbnail(projectId, {
@@ -69,9 +69,10 @@ module.exports = {
     }
   },
   createProjectDetail: fastify => async (request, reply) => {
-    const { projectMission, theProblem, ownerId } = request.raw.body;
+    const { projectMission, theProblem } = request.raw.body;
     const { file } = request.raw.files;
     const { projectId } = request.params;
+    const ownerId = request.user.id;
 
     try {
       const response = await projectService.createProjectDetail(projectId, {
@@ -87,7 +88,8 @@ module.exports = {
   },
   updateProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const { projectMission, theProblem, ownerId } = request.raw.body;
+    const { projectMission, theProblem } = request.raw.body;
+    const ownerId = request.user.id;
     const { file } = request.raw.files;
     try {
       const response = await projectService.updateProjectDetail(projectId, {
@@ -112,7 +114,8 @@ module.exports = {
   },
   createProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
-    const { projectProposal, ownerId } = request.raw.body;
+    const ownerId = request.user.id;
+    const { projectProposal } = request.raw.body;
     try {
       const response = await projectService.createProjectProposal(projectId, {
         projectProposal,
@@ -124,8 +127,9 @@ module.exports = {
     }
   },
   updateProjectProposal: fastify => async (request, reply) => {
+    const ownerId = request.user.id;
     const { projectId } = request.params;
-    const { projectProposal, ownerId } = request.raw.body;
+    const { projectProposal } = request.raw.body;
     try {
       const response = await projectService.updateProjectProposal(projectId, {
         projectProposal,
