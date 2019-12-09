@@ -733,11 +733,6 @@ describe('Project Service Test', () => {
           COAError
         );
       });
-      it('Should not create milestones and activities to an existent project with already a file that has been processed, and throw an error', () => {
-        expect(projectService.processMilestoneFile(10)).rejects.toThrow(
-          COAError
-        );
-      });
       it('Should not create milestones and activities to an existent project with status different than draft', () => {
         expect(projectService.processMilestoneFile(3)).rejects.toThrow(
           COAError

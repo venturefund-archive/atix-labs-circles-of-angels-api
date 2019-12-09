@@ -251,7 +251,8 @@ module.exports = {
 
   async editTaskOfMilestone(milestoneId, taskId, taskParams) {}, // TODO
 
-  async deleteTaskOfMilestone(milestoneId, taskId) { // TODO shouldnt this belong to milestoneService?
+  async deleteTaskOfMilestone(milestoneId, taskId) {
+    // TODO shouldnt this belong to milestoneService?
     // FIXME ADD OWNER VALIDATION
     validateParams(milestoneId, taskId);
     const { tasks } = await validateExistence(
@@ -277,7 +278,8 @@ module.exports = {
       projectId,
       'project'
     );
-    if (project.milestonePath) throw new COAError();
+    if (project.milestonePath)
+      throw new COAError('Milestone file has been already uploaded');
 
     validateMtype(milestonesType)(file);
 
@@ -294,8 +296,10 @@ module.exports = {
       projectId,
       'project'
     );
-    if (project.milestones || project.status !== projectStatusType.DRAFT)
-      throw new COAError();
+    if (project.status !== projectStatusType.DRAFT)
+      throw new COAError(
+        'Cant process milestone file when project has been published'
+      );
     const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId
