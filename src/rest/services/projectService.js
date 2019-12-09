@@ -260,7 +260,7 @@ module.exports = {
       milestoneId,
       'milestone'
     );
-    await validateExistence(this.taskDao, taskId, 'task');
+    await validateExistence(this.activityDao, taskId, 'task');
 
     return {
       milestoneId: this.updateMilestone(

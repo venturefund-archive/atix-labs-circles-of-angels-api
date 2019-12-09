@@ -1,15 +1,7 @@
-const errors = require('../rest/errors/exporter/ErrorExporter');
 const COAError = require('../rest/errors/COAError');
 const files = require('../rest/util/files');
 
-const userDao = {
-  findById: id => {
-    if (id === 2) {
-      return { id: 2 };
-    }
-    return undefined;
-  }
-};
+const { injectMocks } = require('../rest/util/injection');
 
 const projectService = require('../rest/services/projectService');
 
@@ -171,10 +163,11 @@ describe('Project Service Test', () => {
       ).resolves.not.toThrow(COAError);
       expect(projectUpdated).toEqual(1);
     });
+  });
 
   describe('Update milestone', () => {
     beforeAll(() => {
-      const milestoneDao = {
+      const newMilestoneDao = {
         updateMilestone: (fields, milestoneId) => {
           if (milestoneId === 1) {
             return { id: 1 };
@@ -182,7 +175,7 @@ describe('Project Service Test', () => {
           return undefined;
         }
       };
-      injectMocks(projectService, { milestoneDao });
+      injectMocks(projectService, { milestoneDao: newMilestoneDao });
     });
     it('When an update is done, it should return the id of the updated milestone', async () => {
       const projectUpdated = await projectService.updateMilestone(1, {
@@ -205,6 +198,7 @@ describe('Project Service Test', () => {
         })
       ).rejects.toThrow(COAError);
     });
+  });
 
   describe('Save project', () => {
     beforeAll(() => {
@@ -730,6 +724,11 @@ describe('Project Service Test', () => {
       });
       it('Should not create milestones and activities to a non-existent project, and throw an error', () => {
         expect(projectService.processMilestoneFile(2)).rejects.toThrow(
+          COAError
+        );
+      });
+      it('Should not create milestones and activities to an existent project with already a file that has been processed, and throw an error', () => {
+        expect(projectService.processMilestoneFile(10)).rejects.toThrow(
           COAError
         );
       });
