@@ -10,7 +10,7 @@ const validateExistence = async (dao, id, model) => {
     return new Promise(resolve => resolve(object));
   }
   return new Promise((resolve, reject) =>
-    reject(new COAError(`Cant find ${model} with id ${id}`))
+    reject(new COAError(errors.CantFindModelWithId(model, id)))
   );
 };
 
