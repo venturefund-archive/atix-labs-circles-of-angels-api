@@ -38,7 +38,7 @@ module.exports = {
       // logger.info('[User Service] :: User found in database:', user);
 
       // if an user was found with that email, verify with encrypted pwd
-      const match = await bcrypt.compare(pwd, user.pwd);
+      const match = await bcrypt.compare(pwd, user.password);
 
       if (match) {
         // logger.info('[User Service] :: User authenticated:', user.email);

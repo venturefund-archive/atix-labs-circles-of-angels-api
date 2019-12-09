@@ -2,7 +2,14 @@ const errors = require('../rest/errors/exporter/ErrorExporter');
 const COAError = require('../rest/errors/COAError');
 const files = require('../rest/util/files');
 
-const { injectMocks } = require('../rest/util/injection');
+const userDao = {
+  findById: id => {
+    if (id === 2) {
+      return { id: 2 };
+    }
+    return undefined;
+  }
+};
 
 const projectService = require('../rest/services/projectService');
 
@@ -164,7 +171,6 @@ describe('Project Service Test', () => {
       ).resolves.not.toThrow(COAError);
       expect(projectUpdated).toEqual(1);
     });
-  });
 
   describe('Update milestone', () => {
     beforeAll(() => {
@@ -199,7 +205,6 @@ describe('Project Service Test', () => {
         })
       ).rejects.toThrow(COAError);
     });
-  });
 
   describe('Save project', () => {
     beforeAll(() => {
