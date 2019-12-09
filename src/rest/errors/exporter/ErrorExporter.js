@@ -62,5 +62,8 @@ module.exports = {
   UserIsNotOwnerOfProject: {
     message: 'The user is not the project´s owner',
     statusCode: 403
+  },
+  MilestoneDoesNotBelongToProject: {
+    message: 'Milestone does not belong to project'
   }
 };

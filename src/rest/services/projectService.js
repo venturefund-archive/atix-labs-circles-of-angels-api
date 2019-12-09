@@ -249,7 +249,13 @@ module.exports = {
   },
 
   filterMilestones(milestones, milestoneIdToFilter) {
-    return milestones.filter(({ id }) => id !== milestoneIdToFilter);
+    const filteredMilestones = milestones.filter(
+      ({ id }) => id !== milestoneIdToFilter
+    );
+    if (filteredMilestones.length === milestones.length) {
+      throw new COAError(errors.MilestoneDoesNotBelongToProject);
+    }
+    return filteredMilestones;
   },
 
   async deleteMilestoneOfProject(projectId, milestoneId) {

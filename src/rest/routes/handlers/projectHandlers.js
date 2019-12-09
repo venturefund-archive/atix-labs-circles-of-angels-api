@@ -44,7 +44,7 @@ module.exports = {
       goalAmount
     } = request.raw.body;
     const ownerId = request.user.id;
-    const { file } = request.raw.files;
+    const file = request.raw.files ? request.raw.files.file : undefined;
     try {
       const response = await projectService.updateProjectThumbnail(projectId, {
         projectName,
@@ -90,7 +90,7 @@ module.exports = {
     const { projectId } = request.params;
     const { projectMission, theProblem } = request.raw.body;
     const ownerId = request.user.id;
-    const { file } = request.raw.files;
+    const file = request.raw.files.file ? request.raw.files.file : undefined;
     try {
       const response = await projectService.updateProjectDetail(projectId, {
         projectMission,
