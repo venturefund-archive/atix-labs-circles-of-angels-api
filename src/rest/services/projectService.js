@@ -29,7 +29,7 @@ module.exports = {
       projectId
     );
     if (!updatedProject)
-      throw new COAError(`Cant update project with id ${projectId}`);
+      throw new COAError(errors.CantUpdateProject(projectId));
     return updatedProject.id;
   },
   async updateMilestone(milestoneId, fields) {
@@ -38,7 +38,7 @@ module.exports = {
       milestoneId
     );
     if (!updatedMilestone)
-      throw new COAError(`Cant update milestone with id ${milestoneId}`);
+      throw new COAError(errors.CantUpdateMilestone(milestoneId));
     return updatedMilestone.id;
   },
   async saveProject(project) {
@@ -279,7 +279,7 @@ module.exports = {
       'project'
     );
     if (project.milestonePath)
-      throw new COAError('Milestone file has been already uploaded');
+      throw new COAError(errors.MilestoneFileHasBeenAlreadyUploaded);
 
     validateMtype(milestonesType)(file);
 
@@ -297,9 +297,7 @@ module.exports = {
       'project'
     );
     if (project.status !== projectStatusType.DRAFT)
-      throw new COAError(
-        'Cant process milestone file when project has been published'
-      );
+      throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
     const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId

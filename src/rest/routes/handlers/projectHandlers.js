@@ -32,7 +32,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   updateProjectThumbnail: fastify => async (request, reply) => {
@@ -56,7 +56,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   getProjectThumbnail: fastify => async (request, reply) => {
@@ -65,7 +65,7 @@ module.exports = {
       const response = await projectService.getProjectThumbnail(projectId);
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   createProjectDetail: fastify => async (request, reply) => {
@@ -82,7 +82,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   updateProjectDetail: fastify => async (request, reply) => {
@@ -98,7 +98,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   getProjectDetail: fastify => async (request, reply) => {
@@ -107,7 +107,7 @@ module.exports = {
       const response = await projectService.getProjectDetail(projectId);
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   createProjectProposal: fastify => async (request, reply) => {
@@ -120,7 +120,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   updateProjectProposal: fastify => async (request, reply) => {
@@ -133,7 +133,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   getProjectProposal: fastify => async (request, reply) => {
@@ -142,7 +142,7 @@ module.exports = {
       const response = await projectService.getProjectProposal(projectId);
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   deleteMilestoneOfProject: fastify => async (request, reply) => {
@@ -154,7 +154,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(200).send(error);
+      reply.status(200).send(error.message);
     }
   },
   editTaskOfMilestone: fastify => async (request, reply) => {
@@ -166,7 +166,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   deleteTaskOfMilestone: fastify => async (request, reply) => {
@@ -178,7 +178,7 @@ module.exports = {
       });
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   addTaskOnMilestone: fastify => async (request, reply) => {
@@ -203,7 +203,7 @@ module.exports = {
       );
       reply.send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   processMilestonesFile: fastify => async (request, reply) => {
@@ -212,7 +212,7 @@ module.exports = {
       const response = await projectService.processMilestoneFile(projectId);
       reply.send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   getProjectMilestones: fastify => async (request, reply) => {
@@ -222,7 +222,7 @@ module.exports = {
       console.log('response', response);
       reply.status(200).send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
   publishProject: fastify => async (request, reply) => {
@@ -231,7 +231,7 @@ module.exports = {
       const response = await projectService.publishProject(projectId);
       reply.send(response);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
 
@@ -240,7 +240,7 @@ module.exports = {
       const projects = await projectService.getProjects();
       reply.status(200).send(projects);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
 
@@ -251,7 +251,7 @@ module.exports = {
       });
       reply.status(200).send(projects);
     } catch (error) {
-      reply.status(500).send(error);
+      reply.status(error.statusCode).send(error.message);
     }
   },
 
