@@ -10,13 +10,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
 const { frontendUrl, support } = require('config');
-
-// TODO : replace with a logger;
-const logger = {
-  log: () => {},
-  error: () => {},
-  info: () => {}
-};
+const logger = require('../logger');
 
 module.exports = {
   async startPassRecoveryProcess(email) {

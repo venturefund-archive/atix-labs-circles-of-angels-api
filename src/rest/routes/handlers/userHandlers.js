@@ -7,9 +7,10 @@
  */
 
 const basePath = '/user';
-const apiHelper = require('../../services/helper');
 
 const userService = require('../../services/userService');
+const passwordRecoveryService = require('../../services/passRecoveryService');
+const userProjectService = require('../../services/userProjectService');
 
 module.exports = {
   getUser: fastify => async (request, reply) => {
@@ -64,7 +65,7 @@ module.exports = {
       });
     }
   },
-  
+
   getAllRoles: fastify => async (request, reply) => {
     try {
       fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
@@ -107,7 +108,7 @@ module.exports = {
             expires: expirationDate
             // secure: true
           })
-          .redirect('/explore-projects')
+          .redirect('/explore-projects');
       }
     } catch (err) {
       reply
@@ -168,10 +169,9 @@ module.exports = {
 
   recoverPassword: fastify => async (request, reply) => {
     try {
-      const { passRecoveryService } = apiHelper.helper.services;
       fastify.log.info('[User Routes] :: Starting pass recovery proccess');
       const { email } = request.body;
-      const response = await passRecoveryService.startPassRecoveryProcess(
+      const response = await passwordRecoveryService.startPassRecoveryProcess(
         email
       );
       if (response.error) {
@@ -197,7 +197,6 @@ module.exports = {
 
   updatePassword: fastify => async (request, reply) => {
     try {
-      const { passRecoveryService } = apiHelper.helper.services;
       fastify.log.info('[User Routes] :: Updating password');
       const { token, password } = request.body;
       const response = await passRecoveryService.updatePassword(
@@ -221,7 +220,6 @@ module.exports = {
   },
 
   getUserProjects: fastify => async (request, reply) => {
-    const { userProjectService, projectService } = apiHelper.helper.services;
     const { userId } = request.params;
     fastify.log.info('[User Routes] :: getting list of oracles');
     try {

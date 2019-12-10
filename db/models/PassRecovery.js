@@ -12,7 +12,7 @@ module.exports = {
   attributes: {
     email: { type: 'string', required: true },
     token: { type: 'string', required: true },
-    createdAt: { type: 'string', autoCreatedAt: true, required: false },
+    createdat: { type: 'string', autoCreatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
 };

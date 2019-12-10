@@ -154,8 +154,7 @@ module.exports = fastify => {
     injectModel(milestoneDao, models.milestone);
     injectModel(projectDao, models.project);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
-    injectModel(projectDao, models.project);
-    injectModel(passRecoveryDao, models.passRecovery);
+    injectModel(passRecoveryDao, models.pass_recovery);
   }
 
   function configureServices() {
