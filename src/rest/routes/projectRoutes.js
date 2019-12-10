@@ -606,13 +606,21 @@ const commonProjectRoutes = {
   }
 };
 
+// TODO
+const projectExperienceRoutes = {
+  addExperience: {},
+  getExperience: {},
+  getExperiencesOfProject: {}
+};
+
 const routes = {
   ...projectThumbnailRoutes,
   ...projectDetailRoutes,
   ...projectProposalRoutes,
   ...projectMilestonesRoute,
   ...createProjectRoute,
-  ...commonProjectRoutes
+  ...commonProjectRoutes,
+  ...projectExperienceRoutes
 };
 
 module.exports = routes;

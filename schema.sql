@@ -101,6 +101,15 @@ CREATE TABLE public.project_experience (
     FOREIGN KEY ("userId") REFERENCES public.user (id)
 );
 
+CREATE TABLE public.project_experience_photo (
+    id SERIAL NOT NULL,
+    path varchar(200) NOT NULL,
+    "projectExperienceId" int NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY ("projectExperienceId") REFECES public.project_experience (id)
+);
+
 CREATE TABLE public.pass_recovery (
     id SERIAL NOT NULL,
     token varchar(80) NOT NULL,
