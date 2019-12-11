@@ -8,7 +8,10 @@ const {
 
 module.exports = {
   validatePhotos(photos) {
-    photos.forEach(photo => validateMtype(photo) && validatePhotoSize(photo));
+    photos.forEach(photo => {
+      validateMtype('experiencePhoto')(photo);
+      validatePhotoSize(photo);
+    });
   },
   async savePhotos(photos) {
     return photos.map(photo => files.saveFile('projectExperiencePhoto', photo));
@@ -35,12 +38,13 @@ module.exports = {
       })
     );
 
-    return ' salio increiblemente todo piola ';
+    return { projectExperienceId: id };
   },
   async getExperiencesOnProject({ projectId }) {
     validateParams(projectId);
     validateExistence(this.projectDao, projectId, 'project');
     return this.projectExperienceDao.getExperiencesByProject({
+      // FIXME this shit returns everything LIKE USER PASSWORD because of the way it is made
       project: projectId
     });
   }
