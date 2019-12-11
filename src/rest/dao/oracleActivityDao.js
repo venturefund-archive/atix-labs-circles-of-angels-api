@@ -37,7 +37,7 @@ const getOracleFromActivity = oracleActivityModel => async activityId => {
 const getActivitiesByOracle = oracleActivityModel => async oracleId => {
   const activities = oracleActivityModel
     .find({ user: oracleId })
-    .populate('activity');
+    .populate('task');
   return activities;
 };
 

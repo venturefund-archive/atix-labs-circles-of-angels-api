@@ -8,118 +8,95 @@
 
 const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
 
-const getMilestoneById = milestoneModel => async milestoneId => {
-  const milestone = await milestoneModel.findOne({ id: milestoneId });
-  return milestone;
+module.exports = {
+  async getMilestoneById(milestoneId) {
+    const milestone = await this.model.findOne({ id: milestoneId });
+    return milestone;
+  },
+  async findById(milestoneId) { //TODO remove getMilestoneById
+    const milestone = await this.model.findOne({ id: milestoneId });
+    return milestone;
+  },
+  async getMilestoneByIdWithProject(milestoneId) {
+    const milestone = await this.model
+      .findOne({ id: milestoneId })
+      .populate('project');
+
+    return milestone;
+  },
+  async getMilestoneByProjectId(project) {
+    return this.model.find({ project }).populate('tasks');
+  },
+  async saveMilestone({ milestone, projectId, budgetStatus }) {
+    const toSave = {
+      ...milestone,
+      project: projectId
+      // status: activityStatus.PENDING,
+      // budgetStatus: budgetStatus || milestoneBudgetStatus.BLOCKED,
+      // blockchainStatus: 1
+    };
+    const createdMilestone = await this.model.create(toSave);
+    return createdMilestone;
+  },
+  async updateMilestone(milestone, milestoneId) {
+    const toUpdate = { ...milestone };
+
+    toUpdate.status = toUpdate.status || activityStatus.PENDING;
+    toUpdate.budgetStatus =
+      toUpdate.budgetStatus || milestoneBudgetStatus.BLOCKED;
+    toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
+
+    const savedMilestone = await this.model
+      .updateOne({ id: milestoneId })
+      .set({ ...toUpdate });
+
+    return savedMilestone;
+  },
+  async getMilestoneActivities(milestoneId) {
+    const milestone = await this.model
+      .findOne({ id: milestoneId })
+      .populate('activities')
+      .populate('status')
+      .populate('budgetStatus');
+
+    return milestone || [];
+  },
+  async deleteMilestone(milestoneId) {
+    const deleted = await this.model.destroy(milestoneId).fetch();
+    return deleted;
+  },
+  async getMilestonesByProject(projectId) {
+    const milestones = await this.model
+      .find({ project: projectId })
+      .sort('id ASC');
+    return milestones;
+  },
+
+  async updateMilestoneStatus(milestoneId, status) {
+    this.model.update(milestoneId).set({ status });
+  },
+  async getAllMilestones() {
+    const milestones = await this.model
+      .find()
+      .populate('status')
+      .populate('project')
+      .populate('budgetStatus')
+      .sort('id DESC');
+
+    return milestones || [];
+  },
+  async updateBudgetStatus(milestoneId, budgetStatusId) {
+    const milestone = await this.model
+      .updateOne({ id: milestoneId })
+      .set({ budgetStatus: budgetStatusId });
+
+    return milestone;
+  },
+
+  async updateBlockchainStatus(milestoneId, blockchainStatus) {
+    this.model.updateOne({ id: milestoneId }).set({ blockchainStatus });
+  },
+  async updateCreationTransactionHash(milestoneId, transactionHash) {
+    this.model.updateOne({ id: milestoneId }).set({ transactionHash });
+  }
 };
-
-const getMilestoneByIdWithProject = milestoneModel => async milestoneId => {
-  const milestone = await milestoneModel
-    .findOne({ id: milestoneId })
-    .populate('project');
-
-  return milestone;
-};
-
-const saveMilestone = milestoneModel => async ({
-  milestone,
-  projectId,
-  budgetStatus
-}) => {
-  const toSave = {
-    ...milestone,
-    project: projectId,
-    status: activityStatus.PENDING,
-    budgetStatus: budgetStatus || milestoneBudgetStatus.BLOCKED,
-    blockchainStatus: 1
-  };
-  const createdMilestone = await milestoneModel.create(toSave);
-  return createdMilestone;
-};
-
-const updateMilestone = milestoneModel => async (milestone, milestoneId) => {
-  const toUpdate = { ...milestone };
-
-  toUpdate.status = toUpdate.status || activityStatus.PENDING;
-  toUpdate.budgetStatus =
-    toUpdate.budgetStatus || milestoneBudgetStatus.BLOCKED;
-  toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
-
-  const savedMilestone = await milestoneModel
-    .updateOne({ id: milestoneId })
-    .set({ ...toUpdate });
-
-  return savedMilestone;
-};
-
-const getMilestoneActivities = milestoneModel => async milestoneId => {
-  const milestone = await milestoneModel
-    .findOne({ id: milestoneId })
-    .populate('activities')
-    .populate('status')
-    .populate('budgetStatus');
-
-  return milestone || [];
-};
-
-const deleteMilestone = milestoneModel => async milestoneId => {
-  const deleted = await milestoneModel.destroy(milestoneId).fetch();
-  return deleted;
-};
-
-const getMilestonesByProject = milestoneModel => async projectId => {
-  const milestones = await milestoneModel
-    .find({ project: projectId })
-    .sort('id ASC');
-  return milestones;
-};
-
-const updateMilestoneStatus = milestoneModel => async (milestoneId, status) =>
-  milestoneModel.update(milestoneId).set({ status });
-
-const getAllMilestones = milestoneModel => async () => {
-  const milestones = await milestoneModel
-    .find()
-    .populate('status')
-    .populate('project')
-    .populate('budgetStatus')
-    .sort('id DESC');
-
-  return milestones || [];
-};
-
-const updateBudgetStatus = milestoneModel => async (
-  milestoneId,
-  budgetStatusId
-) => {
-  const milestone = await milestoneModel
-    .updateOne({ id: milestoneId })
-    .set({ budgetStatus: budgetStatusId });
-
-  return milestone;
-};
-
-const updateBlockchainStatus = milestoneModel => async (
-  milestoneId,
-  blockchainStatus
-) => milestoneModel.updateOne({ id: milestoneId }).set({ blockchainStatus });
-
-const updateCreationTransactionHash = milestoneModel => async (
-  milestoneId,
-  transactionHash
-) => milestoneModel.updateOne({ id: milestoneId }).set({ transactionHash });
-
-module.exports = milestoneModel => ({
-  getMilestoneById: getMilestoneById(milestoneModel),
-  saveMilestone: saveMilestone(milestoneModel),
-  getMilestoneActivities: getMilestoneActivities(milestoneModel),
-  deleteMilestone: deleteMilestone(milestoneModel),
-  updateMilestone: updateMilestone(milestoneModel),
-  getMilestonesByProject: getMilestonesByProject(milestoneModel),
-  getAllMilestones: getAllMilestones(milestoneModel),
-  updateBudgetStatus: updateBudgetStatus(milestoneModel),
-  updateMilestoneStatus: updateMilestoneStatus(milestoneModel),
-  updateBlockchainStatus: updateBlockchainStatus(milestoneModel),
-  updateCreationTransactionHash: updateCreationTransactionHash(milestoneModel),
-  getMilestoneByIdWithProject: getMilestoneByIdWithProject(milestoneModel)
-});

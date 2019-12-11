@@ -17,7 +17,7 @@ const {
 const logger = require('../logger');
 
 const COAError = require('../errors/COAError');
-const errors = require("../errors/exporter/ErrorExporter");
+const errors = require('../errors/exporter/ErrorExporter');
 
 module.exports = {
   async getUserById(id) {
@@ -38,7 +38,7 @@ module.exports = {
       // logger.info('[User Service] :: User found in database:', user);
 
       // if an user was found with that email, verify with encrypted pwd
-      const match = await bcrypt.compare(pwd, user.pwd);
+      const match = await bcrypt.compare(pwd, user.password);
 
       if (match) {
         // logger.info('[User Service] :: User authenticated:', user.email);
@@ -112,7 +112,7 @@ module.exports = {
       logger.error(
         `[User Service] :: User with email ${email} already exists.`
       );
-      throw new COAError(errors.EmailAlreadyInUse)
+      throw new COAError(errors.EmailAlreadyInUse);
     }
 
     // TODO : address, privkey
@@ -120,11 +120,9 @@ module.exports = {
       firstName,
       lastName,
       email: email.toLowerCase(),
-      pwd: hashedPwd,
+      password: hashedPwd,
       role,
       address: '0x0', //account.address,
-      registrationStatus: 1,
-      transferBlockchainStatus: blockchainStatus.SENT,
       privKey: account.privateKey
     };
 
@@ -175,14 +173,14 @@ module.exports = {
    */
   async updateUser(userId, user) {
     logger.info('[User Service] :: Updating User:', user);
-    
+
     // check user existence
     const existingUser = await this.userDao.getUserById(userId);
-    
+
     // TODO : duplicate logic, should we extract it?
     if (!existingUser) {
       logger.error(`[User Service] :: User ID ${userId} does not exist`);
-      throw new COAError(errors.UserNotFound)
+      throw new COAError(errors.UserNotFound);
     }
 
     const { pwd, email } = user;
@@ -200,7 +198,7 @@ module.exports = {
         logger.error(
           `[User Service] :: User with email ${email} already exists.`
         );
-        throw new COAError(errors.EmailAlreadyInUse)
+        throw new COAError(errors.EmailAlreadyInUse);
       }
     }
 

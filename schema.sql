@@ -21,12 +21,14 @@ CREATE TABLE public.user (
     "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
     "privKey" varchar(80) NOT NULL,
+    blocked BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
-    UNIQUE (email)
+    UNIQUE (email),
+    UNIQUE (address)
 );
 
 CREATE TYPE ProjectStatus AS ENUM (
-    'editing',
+    'draft',
     'pending',
     'consensus',
     'ongoing'
@@ -42,13 +44,14 @@ CREATE TABLE public.project (
     location text,
     "problemAddressed" text,
     timeframe text,
-    status ProjectStatus DEFAULT 'editing',
+    status ProjectStatus DEFAULT 'draft',
     "goalAmount" real NOT NULL,
     "faqLink" text,
-    "coverPhotoPath" varchar(100),
-    "cardPhotoPath" varchar(100),
+    "coverPhotoPath" varchar(200),
+    "cardPhotoPath" varchar(200),
+    "milestonePath" varchar(200),
     proposal text,
-    "agreementPath" varchar(100),
+    "agreementPath" varchar(200),
     PRIMARY KEY (id),
     FOREIGN KEY ("ownerId") REFERENCES public.user (id)
 );
@@ -69,7 +72,7 @@ CREATE TABLE public.task (
     "milestoneId" int,
     "createdAt" date DEFAULT NOW(),
     "taskHash" varchar(80) DEFAULT NULL,
-    "oracleAddress" varchar(42) NOT NULL,
+    "oracleAddress" varchar(42) DEFAULT NULL,
     description text, -- TODO : should be NOT NULL
     "reviewCriteria" text,
     category text,
