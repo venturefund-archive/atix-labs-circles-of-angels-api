@@ -642,12 +642,6 @@ const commonProjectRoutes = {
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
         description: 'Retrieves the whole project, including milestones and experiences',
-        summary: '',
-        response: {
-          ...successResponse(projectFullResponse), // TODO change to proper get projects response
-          ...clientErrorResponse(), // TODO add correct params
-          ...serverErrorResponse() // TODO add correct params
-        }
       }
     },
     handler: handlers.getProjectFull
