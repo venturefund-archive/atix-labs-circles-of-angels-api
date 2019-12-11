@@ -325,5 +325,9 @@ module.exports = {
 
   async getProjects() {
     return this.projectDao.findAllByProps();
+  },
+  async getProject(id) {
+    const project = await this.projectDao.findById(id);
+    return project;
   }
 };

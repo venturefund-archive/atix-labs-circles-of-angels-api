@@ -10,6 +10,11 @@ const projectService = require('../../services/projectService');
 const { projectStatusType } = require('../../util/constants');
 
 module.exports = {
+  getProject: fastify => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectService.getProject(projectId);
+    reply.status(200).send(response);
+  },
   createProjectThumbnail: fastify => async (request, reply) => {
     const {
       projectName,
