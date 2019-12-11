@@ -28,12 +28,13 @@ module.exports = {
       model: 'user'
     },
     photos: {
-      collection: 'photo',
-      via: 'projectExperience'
+      collection: 'project_experience_photo',
+      via: 'projectExperience' // TODO VALIDATE THIS
     },
+    // projectId: { type: 'number' },
+    // userId: { type: 'number' },
     comment: { type: 'string', required: true },
     createdAt: { type: 'string', autoCreatedAt: true },
-    updatedAt: { type: 'string', autoUpdatedAt: true },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
 };

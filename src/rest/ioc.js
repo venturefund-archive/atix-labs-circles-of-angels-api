@@ -32,6 +32,7 @@ const milestoneDao = require('./dao/milestoneDao');
 const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
 const passRecoveryDao = require('./dao/passRecoveryDao');
+const projectExperiencePhotoDao = require('./dao/projectExperiencePhotoDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -147,7 +148,12 @@ module.exports = fastify => {
   }
 
   function configureProjectExperienceService(service) {
-    const dependencies = {};
+    const dependencies = {
+      projectExperienceDao,
+      projectExperiencePhotoDao,
+      projectDao,
+      userDao
+    };
     injectDependencies(service, dependencies);
   }
 
@@ -161,6 +167,7 @@ module.exports = fastify => {
     injectModel(passRecoveryDao, models.passRecovery);
     injectModel(activityDao, models.task);
     injectModel(projectExperienceDao, models.project_experience);
+    injectModel(projectExperiencePhotoDao, models.project_experience_photo);
   }
 
   function configureServices() {

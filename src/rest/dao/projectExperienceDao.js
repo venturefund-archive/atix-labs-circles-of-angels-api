@@ -11,7 +11,7 @@ module.exports = {
     return savedProjectExperience;
   },
 
-  async getExperiencesByProject(project) {
+  async getExperiencesByProject({ project }) {
     const projectExperiences = await this.model
       .find({
         project

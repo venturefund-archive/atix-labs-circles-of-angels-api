@@ -40,7 +40,8 @@ const xslValidator = file => {
 const mtypesValidator = {
   coverPhoto: imgValidator,
   thumbnail: imgValidator,
-  milestones: xslValidator
+  milestones: xslValidator,
+  experiencePhoto: imgValidator
 };
 
 const validateMtype = type => file => mtypesValidator[type](file);

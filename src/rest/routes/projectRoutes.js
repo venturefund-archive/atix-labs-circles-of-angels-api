@@ -58,6 +58,9 @@ const projectDetailProperties = {
 const projectProposalProperties = {
   proposal: { type: 'string' }
 };
+const experienceProperties = {
+  comment: { type: 'string' }
+};
 const taskProperties = {
   // TODO
   milestoneId: { type: 'integer' }
@@ -134,6 +137,14 @@ const projectsResponse = {
     }
   },
   description: 'Returns all projects'
+};
+
+const experienceResponse = {
+  type: 'object',
+  properties: {
+    comment: { type: 'string' },
+    photos: { type: 'array', items: { type: 'object' } }
+  }
 };
 
 const projectThumbnailRoutes = {
@@ -606,11 +617,50 @@ const commonProjectRoutes = {
   }
 };
 
-// TODO
 const projectExperienceRoutes = {
-  addExperience: {},
-  getExperience: {},
-  getExperiencesOfProject: {}
+  addExperience: {
+    method: 'post',
+    path: `${basePath}/:projectId/experiences`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Creates new project and adds project proposal to it.',
+        summary: 'Create new project and project proposal',
+        params: projectIdParam,
+        raw: {
+          body: {
+            type: 'object',
+            properties: experienceProperties
+          },
+          files: { type: 'array', items: { type: 'object' } }
+        },
+        response: {
+          ...successResponse(successWithProjectIdResponse), // TODO
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.addExperienceToProject
+  },
+  getExperiencesOfProject: {
+    method: 'get',
+    path: `${basePath}/:projectId/experiences`,
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Gets all experiences of project.',
+        summary: 'Gets all experiences of project.',
+        params: projectIdParam,
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getExperiencesOfProject
+  }
 };
 
 const routes = {

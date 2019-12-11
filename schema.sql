@@ -92,8 +92,8 @@ CREATE TABLE public.transaction (
 
 CREATE TABLE public.project_experience (
     id SERIAL NOT NULL,
-    "projectId" int NOT NULL,
-    "userId" int NOT NULL,
+    "projectId" int,
+    "userId" int,
     comment text NOT NULL,
     "createdAt" timestamp with time zone NOT NULL,
     PRIMARY KEY (id),
@@ -107,7 +107,7 @@ CREATE TABLE public.project_experience_photo (
     "projectExperienceId" int NOT NULL,
     "createdAt" timestamp with time zone NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY ("projectExperienceId") REFECES public.project_experience (id)
+    FOREIGN KEY ("projectExperienceId") REFERENCES public.project_experience (id)
 );
 
 CREATE TABLE public.pass_recovery (
