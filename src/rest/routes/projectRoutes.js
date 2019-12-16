@@ -618,12 +618,19 @@ const commonProjectRoutes = {
   getProject: {
     method: 'get',
     path: '/project/:projectId',
-    handler: handlers.getProject
+    handler: handlers.getProject,
+    options: {
+      beforeHandler: []
+    }
   },
   getProjectFull: {
     method: 'get',
     path: '/project/:projectId/full',
-    handler: handlers.getProjectFull
+    handler: handlers.getProjectFull,
+    options: {
+      beforeHandler: []
+    }
+
   }
 };
 
