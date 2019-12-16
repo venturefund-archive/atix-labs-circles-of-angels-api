@@ -357,6 +357,17 @@ module.exports = {
     };
   },
 
+  async getProject(id) {
+    const project = await this.projectDao.findById(id);
+    return project;
+  },
+
+  async getProjectFull(id) {
+    const project = await this.getProject(id);
+    project.milestones = await this.milestoneService.getMilestonesByProject(id);
+    return project;
+  },
+
   async getProjects() {
     return this.projectDao.findAllByProps();
   }

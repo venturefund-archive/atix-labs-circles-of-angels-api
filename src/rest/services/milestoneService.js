@@ -281,39 +281,43 @@ module.exports = {
    * @returns milestone with activities
    */
   async getMilestoneActivities(milestone) {
-    const milestoneActivities = await this.milestoneDao.getMilestoneActivities(
+    const milestoneTasks = await this.milestoneDao.getMilestoneActivities(
       milestone.id
     );
-    const activities = [];
+    return milestoneTasks;
 
-    await forEachPromise(
-      milestoneActivities.activities,
-      (activity, context) =>
-        new Promise(resolve => {
-          process.nextTick(async () => {
-            const oracle = await this.activityService.getOracleFromActivity(
-              activity.id
-            );
-            const activityWithType = {
-              ...activity,
-              type: 'Activity',
-              quarter: milestone.quarter,
-              oracle: oracle ? oracle.user : {}
-            };
+    // FIXME : keeping this because I can't understand what it's trying to achieve.
+    //         but I may need it in the future.
+    // const activities = [];
 
-            context.push(activityWithType);
-            resolve();
-          });
-        }),
-      activities
-    );
+    // await forEachPromise(
+    //   milestoneActivities.activities,
+    //   (activity, context) =>
+    //     new Promise(resolve => {
+    //       process.nextTick(async () => {
+    //         const oracle = await this.activityService.getOracleFromActivity(
+    //           activity.id
+    //         );
+    //         const activityWithType = {
+    //           ...activity,
+    //           type: 'Activity',
+    //           quarter: milestone.quarter,
+    //           oracle: oracle ? oracle.user : {}
+    //         };
 
-    const activitiesWithType = {
-      ...milestoneActivities,
-      activities
-    };
+    //         context.push(activityWithType);
+    //         resolve();
+    //       });
+    //     }),
+    //   activities
+    // );
 
-    return activitiesWithType;
+    // const activitiesWithType = {
+    //   ...milestoneActivities,
+    //   activities
+    // };
+
+    // return activitiesWithType;
   },
 
   /**
