@@ -6,7 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { projectStatus } = require('../util/constants');
+const { projectStatusType } = require('../util/constants');
 const files = require('../util/files');
 const {
   validateExistence,
@@ -29,7 +29,7 @@ module.exports = {
       projectId
     );
     if (!updatedProject)
-      throw new COAError(`Cant update project with id ${projectId}`);
+      throw new COAError(errors.CantUpdateProject(projectId));
     return updatedProject.id;
   },
   async updateMilestone(milestoneId, fields) {
@@ -38,13 +38,17 @@ module.exports = {
       milestoneId
     );
     if (!updatedMilestone)
-      throw new COAError(`Cant update milestone with id ${milestoneId}`);
+      throw new COAError(errors.CantUpdateMilestone(milestoneId));
     return updatedMilestone.id;
   },
   async saveProject(project) {
     const savedProject = await this.projectDao.saveProject(project);
     if (!savedProject) throw new COAError(errors.CantSaveProject);
     return savedProject.id;
+  },
+  validateOwnership(realOwnerId, userId) {
+    if (realOwnerId !== userId)
+      throw new COAError(errors.UserIsNotOwnerOfProject);
   },
   async createProjectThumbnail({
     projectName,
@@ -62,8 +66,7 @@ module.exports = {
       ownerId,
       file
     );
-    const user = await validateExistence(this.userDao, ownerId, 'user');
-    // TODO ROLE VALIDATION
+    await validateExistence(this.userDao, ownerId, 'user');
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
@@ -99,7 +102,7 @@ module.exports = {
       projectId,
       'project'
     );
-
+    this.validateOwnership(project.ownerId, ownerId);
     if (file) {
       validateMtype(thumbnailType)(file);
       validatePhotoSize(file);
@@ -144,9 +147,14 @@ module.exports = {
   ) {
     validateParams(projectMission, theProblem, file, ownerId, projectId);
     await validateExistence(this.userDao, ownerId, 'user');
-    await validateExistence(this.projectDao, projectId, 'project');
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
     validateMtype(coverPhotoType)(file);
     validatePhotoSize(file);
+    this.validateOwnership(project.ownerId, ownerId);
 
     const filePath = await files.saveFile(coverPhotoType, file);
 
@@ -167,6 +175,7 @@ module.exports = {
 
     await validateExistence(this.userDao, ownerId);
     const project = await validateExistence(this.projectDao, projectId);
+    this.validateOwnership(project.ownerId, ownerId);
     if (file) {
       validateMtype(coverPhotoType)(file);
       validatePhotoSize(file);
@@ -198,7 +207,12 @@ module.exports = {
     validateParams(projectId, projectProposal, ownerId);
 
     await validateExistence(this.userDao, ownerId, 'user');
-    await validateExistence(this.projectDao, projectId, 'project');
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
+    this.validateOwnership(project.ownerId, ownerId);
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -209,8 +223,13 @@ module.exports = {
 
   async updateProjectProposal(projectId, { projectProposal, ownerId }) {
     validateParams(projectProposal, ownerId, projectId);
-    await validateExistence(this.projectDao, projectId, 'project');
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
     await validateExistence(this.userDao, ownerId, 'user');
+    this.validateOwnership(project.ownerId, ownerId);
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -229,27 +248,36 @@ module.exports = {
     return { proposal };
   },
 
+  filterMilestones(milestones, milestoneIdToFilter) {
+    const filteredMilestones = milestones.filter(
+      ({ id }) => id !== milestoneIdToFilter
+    );
+    if (filteredMilestones.length === milestones.length) {
+      throw new COAError(errors.MilestoneDoesNotBelongToProject);
+    }
+    return filteredMilestones;
+  },
+
   async deleteMilestoneOfProject(projectId, milestoneId) {
     //FIXME ADD OWNER VALIDATION
     validateParams(projectId, milestoneId);
-    await validateExistence(this.milestoneId, milestoneId, 'milestone');
+    await validateExistence(this.milestoneDao, milestoneId, 'milestone');
     const { milestones } = await validateExistence(
       this.projectDao,
       projectId,
       'project'
     );
-
     return {
-      milestoneId: this.updateProject(
-        projectId,
-        milestones.filter(({ id }) => id !== milestoneId)
-      )
+      projectId: await this.updateProject(projectId, {
+        milestones: this.filterMilestones(milestones, milestoneId)
+      })
     };
   },
 
   async editTaskOfMilestone(milestoneId, taskId, taskParams) {}, // TODO
 
-  async deleteTaskOfMilestone(milestoneId, taskId) {
+  async deleteTaskOfMilestone({ milestoneId, taskId }) {
+    // TODO shouldnt this belong to milestoneService?
     // FIXME ADD OWNER VALIDATION
     validateParams(milestoneId, taskId);
     const { tasks } = await validateExistence(
@@ -257,7 +285,7 @@ module.exports = {
       milestoneId,
       'milestone'
     );
-    await validateExistence(this.taskDao, taskId, 'task');
+    await validateExistence(this.activityDao, taskId, 'task');
 
     return {
       milestoneId: this.updateMilestone(
@@ -267,15 +295,17 @@ module.exports = {
     };
   },
 
-  async uploadMilestoneFile(projectId, file) {
-    //FIXME ADD OWNER VALIDATION
-    validateParams(projectId, file);
+  async uploadMilestoneFile(projectId, { file, ownerId }) {
+    validateParams(projectId, file, ownerId);
     const project = await validateExistence(
       this.projectDao,
       projectId,
       'project'
     );
-    if (project.milestone) throw Error();
+    if (project.milestonePath)
+      throw new COAError(errors.MilestoneFileHasBeenAlreadyUploaded);
+
+    this.validateOwnership(project.ownerId, ownerId);
 
     validateMtype(milestonesType)(file);
 
@@ -286,12 +316,16 @@ module.exports = {
     };
   },
 
-  async processMilestoneFile(projectId) {
+  async processMilestoneFile(projectId, { ownerId }) {
+    validateParams(projectId, ownerId);
     const project = await validateExistence(
       this.projectDao,
       projectId,
       'project'
     );
+    if (project.status !== projectStatusType.DRAFT)
+      throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
+    this.validateOwnership(project.ownerId, ownerId);
     const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId
@@ -305,20 +339,20 @@ module.exports = {
     return this.milestoneDao.getMilestoneByProjectId(projectId);
   },
 
-  async publishProject(projectId) {
-    //FIXME ADD OWNER VALIDATION
-    validateParams(projectId);
-    const { status } = await validateExistence(
+  async publishProject(projectId, { ownerId }) {
+    validateParams(projectId, ownerId);
+    const project = await validateExistence(
       this.projectDao,
       projectId,
       'project'
     );
-    if (status !== projectStatus.DRAFT) {
-      throw COAError(errors.ProjectIsNotPublishable);
+    this.validateOwnership(project.ownerId, ownerId);
+    if (project.status !== projectStatusType.DRAFT) {
+      throw new COAError(errors.ProjectIsNotPublishable);
     }
     return {
       projectId: await this.updateProject(projectId, {
-        status: projectStatus.PENDING_APPROVAL
+        status: projectStatusType.PENDING_APPROVAL
       })
     };
   },

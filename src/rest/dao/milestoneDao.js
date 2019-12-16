@@ -13,6 +13,10 @@ module.exports = {
     const milestone = await this.model.findOne({ id: milestoneId });
     return milestone;
   },
+  async findById(milestoneId) { //TODO remove getMilestoneById
+    const milestone = await this.model.findOne({ id: milestoneId });
+    return milestone;
+  },
   async getMilestoneByIdWithProject(milestoneId) {
     const milestone = await this.model
       .findOne({ id: milestoneId })

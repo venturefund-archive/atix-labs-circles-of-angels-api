@@ -5,25 +5,19 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
+module.exports = {
+  async saveProjectExperience(projectExperience) {
+    const savedProjectExperience = await this.model.create(projectExperience);
+    return savedProjectExperience;
+  },
 
-const saveProjectExperience = projectExperienceModel => async projectExperience => {
-  const savedProjectExperience = await projectExperienceModel.create(
-    projectExperience
-  );
-  return savedProjectExperience;
+  async getExperiencesByProject({ project }) {
+    const projectExperiences = await this.model
+      .find({
+        project
+      })
+      .populate('user')
+      .populate('photos');
+    return projectExperiences;
+  }
 };
-
-const getExperiencesByProject = projectExperienceModel => async project => {
-  const projectExperiences = await projectExperienceModel
-    .find({
-      project
-    })
-    .populate('user')
-    .populate('photos');
-  return projectExperiences;
-};
-
-module.exports = projectExperienceModel => ({
-  saveProjectExperience: saveProjectExperience(projectExperienceModel),
-  getExperiencesByProject: getExperiencesByProject(projectExperienceModel)
-});
