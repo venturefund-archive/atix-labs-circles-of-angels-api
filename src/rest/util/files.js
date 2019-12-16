@@ -16,6 +16,8 @@ exports.getFileFromPath = filepath => {
   return file;
 };
 
+const jpeg = '.jpeg';
+
 const getCoverPhotoPath = () =>
   `${configs.fileServer.filePath}/projects/coverPhotos/`;
 
@@ -24,6 +26,9 @@ const getCardPhotoPath = () =>
 
 const getMilestonesPath = () =>
   `${configs.fileServer.filePath}/projects/milestones/`;
+
+const getProjectExperiencePath = () =>
+  `${configs.fileServer.filePath}/projects/experiencePhotos/`;
 
 const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
   new Promise((resolve, reject) => {
@@ -55,12 +60,17 @@ const fileSaver = {
   thumbnail: {
     save: savePhotoJpgFormat,
     getBasePath: getCardPhotoPath,
-    fileExtension: '.jpeg'
+    fileExtension: jpeg
   },
   coverPhoto: {
     save: savePhotoJpgFormat,
     getBasePath: getCoverPhotoPath,
-    fileExtension: '.jpeg'
+    fileExtension: jpeg
+  },
+  projectExperiencePhoto: {
+    save: savePhotoJpgFormat,
+    getBasePath: getProjectExperiencePath,
+    fileExtension: jpeg
   }
 };
 

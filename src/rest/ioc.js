@@ -15,7 +15,7 @@ const projectService = require('./services/projectService');
 const photoService = require('./services/photoService');
 const fileService = require('./services/fileService');
 const activityService = require('./services/activityService');
-
+const projectExperienceService = require('./services/projectExperienceService');
 const userProjectService = require('./services/userProjectService');
 const transferService = require('./services/transferService');
 const milestoneService = require('./services/milestoneService');
@@ -24,7 +24,7 @@ const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
 const photoDao = require('./dao/photoDao');
 const fileDao = require('./dao/fileDao');
-
+const projectExperienceDao = require('./dao/projectExperienceDao');
 const activityDao = require('./dao/activityDao');
 const userProjectDao = require('./dao/userProjectDao');
 const transferDao = require('./dao/transferDao');
@@ -32,6 +32,7 @@ const milestoneDao = require('./dao/milestoneDao');
 const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
 const passRecoveryDao = require('./dao/passRecoveryDao');
+const projectExperiencePhotoDao = require('./dao/projectExperiencePhotoDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -146,6 +147,16 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureProjectExperienceService(service) {
+    const dependencies = {
+      projectExperienceDao,
+      projectExperiencePhotoDao,
+      projectDao,
+      userDao
+    };
+    injectDependencies(service, dependencies);
+  }
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(photoDao, models.photo);
@@ -155,6 +166,8 @@ module.exports = fastify => {
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
     injectModel(passRecoveryDao, models.passRecovery);
     injectModel(activityDao, models.task);
+    injectModel(projectExperienceDao, models.project_experience);
+    injectModel(projectExperiencePhotoDao, models.project_experience_photo);
   }
 
   function configureServices() {
@@ -168,6 +181,7 @@ module.exports = fastify => {
     configureUserProjectService(userProjectService);
     configureTransferService(transferService);
     configurePasssRecoveryService(passRecoveryService);
+    configureProjectExperienceService(projectExperienceService);
   }
 
   function init({ models }) {

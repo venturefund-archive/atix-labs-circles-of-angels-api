@@ -7,6 +7,8 @@
  */
 
 const projectService = require('../../services/projectService');
+const projectServiceExperience = require('../../services/projectExperienceService');
+
 const { projectStatusType } = require('../../util/constants');
 
 module.exports = {
@@ -228,7 +230,6 @@ module.exports = {
     const { projectId } = request.params;
     try {
       const response = await projectService.getProjectMilestones(projectId);
-      console.log('response', response);
       reply.status(200).send(response);
     } catch (error) {
       reply.status(error.statusCode).send(error.message);
@@ -266,5 +267,35 @@ module.exports = {
   },
 
   // FIXME --> thumbnail?
-  getProjectsPreview: fastify => async (request, reply) => {}
+  getProjectsPreview: fastify => async (request, reply) => {},
+  addExperienceToProject: fastify => async (request, reply) => {
+    try {
+      const userId = request.user.id;
+      const { comment } = request.raw.body;
+      const { files } = request.raw.files;
+      const { projectId } = request.params;
+
+      const response = await projectServiceExperience.addExperience({
+        comment,
+        projectId,
+        userId,
+        photos: files
+      });
+      reply.status(200).send(response);
+    } catch (error) {
+      reply.status(error.statusCode).send(error.message);
+    }
+  },
+  getExperiencesOfProject: fastify => async (request, reply) => {
+    try {
+      const { projectId } = request.params;
+      const response = await projectServiceExperience.getExperiencesOnProject({
+        projectId
+      });
+      reply.status(200).send(response);
+    } catch (error) {
+      console.log('error', error);
+      reply.status(error.statusCode).send(error.message);
+    }
+  }
 };
