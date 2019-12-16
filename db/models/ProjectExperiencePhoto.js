@@ -7,19 +7,14 @@
  */
 
 module.exports = {
-  identity: 'milestone',
+  identity: 'project_experience_photo',
   primaryKey: 'id',
   attributes: {
-    category: { type: 'string', required: true },
-    description: { type: 'string', required: true },
-    project: {
-      columnName: 'projectId',
-      model: 'project'
+    projectExperience: {
+      columnName: 'projectExperienceId',
+      model: 'project_experience'
     },
-    tasks: {
-      collection: 'task',
-      via: 'milestone'
-    },
+    path: { type: 'string' },
     createdAt: { type: 'string', autoCreatedAt: true },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }

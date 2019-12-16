@@ -63,6 +63,35 @@ module.exports = {
     }
   },
 
+  deleteFieldsFromMilestone(milestone) {
+    const newMilestone = milestone;
+    delete newMilestone.impact;
+    delete newMilestone.impactCriterion;
+    delete newMilestone.signsOfSuccess;
+    delete newMilestone.signsOfSuccessCriterion;
+    delete newMilestone.keyPersonnel;
+    delete newMilestone.budget;
+    newMilestone.description = milestone.tasks;
+    delete newMilestone.quarter;
+    delete newMilestone.tasks;
+    newMilestone.category = milestone.category;
+    delete newMilestone.activityList;
+    delete newMilestone.updatedAt;
+    delete newMilestone.transactionHash;
+    delete newMilestone.budgetStatus;
+    delete newMilestone.blockchainStatus;
+    return newMilestone;
+  },
+  deleteFieldsFromActivities(activities) {
+    return activities.map(activity => {
+      activity.reviewCriteria = 'review criteria';
+      activity.description = activity.tasks;
+      // delete activity.tasks;
+      // delete activity.signsOfSuccess;
+      // delete activity.impactCriterion;
+      return activity;
+    });
+  },
   /**
    * Receives an excel file, saves it and creates the Milestones
    * associated to the Project passed by parameter.
@@ -96,16 +125,20 @@ module.exports = {
         new Promise(resolve => {
           process.nextTick(async () => {
             if (!this.isMilestoneEmpty(milestone)) {
-              const isFirstMilestone = isEmpty(
-                await this.milestoneDao.getMilestonesByProject(projectId)
-              );
+              // const isFirstMilestone = isEmpty(
+              //   await this.milestoneDao.getMilestonesByProject(projectId)
+              // );
               const activityList = milestone.activityList.slice(0);
+              const milestoneWithoutFields = this.deleteFieldsFromMilestone(
+                milestone
+              );
+
               const savedMilestone = await this.milestoneDao.saveMilestone({
-                milestone,
-                projectId,
-                budgetStatus: isFirstMilestone
-                  ? milestoneBudgetStatus.CLAIMABLE
-                  : milestoneBudgetStatus.BLOCKED
+                milestone: milestoneWithoutFields,
+                projectId
+                // budgetStatus: isFirstMilestone
+                //   ? milestoneBudgetStatus.CLAIMABLE
+                //   : milestoneBudgetStatus.BLOCKED
               });
               logger.info(
                 '[Milestone Service] :: Milestone created:',
@@ -114,7 +147,7 @@ module.exports = {
               context.push(savedMilestone);
               // create the activities for this milestone
               await this.activityService.createActivities(
-                activityList,
+                this.deleteFieldsFromActivities(activityList),
                 savedMilestone.id
               );
             }
@@ -248,39 +281,43 @@ module.exports = {
    * @returns milestone with activities
    */
   async getMilestoneActivities(milestone) {
-    const milestoneActivities = await this.milestoneDao.getMilestoneActivities(
+    const milestoneTasks = await this.milestoneDao.getMilestoneActivities(
       milestone.id
     );
-    const activities = [];
+    return milestoneTasks;
 
-    await forEachPromise(
-      milestoneActivities.activities,
-      (activity, context) =>
-        new Promise(resolve => {
-          process.nextTick(async () => {
-            const oracle = await this.activityService.getOracleFromActivity(
-              activity.id
-            );
-            const activityWithType = {
-              ...activity,
-              type: 'Activity',
-              quarter: milestone.quarter,
-              oracle: oracle ? oracle.user : {}
-            };
+    // FIXME : keeping this because I can't understand what it's trying to achieve.
+    //         but I may need it in the future.
+    // const activities = [];
 
-            context.push(activityWithType);
-            resolve();
-          });
-        }),
-      activities
-    );
+    // await forEachPromise(
+    //   milestoneActivities.activities,
+    //   (activity, context) =>
+    //     new Promise(resolve => {
+    //       process.nextTick(async () => {
+    //         const oracle = await this.activityService.getOracleFromActivity(
+    //           activity.id
+    //         );
+    //         const activityWithType = {
+    //           ...activity,
+    //           type: 'Activity',
+    //           quarter: milestone.quarter,
+    //           oracle: oracle ? oracle.user : {}
+    //         };
 
-    const activitiesWithType = {
-      ...milestoneActivities,
-      activities
-    };
+    //         context.push(activityWithType);
+    //         resolve();
+    //       });
+    //     }),
+    //   activities
+    // );
 
-    return activitiesWithType;
+    // const activitiesWithType = {
+    //   ...milestoneActivities,
+    //   activities
+    // };
+
+    // return activitiesWithType;
   },
 
   /**
@@ -507,7 +544,9 @@ module.exports = {
       oracleId
     );
     try {
-      const milestones = await this.activityService.getMilestonesAsOracle(oracleId);
+      const milestones = await this.activityService.getMilestonesAsOracle(
+        oracleId
+      );
 
       if (milestones.error) {
         return milestones;
@@ -515,7 +554,9 @@ module.exports = {
 
       const projects = await Promise.all(
         milestones.map(async milestoneId => {
-          const milestone = await this.milestoneDao.getMilestoneById(milestoneId);
+          const milestone = await this.milestoneDao.getMilestoneById(
+            milestoneId
+          );
           return milestone.project;
         })
       );
@@ -533,7 +574,9 @@ module.exports = {
       projectId
     );
     try {
-      const milestones = await this.milestoneDao.getMilestonesByProject(projectId);
+      const milestones = await this.milestoneDao.getMilestonesByProject(
+        projectId
+      );
 
       if (!milestones || milestones == null) {
         return milestones;
