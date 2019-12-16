@@ -10,6 +10,13 @@ CREATE TYPE ROLE AS ENUM (
     'admin'
 );
 
+CREATE TYPE TX_FUNDER_STATUS AS ENUM (
+    'reconciliation',
+    'pending',
+    'cancelled',
+    'verified'
+);
+
 CREATE TABLE public.user (
     id SERIAL NOT NULL,
     "firstName" varchar(80) NOT NULL,
@@ -108,6 +115,22 @@ CREATE TABLE public.project_experience_photo (
     "createdAt" timestamp with time zone NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY ("projectExperienceId") REFERENCES public.project_experience (id)
+);
+
+CREATE TABLE public.fund_transfer (
+    id SERIAL NOT NULL,
+    transferId varchar(80) NOT NULL,
+    destinationAccount varchar(80) NOT NULL,
+    receiptPath text NOT NULL,
+    amount real NOT NULL,
+    currency varchar(10) NOT NULL,
+    senderId int NOT NULL,
+    projectId int NOT NULL,
+    status TX_FUNDER_STATUS NOT NULL,
+    createdAt DATE,
+    PRIMARY KEY (id),
+    FOREIGN KEY ("projectId") REFERENCES public.project (id),
+    FOREIGN KEY ("senderId") REFERENCES public.user (id)
 );
 
 CREATE TABLE public.pass_recovery (

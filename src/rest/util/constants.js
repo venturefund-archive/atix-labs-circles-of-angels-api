@@ -41,6 +41,13 @@ const activityStatus = {
   COMPLETED: 4
 };
 
+const txFunderStatus = {
+  pending: 'pending',
+  reconciliation: 'reconciliation',
+  cancelled: 'cancelled',
+  verified: 'verified'
+};
+
 const userRoles = {
   BO_ADMIN: 'admin',
   ENTREPRENEUR: 'entrepreneur',
@@ -102,6 +109,7 @@ const transactionTypes = {
 
 module.exports = {
   evidenceFileTypes,
+  txFunderStatus,
   transferStatus,
   projectStatus,
   activityStatus,
