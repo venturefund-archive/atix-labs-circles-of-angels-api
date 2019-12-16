@@ -614,6 +614,16 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.getProjects
+  },
+  getProject: {
+    method: 'get',
+    path: '/project/:projectId',
+    handler: handlers.getProject
+  },
+  getProjectFull: {
+    method: 'get',
+    path: '/project/:projectId/full',
+    handler: handlers.getProjectFull
   }
 };
 
