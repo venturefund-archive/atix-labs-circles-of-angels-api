@@ -12,6 +12,17 @@ const projectServiceExperience = require('../../services/projectExperienceServic
 const { projectStatusType } = require('../../util/constants');
 
 module.exports = {
+  getProject: fastify => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectService.getProject(projectId);
+    reply.status(200).send(response);
+  },
+  getProjectFull: fastify => async (request, reply) => {
+    const { projectId } = request.params;
+    const project = await projectService.getProjectFull(projectId);
+    console.log(project);
+    reply.status(200).send(project);
+  },
   createProjectThumbnail: fastify => async (request, reply) => {
     const {
       projectName,

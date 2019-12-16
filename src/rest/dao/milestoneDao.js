@@ -52,13 +52,15 @@ module.exports = {
 
     return savedMilestone;
   },
+
+  // FIXME : unclear name.
   async getMilestoneActivities(milestoneId) {
     const milestone = await this.model
       .findOne({ id: milestoneId })
-      .populate('activities')
-      .populate('status')
-      .populate('budgetStatus');
-
+      .populate('tasks');
+    // .populate('status')
+    // .populate('budgetStatus');
+    console.log(milestone.tasks);
     return milestone || [];
   },
   async deleteMilestone(milestoneId) {

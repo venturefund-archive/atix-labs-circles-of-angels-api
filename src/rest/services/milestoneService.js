@@ -281,39 +281,37 @@ module.exports = {
    * @returns milestone with activities
    */
   async getMilestoneActivities(milestone) {
-    const milestoneActivities = await this.milestoneDao.getMilestoneActivities(
+    const milestoneTasks = await this.milestoneDao.getMilestoneActivities(
       milestone.id
     );
-    const activities = [];
+    return milestoneTasks;
+    // const activities = [];
+    // await forEachPromise(
+    //   milestoneActivities.activities,
+    //   (activity, context) =>
+    //     new Promise(resolve => {
+    //       process.nextTick(async () => {
+    //         const oracle = await this.activityService.getOracleFromActivity(
+    //           activity.id
+    //         );
+    //         const activityWithType = {
+    //           ...activity,
+    //           type: 'Activity',
+    //           quarter: milestone.quarter,
+    //           oracle: oracle ? oracle.user : {}
+    //         };
+    //         context.push(activityWithType);
+    //         resolve();
+    //       });
+    //     }),
+    //   activities
+    // );
+    // const activitiesWithType = {
+    //   ...milestoneActivities,
+    //   activities
+    // };
 
-    await forEachPromise(
-      milestoneActivities.activities,
-      (activity, context) =>
-        new Promise(resolve => {
-          process.nextTick(async () => {
-            const oracle = await this.activityService.getOracleFromActivity(
-              activity.id
-            );
-            const activityWithType = {
-              ...activity,
-              type: 'Activity',
-              quarter: milestone.quarter,
-              oracle: oracle ? oracle.user : {}
-            };
-
-            context.push(activityWithType);
-            resolve();
-          });
-        }),
-      activities
-    );
-
-    const activitiesWithType = {
-      ...milestoneActivities,
-      activities
-    };
-
-    return activitiesWithType;
+    // return activitiesWithType;
   },
 
   /**
@@ -578,14 +576,17 @@ module.exports = {
         return milestones;
       }
 
-      const milestonesWithActivities = await Promise.all(
-        milestones.map(async milestone => {
-          const milestoneWithActivity = await this.getMilestoneActivities(
-            milestone
-          );
-          return milestoneWithActivity;
-        })
-      );
+      // FIXME : I don't like using await inside Array#map.
+      // const pMilestones = milestones.map(async milestone => {
+      //   const tasks = await this.getMilestoneActivities(milestone);
+      //   return { ...milestone, tasks };
+      // });
+
+      const pMilestones = milestones.map(async milestone => {
+        return this.getMilestoneActivities(milestone);
+      });
+
+      const milestonesWithActivities = await Promise.all(pMilestones);
 
       return milestonesWithActivities;
     } catch (error) {

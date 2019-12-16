@@ -114,27 +114,34 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
+const projectProperties = {
+  projectName: { type: 'string' },
+  mission: { type: 'string' },
+  problemAddressed: { type: 'string' },
+  location: { type: 'string' },
+  timeframe: { type: 'string' },
+  proposal: { type: 'string' },
+  faqLink: { type: 'string' },
+  coverPhotoPath: { type: 'string' },
+  cardPhotoPath: { type: 'string' },
+  goalAmount: { type: 'number' },
+  status: { type: 'string' },
+  ownerId: { type: 'number' },
+  createdAt: { type: 'string' },
+  transactionHash: { type: 'string' },
+  id: { type: 'number' }
+};
+
+const projectResponse = {
+  type: 'object',
+  properties: projectProperties
+};
+
 const projectsResponse = {
   type: 'array',
   items: {
     type: 'object',
-    properties: {
-      projectName: { type: 'string' },
-      mission: { type: 'string' },
-      problemAddressed: { type: 'string' },
-      location: { type: 'string' },
-      timeframe: { type: 'string' },
-      proposal: { type: 'string' },
-      faqLink: { type: 'string' },
-      coverPhotoPath: { type: 'string' },
-      cardPhotoPath: { type: 'string' },
-      goalAmount: { type: 'number' },
-      status: { type: 'string' },
-      ownerId: { type: 'number' },
-      createdAt: { type: 'string' },
-      transactionHash: { type: 'string' },
-      id: { type: 'number' }
-    }
+    properties: projectProperties
   },
   description: 'Returns all projects'
 };
@@ -598,14 +605,42 @@ const createProjectRoute = {
 };
 
 const commonProjectRoutes = {
-  getProjects: {
+  getProject: {
     method: 'get',
-    path: `${basePath}/`,
+    path: '/project/:projectId',
     options: {
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Gets all projects.',
-        summary: 'Gets all project',
+        description: 'Retrieves a project detail',
+        summary: 'Retrieves',
+        response: {
+          ...successResponse(projectResponse), // TODO change to proper get projects response
+          ...clientErrorResponse(), // TODO add correct params
+          ...serverErrorResponse() // TODO add correct params
+        }
+      }
+    },
+    handler: handlers.getProject
+  },
+  getProjectFull: {
+    method: 'get',
+    path: '/project/:projectId/full',
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Retrieves the whole project, including milestones and experiences',
+      }
+    },
+    handler: handlers.getProjectFull
+  },
+  getProjects: {
+    method: 'get',
+    path: '/projects',
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Retrieves all the projects',
+        summary: '',
         response: {
           ...successResponse(projectsResponse),
           ...clientErrorResponse(),
