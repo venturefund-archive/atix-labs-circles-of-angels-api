@@ -1,1676 +1,857 @@
-/**
- * AGPL License
- * Circle of Angels aims to democratize social impact financing.
- * It facilitate the investment process by utilizing smart
- * contracts to develop impact milestones agreed
- * upon by funders and the social entrepenuers.
- *
- * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
- */
-
-const { find } = require('lodash');
-const fs = require('fs');
-const configs = require('config');
-const testHelper = require('./testHelper');
-const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
-
-const projectServiceBuilder = require('../rest/core/projectService');
-const { projectStatus, blockchainStatus } = require('../rest/util/constants');
+const COAError = require('../rest/errors/COAError');
+const files = require('../rest/util/files');
+const errors = require('../rest/errors/exporter/ErrorExporter');
 
 const { injectMocks } = require('../rest/util/injection');
 
-const fastify = {
-  log: { info: jest.fn(), error: jest.fn() },
-  eth: {
-    createProject: ethServicesMock.createProject,
-    isTransactionConfirmed: ethServicesMock.isTransactionConfirmed,
-    startProject: ethServicesMock.startProject
-  },
-  configs
+const projectService = require('../rest/services/projectService');
+
+const projectName = 'validProjectName';
+const countryOfImpact = 'Argentina';
+const timeframe = '12';
+const goalAmount = 124123;
+const mission = 'mission';
+const problemAddressed = 'the problem';
+const coverPhotoPath = 'detail.jpeg';
+const proposal = 'proposal';
+const ownerId = 2;
+const file = { name: 'project.jpeg', size: 1234 };
+const milestoneFile = { name: 'project.xlsx', size: 1234 };
+const milestone = { id: 2, tasks: [{ id: 1 }, { id: 2 }, { id: 3 }] };
+
+const pendingProject = {
+  id: 3,
+  projectName,
+  countryOfImpact,
+  timeframe,
+  goalAmount,
+  ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: 'pending',
+  milestones: [milestone],
+  milestonePath: 'milestonePath'
+};
+const draftProjectWithMilestone = {
+  id: 10,
+  projectName,
+  countryOfImpact,
+  timeframe,
+  goalAmount,
+  ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: 'draft',
+  milestones: [milestone],
+  milestonePath: 'milestonePath'
+};
+const draftProject = {
+  id: 1,
+  projectName,
+  countryOfImpact,
+  timeframe,
+  goalAmount,
+  ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: 'draft'
 };
 
-describe('Testing projectService createProject', () => {
-  let projectDao;
-  let photoService;
-  let projectService;
-  let milestoneService;
-  let projectStatusDao;
-  let userDao;
+const userDao = {
+  findById: id => {
+    if (id === 2 || id === 3) {
+      return {
+        id
+      };
+    }
+    return undefined;
+  }
+};
 
+const projectDao = {
+  saveProject: project => {
+    if (project.projectName === 'validProjectName') {
+      return {
+        id: 1
+      };
+    }
+    return undefined;
+  },
+  updateProject: (fields, projectId) => {
+    if (projectId === 1 || projectId === 3) {
+      return {
+        projectName: 'projectUpdateado',
+        ...fields,
+        id: projectId
+      };
+    }
+    return undefined;
+  },
+  findById: id => {
+    if (id === 1) {
+      return draftProject;
+    }
+    if (id === 3) {
+      return pendingProject;
+    }
+    if (id === 10) {
+      return draftProjectWithMilestone;
+    }
+    return undefined;
+  }
+};
+
+const milestoneDao = {
+  findById: id => {
+    if (id === 2) {
+      return milestone;
+    }
+    return undefined;
+  },
+  getMilestoneByProjectId: projectId => {
+    if (projectId === 3) {
+      return [milestone];
+    }
+    return undefined;
+  }
+};
+
+const milestoneService = {
+  createMilestones: (milestonePath, projectId) => {
+    if (projectId === 1) {
+      return [milestone];
+    }
+  }
+};
+
+describe('Project Service Test', () => {
   beforeAll(() => {
-    projectStatusDao = {};
+    files.saveFile = jest.fn();
+  });
 
-    projectDao = {
-      async saveProject(project) {
-        if (!project.mission) {
-          throw Error('error saving project');
+  describe('Update project', () => {
+    beforeAll(() => {
+      injectMocks(projectService, { projectDao });
+    });
+
+    it('Whenever there is no update, an error should be thrown', async () => {
+      expect(
+        projectService.updateProject(3, {
+          field: 'field1',
+          field2: 'field2'
+        })
+      ).rejects.toThrow(errors.CantUpdateProject(3));
+    });
+    it('When an update is done, it should return the id of the updated project', async () => {
+      const projectUpdated = await projectService.updateProject(1, {
+        field: 'field1',
+        field2: 'field2'
+      });
+      expect(
+        projectService.updateProject(1, {
+          field: 'field1',
+          field2: 'field2'
+        })
+      ).resolves.not.toThrow(COAError);
+      expect(projectUpdated).toEqual(1);
+    });
+  });
+
+  describe('Update milestone', () => {
+    beforeAll(() => {
+      const newMilestoneDao = {
+        updateMilestone: (fields, milestoneId) => {
+          if (milestoneId === 1) {
+            return { id: 1 };
+          }
+          return undefined;
         }
-        const toSave = Object.assign({}, project, {
-          id: 11,
-          createdAt: '2019-05-31T03:00:00.000Z',
-          updatedAt: '2019-05-31T03:00:00.000Z',
-          startBlockchainStatus: blockchainStatus.PENDING
+      };
+      injectMocks(projectService, { milestoneDao: newMilestoneDao });
+    });
+    it('When an update is done, it should return the id of the updated milestone', async () => {
+      const projectUpdated = await projectService.updateMilestone(1, {
+        field: 'field1',
+        field2: 'field2'
+      });
+      expect(
+        projectService.updateMilestone(1, {
+          field: 'field1',
+          field2: 'field2'
+        })
+      ).resolves.not.toThrow(COAError);
+      expect(projectUpdated).toEqual(1);
+    });
+    it('Whenever there is no update, an error should be thrown', () => {
+      expect(
+        projectService.updateMilestone(3, {
+          field: 'field1',
+          field2: 'field2'
+        })
+      ).rejects.toThrow(errors.CantUpdateMilestone(3));
+    });
+  });
+
+  describe('Save project', () => {
+    beforeAll(() => {
+      injectMocks(projectService, { projectDao });
+    });
+
+    it('Whenever a project is saved, it should return the id of the project', async () => {
+      const id = await projectService.saveProject({
+        projectName: 'validProjectName'
+      });
+      expect(id).toEqual(1);
+    });
+
+    it('Whenever an error occurs and the project cant be saved, an error should be thrown', () => {
+      expect(
+        projectService.saveProject({ projectName: 'invalidProject' })
+      ).rejects.toThrow(errors.CantSaveProject);
+    });
+  });
+
+  describe('Project thumbnail', () => {
+    beforeAll(() => {
+      injectMocks(projectService, { projectDao, userDao });
+    });
+
+    describe('Create project thumbnail', () => {
+      it('Should create a new project when all the fields are valid', async () => {
+        const { projectId } = await projectService.createProjectThumbnail({
+          projectName,
+          countryOfImpact,
+          timeframe,
+          goalAmount,
+          ownerId,
+          file
         });
-        return toSave;
-      },
+        expect(projectId).toEqual(1);
+      });
 
-      async updateProject(project) {
-        return project;
-      }
-    };
+      it('Should not create a project when some field is missing and throw an error', async () => {
+        expect(
+          projectService.createProjectThumbnail({
+            projectName,
+            countryOfImpact,
+            timeframe,
+            ownerId
+          })
+        ).rejects.toThrow(errors.CreateProjectFieldsNotValid);
+      });
 
-    userDao = {
-      async getUserById(owner) {
-        return {
-          id: owner,
-          username: 'Social Entrepreneur'
-        };
-      }
-    };
+      it('Should not create a project when the fileType is not valid and throw an error', async () => {
+        expect(
+          projectService.createProjectThumbnail({
+            projectName,
+            countryOfImpact,
+            timeframe,
+            goalAmount,
+            ownerId,
+            file: { name: 'invalidFile.json' }
+          })
+        ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+      });
 
-    milestoneService = {
-      async createMilestones() {
-        return [];
-      }
-    };
+      it('Should not create a project when the owner does not exist and throw an error', async () => {
+        expect(
+          projectService.createProjectThumbnail({
+            projectName,
+            countryOfImpact,
+            timeframe,
+            goalAmount,
+            ownerId: 34,
+            file
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+      });
 
-    photoService = {
-      async savePhoto(path) {
-        if (path.includes('cover')) {
-          return {
-            id: 1,
-            path
-          };
-        }
-        return {
-          id: 2,
-          path
-        };
-      }
-    };
-
-    projectService = require('../rest/services/projectService');
-    injectMocks(projectService, {
-      fastify,
-      projectDao,
-      milestoneService,
-      projectStatusDao,
-      userDao,
-      photoService
-    });
-  });
-
-  it.skip('should create and return a new project with status 0 and ownerId from a JSON object', async () => {
-    const ownerId = 2;
-
-    const mockFiles = testHelper.getMockFiles();
-
-    const savedProject = testHelper.buildProject(0, 0, {
-      bcStatus: blockchainStatus.PENDING,
-      status: projectStatus.PENDING_APPROVAL
+      it('Should not create a project when the file is too big and throw an error', async () => {
+        expect(
+          projectService.createProjectThumbnail({
+            projectName,
+            countryOfImpact,
+            timeframe,
+            goalAmount,
+            ownerId: 34,
+            file: { name: 'project.jpeg', size: 123455555 }
+          })
+        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+      });
     });
 
-    const mockProject = JSON.stringify({
-      projectName: savedProject.projectName,
-      mission: savedProject.mission,
-      problemAddressed: savedProject.problemAddressed,
-      creationTransactionHash: fastify.eth.createProject(),
-      location: savedProject.location,
-      timeframe: savedProject.timeframe,
-      goalAmount: savedProject.goalAmount,
-      faqLink: savedProject.faqLink
-    });
-
-    delete savedProject.transactionHash;
-    delete savedProject.ownerName;
-    delete savedProject.ownerEmail;
-    delete savedProject.milestones;
-
-    const response = await projectService.createProject(
-      mockProject,
-      mockFiles.projectProposal,
-      mockFiles.projectCoverPhoto,
-      mockFiles.projectCardPhoto,
-      mockFiles.projectMilestones,
-      mockFiles.projectAgreement,
-      ownerId
-    );
-
-    const expected = {
-      project: savedProject,
-      milestones: []
-    };
-
-    await expect(response).toEqual(expected);
-  });
-
-  it('should throw an error if it fails to save the project', async () => {
-    const mockProject = testHelper.buildProject(0, 0, {});
-    const { ownerId } = mockProject;
-
-    delete mockProject.mission;
-
-    const mockFiles = testHelper.getMockFiles();
-
-    await expect(
-      projectService.createProject(
-        mockProject,
-        mockFiles.projectProposal,
-        mockFiles.projectCoverPhoto,
-        mockFiles.projectCardPhoto,
-        mockFiles.projectMilestones,
-        mockFiles.projectAgreement,
-        ownerId
-      )
-    ).rejects.toEqual(Error('Error creating Project'));
-  });
-});
-
-describe('Testing projectService updateProject', () => {
-  let projectDao;
-  let projectService;
-  let photoService;
-  let mockProjects;
-
-  const mockProjectCoverPhoto = testHelper.getMockFiles().projectCoverPhoto;
-  const mockProjectCardPhoto = testHelper.getMockFiles().projectCardPhoto;
-
-  beforeAll(() => {
-    mockProjects = testHelper.getMockProjects();
-    projectDao = {
-      getProjectById: ({ projectId }) =>
-        find(mockProjects, project => project.id === projectId),
-
-      getProjectPhotos: projectId => {
-        const project = find(
-          mockProjects,
-          mockProject => mockProject.id === projectId
-        );
-        return {
-          cardPhoto: project.cardPhoto,
-          coverPhoto: project.coverPhoto
-        };
-      },
-
-      updateProject: (project, id) => {
-        if (id === 5) {
-          throw Error('Error updating project in db');
-        }
-        let updatedProject = find(
-          mockProjects,
-          mockProject => mockProject.id === id
-        );
-        if (project) updatedProject = { ...project, id };
-        return updatedProject;
-      }
-    };
-
-    photoService = {
-      getPhotoById: id => {
-        const currentPhoto = testHelper.getPhoto(id);
-        // override path so the actual photo doesn't get deleted
-        currentPhoto.path = 'server/photo.png';
-        return currentPhoto;
-      },
-      updatePhoto: id => ({ id })
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      photoService
-    });
-
-    projectService.startProject = jest.fn(project => project);
-  });
-
-  it('should return the updated project', async () => {
-    const projectId = 2;
-    const project = {
-      problemAddressed: 'problem',
-      mission: 'mission'
-    };
-
-    const response = await projectService.updateProject(
-      JSON.stringify(project),
-      mockProjectCoverPhoto,
-      mockProjectCardPhoto,
-      projectId
-    );
-
-    const expected = {
-      ...project,
-      id: projectId,
-      cardPhoto: 2,
-      coverPhoto: 1
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should call startProject if the new status is IN PROGRESS', async () => {
-    const projectId = 2;
-    const project = {
-      status: projectStatus.IN_PROGRESS
-    };
-
-    await projectService.updateProject(
-      JSON.stringify(project),
-      mockProjectCoverPhoto,
-      mockProjectCardPhoto,
-      projectId
-    );
-
-    return expect(projectService.startProject).toBeCalled();
-  });
-
-  it('should return an error if the project is in progress', async () => {
-    const projectId = 1;
-    const project = {
-      problemAddressed: 'problem',
-      mission: 'mission'
-    };
-
-    const response = await projectService.updateProject(
-      JSON.stringify(project),
-      mockProjectCoverPhoto,
-      mockProjectCardPhoto,
-      projectId
-    );
-
-    const expected = {
-      status: 409,
-      error:
-        'Project cannot be updated. It has already started or sent to the blockchain.'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return a 404 error when the project does not exist', async () => {
-    const projectId = 0;
-    const project = {
-      problemAddressed: 'problem',
-      mission: 'mission'
-    };
-
-    const response = await projectService.updateProject(
-      JSON.stringify(project),
-      mockProjectCoverPhoto,
-      mockProjectCardPhoto,
-      projectId
-    );
-
-    const expected = {
-      status: 404,
-      error: 'Project does not exist'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return a 404 error when no project could be updated', async () => {
-    const projectId = 999;
-    const project = {
-      problemAddressed: 'problem',
-      mission: 'mission'
-    };
-
-    const response = await projectService.updateProject(
-      JSON.stringify(project),
-      mockProjectCoverPhoto,
-      mockProjectCardPhoto,
-      projectId
-    );
-
-    const expected = {
-      status: 404,
-      error: 'Project does not exist'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should throw an error if it fails to update the project', async () => {
-    const projectId = 5;
-    const project = {
-      problemAddressed: 'problem',
-      mission: 'mission'
-    };
-
-    return expect(
-      projectService.updateProject(
-        JSON.stringify(project),
-        mockProjectCoverPhoto,
-        mockProjectCardPhoto,
-        projectId
-      )
-    ).rejects.toEqual(Error('Error updating Project'));
-  });
-});
-
-describe('Testing projectService getProjectList', () => {
-  let projectDao;
-  let projectService;
-  let projectStatusDao;
-  let milestoneService;
-
-  let mockProjects;
-
-  beforeAll(() => {
-    projectStatusDao = {};
-    mockProjects = testHelper.getMockProjects();
-    projectDao = {
-      async getProjecListWithStatusFrom({ status }) {
-        return mockProjects.filter(project => project.status >= status);
-      }
-    };
-
-    milestoneService = {};
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      milestoneService,
-      projectStatusDao
-    });
-  });
-
-  it('should return an array of all projects with status >= PENDING_APPROVAL', async () => {
-    const status = projectStatus.PENDING_APPROVAL;
-
-    const projects = await projectService.getProjectList();
-
-    expect(projects).toEqual(
-      mockProjects.filter(project => project.status >= status)
-    );
-  });
-});
-
-describe('Testing projectService getActiveProjectList', () => {
-  let projectDao;
-  let projectService;
-  let projectStatusDao;
-  let milestoneService;
-
-  let mockProjects;
-
-  beforeAll(() => {
-    projectStatusDao = {};
-    mockProjects = testHelper.getMockProjects();
-    projectDao = {
-      async getProjecListWithStatusFrom({ status }) {
-        return mockProjects.filter(project => project.status >= status);
-      }
-    };
-
-    milestoneService = {};
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      milestoneService,
-      projectStatusDao
-    });
-  });
-
-  it('should return an array of all projects with status PUBLISHED', async () => {
-    const status = projectStatus.PUBLISHED;
-
-    const projects = await projectService.getActiveProjectList();
-
-    expect(projects).toEqual(
-      mockProjects.filter(project => project.status >= status)
-    );
-  });
-});
-
-describe('Testing projectService getProjectWithId', () => {
-  let projectDao;
-  let projectService;
-
-  let mockProjects;
-  const totalFunded = 200;
-
-  beforeAll(() => {
-    mockProjects = testHelper.getMockProjects();
-    projectDao = {
-      async getProjectById({ projectId }) {
-        return mockProjects.find(project => project.id === projectId);
-      }
-    };
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao
-    });
-
-    projectService.getTotalFunded = () => totalFunded;
-  });
-  it('should return an existing project with its total funds', async () => {
-    const response = await projectService.getProjectWithId({
-      projectId: mockProjects[0].id
-    });
-
-    const expected = { ...mockProjects[0], totalFunded };
-    expect(response).toEqual(expected);
-  });
-
-  it("should return a 404 error if project doesn't exist", async () => {
-    const response = await projectService.getProjectWithId({ projectId: -1 });
-    const expected = { error: 'Project not found', status: 404 };
-    expect(response).toEqual(expected);
-  });
-});
-
-describe('Testing projectService deleteProject', () => {
-  let projectDao;
-  let projectService;
-  let mockProjects;
-  beforeAll(() => {
-    mockProjects = testHelper.getMockProjects();
-  });
-  beforeEach(() => {
-    projectDao = {
-      deleteProject({ projectId }) {
-        const project = find(
-          mockProjects,
-          mockProject => mockProject.id === projectId
-        );
-        mockProjects = mockProjects.filter(
-          mockProject => mockProject.id !== projectId
-        );
-        return project;
-      }
-    };
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao
-    });
-  });
-
-  it('should return deleted project if exists', async () => {
-    const deletedProject = await projectService.deleteProject({ projectId: 1 });
-    expect(deletedProject.id).toBe(1);
-
-    const undefinedDeletedProject = await projectService.deleteProject({
-      projectId: 1
-    });
-    expect(undefinedDeletedProject).toBeUndefined();
-  });
-
-  it("should return undefined if the project doesn't exist", async () => {
-    const deletedProject = await projectService.deleteProject({
-      projectId: -1
-    });
-    expect(deletedProject).toBeUndefined();
-  });
-});
-
-describe('Testing projectService getProjectMilestones', () => {
-  let projectDao;
-  let projectService;
-  let projectStatusDao;
-  let milestoneService;
-
-  let mockProjects;
-  beforeEach(() => {
-    mockProjects = testHelper.getMockProjects();
-    projectStatusDao = {};
-    milestoneService = {
-      async getMilestoneActivities(milestone) {
-        return milestone;
-      }
-    };
-
-    projectDao = {
-      async getProjectMilestones({ projectId }) {
-        const project = find(
-          mockProjects,
-          mockProject => mockProject.id === projectId
-        );
-        if (!project) return [];
-        return project.milestones;
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      milestoneService,
-      projectStatusDao
-    });
-  });
-
-  it('should return a list of milestones with activities for an existing project', async () => {
-    const projectId = 1;
-    const milestones = await projectService.getProjectMilestones(projectId);
-    expect(milestones.length).toBeGreaterThan(0);
-    milestones.forEach(milestone => {
-      expect(milestone.activities.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('should return an empty array for a non-existent project', async () => {
-    const milestones = await projectService.getProjectMilestones(-1);
-
-    await expect(milestones).toEqual([]);
-  });
-});
-
-describe('Testing projectService downloadMilestonesTemplate', () => {
-  let projectDao;
-  let projectService;
-  let milestoneService;
-  let projectStatusDao;
-
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectXls.xlsx'
-  );
-
-  const mockReadStream = fs.createReadStream(filepath);
-
-  beforeAll(() => {
-    projectStatusDao = {};
-    projectDao = {};
-    milestoneService = {};
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      milestoneService,
-      projectStatusDao
-    });
-
-    fs.existsSync = jest.fn();
-    fs.createReadStream = jest.fn();
-  });
-
-  it('should return an object with a filestream and the file name', async () => {
-    fs.existsSync.mockReturnValueOnce(true);
-    fs.createReadStream.mockReturnValueOnce(mockReadStream);
-
-    const expected = {
-      filename: 'milestones.xlsx',
-      filestream: mockReadStream
-    };
-
-    const response = await projectService.downloadMilestonesTemplate();
-
-    await expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the file could not be read', async () => {
-    fs.existsSync.mockReturnValueOnce(true);
-
-    // fs.createReadStream = jest.fn() throws an error
-
-    const mockError = {
-      error: 'ERROR: Error reading milestones template file',
-      status: 404
-    };
-    const response = await projectService.downloadMilestonesTemplate();
-
-    await expect(response).toEqual(mockError);
-  });
-
-  // eslint-disable-next-line prettier/prettier
-  it("should return an error if the file doesn't exist", async () => {
-    fs.existsSync.mockReturnValueOnce(false);
-
-    const mockError = {
-      error: 'ERROR: Milestones template file could not be found',
-      status: 404
-    };
-    const response = await projectService.downloadMilestonesTemplate();
-
-    await expect(response).toEqual(mockError);
-  });
-});
-
-describe('Testing projectService getProjectMilestonesPath', () => {
-  let projectDao;
-  let projectService;
-  let milestoneService;
-  let projectStatusDao;
-  const projectId = 1;
-  const filepath = '/server/file/milestones.xlsx';
-
-  beforeAll(() => {
-    projectStatusDao = {};
-    projectDao = {
-      getProjectMilestonesFilePath: id => {
-        if (id === projectId) {
-          return {
-            milestonesFile: filepath,
-            id: projectId
-          };
-        }
-        return undefined;
-      }
-    };
-    milestoneService = {};
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      milestoneService,
-      projectStatusDao
-    });
-  });
-
-  it(
-    'should return  an object with the file name and ' +
-      ' the path to the milestones file of a project',
-    async () => {
-      const milestonesPath = await projectService.getProjectMilestonesPath(
-        projectId
-      );
-
-      const expected = {
-        filename: 'milestones.xlsx',
-        filepath
-      };
-
-      await expect(milestonesPath).toEqual(expected);
-    }
-  );
-
-  it("should throw an error if the project doesn't exist", async () => {
-    const missingProject = projectId + 1;
-
-    await expect(
-      projectService.getProjectMilestonesPath(missingProject)
-    ).rejects.toEqual(Error('Error getting milestones file'));
-  });
-});
-
-describe('Testing projectService uploadAgreement', () => {
-  let projectDao;
-  let projectService;
-  let milestoneService;
-
-  const id = 1;
-  const name = 'Project';
-
-  const mockProjectAgreement = testHelper.getMockFiles().projectAgreement;
-
-  beforeAll(() => {
-    projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (projectId === 0) {
-          return undefined;
-        }
-
-        return {
-          projectName: name,
-          id: projectId
-        };
-      },
-
-      updateProjectAgreement: ({ projectAgreement, projectId }) => {
-        if (projectId === '') {
-          throw Error('Error updating project agreement');
-        }
-
-        return {
-          id: projectId,
-          projectName: name,
-          projectAgreement
-        };
-      }
-    };
-    milestoneService = {};
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      milestoneService
-    });
-  });
-
-  it('should return the updated project with the agreement file path', async () => {
-    const expected = {
-      projectName: name,
-      id,
-      projectAgreement: `${
-        configs.fileServer.filePath
-      }/projects/${id}/agreement.pdf`
-    };
-
-    const updatedProject = await projectService.uploadAgreement(
-      mockProjectAgreement,
-      id
-    );
-
-    return expect(updatedProject).toEqual(expected);
-  });
-
-  it('should return an error if the project does not exist', async () => {
-    const expected = { error: 'ERROR: Project not found', status: 404 };
-
-    const updatedProject = await projectService.uploadAgreement(
-      mockProjectAgreement,
-      0
-    );
-
-    return expect(updatedProject).toEqual(expected);
-  });
-
-  it('should return an error if the agreement could not be uploaded', async () =>
-    expect(
-      projectService.uploadAgreement(mockProjectAgreement, '')
-    ).rejects.toEqual(Error('Error uploading agreement')));
-});
-
-describe('Testing projectService downloadAgreement', () => {
-  let projectDao;
-  let projectService;
-
-  const id = 1;
-
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectProposal.pdf'
-  );
-
-  const mockReadStream = fs.createReadStream(filepath);
-
-  beforeAll(() => {
-    projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (projectId === 0) {
-          return undefined;
-        }
-
-        if (projectId === 999) {
-          return {
-            id: projectId
-          };
-        }
-
-        return {
-          projectAgreement: filepath,
-          id: projectId
-        };
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao
-    });
-
-    fs.createReadStream = jest.fn();
-  });
-
-  it('should return an object with the filename and filestream', async () => {
-    fs.createReadStream.mockReturnValueOnce(mockReadStream);
-
-    const response = await projectService.downloadAgreement(id);
-
-    const expected = {
-      filename: 'projectProposal.pdf',
-      filestream: mockReadStream
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should throw an error if the file could not be read', async () =>
-    // fs.createReadStream = jest.fn() throws an error
-
-    expect(projectService.downloadAgreement(id)).rejects.toEqual(
-      Error('Error getting agreement')
-    ));
-
-  it('should return an error if the project does not exist', async () => {
-    const mockError = { error: 'ERROR: Project not found', status: 404 };
-    const response = await projectService.downloadAgreement(0);
-
-    return expect(response).toEqual(mockError);
-  });
-
-  it('should return an error if the project does not have an agreement', async () => {
-    const mockError = {
-      error: "ERROR: Project doesn't have an agreement uploaded",
-      status: 409
-    };
-
-    const response = await projectService.downloadAgreement(999);
-
-    return expect(response).toEqual(mockError);
-  });
-});
-
-describe('Testing projectService downloadProposal', () => {
-  let projectDao;
-  let projectService;
-
-  const id = 1;
-
-  const filepath = require('path').join(
-    __dirname,
-    './mockFiles/projectProposal.pdf'
-  );
-
-  const mockReadStream = fs.createReadStream(filepath);
-
-  beforeAll(() => {
-    projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (projectId === 0) {
-          return undefined;
-        }
-
-        if (projectId === 999) {
-          return {
-            id: projectId
-          };
-        }
-
-        return {
-          pitchProposal: filepath,
-          id: projectId
-        };
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao
-    });
-
-    fs.createReadStream = jest.fn();
-  });
-
-  it('should return an object with the filename and filestream', async () => {
-    fs.createReadStream.mockReturnValueOnce(mockReadStream);
-
-    const response = await projectService.downloadProposal(id);
-
-    const expected = {
-      filename: 'projectProposal.pdf',
-      filestream: mockReadStream
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should throw an error if the file could not be read', async () =>
-    // fs.createReadStream = jest.fn() throws an error
-
-    expect(projectService.downloadProposal(id)).rejects.toEqual(
-      Error('Error getting pitch proposal')
-    ));
-
-  it('should return an error if the project does not exist', async () => {
-    const mockError = { error: 'ERROR: Project not found', status: 404 };
-    const response = await projectService.downloadProposal(0);
-
-    return expect(response).toEqual(mockError);
-  });
-
-  it('should return an error if the project does not have an proposal', async () => {
-    const mockError = {
-      error: "ERROR: Project doesn't have a pitch proposal uploaded",
-      status: 409
-    };
-
-    const response = await projectService.downloadProposal(999);
-
-    return expect(response).toEqual(mockError);
-  });
-});
-
-describe('Testing projectService getTotalFunded', () => {
-  let projectService;
-  let transferService;
-
-  const totalFunded = 300;
-
-  beforeAll(() => {
-    transferService = {
-      getTotalFundedByProject: projectId => {
-        if (!projectId) {
-          throw Error('Error getting funds');
-        }
-
-        return totalFunded;
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      transferService
-    });
-  });
-
-  it('should return the total funded amount for a project', async () => {
-    const response = await projectService.getTotalFunded(1);
-    return expect(response).toEqual(totalFunded);
-  });
-
-  it('should throw an error if it fails to get the transferred funds', async () =>
-    expect(projectService.getTotalFunded()).rejects.toEqual(
-      Error('Error getting funded amount')
-    ));
-});
-
-describe('Testing projectService startProject', () => {
-  let projectDao;
-  let projectService;
-  let transferService;
-  let milestoneService;
-
-  const goalAmount = 1000;
-  let mockProjects;
-
-  beforeEach(() => {
-    mockProjects = testHelper.getMockProjects();
-    transferService = {
-      getTotalFundedByProject: projectId => {
-        if (projectId === 999) {
-          return goalAmount - 1;
-        }
-        return goalAmount;
-      }
-    };
-
-    milestoneService = {
-      startMilestonesOfProject: () => true,
-      getMilestonesByProject: projectId => {
-        const project = mockProjects.find(p => p.id === projectId);
-        return project.milestones;
-      }
-    };
-
-    projectDao = {
-      getUserOwnerOfProject: projectId => {
-        const project = find(
-          mockProjects,
-          mockProject => mockProject.id === projectId
-        );
-        const user = testHelper.buildUserSe(project.ownerId);
-        return user;
-      },
-
-      updateStartBlockchainStatus: (projectId, status) => {
-        const project = find(
-          mockProjects,
-          mockProject => mockProject.id === projectId
-        );
-        return { ...project, startBlockchainStatus: status };
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      transferService,
-      milestoneService
-    });
-  });
-
-  it(
-    'should return the updated project with status In Progress ' +
-      'and start status Pending',
-    async () => {
-      const projectId = 4;
-      const response = await projectService.startProject(mockProjects[3]);
-      const expected = find(mockProjects, project => projectId === project.id);
-      expected.startBlockchainStatus = blockchainStatus.SENT;
-      return expect(response).toEqual(expected);
-    }
-  );
-
-  it('should return an error if the project is not Published', async () => {
-    const response = await projectService.startProject(mockProjects[1]);
-    const expected = { error: 'Project needs to be published', status: 409 };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the project is already In Progress', async () => {
-    const response = await projectService.startProject(mockProjects[0]);
-    const expected = {
-      error: 'Project has already started or sent to the blockchain',
-      status: 409
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if project is not fully assigned', async () => {
-    const projectNotAssigned = { ...mockProjects[3] };
-    projectNotAssigned.milestones[0].activities[0].oracle = false;
-    const response = await projectService.startProject(projectNotAssigned);
-    const expected = {
-      error: 'Project has activities with no oracles assigned',
-      status: 409
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should throw an error if it fails to get the project', async () => {
-    const project = { ...mockProjects[3], id: '' };
-    return expect(projectService.startProject(project)).rejects.toEqual(
-      Error('Error starting project')
-    );
-  });
-});
-
-describe('Testing projectService uploadExperience', () => {
-  let projectDao;
-  let userDao;
-  let projectExperienceDao;
-  let photoService;
-  let projectService;
-
-  const mockFiles = testHelper.getMockFiles();
-  const mockPhotos = [mockFiles.projectCardPhoto, mockFiles.projectCoverPhoto];
-
-  const photoId = 22;
-
-  beforeAll(() => {
-    projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (projectId === 0) {
-          return undefined;
-        }
-
-        return {
-          id: projectId
-        };
-      }
-    };
-
-    userDao = {
-      getUserById: userId => {
-        if (userId === 0) {
-          return undefined;
-        }
-
-        return {
-          id: userId
-        };
-      }
-    };
-
-    photoService = {
-      savePhoto: filepath => {
-        if (filepath.includes('error')) {
-          throw Error('Error saving photo');
-        }
-        return { id: photoId };
-      }
-    };
-
-    projectExperienceDao = {
-      saveProjectExperience: experience => {
-        if (experience.user === -1) {
-          throw Error('Error saving experience in db');
-        }
-
-        if (!experience.comment) {
-          return undefined;
-        }
-        return experience;
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      photoService,
-      userDao,
-      projectExperienceDao
-    });
-  });
-
-  it('should return the saved experience without attached files', async () => {
-    const projectId = 12;
-    const experience = {
-      user: 7,
-      comment: 'Testing Comment'
-    };
-
-    const response = await projectService.uploadExperience(
-      projectId,
-      experience
-    );
-
-    const expected = {
-      ...experience,
-      project: projectId
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return the saved experience with attached files', async () => {
-    const projectId = 12;
-    const experience = {
-      user: 7,
-      comment: 'Testing Comment'
-    };
-
-    const response = await projectService.uploadExperience(
-      projectId,
-      experience,
-      mockPhotos
-    );
-
-    const expected = {
-      ...experience,
-      project: projectId,
-      photos: [{ id: photoId }, { id: photoId }]
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the project does not exist', async () => {
-    const projectId = 0;
-    const experience = {
-      user: 7,
-      comment: 'Testing Comment'
-    };
-
-    const response = await projectService.uploadExperience(
-      projectId,
-      experience,
-      mockPhotos
-    );
-
-    const expected = {
-      status: 404,
-      error: 'Project not found'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the user does not exist', async () => {
-    const projectId = 12;
-    const experience = {
-      user: 0,
-      comment: 'Testing Comment'
-    };
-
-    const response = await projectService.uploadExperience(
-      projectId,
-      experience,
-      mockPhotos
-    );
-
-    const expected = {
-      status: 404,
-      error: 'User not found'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the file type is not an image', async () => {
-    const projectId = 12;
-    const experience = {
-      user: 7,
-      comment: 'Testing Comment'
-    };
-
-    const mockFile = [mockFiles.projectProposal];
-
-    const response = await projectService.uploadExperience(
-      projectId,
-      experience,
-      mockFile
-    );
-
-    const expected = {
-      ...experience,
-      project: projectId,
-      photos: [{ error: 'File type is invalid', status: 409 }],
-      errors: [
-        {
-          error: 'File type is invalid',
-          file: mockFiles.projectProposal.name
-        }
-      ]
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if it fails to save the file', async () => {
-    const projectId = 12;
-    const experience = {
-      user: 7,
-      comment: 'Testing Comment'
-    };
-
-    const mockErrorFile = [
-      {
-        name: 'error.png',
-        path: `${__dirname}/mockFiles/error.png`,
-        mv: jest.fn()
-      }
-    ];
-
-    const response = await projectService.uploadExperience(
-      projectId,
-      experience,
-      mockErrorFile
-    );
-
-    const expected = {
-      ...experience,
-      project: projectId,
-      photos: [{ error: 'Error saving file', status: 409 }],
-      errors: [
-        {
-          error: 'Error saving file',
-          file: 'error.png'
-        }
-      ]
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it(
-    'should return an error if it fails to save the experience ' +
-      'when no file is attached',
-    async () => {
-      const projectId = 12;
-      const experience = {
-        user: 7
-      };
-
-      const response = await projectService.uploadExperience(
-        projectId,
-        experience
-      );
-
-      const expected = {
-        status: 500,
-        error: 'There was an error uploading the experience'
-      };
-
-      return expect(response).toEqual(expected);
-    }
-  );
-
-  it('should throw an error it saving the experience in database fails', async () => {
-    const projectId = 12;
-    const experience = {
-      user: -1,
-      comment: 'Testing Comment'
-    };
-
-    return expect(
-      projectService.uploadExperience(projectId, experience)
-    ).rejects.toEqual(Error('Error uploading experience'));
-  });
-});
-
-describe('Testing projectService getExperiences', () => {
-  let projectDao;
-  let projectExperienceDao;
-  let projectService;
-
-  const experiences = projectId => [
-    {
-      id: 1,
-      project: projectId,
-      user: {
-        id: 1,
-        username: 'SE',
-        email: 'se@test.com',
-        role: 1
-      },
-      photos: [
-        {
-          id: 7
-        },
-        {
-          id: 8
-        }
-      ],
-      comment: 'Testing experience'
-    },
-    {
-      id: 2,
-      project: projectId,
-      user: {
-        id: 1,
-        username: 'SE',
-        email: 'se@test.com',
-        role: 1
-      },
-      photos: [],
-      comment: 'Testing experience'
-    }
-  ];
-
-  beforeAll(() => {
-    projectDao = {
-      getProjectById: ({ projectId }) => {
-        if (!projectId) {
-          throw Error('Error getting project from db');
-        }
-        if (projectId === -1) {
-          return undefined;
-        }
-        return {
-          id: projectId
-        };
-      }
-    };
-
-    projectExperienceDao = {
-      getExperiencesByProject: projectId => {
-        if (projectId === 999) {
-          return undefined;
-        }
-        return { experiences: experiences(projectId) };
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao,
-      projectExperienceDao
-    });
-  });
-
-  it('should return the experiences of a project', async () => {
-    const projectId = 12;
-
-    const response = await projectService.getExperiences(projectId);
-
-    const expected = {
-      experiences: experiences(projectId)
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the project does not exist', async () => {
-    const projectId = -1;
-
-    const response = await projectService.getExperiences(projectId);
-
-    const expected = {
-      status: 404,
-      error: 'Project not found'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the experiences could not be retrieved', async () => {
-    const projectId = 999;
-
-    const response = await projectService.getExperiences(projectId);
-
-    const expected = {
-      status: 500,
-      error: 'There was an error getting the project experiences'
-    };
-
-    return expect(response).toEqual(expected);
-  });
-
-  it('should throw an error if the database query fails', async () =>
-    expect(projectService.getExperiences()).rejects.toEqual(
-      Error('Error getting experiences')
-    ));
-});
-
-describe('testing ProjectService isFullyAssigned', () => {
-  let mockProjects;
-  let milestoneService;
-  let projectService;
-  beforeEach(() => {
-    mockProjects = testHelper.getMockProjects();
-
-    milestoneService = {
-      getMilestonesByProject: projectId => {
-        const project = mockProjects.find(p => p.id === projectId);
-        return project.milestones;
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao: {},
-      transferService: {},
-      milestoneService
-    });
-  });
-
-  it('should return a true if all activities of a project is assigned with oracle', async () => {
-    const projectId = 1;
-    const response = await projectService.isFullyAssigned(projectId);
-    expect(response).toBeTruthy();
-  });
-
-  it('should return false if have at least one non asigned activity', async () => {
-    const projectId = 1;
-    mockProjects.find(
-      project => project.id === projectId
-    ).milestones[0].activities[0].oracle = {};
-    const response = await projectService.isFullyAssigned(projectId);
-    expect(response).toBeFalsy();
-  });
-
-  it('should return false if not have milestones', async () => {
-    const projectId = 1;
-    mockProjects.find(project => project.id === projectId).milestones = [];
-    const response = await projectService.isFullyAssigned(projectId);
-    expect(response).toBeFalsy();
-  });
-});
-
-describe('Testing ProjectService getProjectsAsOracle', () => {
-  let mockProjects;
-  let milestoneService;
-  let projectService;
-  const oracle = testHelper.buildUserOracle(1);
-
-  beforeEach(() => {
-    mockProjects = testHelper.getMockProjects();
-    mockProjects[0].milestones[0].activities[0].oracle = oracle;
-    mockProjects[2].milestones[0].activities[0].oracle = oracle;
-    milestoneService = {
-      getProjectsAsOracle: oracleId => {
-        const projects = [];
-        if (oracleId === -1) {
-          throw Error();
-        }
-
-        mockProjects.forEach(project => {
-          project.milestones.forEach(milestone => {
-            milestone.activities.forEach(activity => {
-              if (activity.oracle.id === oracleId) {
-                projects.push(project.id);
-              }
-            });
-          });
+    describe('Update project thumbnail', () => {
+      it('Should update the project whenever the fields are valid and the project already exists', async () => {
+        const { projectId } = await projectService.updateProjectThumbnail(1, {
+          projectName,
+          countryOfImpact,
+          timeframe,
+          goalAmount,
+          ownerId,
+          file
         });
-        return projects;
-      }
-    };
+        expect(projectId).toEqual(1);
+      });
 
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao: {},
-      transferService: {},
-      milestoneService
+      it('Should not update the project whenever some fields are missing (not file since it is an optional field) and throw an error', () => {
+        expect(
+          projectService.updateProjectThumbnail(1, {
+            projectName,
+            countryOfImpact,
+            timeframe,
+            file
+          })
+        ).rejects.toThrow(errors.CreateProjectFieldsNotValid);
+      });
+
+      it('Should not update the project whenever the fields are valid but the project does not exist and throw an error', () => {
+        expect(
+          projectService.updateProjectThumbnail(2, {
+            projectName,
+            countryOfImpact,
+            timeframe,
+            goalAmount,
+            ownerId,
+            file
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+      });
+
+      it('Should not update the project whenever the fields are valid and the project does exist but user is not owner of the project, and throw an error', () => {
+        expect(
+          projectService.updateProjectThumbnail(2, {
+            projectName,
+            countryOfImpact,
+            timeframe,
+            goalAmount,
+            ownerId: 3,
+            file
+          })
+        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      });
+
+      it('Should not update the project whenever the photo has an invalid file type and throw an error', () => {
+        expect(
+          projectService.updateProjectThumbnail(2, {
+            projectName,
+            countryOfImpact,
+            timeframe,
+            goalAmount,
+            ownerId,
+            file: { fileName: 'file.json', size: 1234 }
+          })
+        ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+      });
+
+      it('Should not update the project whenever the photo has an invalid size and throw an error', () => {
+        expect(
+          projectService.updateProjectThumbnail(2, {
+            projectName,
+            countryOfImpact,
+            timeframe,
+            goalAmount,
+            ownerId,
+            file: { fileName: 'file.jpeg', size: 90000000 }
+          })
+        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+      });
+
+      it('Should update the project although file field is missing', async () => {
+        const { projectId } = await projectService.updateProjectThumbnail(1, {
+          projectName,
+          countryOfImpact,
+          timeframe,
+          goalAmount,
+          ownerId
+        });
+        expect(projectId).toEqual(1);
+      });
+    });
+
+    describe('Get project thumbnail', () => {
+      it('Should return the project thumbnail when the project exists', async () => {
+        const response = await projectService.getProjectThumbnail(1);
+        expect(response.projectName).toEqual('validProjectName');
+        expect(response.countryOfImpact).toEqual('Argentina');
+        expect(response.timeframe).toEqual('12');
+        expect(response.goalAmount).toEqual(124123);
+        expect(response.imgPath).toEqual('cardPhotoPath');
+      });
+      it('Should throw an error when the project does not exist', () => {
+        expect(projectService.getProjectThumbnail(4)).rejects.toThrow(
+          errors.CantFindModelWithId('project', 4)
+        );
+      });
     });
   });
 
-  it('must return an array of unique project ids', async () => {
-    const expected = { oracle: oracle.id, projects: [1, 3] };
-    let response = await projectService.getProjectsAsOracle(oracle.id);
-    expect(response).toEqual(expected);
+  describe('Project detail', () => {
+    beforeAll(() => {
+      injectMocks(projectService, { projectDao, userDao });
+    });
+    describe('Create project detail', () => {
+      it('Should create project detail when there is an existent project created and all the needed fields are present', async () => {
+        const { projectId } = await projectService.createProjectDetail(1, {
+          projectMission: mission,
+          theProblem: problemAddressed,
+          ownerId: 2,
+          file
+        });
+        expect(projectId).toEqual(1);
+      });
+      it('Should not create project detail when there are not all the needed fields, and throw an error', () => {
+        expect(
+          projectService.createProjectDetail(1, { projectMission: mission })
+        ).rejects.toThrow(errors.CreateProjectFieldsNotValid);
+      });
+      it('Should not create project detail when the owner does not exist, and throw an error', () => {
+        expect(
+          projectService.createProjectDetail(1, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            ownerId: 34,
+            file
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+      });
+      it('Should not create project detail when the user is not the owner of the project, and throw an error', () => {
+        expect(
+          projectService.createProjectDetail(1, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            ownerId: 3,
+            file
+          })
+        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      });
+      it('Should not create project detail when there is not an existent project created, and throw an error', () => {
+        expect(
+          projectService.createProjectDetail(2, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            ownerId: 2,
+            file
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+      });
+      it('Should not create project detail when the file type is not a valid, and throw an error', () => {
+        expect(
+          projectService.createProjectDetail(2, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            ownerId: 2,
+            file: { name: 'hi.json' }
+          })
+        ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+      });
+      it('Should not create project detail when the file size is bigger than allowed, and throw an error', () => {
+        expect(
+          projectService.createProjectDetail(2, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            ownerId: 2,
+            file: { name: 'hi.jpeg', size: 12319023 }
+          })
+        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+      });
+    });
 
-    mockProjects[0].milestones.push(testHelper.buildMilestone(1, {}));
-    response = await projectService.getProjectsAsOracle(oracle.id);
-    expect(response).toEqual(expected);
-  });
+    describe('Update project detail', () => {
+      it('Should update the project if it exists and have all the fields and there are valids', async () => {
+        const { projectId } = await projectService.updateProjectDetail(1, {
+          projectMission: mission,
+          theProblem: problemAddressed,
+          file,
+          ownerId: 2
+        });
+        expect(projectId).toEqual(1);
+      });
+      it('Should update the project if it exists and have all the fields valids and file field is missing ', async () => {
+        const { projectId } = await projectService.updateProjectDetail(1, {
+          projectMission: mission,
+          theProblem: problemAddressed,
+          ownerId: 2
+        });
+        expect(projectId).toEqual(1);
+      });
+      it('Should not update the project if it does not exists, and throw an error', () => {
+        expect(
+          projectService.updateProjectDetail(2, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            file,
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+      });
+      it('Should not update the project if it exists but some needed fields are missing and throw an error', () => {
+        expect(
+          projectService.updateProjectDetail(1, {
+            projectMission: mission,
+            file,
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.CreateProjectFieldsNotValid);
+      });
+      it('Should not update the project if it exists and have all valid fields but file size is bigger than allowed', () => {
+        expect(
+          projectService.updateProjectDetail(1, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            file: { name: 'hi.jpeg', size: 1231232 },
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+      });
+      it('Should not update the project if it exists and have all valid fields but file type is not a valid one', () => {
+        expect(
+          projectService.updateProjectDetail(1, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            file: { name: 'hi.json', size: 4123 },
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+      });
+      it('Should not update the project if owner does not exist', () => {
+        expect(
+          projectService.updateProjectDetail(1, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            file: { name: 'hi.jpeg', size: 3123 },
+            ownerId: 34
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+      });
+      it('Should not update the project if user is not owner', () => {
+        expect(
+          projectService.updateProjectDetail(1, {
+            projectMission: mission,
+            theProblem: problemAddressed,
+            file: { name: 'hi.jpeg', size: 3123 },
+            ownerId: 3
+          })
+        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      });
+    });
 
-  it('must throw error if crash execution', async () => {
-    expect(projectService.getProjectsAsOracle(-1)).rejects.toEqual(
-      Error('Error getting Projects')
-    );
-  });
-});
-
-describe('Testing ProjectService getProjectOwner', () => {
-  let mockProjects;
-  let projectService;
-  const user = testHelper.buildUserSe(2);
-
-  beforeEach(() => {
-    mockProjects = testHelper.getMockProjects();
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao: {
-        getProjectById: ({ projectId }) =>
-          mockProjects.find(project => project.id === projectId)
-      },
-      userDao: {
-        getUserById: id => {
-          if (id === user.id) return user;
-        }
-      },
-      transferService: {},
-      milestoneService: {}
+    describe('Get project detail', () => {
+      it('Should return the project detail when the project exists', async () => {
+        const response = await projectService.getProjectDetail(1);
+        expect(response.mission).toEqual('mission');
+        expect(response.problemAddressed).toEqual('the problem');
+        expect(response.imgPath).toEqual('detail.jpeg');
+      });
+      it('Should throw an error when the project does not exist', () => {
+        expect(projectService.getProjectDetail(4)).rejects.toThrow(
+          errors.CantFindModelWithId('project', 4)
+        );
+      });
     });
   });
 
-  it('should return a user owner object', async () => {
-    const userId = user.id;
-    const owner = await projectService.getProjectOwner(userId);
-    expect(owner).toEqual(user);
-  });
-});
+  describe('Project proposal', () => {
+    describe('Create project proposal', () => {
+      it('Should create the project proposal on an existent project when all fields are valid', async () => {
+        const { projectId } = await projectService.createProjectProposal(1, {
+          ownerId: 2,
+          projectProposal: proposal
+        });
+        expect(projectId).toEqual(1);
+      });
+      it('Should not create the project proposal when the project does not exist, and throw an error', () => {
+        expect(
+          projectService.createProjectProposal(2, {
+            ownerId: 2,
+            projectProposal: proposal
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+      });
+      it('Should not create the project proposal when the project exists but proposal is missing and throw an error', () => {
+        expect(
+          projectService.createProjectProposal(1, {
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.CreateProjectFieldsNotValid);
+      });
+      it('Should not create the project proposal when the project exists but owner does not exist and throw an error', () => {
+        expect(
+          projectService.createProjectProposal(2, {
+            ownerId: 34,
+            projectProposal: proposal
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+      });
+      it('Should not create the project proposal when the project exists but user is not owner, and throw an error', () => {
+        expect(
+          projectService.createProjectProposal(2, {
+            ownerId: 3,
+            projectProposal: proposal
+          })
+        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      });
+    });
+    describe('Update project proposal', () => {
+      it('Should update the project when the project exists and all the fields are valid', async () => {
+        const { projectId } = await projectService.updateProjectProposal(1, {
+          projectProposal: proposal,
+          ownerId: 2
+        });
+        expect(projectId).toEqual(1);
+      });
+      it('Should not update the project when it does not exist and throw an error', () => {
+        expect(
+          projectService.updateProjectProposal(2, {
+            projectProposal: proposal,
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+      });
+      it('Should not update the project when the project exists but proposal is missing and throw an error', () => {
+        expect(
+          projectService.updateProjectProposal(1, { ownerId: 2 })
+        ).rejects.toThrow(COAError);
+      });
+      it('Should not update the project when the project exists, all fields are valid but owner does not exist and throw an error', () => {
+        expect(
+          projectService.updateProjectProposal(1, {
+            projectProposal: proposal,
+            ownerId: 34
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+      });
+      it('Should not update the project when user is not owner, and throw an error', () => {
+        expect(
+          projectService.updateProjectProposal(2, {
+            projectProposal: proposal,
+            ownerId: 3
+          })
+        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      });
+    });
 
-describe('Testing ProjectService getProjectsOfOwner', () => {
-  let mockProjects;
-  let projectService;
-  const user = testHelper.buildUserSe(3);
-
-  beforeEach(() => {
-    mockProjects = testHelper.getMockProjects();
-
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao: {
-        getProjectsByOwner: ownerId =>
-          mockProjects.filter(project => project.ownerId === ownerId)
-      },
-      transferService: {},
-      milestoneService: {}
+    describe('Get project proposal', () => {
+      it('Should return project proposal when the project exists', async () => {
+        const response = await projectService.getProjectProposal(1);
+        expect(response.proposal).toEqual('proposal');
+      });
+      it('Should throw an error when the project does not exist, and throw an error', () => {
+        expect(projectService.getProjectProposal(2)).rejects.toThrow(
+          errors.CantFindModelWithId('project', 2)
+        );
+      });
     });
   });
 
-  it('should return an array of projects with specific owner', async () => {
-    mockProjects[1].ownerId = user.id;
-    mockProjects[2].ownerId = user.id;
-    mockProjects[3].ownerId = user.id;
-    const expected = [mockProjects[1], mockProjects[2], mockProjects[3]];
-    const response = await projectService.getProjectsOfOwner(user.id);
-    expect(response.map(entry => entry.ownerId)).toEqual(
-      expected.map(entry => entry.ownerId)
-    );
-  });
-
-  it('should return an empty array if user provide is not owner', async () => {
-    const expected = [];
-    const response = await projectService.getProjectsOfOwner(1000);
-    expect(response).toEqual(expected);
-  });
-});
-
-describe('Testing ProjectService saveExperienceFile', () => {
-  let mockFiles;
-  let projectService;
-  let photoService;
-  const photoId = 22;
-
-  beforeEach(() => {
-    mockFiles = testHelper.getMockFiles();
-    photoService = {
-      savePhoto: filepath => {
-        if (filepath.includes('error')) {
-          throw Error('Error saving photo');
-        }
-        return { id: photoId };
-      }
-    };
-
-    projectService = projectServiceBuilder({
-      fastify,
-      photoService
+  describe('Publish project', () => {
+    it('Should publish project if it exists and its state is draft', async () => {
+      const { projectId } = await projectService.publishProject(1, {
+        ownerId: 2
+      });
+      expect(projectId).toEqual(1);
+    });
+    it('Should not publish project if it does not exist, and throw an error', () => {
+      expect(
+        projectService.publishProject(2, {
+          ownerId: 2
+        })
+      ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+    });
+    it('Should not publish project if it exist but is already published, and throw an error', () => {
+      expect(
+        projectService.publishProject(3, {
+          ownerId: 2
+        })
+      ).rejects.toThrow(errors.ProjectIsNotPublishable);
+    });
+    it('Should not publish project if it exist but user is not the owner of it, and throw an error', () => {
+      expect(
+        projectService.publishProject(3, {
+          ownerId: 15
+        })
+      ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
     });
   });
 
-  it('should save a experience photo on directory and entry on photo table', async () => {
-    const file = mockFiles.projectCoverPhoto;
-    const projectId = 2;
-    const projectExperienceId = 1;
-    const response = await projectService.saveExperienceFile(
-      file,
-      projectId,
-      projectExperienceId,
-      1
-    );
-    expect(response).toEqual({ id: photoId });
-  });
-});
-
-describe('Testing ProjectService updateBlockchainStatus', () => {
-  let projectService;
-  let mockProjects;
-
-  beforeEach(() => {
-    mockProjects = testHelper.getMockProjects();
-    projectService = projectServiceBuilder({
-      fastify,
-      projectDao: {
-        updateBlockchainStatus: (projectId, status) => {
-          const project = mockProjects.find(p => p.id === projectId);
-          project.blockchainStatus = status;
-          return project;
-        }
-      }
+  describe('Get projects', () => {
+    beforeAll(() => {});
+    it('Should return an empty list if no projects are published', () => {
+      injectMocks(projectService, {
+        projectDao: Object.assign({}, projectDao, {
+          findAllByProps: () => []
+        })
+      });
+      expect(projectService.getProjects()).resolves.toHaveLength(0);
+    });
+    it('Should return an array of projects if there is any project published', () => {
+      injectMocks(projectService, {
+        projectDao: Object.assign({}, projectDao, {
+          findAllByProps: () => [pendingProject]
+        })
+      });
+      expect(projectService.getProjects()).resolves.toHaveLength(1);
     });
   });
 
-  it('should fail if provide a invalid blockchain status', async () => {
-    const status = -1;
-    const projectId = 6;
-    const response = await projectService.updateBlockchainStatus(
-      projectId,
-      status
-    );
-    expect(response).toEqual({ error: 'Invalid Blockchain status' });
+  describe('Project milestone', () => {
+    beforeAll(() => {
+      injectMocks(projectService, { milestoneDao, projectDao, userDao });
+    });
+    describe('Delete milestone of project', () => {
+      it('Should delete milestone of project if project exists and milestone belongs to project', async () => {
+        const { projectId } = await projectService.deleteMilestoneOfProject(
+          3,
+          2
+        );
+        expect(projectId).toEqual(3);
+      });
+      it('Should not delete milestone of project if project does not exist, and throw an error', () => {
+        expect(projectService.deleteMilestoneOfProject(2, 2)).rejects.toThrow(
+          errors.CantFindModelWithId('project', 2)
+        );
+      });
+      it('Should not delete milestone of project if project exists and milestone does not belongs to project, and throw an error', () => {
+        expect(projectService.deleteMilestoneOfProject(3, 5)).rejects.toThrow(
+          errors.MilestoneDoesNotBelongToProject
+        );
+      });
+    });
+
+    describe('Filter milestones', () => {
+      it('Should filter milestone with id = milestoneId from milestones array', () => {
+        const milestones = [{ id: 1 }, { id: 2 }, { id: 3 }];
+        const milestonesFiltered = projectService.filterMilestones(
+          milestones,
+          2
+        );
+        expect(milestonesFiltered[0]).toEqual({ id: 1 });
+        expect(milestonesFiltered[1]).toEqual({ id: 3 });
+      });
+    });
+
+    describe('Edit task of milestone', () => {}); // TODO
+
+    describe('Delete task of milestone', () => {
+      // TODO
+      it('Should delete task of milestone if milestone exists and task belongs to milestone', () => {});
+      it('Should not delete task of milestone if milestone does not exist, and throw an error', () => {});
+      it('Should not delete task of milestone if milestone exists but task does not belongs to milestone, and throw an error', () => {});
+    });
+
+    describe('Upload milestone file', () => {
+      it('Should add milestone file to an existent project', async () => {
+        const { projectId } = await projectService.uploadMilestoneFile(1, {
+          file: milestoneFile,
+          ownerId: 2
+        });
+        expect(projectId).toEqual(1);
+      });
+      it('Should not add milestone file to a non-existent project, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(5, {
+            file: milestoneFile,
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.CantFindModelWithId('project', 5));
+      });
+      it('Should not add milestone file to an existent project if user is not owner, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(1, {
+            file: milestoneFile,
+            ownerId: 3
+          })
+        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      });
+      it('Should not add milestone file to an existent project with a milestone file already uploaded, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(3, {
+            file: milestoneFile,
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.MilestoneFileHasBeenAlreadyUploaded);
+      });
+      it('Should not add milestone file to an existent project if file has not a valid type, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(3, {
+            file: milestoneFile,
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.MilestoneFileTypeNotValid);
+      });
+      it('Should not add milestone file to an existent project if file has not a valid size, and throw an error', () => {
+        expect(
+          projectService.uploadMilestoneFile(3, {
+            file: {
+              name: 'name.xslx',
+              size: 1982319823
+            },
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+      });
+      it('Should not add milestone file to an existent project if file field is missing, and throw an error', () => {
+        expect(projectService.uploadMilestoneFile(3, { file })).rejects.toThrow(
+          errors.CreateProjectFieldsNotValid
+        );
+      });
+    });
+
+    describe('Process milestone file', () => {
+      beforeAll(() => {
+        injectMocks(projectService, {
+          milestoneDao,
+          projectDao,
+          milestoneService
+        });
+      });
+      it('Should create milestones and activities to an existent project without an already process file', async () => {
+        const { projectId } = await projectService.processMilestoneFile(1, {
+          ownerId: 2
+        });
+        expect(projectId).toEqual(1);
+      });
+      it('Should not create milestones and activities to a non-existent project, and throw an error', () => {
+        expect(
+          projectService.processMilestoneFile(2, { ownerId: 2 })
+        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+      });
+      it('Should not create milestones and activities to an existent project with status different than draft', () => {
+        expect(
+          projectService.processMilestoneFile(3, { ownerId: 2 })
+        ).rejects.toThrow(errors.InvalidStatusForMilestoneFileProcess);
+      });
+      it('Should not create milestones and activities to an existent project whenever user is not the owner of it', () => {
+        expect(
+          projectService.processMilestoneFile(3, { ownerId: 5 })
+        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      });
+    });
+
+    describe('Get project milestones', () => {
+      beforeAll(() => {
+        injectMocks(projectService, { milestoneDao, projectDao, userDao });
+      });
+
+      it('Should return project milestones of an existent project', async () => {
+        const milestones = await projectService.getProjectMilestones(3);
+        expect(milestones).toHaveLength(1);
+        expect(milestones[0].id).toEqual(2);
+      });
+      it('Should not return project milestones of a non-existent project, and throw an error', () => {
+        expect(projectService.getProjectMilestones(4)).rejects.toThrow(
+          errors.CantFindModelWithId('project', 4)
+        );
+      });
+    });
   });
-
-  it('should update blockchain status of project and return the project object', async () => {
-    const status = blockchainStatus.CONFIRMED;
-    const projectId = 6;
-
-    expect(
-      mockProjects.find(project => project.id === projectId).blockchainStatus
-    ).toEqual(blockchainStatus.PENDING);
-
-    const response = await projectService.updateBlockchainStatus(
-      projectId,
-      status
-    );
-    expect(response.blockchainStatus).toEqual(blockchainStatus.CONFIRMED);
-  });
+  // TODO whenever mail is answered describe('Project milestone activities', () => {});
 });

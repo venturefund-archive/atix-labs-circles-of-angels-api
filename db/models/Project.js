@@ -25,46 +25,31 @@
  *@attribute `projectAgreement`: project consensus file
  */
 
+const { projectStatusType } = require('../../src/rest/util/constants');
+
 module.exports = {
   identity: 'project',
   primaryKey: 'id',
   attributes: {
-    projectName: { type: 'string', required: true },
-    mission: { type: 'string', required: true },
-    problemAddressed: { type: 'string', required: true },
-    location: { type: 'string', required: true },
-    timeframe: { type: 'string', required: true },
-    pitchProposal: { type: 'string', required: false },
+    projectName: { type: 'string', required: false },
+    mission: { type: 'string', required: false },
+    problemAddressed: { type: 'string', required: false },
+    location: { type: 'string', required: false },
+    timeframe: { type: 'string', required: false },
+    proposal: { type: 'string', required: false },
     faqLink: { type: 'string', required: false },
-    coverPhoto: {
-      columnName: 'coverPhoto',
-      model: 'photo'
-    },
-    milestonesFile: { type: 'string', required: false },
-    cardPhoto: {
-      columnName: 'cardPhoto',
-      model: 'photo'
-    },
-    goalAmount: { type: 'number', required: true },
-    status: { type: 'number', defaultsTo: 0 },
+    coverPhotoPath: { type: 'string', required: false },
+    cardPhotoPath: { type: 'string', required: false },
+    milestonePath: { type: 'string', required: false },
+    goalAmount: { type: 'number', required: false },
+    status: { type: 'string', defaultsTo: projectStatusType.DRAFT },
     ownerId: { type: 'number', required: true },
-    projectAgreement: { type: 'string', required: false },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     transactionHash: { type: 'string', required: false },
-    creationTransactionHash: { type: 'string', required: false },
     milestones: {
       collection: 'milestone',
       via: 'project'
     },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } },
-    blockchainStatus: {
-      columnName: 'blockchainStatus',
-      model: 'blockchain_status'
-    },
-    startBlockchainStatus: {
-      type: 'number',
-      defaultsTo: 1
-    }
+    id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
 };
