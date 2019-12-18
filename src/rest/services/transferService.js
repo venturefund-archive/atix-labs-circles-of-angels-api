@@ -156,6 +156,50 @@ module.exports = {
     return { transferId: updated.id };
   },
 
+  /**
+   * Returns an array with all transfers for the specified project
+   * @param {number} projectId - Project to get all transfers from
+   * @returns {{ transfers: array }}
+   */
+  async getAllTransfersByProject(projectId) {
+    logger.info(
+      '[TransferService] :: Entering getAllTransfersByProject method'
+    );
+    validateRequiredParams({
+      method: 'getAllTransfersByProject',
+      params: { projectId }
+    });
+
+    const project = await checkExistence(this.projectDao, projectId, 'project');
+
+    // TODO: define in which project phase/s this list would make sense
+    if (
+      project.status !== projectStatusType.CONSENSUS &&
+      project.status !== projectStatusType.ONGOING
+    ) {
+      logger.error(
+        '[TransferService] :: Project has not been approved yet',
+        project
+      );
+      throw new COAError(errors.ProjectNotApproved);
+    }
+
+    logger.info(
+      '[TransferService] :: Getting all transfer for project',
+      projectId
+    );
+
+    // TODO: might have to add pagination
+    const transfers = await this.transferDao.getAllTransfersByProject(
+      projectId
+    );
+
+    logger.info(
+      `[TransferService] :: Found ${transfers.length} for project ${projectId}`
+    );
+    return { transfers };
+  },
+
   async getTransferById({ transferId }) {
     return this.transferDao.findTransferById(transferId);
   },
@@ -166,10 +210,6 @@ module.exports = {
       projectId
     });
     return transfer;
-  },
-
-  async getTransferList({ projectId }) {
-    return this.transferDao.getTransferByProjectId({ projectId });
   },
 
   /**
