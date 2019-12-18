@@ -50,14 +50,11 @@ module.exports = {
   },
 
   updateTransfer: fastify => async (request, reply) => {
-    fastify.log.info('[Transfer Routes] :: Update transfer state');
-    const verification = await transferService.updateTransferState({
-      transferId: request.params.id,
-      state: request.body.state
-    });
-    if (!verification)
-      reply.send({ error: 'Error when trying upload transfer state' });
-    reply.send({ sucess: 'Transfer information upload sucessfuly!' });
+    fastify.log.info('[Transfer Routes] :: Update transfer');
+    const { id } = request.params;
+    const { status } = request.body;
+    const response = await transferService.updateTransfer(id, { status });
+    reply.status(200).send(response);
   },
 
   getState: fastify => async (request, reply) => {

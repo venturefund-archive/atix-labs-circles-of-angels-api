@@ -59,12 +59,19 @@ module.exports = {
     const project = await checkExistence(this.projectDao, projectId, 'project');
     const user = await checkExistence(this.userDao, senderId, 'user');
 
-    if (user.role !== userRoles.FUNDER)
+    if (user.role !== userRoles.FUNDER) {
+      logger.error('[TransferService] :: User is not a funder', user);
       throw new COAError(errors.UnauthorizedUserRole(user.role));
+    }
 
     // TODO: change allowed project status to FUNDING when implemented
-    if (project.status !== projectStatusType.CONSENSUS)
+    if (project.status !== projectStatusType.CONSENSUS) {
+      logger.error(
+        '[TransferService] :: Project is not on consensus phase',
+        project
+      );
       throw new COAError(errors.ProjectCantReceiveTransfers(project.status));
+    }
 
     const existingTransfer = await this.transferDao.getTransferById({
       transferId
@@ -74,8 +81,13 @@ module.exports = {
     if (
       existingTransfer &&
       existingTransfer.status !== txFunderStatus.CANCELLED
-    )
+    ) {
+      logger.error(
+        '[TransferService] :: Transfer with same tranferId already exists',
+        existingTransfer
+      );
       throw new COAError(errors.TransferIdAlreadyExists(transferId));
+    }
 
     validateMtype('transferReceipt', receiptFile);
     validatePhotoSize(receiptFile);
@@ -103,6 +115,47 @@ module.exports = {
     return { transferId: created.id };
   },
 
+  /**
+   * Updates an existing transfer status
+   * Returns its `id` if successfully updated
+   * @param {number} id - Transfer's `id` field
+   * @param {Object} status - New status to update the transfer with
+   * @param {string} status.status
+   * @returns {{ transferId: number }} transfer's `id` field
+   */
+  async updateTransfer(id, { status }) {
+    logger.info('[TransferService] :: Entering updateTransfer method');
+    validateRequiredParams({
+      method: 'updateTransfer',
+      params: { id, status }
+    });
+
+    const transfer = await checkExistence(
+      this.transferDao,
+      id,
+      'fund_transfer'
+    );
+
+    if (!Object.values(txFunderStatus).includes(status)) {
+      logger.error(
+        `[TransferService] :: Transfer status '${status}' is not valid`
+      );
+      throw new COAError(errors.TransferStatusNotValid(status));
+    }
+
+    // TODO: define what to do with RECONCILIATION status
+    if (transfer.status !== txFunderStatus.PENDING) {
+      logger.error('[TransferService] :: Transfer status is not pending', {
+        id: transfer.id,
+        status: transfer.status
+      });
+      throw new COAError(errors.TransferStatusCannotChange(transfer.status));
+    }
+
+    const updated = await this.transferDao.update({ id, status });
+    return { transferId: updated.id };
+  },
+
   async sendTransferToVerification({
     transferId,
     amount,
@@ -119,10 +172,6 @@ module.exports = {
       projectId,
       destinationAccount
     });
-  },
-
-  async updateTransferState({ transferId, state }) {
-    return this.transferDao.updateTransferState({ transferId, state });
   },
 
   async getTransferById({ transferId }) {

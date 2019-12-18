@@ -47,6 +47,10 @@ module.exports = {
     );
   },
 
+  async findById(id) {
+    return this.model.findOne({ id });
+  },
+
   async create({
     transferId,
     senderId,
@@ -69,8 +73,8 @@ module.exports = {
     });
   },
 
-  async updateTransferState({ transferId, state }) {
-    return this.model.update({ id: transferId }).set({ state });
+  async update({ id, status }) {
+    return this.model.updateOne({ id }).set({ status });
   },
 
   async getTransferById({ transferId }) {

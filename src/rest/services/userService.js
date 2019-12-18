@@ -284,7 +284,7 @@ module.exports = {
 
   async validUser(user, roleId) {
     const existentUser = await this.userDao.getUserById(user.id);
-    const role = roleId ? existentUser.role.id === roleId : true;
+    const role = roleId ? existentUser.role === roleId : true;
     return existentUser && !existentUser.blocked && role;
   }
 };

@@ -54,8 +54,15 @@ describe('Testing transferService', () => {
   };
 
   const verifiedTransfer = {
+    id: 2,
     transferId: 'existing123',
     status: txFunderStatus.VERIFIED
+  };
+
+  const pendingTransfer = {
+    id: 3,
+    transferId: 'pendingABC',
+    status: txFunderStatus.PENDING
   };
 
   beforeAll(() => {
@@ -74,6 +81,13 @@ describe('Testing transferService', () => {
     },
     getTransferById: ({ transferId }) =>
       dbTransfer.find(transfer => transfer.transferId === transferId),
+
+    update: ({ id, status }) => {
+      const existing = dbTransfer.find(transfer => transfer.id === id);
+      if (existing) existing.status = status;
+      return existing;
+    },
+    findById: id => dbTransfer.find(transfer => transfer.id === id),
 
     getTransfersByProjectAndState: (projectId, state) => {
       if (projectId === 0) {
@@ -203,6 +217,60 @@ describe('Testing transferService', () => {
           receiptFile: { name: 'receipt.jpg', size: 10000000 }
         })
       ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+    });
+  });
+
+  describe('Testing transferService updateTransfer', () => {
+    beforeAll(() => {
+      injectMocks(transferService, {
+        transferDao
+      });
+    });
+
+    beforeEach(() => {
+      dbTransfer = [];
+      dbTransfer.push(pendingTransfer);
+    });
+
+    it('should update the pending transfer status and return its id', async () => {
+      const response = await transferService.updateTransfer(
+        pendingTransfer.id,
+        { status: txFunderStatus.VERIFIED }
+      );
+      const updatedTransfer = dbTransfer.find(
+        transfer => transfer.id === response.transferId
+      );
+      expect(updatedTransfer.status).toEqual(txFunderStatus.VERIFIED);
+      expect(response).toEqual({ transferId: pendingTransfer.id });
+    });
+
+    it('should throw an error if parameters are not valid', async () => {
+      await expect(
+        transferService.updateTransfer(pendingTransfer.id, {})
+      ).rejects.toThrow(errors.RequiredParamsMissing('updateTransfer'));
+    });
+
+    it('should throw an error if transfer does not exist', async () => {
+      await expect(
+        transferService.updateTransfer(0, { status: txFunderStatus.VERIFIED })
+      ).rejects.toThrow(errors.CantFindModelWithId('fund_transfer', 0));
+    });
+
+    it('should throw an error if new status is not valid', async () => {
+      await expect(
+        transferService.updateTransfer(pendingTransfer.id, { status: 'wrong' })
+      ).rejects.toThrow(errors.TransferStatusNotValid('wrong'));
+    });
+
+    it('should throw an error if transfer status is not pending', async () => {
+      dbTransfer.push(verifiedTransfer);
+      await expect(
+        transferService.updateTransfer(verifiedTransfer.id, {
+          status: txFunderStatus.CANCELLED
+        })
+      ).rejects.toThrow(
+        errors.TransferStatusCannotChange(verifiedTransfer.status)
+      );
     });
   });
 
