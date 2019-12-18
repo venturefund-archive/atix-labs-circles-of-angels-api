@@ -32,8 +32,7 @@ module.exports = {
     reply.status(200).send(response);
   },
 
-  sendToVerification: fastify => async (request, reply) => {
-    fastify.log.info('[Transfer Routes] :: Send transfer to verification');
+  sendToVerification: () => async (request, reply) => {
     const verification = await transferService.sendTransferToVerification({
       transferId: request.body.transferId,
       amount: request.body.amount,
@@ -49,20 +48,14 @@ module.exports = {
     reply.send({ sucess: 'Transfer information upload sucessfuly!' });
   },
 
-  updateTransfer: fastify => async (request, reply) => {
-    fastify.log.info('[Transfer Routes] :: Update transfer');
+  updateTransfer: () => async (request, reply) => {
     const { id } = request.params;
     const { status } = request.body;
     const response = await transferService.updateTransfer(id, { status });
     reply.status(200).send(response);
   },
 
-  getState: fastify => async (request, reply) => {
-    fastify.log.info(
-      `[Transfer Routes] :: Getting state of user ${
-        request.params.userId
-      } in project ${request.params.projectId}`
-    );
+  getState: () => async (request, reply) => {
     const status = await transferService.getTransferStatusByUserAndProject({
       senderId: request.params.userId,
       projectId: request.params.projectId
@@ -77,12 +70,7 @@ module.exports = {
     }
   },
 
-  getTransfers: fastify => async (request, reply) => {
-    fastify.log.info(
-      `[Transfer Routes] :: Getting transactions of project ${
-        request.params.projectId
-      }`
-    );
+  getTransfers: () => async (request, reply) => {
     const transferList = await transferService.getTransferList({
       projectId: request.params.projectId
     });
