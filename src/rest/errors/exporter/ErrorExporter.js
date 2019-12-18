@@ -22,6 +22,10 @@ module.exports = {
     message: 'The create project fields are not valid',
     statusCode: 400
   },
+  RequiredParamsMissing: method => ({
+    message: `Required params are missing for method ${method}`,
+    statusCode: 400
+  }),
   ImgFileTyPeNotValid: {
     message: 'The image file type is not a valid one',
     statusCode: 400
@@ -65,5 +69,20 @@ module.exports = {
   },
   MilestoneDoesNotBelongToProject: {
     message: 'Milestone does not belong to project'
+  },
+  UnauthorizedUserRole: role => ({
+    message: `User of role ${role} is not allowed to execute this operation`,
+    statusCode: 403
+  }),
+  ProjectCantReceiveTransfers: status => ({
+    message: `Project with status ${status} can't receive transfers`,
+    statusCode: 403
+  }),
+  TransferIdAlreadyExists: transferId => ({
+    message: `There is another PENDING or VERIFIED transfer with the same transferId ${transferId}`,
+    statusCode: 403
+  }),
+  CantCreateTransfer: {
+    message: "Couldn't create transfer"
   }
 };

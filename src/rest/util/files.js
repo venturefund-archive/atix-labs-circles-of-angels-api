@@ -30,6 +30,9 @@ const getMilestonesPath = () =>
 const getProjectExperiencePath = () =>
   `${configs.fileServer.filePath}/projects/experiencePhotos/`;
 
+const getTransferReceiptPath = () =>
+  `${configs.fileServer.filePath}/projects/transfers/`;
+
 const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
   new Promise((resolve, reject) => {
     sharp(image.data)
@@ -70,6 +73,11 @@ const fileSaver = {
   projectExperiencePhoto: {
     save: savePhotoJpgFormat,
     getBasePath: getProjectExperiencePath,
+    fileExtension: jpeg
+  },
+  transferReceipt: {
+    save: savePhotoJpgFormat,
+    getBasePath: getTransferReceiptPath,
     fileExtension: jpeg
   }
 };

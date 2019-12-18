@@ -117,7 +117,11 @@ module.exports = fastify => {
   }
 
   function configureTransferService(service) {
-    const dependencies = { transferDao };
+    const dependencies = {
+      transferDao,
+      projectDao,
+      userDao
+    };
 
     injectDependencies(service, dependencies);
   }
@@ -168,6 +172,7 @@ module.exports = fastify => {
     injectModel(activityDao, models.task);
     injectModel(projectExperienceDao, models.project_experience);
     injectModel(projectExperiencePhotoDao, models.project_experience_photo);
+    injectModel(transferDao, models.fund_transfer);
   }
 
   function configureServices() {

@@ -9,6 +9,29 @@
 const transferService = require('../../services/transferService');
 
 module.exports = {
+  createTransfer: () => async (request, reply) => {
+    const {
+      transferId,
+      destinationAccount,
+      amount,
+      currency,
+      projectId
+    } = request.raw.body;
+    const { receiptFile } = request.raw.files;
+    const senderId = request.user.id;
+
+    const response = await transferService.createTransfer({
+      transferId,
+      destinationAccount,
+      amount,
+      currency,
+      projectId,
+      senderId,
+      receiptFile
+    });
+    reply.status(200).send(response);
+  },
+
   sendToVerification: fastify => async (request, reply) => {
     fastify.log.info('[Transfer Routes] :: Send transfer to verification');
     const verification = await transferService.sendTransferToVerification({

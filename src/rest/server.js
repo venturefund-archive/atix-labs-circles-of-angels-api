@@ -8,6 +8,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const COAError = require('./errors/COAError');
+
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
  * @param db instance of database creator.
@@ -40,6 +42,13 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-static'), { root: '/' });
 
     // fastify.eth = await ethInitializer({ logger });
+    fastify.setErrorHandler((error, request, reply) => {
+      if (error instanceof COAError) {
+        reply.status(error.statusCode).send(error.message);
+      } else {
+        reply.status(500).send('Internal Server Error');
+      }
+    });
     loadRoutes(fastify);
 
     await fastify.listen(configs.server);

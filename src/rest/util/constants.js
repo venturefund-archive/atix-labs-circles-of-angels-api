@@ -42,10 +42,10 @@ const activityStatus = {
 };
 
 const txFunderStatus = {
-  pending: 'pending',
-  reconciliation: 'reconciliation',
-  cancelled: 'cancelled',
-  verified: 'verified'
+  PENDING: 'pending',
+  RECONCILIATION: 'reconciliation',
+  CANCELLED: 'cancelled',
+  VERIFIED: 'verified'
 };
 
 const userRoles = {
