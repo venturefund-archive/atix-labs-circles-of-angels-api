@@ -10,6 +10,13 @@ CREATE TYPE ROLE AS ENUM (
     'admin'
 );
 
+CREATE TYPE TX_FUNDER_STATUS AS ENUM (
+    'reconciliation',
+    'pending',
+    'cancelled',
+    'verified'
+);
+
 CREATE TABLE public.user (
     id SERIAL NOT NULL,
     "firstName" varchar(80) NOT NULL,
@@ -110,11 +117,27 @@ CREATE TABLE public.project_experience_photo (
     FOREIGN KEY ("projectExperienceId") REFERENCES public.project_experience (id)
 );
 
+CREATE TABLE public.fund_transfer (
+    id SERIAL NOT NULL,
+    "transferId" varchar(80) NOT NULL,
+    "destinationAccount" varchar(80) NOT NULL,
+    "receiptPath" text NOT NULL,
+    amount real NOT NULL,
+    currency varchar(10) NOT NULL,
+    "senderId" int NOT NULL,
+    "projectId" int NOT NULL,
+    status TX_FUNDER_STATUS NOT NULL,
+    "createdAt" DATE,
+    PRIMARY KEY (id),
+    FOREIGN KEY ("projectId") REFERENCES public.project (id),
+    FOREIGN KEY ("senderId") REFERENCES public.user (id)
+);
+
 CREATE TABLE public.pass_recovery (
     id SERIAL NOT NULL,
     token varchar(80) NOT NULL,
     email varchar(80) NOT NULL,
-    createdAt timestamp with time zone NOT NULL
+    "createdAt" timestamp with time zone NOT NULL
 );
 
 CREATE TABLE public.question (
@@ -126,22 +149,23 @@ CREATE TABLE public.question (
 
 CREATE TABLE public.answer (
     id SERIAL NOT NULL,
-    questionId integer NOT NULL,
+    "questionId" integer NOT NULL,
     answer text
 );
 
 CREATE TABLE public.answer_question (
     id SERIAL NOT NULL,
-    questionId integer NOT NULL,
-    answerId integer NOT NULL,
-    customAnswer text,
-    userId integer NOT NULL PRIMARY KEY (id)
+    "questionId" integer NOT NULL,
+    "answerId" integer NOT NULL,
+    "customAnswer" text,
+    "userId" integer NOT NULL, 
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE public.file (
     id SERIAL NOT NULL,
     path character varying NOT NULL,
-    createdAt date,
+    "createdAt" date,
     PRIMARY KEY (id)
 );
 
