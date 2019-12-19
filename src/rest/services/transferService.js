@@ -60,15 +60,14 @@ module.exports = {
     const user = await checkExistence(this.userDao, senderId, 'user');
 
     if (user.role !== userRoles.FUNDER) {
-      logger.error('[TransferService] :: User is not a funder', user);
+      logger.error(`[TransferService] :: User ${user.id} is not a funder`);
       throw new COAError(errors.UnauthorizedUserRole(user.role));
     }
 
     // TODO: change allowed project status to FUNDING when implemented
     if (project.status !== projectStatusType.CONSENSUS) {
       logger.error(
-        '[TransferService] :: Project is not on consensus phase',
-        project
+        `[TransferService] :: Project ${project.id} is not on consensus phase`
       );
       throw new COAError(errors.ProjectCantReceiveTransfers(project.status));
     }
@@ -83,8 +82,9 @@ module.exports = {
       existingTransfer.status !== txFunderStatus.CANCELLED
     ) {
       logger.error(
-        '[TransferService] :: Transfer with same tranferId already exists',
-        existingTransfer
+        `[TransferService] :: Transfer ${
+          existingTransfer.id
+        } with same tranferId already exists`
       );
       throw new COAError(errors.TransferIdAlreadyExists(transferId));
     }
@@ -154,24 +154,6 @@ module.exports = {
 
     const updated = await this.transferDao.update({ id, status });
     return { transferId: updated.id };
-  },
-
-  async sendTransferToVerification({
-    transferId,
-    amount,
-    currency,
-    senderId,
-    projectId,
-    destinationAccount
-  }) {
-    return this.transferDao.createOrUpdateTransfer({
-      transferId,
-      amount,
-      currency,
-      senderId,
-      projectId,
-      destinationAccount
-    });
   },
 
   async getTransferById({ transferId }) {

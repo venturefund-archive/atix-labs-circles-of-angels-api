@@ -135,53 +135,6 @@ const transferRoutes = {
 };
 
 const routes = {
-  sendToVerification: {
-    method: 'post',
-    path: `${basePath}/send`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
-        description: 'Creates a new transfer to be verified by the admin',
-        summary: 'Create new transfer',
-        body: {
-          type: 'object',
-          properties: {
-            amount: { type: 'number' },
-            currency: { type: 'string' },
-            senderId: { type: 'string' },
-            projectId: { type: 'integer' },
-            destinationAccount: { type: 'string' },
-            transferId: { type: 'string' }
-          },
-          required: [
-            'amount',
-            'currency',
-            'senderId',
-            'projectId',
-            'destinationAccount',
-            'transferId'
-          ]
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              sucess: { type: 'string' }
-            }
-          },
-          409: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.sendToVerification
-  },
-
   getState: {
     method: 'get',
     path: `${basePath}/user/:userId/project/:projectId/state`,

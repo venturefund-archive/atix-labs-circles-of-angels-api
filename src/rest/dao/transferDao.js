@@ -9,44 +9,6 @@
 const { txFunderStatus } = require('../util/constants');
 
 module.exports = {
-  async createOrUpdateTransfer({
-    transferId,
-    amount,
-    currency,
-    senderId,
-    projectId,
-    destinationAccount
-  }) {
-    const transfer = await this.model.findOne({
-      and: [
-        {
-          sender: senderId,
-          project: projectId
-        }
-      ]
-    });
-    if (!transfer) {
-      return this.model.create({
-        transferId,
-        amount,
-        currency,
-        sender: senderId,
-        project: projectId,
-        destinationAccount
-      });
-    }
-    return this.model.update(
-      { sender: senderId, project: projectId },
-      {
-        transferId,
-        amount,
-        currency,
-        state: 0,
-        destinationAccount
-      }
-    );
-  },
-
   async findById(id) {
     return this.model.findOne({ id });
   },

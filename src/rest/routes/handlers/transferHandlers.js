@@ -32,22 +32,6 @@ module.exports = {
     reply.status(200).send(response);
   },
 
-  sendToVerification: () => async (request, reply) => {
-    const verification = await transferService.sendTransferToVerification({
-      transferId: request.body.transferId,
-      amount: request.body.amount,
-      currency: request.body.currency,
-      senderId: request.body.senderId,
-      projectId: request.body.projectId,
-      destinationAccount: request.body.destinationAccount
-    });
-    if (!verification)
-      reply
-        .status(409)
-        .send({ error: 'Error when trying upload transfer information' });
-    reply.send({ sucess: 'Transfer information upload sucessfuly!' });
-  },
-
   updateTransfer: () => async (request, reply) => {
     const { id } = request.params;
     const { status } = request.body;
