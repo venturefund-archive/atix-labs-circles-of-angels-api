@@ -95,7 +95,6 @@ module.exports = {
       } else {
         fastify.log.info('[User Routes] :: Log in successful for user:', email);
         const token = fastify.jwt.sign(user);
-
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + 1);
         reply
@@ -107,7 +106,7 @@ module.exports = {
             expires: expirationDate
             // secure: true
           })
-          .redirect('/explore-projects');
+          .send(user);
       }
     } catch (err) {
       reply
