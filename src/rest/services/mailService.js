@@ -7,7 +7,7 @@
  */
 
 const { isEmpty } = require('lodash');
-const logger = require("../logger");
+const logger = require('../logger');
 
 module.exports = {
   /**
@@ -19,7 +19,7 @@ module.exports = {
    * @param {number} text <= TODO : what is this?
    * @param {object} content - email's content.
    * @returns
-  */
+   */
   async sendMail(from, to, subject, text, content) {
     try {
       const info = await this.emailClient.sendMail({
@@ -30,15 +30,12 @@ module.exports = {
         content
       });
       if (!isEmpty(info.rejected)) {
-        fastify.log.info(
-          '[User Service] :: Invalid email account',
-          info.rejected
-        );
+        logger.info('[User Service] :: Invalid email account', info.rejected);
         throw new Error(409, 'Invalid email');
       }
       return info;
     } catch (error) {
-      fastify.log.error('[User Service] :: Error creating User:', error);
+      logger.error('[User Service] :: Error creating User:', error);
       throw new Error('An error has occurred sending an email');
     }
   }
