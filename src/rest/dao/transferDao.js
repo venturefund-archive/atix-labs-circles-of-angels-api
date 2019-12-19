@@ -43,6 +43,10 @@ module.exports = {
     return this.model.findOne({ transferId });
   },
 
+  async getAllTransfersByProject(projectId) {
+    return this.model.find({ project: projectId });
+  },
+
   async getTransferStatusByUserAndProject({ senderId, projectId }) {
     const transfer = await this.model.findOne({
       and: [
@@ -54,10 +58,6 @@ module.exports = {
     });
 
     return transfer ? transfer.status : undefined;
-  },
-
-  async getTransferByProjectId({ projectId }) {
-    return this.model.find({ project: projectId });
   },
 
   async getTransfersByProjectAndState(projectId, status) {

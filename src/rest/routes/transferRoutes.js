@@ -49,6 +49,7 @@ const idParam = description => ({
 });
 
 const transferIdParam = idParam('Transfer unique id');
+const projectIdParam = idParam('Project unique id');
 
 const transferProperties = {
   transferId: { type: 'string' },
@@ -70,6 +71,29 @@ const successWithTransferIdResponse = {
     transferId: { type: 'integer' }
   },
   description: 'Returns the id of the created transfer'
+};
+
+const successWithTransfersArray = {
+  type: 'object',
+  properties: {
+    transfers: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          transferId: { type: 'string' },
+          destinationAccount: { type: 'string' },
+          amount: { type: 'number' },
+          currency: { type: 'string' },
+          status: { type: 'string' },
+          createdAt: { type: 'string' },
+          id: { type: 'integer' },
+          sender: { type: 'integer' },
+          project: { type: 'integer' }
+        }
+      }
+    }
+  }
 };
 
 const transferRoutes = {
@@ -131,6 +155,26 @@ const transferRoutes = {
       }
     },
     handler: handlers.updateTransfer
+  },
+
+  getTransfers: {
+    method: 'get',
+    path: `/projects/:projectId${basePath}`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description: 'Returns all the transfers related to a project',
+        summary: 'Get all transfers by project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithTransfersArray),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getTransfers
   }
 };
 
@@ -176,46 +220,6 @@ const routes = {
       }
     },
     handler: handlers.getState
-  },
-
-  getTransfers: {
-    method: 'get',
-    path: `/projects/:projectId${basePath}`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
-        description: 'Returns all the transfers related to a project',
-        summary: 'Get all transfers by project',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                transferId: { type: 'string' },
-                destinationAccount: { type: 'string' },
-                amount: { type: 'number' },
-                currency: { type: 'string' },
-                state: { type: 'integer' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                id: { type: 'integer' },
-                sender: { type: 'integer' },
-                project: { type: 'integer' }
-              }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.getTransfers
   },
 
   ...transferRoutes

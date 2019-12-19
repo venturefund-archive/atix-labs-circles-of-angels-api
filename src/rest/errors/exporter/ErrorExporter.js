@@ -90,6 +90,10 @@ module.exports = {
     message: `A transfer of status '${status}' can't be updated`,
     statusCode: 403
   }),
+  ProjectNotApproved: {
+    message: 'Project has not been approved yet',
+    statusCode: 403
+  },
   CantCreateTransfer: {
     message: "Couldn't create transfer"
   }

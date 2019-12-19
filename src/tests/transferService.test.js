@@ -88,6 +88,8 @@ describe('Testing transferService', () => {
       return existing;
     },
     findById: id => dbTransfer.find(transfer => transfer.id === id),
+    getAllTransfersByProject: projectId =>
+      dbTransfer.filter(transfer => transfer.projectId === projectId),
 
     getTransfersByProjectAndState: (projectId, state) => {
       if (projectId === 0) {
@@ -271,6 +273,51 @@ describe('Testing transferService', () => {
       ).rejects.toThrow(
         errors.TransferStatusCannotChange(verifiedTransfer.status)
       );
+    });
+  });
+
+  describe('Testing transferService getAllTransfersByProject', () => {
+    beforeAll(() => {
+      injectMocks(transferService, {
+        transferDao,
+        projectDao
+      });
+    });
+
+    beforeEach(() => {
+      dbTransfer = [];
+      dbProject = [consensusProject];
+      dbTransfer.push(
+        { ...pendingTransfer, projectId: consensusProject.id },
+        { ...verifiedTransfer, projectId: consensusProject.id }
+      );
+    });
+
+    it('should return an object with the list of transfers', async () => {
+      const response = await transferService.getAllTransfersByProject(
+        consensusProject.id
+      );
+
+      expect(response.transfers.length).toEqual(2);
+    });
+
+    it('should throw an error if projectId is undefined', async () => {
+      await expect(transferService.getAllTransfersByProject()).rejects.toThrow(
+        errors.RequiredParamsMissing('getAllTransfersByProject')
+      );
+    });
+
+    it('should throw an error if project does not exist', async () => {
+      await expect(transferService.getAllTransfersByProject(0)).rejects.toThrow(
+        errors.CantFindModelWithId('project', 0)
+      );
+    });
+
+    it('should throw an error if project status is not CONSENSUS or ONGOING', async () => {
+      dbProject.push(draftProject);
+      await expect(
+        transferService.getAllTransfersByProject(draftProject.id)
+      ).rejects.toThrow(errors.ProjectNotApproved);
     });
   });
 
