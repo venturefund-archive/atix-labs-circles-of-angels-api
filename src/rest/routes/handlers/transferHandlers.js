@@ -42,6 +42,12 @@ module.exports = {
     reply.status(200).send(response);
   },
 
+  getTransfers: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await transferService.getAllTransfersByProject(projectId);
+    reply.status(200).send(response);
+  },
+
   getState: () => async (request, reply) => {
     const status = await transferService.getTransferStatusByUserAndProject({
       senderId: request.params.userId,
@@ -55,12 +61,5 @@ module.exports = {
     } else {
       reply.code(400).send({ error: 'No transfer receipt found' });
     }
-  },
-
-  getTransfers: () => async (request, reply) => {
-    const transferList = await transferService.getTransferList({
-      projectId: request.params.projectId
-    });
-    reply.send(transferList);
   }
 };
