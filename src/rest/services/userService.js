@@ -39,7 +39,8 @@ module.exports = {
         // logger.info('[User Service] :: User authenticated:', user.email);
 
         const authenticatedUser = {
-          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.email,
           id: user.id,
           role: user.role
