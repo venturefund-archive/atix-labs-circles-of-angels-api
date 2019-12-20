@@ -284,17 +284,11 @@ const routes = {
           200: {
             type: 'object',
             properties: {
-              username: { type: 'string' },
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
               email: { type: 'string' },
               id: { type: 'integer' },
-              role: {
-                type: 'object',
-                properties: {
-                  id: { type: 'integer' },
-                  name: { type: 'string' }
-                }
-              },
-              registrationStatus: { type: 'integer' }
+              role: { type: 'string' }
             },
             description:
               'Returns an object with the information of the logged in user ' +
