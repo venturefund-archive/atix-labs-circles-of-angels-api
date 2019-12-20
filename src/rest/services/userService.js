@@ -7,15 +7,10 @@
  */
 
 const bcrypt = require('bcrypt');
-const { isEmpty } = require('lodash');
-const {
-  userRoles,
-  blockchainStatus,
-  projectStatus
-} = require('../util/constants');
+const { userRoles } = require('../util/constants');
+const validateRequiredParams = require('./helpers/validateRequiredParams');
 
 const logger = require('../logger');
-
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 
@@ -88,13 +83,26 @@ module.exports = {
     detail,
     questionnaire
   }) {
+    logger.info(`[User Routes] :: Creating new user with email ${email}`);
+    validateRequiredParams({
+      method: 'createUser',
+      params: {
+        firstName,
+        lastName,
+        email,
+        password,
+        role
+      }
+    });
+
     const hashedPwd = await bcrypt.hash(password, 10);
 
-    // FIXME unmock this
+    // FIXME unmock this when blockchain methods are finished
     const account = {
       address: '0x2131321',
       privateKey: '0x12313'
     };
+
     /*
       await fastify.eth.createAccount();
       if (!account.address || !account.privateKey) {
@@ -106,6 +114,7 @@ module.exports = {
           error: 'Error creating account on blockchain'
         };
       } */
+
     const existingUser = await this.userDao.getUserByEmail(email);
 
     if (existingUser) {
@@ -115,14 +124,13 @@ module.exports = {
       throw new COAError(errors.EmailAlreadyInUse);
     }
 
-    // TODO : address, privkey
     const user = {
       firstName,
       lastName,
       email: email.toLowerCase(),
       password: hashedPwd,
       role,
-      address: '0x0', //account.address,
+      address: account.address,
       privKey: account.privateKey
     };
 
@@ -136,7 +144,8 @@ module.exports = {
       throw new COAError('There was an unexpected error creating the user');
     }
 
-    // sends welcome email
+    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
+
     await this.mailService.sendMail(
       '"Circles of Angels Support" <coa@support.com>',
       email,
@@ -148,6 +157,7 @@ module.exports = {
 
     return savedUser;
   },
+
   /**
    * Receives a User's id and returns their role
    *

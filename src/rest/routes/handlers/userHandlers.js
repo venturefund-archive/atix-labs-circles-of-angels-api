@@ -116,22 +116,9 @@ module.exports = {
     }
   },
 
-  signupUser: fastify => async (request, reply) => {
-    try {
-      fastify.log.info('[User Routes] :: Creating new user:', request.body);
-      const user = await userService.createUser(request.body);
-
-      if (user.error) {
-        fastify.log.error('[User Routes] :: User creation failed', user);
-        reply.status(user.status).send(user);
-      } else {
-        fastify.log.info('[User Routes] :: Creation successful:', user);
-        reply.status(200).send({ success: 'User successfully created!' });
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error creating user' });
-    }
+  signupUser: () => async (request, reply) => {
+    const user = await userService.createUser(request.body);
+    reply.status(200).send({ userId: user.id });
   },
 
   updateUser: fastify => async (request, reply) => {
