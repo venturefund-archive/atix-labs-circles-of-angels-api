@@ -37,6 +37,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   updateProjectThumbnail: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const {
@@ -61,6 +62,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   getProjectThumbnail: fastify => async (request, reply) => {
     const { projectId } = request.params;
     try {
@@ -70,6 +72,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   createProjectDetail: fastify => async (request, reply) => {
     const { projectMission, theProblem } = request.raw.body;
     const { file } = request.raw.files;
@@ -88,6 +91,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   updateProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { projectMission, theProblem } = request.raw.body;
@@ -105,6 +109,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   getProjectDetail: fastify => async (request, reply) => {
     const { projectId } = request.params;
     try {
@@ -114,6 +119,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   createProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const ownerId = request.user.id;
@@ -128,6 +134,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   updateProjectProposal: fastify => async (request, reply) => {
     const ownerId = request.user.id;
     const { projectId } = request.params;
@@ -142,6 +149,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   getProjectProposal: fastify => async (request, reply) => {
     const { projectId } = request.params;
     try {
@@ -151,6 +159,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   deleteMilestoneOfProject: fastify => async (request, reply) => {
     const { projectId, milestoneId } = request.params;
     try {
@@ -163,6 +172,7 @@ module.exports = {
       reply.status(200).send(error.message);
     }
   },
+
   editTaskOfMilestone: fastify => async (request, reply) => {
     const { milestoneId, taskId } = request.params;
     try {
@@ -175,6 +185,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   deleteTaskOfMilestone: fastify => async (request, reply) => {
     const { milestoneId, taskId } = request.params;
     try {
@@ -187,18 +198,21 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   addTaskOnMilestone: fastify => async (request, reply) => {
     // TODO
     const { milestoneId } = request.params;
     const task = request.raw.body;
     reply.send('DALE QUE VA addTaskOnMilestone');
   },
+
   getTemplateOfProjectMilestone: fastify => async (request, reply) => {
     // TODO
     reply.send(
       'Inside getTemplateOfProjectMilestone, this should return a stream to template file, but not today :)'
     );
   },
+
   uploadMilestoneFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const { file } = request.raw.files;
@@ -213,6 +227,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   processMilestonesFile: fastify => async (request, reply) => {
     const { projectId } = request.params;
     const ownerId = request.user.id;
@@ -226,6 +241,7 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
+
   getProjectMilestones: fastify => async (request, reply) => {
     const { projectId } = request.params;
     try {
@@ -235,9 +251,11 @@ module.exports = {
       reply.status(error.statusCode).send(error.message);
     }
   },
-  publishProject: fastify => async (request, reply) => {
+
+  publishProject: () => async (request, reply) => {
     const { projectId } = request.params;
     const ownerId = request.user.id;
+
     try {
       const response = await projectService.publishProject(projectId, ownerId);
       reply.send(response);
@@ -246,13 +264,9 @@ module.exports = {
     }
   },
 
-  getProjects: fastify => async (request, reply) => {
-    try {
-      const projects = await projectService.getProjects();
-      reply.status(200).send(projects);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+  getProjects: () => async (request, reply) => {
+    const projects = await projectService.getProjects();
+    reply.status(200).send(projects);
   },
 
   getActiveProjects: fastify => async (request, reply) => {

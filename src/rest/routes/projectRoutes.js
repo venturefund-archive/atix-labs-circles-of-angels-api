@@ -600,7 +600,7 @@ const createProjectRoute = {
 const commonProjectRoutes = {
   getProjects: {
     method: 'get',
-    path: `${basePath}/`,
+    path: `${basePath}`,
     options: {
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
@@ -630,7 +630,6 @@ const commonProjectRoutes = {
     options: {
       beforeHandler: []
     }
-
   }
 };
 
