@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const path = require('path');
 const { projectStatusType } = require('../util/constants');
 const files = require('../util/files');
 const {
@@ -342,6 +343,34 @@ module.exports = {
     validateParams(projectId);
     await validateExistence(this.projectDao, projectId, 'project');
     return this.milestoneDao.getMilestoneByProjectId(projectId);
+  },
+
+  async getProjectMilestonesPath(projectId) {
+    validateParams(projectId);
+    await validateExistence(this.projectDao, projectId, 'project');
+
+    logger.info(
+      `[Project Routes] :: Getting milestones file of project ${projectId}`
+    );
+
+    const milestonesFilePath = await this.projectDao.getProjectMilestonesFilePath(
+      projectId
+    );
+
+    if (!milestonesFilePath || milestonesFilePath == null) {
+      throw new COAError(errors.ProjectDoesntHaveMilestonesFile(projectId));
+    }
+
+    const response = {
+      filename: path.basename(milestonesFilePath.milestonePath),
+      filepath: milestonesFilePath.milestonePath
+    };
+
+    logger.info(
+      `[Project Routes] :: Milestones file of project ${projectId} got successfully`
+    );
+
+    return response;
   },
 
   async publishProject(projectId, { ownerId }) {
