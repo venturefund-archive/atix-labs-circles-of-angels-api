@@ -43,7 +43,10 @@ module.exports = {
     milestonePath: { type: 'string', required: false },
     goalAmount: { type: 'number', required: false },
     status: { type: 'string', defaultsTo: projectStatusType.DRAFT },
-    ownerId: { type: 'number', required: true },
+    owner: {
+      columnName: 'ownerId',
+      model: 'user'
+    },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     transactionHash: { type: 'string', required: false },
     milestones: {
