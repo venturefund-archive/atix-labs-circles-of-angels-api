@@ -121,13 +121,7 @@ const userResponse = {
     lastName: { type: 'string' },
     email: { type: 'string' },
     id: { type: 'integer' },
-    role: {
-      type: 'object',
-      properties: {
-        id: { type: 'integer' },
-        name: { type: 'string' }
-      }
-    }
+    role: { type: 'string' }
   },
   description: 'Returns and object with the user information'
 };
