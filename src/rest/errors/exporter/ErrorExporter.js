@@ -94,6 +94,14 @@ module.exports = {
     message: 'Project has not been approved yet',
     statusCode: 403
   },
+  ProjectDoesntHaveMilestonesFile: projectId => ({
+    message: `Project ${projectId} doesn't have milestones file`,
+    statusCode: 404
+  }),
+  MilestonesFileNotFound: (projectId, filepath) => ({
+    message: `Milestones file wasn't found for project ${projectId} and path ${filepath}`,
+    statusCode: 404
+  }),
   CantCreateTransfer: {
     message: "Couldn't create transfer"
   }

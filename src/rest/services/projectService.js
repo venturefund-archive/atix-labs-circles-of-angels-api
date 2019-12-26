@@ -6,8 +6,9 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const path = require('path');
 const { projectStatusType } = require('../util/constants');
-const files = require('../util/files');
+const { saveFile, fileExists } = require('../util/files');
 const {
   validateExistence,
   validateParams,
@@ -75,7 +76,7 @@ module.exports = {
     validateMtype(thumbnailType)(file);
     validatePhotoSize(file);
 
-    const cardPhotoPath = await files.saveFile(thumbnailType, file);
+    const cardPhotoPath = await saveFile(thumbnailType, file);
 
     const project = {
       projectName,
@@ -114,7 +115,7 @@ module.exports = {
     }
 
     const cardPhotoPath = file
-      ? await files.saveFile(thumbnailType, file)
+      ? await saveFile(thumbnailType, file)
       : project.filePath;
 
     return {
@@ -161,7 +162,7 @@ module.exports = {
     validatePhotoSize(file);
     this.validateOwnership(project.ownerId, ownerId);
 
-    const filePath = await files.saveFile(coverPhotoType, file);
+    const filePath = await saveFile(coverPhotoType, file);
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -186,7 +187,7 @@ module.exports = {
       validatePhotoSize(file);
     }
     const filePath = file
-      ? await files.saveFile(coverPhotoType, file)
+      ? await saveFile(coverPhotoType, file)
       : project.filePath;
 
     return {
@@ -314,7 +315,7 @@ module.exports = {
 
     validateMtype(milestonesType)(file);
 
-    const milestonePath = await files.saveFile(milestonesType, file);
+    const milestonePath = await saveFile(milestonesType, file);
 
     return {
       projectId: await this.updateProject(projectId, { milestonePath })
@@ -342,6 +343,43 @@ module.exports = {
     validateParams(projectId);
     await validateExistence(this.projectDao, projectId, 'project');
     return this.milestoneDao.getMilestoneByProjectId(projectId);
+  },
+
+  async getProjectMilestonesPath(projectId) {
+    validateParams(projectId);
+    await validateExistence(this.projectDao, projectId, 'project');
+
+    logger.info(
+      `[Project Routes] :: Getting milestones file of project ${projectId}`
+    );
+
+    const milestonesFilePath = await this.projectDao.getProjectMilestonesFilePath(
+      projectId
+    );
+
+    if (!milestonesFilePath)
+      throw new COAError(errors.ProjectDoesntHaveMilestonesFile(projectId));
+
+    const { milestonePath } = milestonesFilePath;
+    logger.info('[Project Routes] :: MilestonesFilePath: ', milestonesFilePath);
+
+    const milestonesFileExists = await fileExists(milestonePath);
+
+    if (!milestonesFileExists)
+      throw new COAError(
+        errors.MilestonesFileNotFound(projectId, milestonePath)
+      );
+
+    const response = {
+      filename: path.basename(milestonePath),
+      filepath: milestonePath
+    };
+
+    logger.info(
+      `[Project Routes] :: Milestones file of project ${projectId} got successfully`
+    );
+
+    return response;
   },
 
   async publishProject(projectId, { ownerId }) {

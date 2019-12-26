@@ -160,6 +160,15 @@ module.exports = {
     }
   },
 
+  getMilestonesFile: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectService.getProjectMilestonesPath(projectId);
+
+    reply.header('file', response.filename);
+    reply.header('Access-Control-Expose-Headers', 'file');
+    reply.status(200).sendFile(response.filepath);
+  },
+
   deleteMilestoneOfProject: fastify => async (request, reply) => {
     const { projectId, milestoneId } = request.params;
     try {
