@@ -16,7 +16,7 @@ module.exports = {
   },
 
   async findAllByProps(props) {
-    return this.model.find({ ...props });
+    return this.model.find({ ...props }).populate('owner');
   },
 
   async getProjecListWithStatusFrom({ status }) {

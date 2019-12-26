@@ -16,6 +16,7 @@ const {
 } = require('./helpers/projectServiceHelper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
+const logger = require('../logger');
 
 const thumbnailType = 'thumbnail';
 const coverPhotoType = 'coverPhoto';
@@ -32,6 +33,7 @@ module.exports = {
       throw new COAError(errors.CantUpdateProject(projectId));
     return updatedProject.id;
   },
+
   async updateMilestone(milestoneId, fields) {
     const updatedMilestone = await this.milestoneDao.updateMilestone(
       fields,
@@ -41,15 +43,18 @@ module.exports = {
       throw new COAError(errors.CantUpdateMilestone(milestoneId));
     return updatedMilestone.id;
   },
+
   async saveProject(project) {
     const savedProject = await this.projectDao.saveProject(project);
     if (!savedProject) throw new COAError(errors.CantSaveProject);
     return savedProject.id;
   },
+
   validateOwnership(realOwnerId, userId) {
     if (realOwnerId !== userId)
       throw new COAError(errors.UserIsNotOwnerOfProject);
   },
+
   async createProjectThumbnail({
     projectName,
     countryOfImpact,
@@ -369,6 +374,7 @@ module.exports = {
   },
 
   async getProjects() {
+    logger.info('Getting all the projects.');
     return this.projectDao.findAllByProps();
   }
 };

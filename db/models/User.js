@@ -35,7 +35,11 @@ module.exports = {
       required: true
     },
     blocked: { type: 'boolean', defaultsTo: false, required: false },
-    privKey: { type: 'string', required: true }
+    privKey: { type: 'string', required: true },
+    projects: {
+      collection: 'project',
+      via: 'owner'
+    }
   },
   async findById(id) {
     return this.findOne(id);
