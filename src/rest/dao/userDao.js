@@ -37,11 +37,9 @@ module.exports = {
   },
 
   async getUsers() {
-    return this.model
-      .find({
-        where: { role: { '!=': userRoles.BO_ADMIN } }
-      })
-      .populate('registrationStatus');
+    return this.model.find({
+      where: { role: { '!=': userRoles.BO_ADMIN } }
+    });
   },
 
   async updatePasswordByMail(email, pwd) {
