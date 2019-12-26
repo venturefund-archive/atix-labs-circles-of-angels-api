@@ -220,23 +220,20 @@ module.exports = {
 
   /**
    * Gets all valid user roles
-   * @returns role list | error
+   * @returns role list
    */
   // TODO : i'd say this function does not make sense anymore.
   getAllRoles() {
     logger.info('[User Service] :: Getting all User Roles');
+
     try {
       const userRoleWithoutAdmin = Object.assign({}, userRoles);
       delete userRoleWithoutAdmin.BO_ADMIN;
 
-      if (userRoleWithoutAdmin.length === 0) {
-        logger.info('[User Service] :: No User Roles loaded');
-      }
-
-      return userRoleWithoutAdmin;
+      return Object.values(userRoleWithoutAdmin);
     } catch (error) {
       logger.error('[User Service] :: Error getting all User Roles:', error);
-      throw new COAError('Error getting all User Roles');
+      throw new COAError(error.ErrorGetting('user roles'));
     }
   },
 

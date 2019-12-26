@@ -37,9 +37,9 @@ module.exports = {
   },
 
   async getUsers() {
-    return this.model.find({
-      where: { role: { '!=': userRoles.BO_ADMIN } }
-    });
+    return this.model
+      .find({ where: { role: { '!=': userRoles.BO_ADMIN } } })
+      .sort('createdAt ASC');
   },
 
   async updatePasswordByMail(email, pwd) {

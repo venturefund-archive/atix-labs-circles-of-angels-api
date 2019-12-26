@@ -42,6 +42,12 @@ const successWithUserResponse = {
   description: 'Returns an array of objects with the users information'
 };
 
+const successWithRolesResponse = {
+  type: 'array',
+  items: { type: 'string' },
+  description: 'Returns an array of objects with each available user roles'
+};
+
 const routes = {
   getUser: {
     method: 'get',
@@ -172,37 +178,9 @@ const routes = {
         description: 'Returns all available user roles in COA',
         summary: 'Get all user roles',
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              roles: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' }
-                  }
-                }
-              }
-            },
-            description:
-              'Returns an array of objects with each available user roles'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithRolesResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
