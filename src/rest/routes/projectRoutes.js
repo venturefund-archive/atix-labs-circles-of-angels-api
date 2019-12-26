@@ -583,6 +583,33 @@ const projectMilestonesRoute = {
     },
     handler: handlers.getProjectMilestones
   },
+  getMilestonesFile: {
+    method: 'get',
+    path: `${basePath}/:projectId/milestonesFile`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: "Returns the specified project's milestones file",
+        summary: 'Get a project milestones file',
+        params: {
+          type: 'object',
+          properties: {
+            projectId: {
+              type: 'integer',
+              description: 'Project to download the milestones file from'
+            }
+          }
+        },
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getMilestonesFile
+  },
   ...milestoneRoutes
 };
 

@@ -22,6 +22,7 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+
 const MAX_PHOTO_SIZE = 500000;
 
 const { savePhotoJpgFormat } = require('../util/files');

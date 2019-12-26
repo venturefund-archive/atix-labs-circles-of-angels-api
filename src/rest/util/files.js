@@ -16,6 +16,14 @@ exports.getFileFromPath = filepath => {
   return file;
 };
 
+exports.fileExists = filepath =>
+  new Promise(resolve =>
+    fs.access(filepath, fs.constants.F_OK, error => {
+      if (error) resolve(false);
+      resolve(true);
+    })
+  );
+
 const jpeg = '.jpeg';
 
 const getCoverPhotoPath = () =>

@@ -78,7 +78,7 @@ module.exports = {
   async getProjectMilestonesFilePath(projectId) {
     return this.model.findOne({
       where: { id: projectId },
-      select: ['milestonesFile']
+      select: ['milestonePath']
     });
   },
 
