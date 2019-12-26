@@ -114,6 +114,24 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    email: { type: 'string' },
+    id: { type: 'integer' },
+    role: {
+      type: 'object',
+      properties: {
+        id: { type: 'integer' },
+        name: { type: 'string' }
+      }
+    }
+  },
+  description: 'Returns and object with the user information'
+};
+
 const projectsResponse = {
   type: 'array',
   items: {
@@ -130,7 +148,7 @@ const projectsResponse = {
       cardPhotoPath: { type: 'string' },
       goalAmount: { type: 'number' },
       status: { type: 'string' },
-      ownerId: { type: 'number' },
+      owner: userResponse,
       createdAt: { type: 'string' },
       transactionHash: { type: 'string' },
       id: { type: 'number' }
