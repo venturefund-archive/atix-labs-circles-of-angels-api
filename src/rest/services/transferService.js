@@ -197,7 +197,7 @@ module.exports = {
     logger.info(
       `[TransferService] :: Found ${transfers.length} for project ${projectId}`
     );
-    return { transfers };
+    return transfers;
   },
 
   async getTransferById({ transferId }) {

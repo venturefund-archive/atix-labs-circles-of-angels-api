@@ -74,24 +74,19 @@ const successWithTransferIdResponse = {
 };
 
 const successWithTransfersArray = {
-  type: 'object',
-  properties: {
-    transfers: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          transferId: { type: 'string' },
-          destinationAccount: { type: 'string' },
-          amount: { type: 'number' },
-          currency: { type: 'string' },
-          status: { type: 'string' },
-          createdAt: { type: 'string' },
-          id: { type: 'integer' },
-          sender: { type: 'integer' },
-          project: { type: 'integer' }
-        }
-      }
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      transferId: { type: 'string' },
+      destinationAccount: { type: 'string' },
+      amount: { type: 'number' },
+      currency: { type: 'string' },
+      status: { type: 'string' },
+      createdAt: { type: 'string' },
+      id: { type: 'integer' },
+      sender: { type: 'integer' },
+      project: { type: 'integer' }
     }
   }
 };
