@@ -147,14 +147,15 @@ module.exports = {
 
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
 
-    await this.mailService.sendMail(
-      '"Circles of Angels Support" <coa@support.com>',
-      email,
-      'Circles of Angels - Welcome!',
-      `<p>Your Circles Of Angels account was created successfully! </br></p>
-          <p>We are reviewing your account details. You will be notified once we are done. </br></p>
-          <p>Thank you for your support. </br></p>`
-    );
+    await this.mailService.sendMail({
+      from: '"Circles of Angels Support" <coa@support.com>',
+      to: email,
+      subject: 'Circles of Angels - Welcome',
+      text: 'Welcome to Circle of Angels!',
+      html: `<p>Your Circles Of Angels account was created successfully! </br></p>
+      <p>We are reviewing your account details. You will be notified once we are done. </br></p>
+      <p>Thank you for your support. </br></p>`
+    });
 
     return savedUser;
   },

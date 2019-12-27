@@ -20,14 +20,14 @@ module.exports = {
    * @param {object} content - email's content.
    * @returns
    */
-  async sendMail(from, to, subject, text, content) {
+  async sendMail({ from, to, subject, text, hmtl }) {
     try {
       const info = await this.emailClient.sendMail({
         from,
         to,
         subject,
         text,
-        content
+        hmtl
       });
       if (!isEmpty(info.rejected)) {
         logger.info('[User Service] :: Invalid email account', info.rejected);
