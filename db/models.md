@@ -5,7 +5,8 @@
 
 
 ### User:
-_Represents a user of Circles Of Angels, it can be: Social entrepreneur, Funder, Oracle, Backoffice Administrator_
+_Represents a user of Circles Of Angels, it can be: Social Entrepreneur, Project Supporter,
+Project Curator, Bank operator, COA Administrator_
   ##### Attributes:
   - `id`: user id in the business domain
   - `name`: user's name displayed

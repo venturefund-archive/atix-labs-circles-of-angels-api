@@ -140,7 +140,7 @@ const initJWT = fastify => {
       try {
         const token = getToken(request, reply);
         fastify.log.info('[Server] :: Admin JWT Authentication', token);
-        if (token) await validateUser(token, reply, userRoles.BO_ADMIN);
+        if (token) await validateUser(token, reply, userRoles.COA_ADMIN);
       } catch (error) {
         fastify.log.error(
           '[Server] :: There was an error authenticating',

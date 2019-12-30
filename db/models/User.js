@@ -8,7 +8,8 @@
 
 /**
  * @description Represent a user of Circles Of Angels, this can be:
- *              Social entrepreneur, Funder, Oracle, Backoffice Administrator
+ *              Social Entrepreneur, Project Supporter, Project Curator,
+ *              Bank operator, COA Administrator
  * @attribute `id`: user id in the business domain
  * @attribute `name`: name with which the user will be shown
  * @attribute `email`: email with which the user is registered
