@@ -35,12 +35,12 @@ describe('Testing transferService', () => {
 
   const userFunder = {
     id: 1,
-    role: userRoles.FUNDER
+    role: userRoles.PROJECT_SUPPORTER
   };
 
   const oracleUser = {
     id: 2,
-    role: userRoles.ORACLE
+    role: userRoles.ENTREPRENEUR
   };
 
   const newTransfer = {
@@ -298,7 +298,7 @@ describe('Testing transferService', () => {
         consensusProject.id
       );
 
-      expect(response.transfers.length).toEqual(2);
+      expect(response.length).toEqual(2);
     });
 
     it('should throw an error if projectId is undefined', async () => {
