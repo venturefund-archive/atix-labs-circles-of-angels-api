@@ -59,7 +59,7 @@ module.exports = {
     const project = await checkExistence(this.projectDao, projectId, 'project');
     const user = await checkExistence(this.userDao, senderId, 'user');
 
-    if (user.role !== userRoles.FUNDER) {
+    if (user.role !== userRoles.PROJECT_SUPPORTER) {
       logger.error(`[TransferService] :: User ${user.id} is not a funder`);
       throw new COAError(errors.UnauthorizedUserRole(user.role));
     }

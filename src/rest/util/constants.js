@@ -49,10 +49,11 @@ const txFunderStatus = {
 };
 
 const userRoles = {
-  BO_ADMIN: 'admin',
+  COA_ADMIN: 'admin',
   ENTREPRENEUR: 'entrepreneur',
-  FUNDER: 'funder',
-  ORACLE: 'oracle'
+  PROJECT_SUPPORTER: 'supporter',
+  PROJECT_CURATOR: 'curator',
+  BANK_OPERATOR: 'bankoperator'
 };
 
 const milestoneBudgetStatus = {
