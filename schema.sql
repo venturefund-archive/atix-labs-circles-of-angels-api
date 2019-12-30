@@ -3,11 +3,12 @@ CREATE DATABASE coadb;
 ALTER DATABASE coadb OWNER TO postgres;
 
 \connect coadb
-CREATE TYPE ROLE AS ENUM (
-    'entrepreneur',
-    'funder',
-    'oracle',
-    'admin'
+CREATE TYPE ROLE AS ENUM(
+  'admin',
+  'entrepreneur',
+  'supporter',
+  'curator',
+  'bankoperator'
 );
 
 CREATE TYPE TX_FUNDER_STATUS AS ENUM (
