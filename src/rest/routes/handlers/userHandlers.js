@@ -60,32 +60,25 @@ module.exports = {
   },
 
   loginUser: fastify => async (request, reply) => {
+    const { email, pwd } = request.body;
+    const user = await userService.login(email, pwd);
+
     try {
-      const { email, pwd } = request.body;
-      fastify.log.info('[User Routes] :: Trying to log in user:', email);
+      const token = fastify.jwt.sign(user);
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + 1);
 
-      const user = await userService.login(email, pwd);
-
-      if (user.error) {
-        fastify.log.error('[User Routes] :: Log in failed for user:', email);
-        reply.status(401).send({ error: user });
-      } else {
-        fastify.log.info('[User Routes] :: Log in successful for user:', email);
-        const token = fastify.jwt.sign(user);
-        const expirationDate = new Date();
-        expirationDate.setDate(expirationDate.getDate() + 1);
-        reply
-          .status(200)
-          .setCookie('userAuth', token, {
-            domain: fastify.configs.server.host,
-            path: '/',
-            httpOnly: true,
-            expires: expirationDate
-            // secure: true
-          })
-          .send(user);
-      }
-    } catch (err) {
+      reply
+        .status(200)
+        .setCookie('userAuth', token, {
+          domain: fastify.configs.server.host,
+          path: '/',
+          httpOnly: true,
+          expires: expirationDate
+          // secure: true
+        })
+        .send(user);
+    } catch (error) {
       reply
         .status(500)
         .send({ error: 'There was an unexpected error logging in' });

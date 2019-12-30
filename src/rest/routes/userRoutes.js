@@ -21,7 +21,6 @@ const userResponse = {
     firstName: { type: 'string' },
     lastName: { type: 'string' },
     email: { type: 'string' },
-    password: { type: 'string' },
     address: { type: 'string' },
     createdAt: { type: 'string' },
     id: { type: 'integer' },
@@ -207,55 +206,9 @@ const routes = {
           description: 'User login information'
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              firstName: { type: 'string' },
-              lastName: { type: 'string' },
-              email: { type: 'string' },
-              id: { type: 'integer' },
-              role: { type: 'string' }
-            },
-            description:
-              'Returns an object with the information of the logged in user ' +
-              'and sets an http-only cookie with JWT'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: {
-                type: 'object',
-                properties: {
-                  status: { type: 'integer' },
-                  error: { type: 'string' },
-                  user: {
-                    type: 'object',
-                    properties: {
-                      username: { type: 'string' },
-                      email: { type: 'string' },
-                      id: { type: 'integer' },
-                      role: {
-                        type: 'object',
-                        properties: {
-                          id: { type: 'integer' },
-                          name: { type: 'string' }
-                        }
-                      },
-                      registrationStatus: { type: 'integer' }
-                    }
-                  }
-                }
-              }
-            },
-            description: 'Returns an object describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(userResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
