@@ -104,5 +104,9 @@ module.exports = {
   }),
   CantCreateTransfer: {
     message: "Couldn't create transfer"
-  }
+  },
+  ErrorGetting: model => ({
+    message: `Error getting ${model}`,
+    statusCode: 500
+  })
 };
