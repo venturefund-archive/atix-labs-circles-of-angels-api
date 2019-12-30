@@ -12,18 +12,9 @@ const milestoneService = require('../../services/milestoneService');
 const userService = require('../../services/userService');
 
 module.exports = {
-  getMilestones: fastify => async (request, reply) => {
-    fastify.log.info('[Milestone Routes] :: GET request at /milestones');
-    try {
-      const milestones = await milestoneService.getAllMilestones();
-      reply.status(200).send({ milestones });
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error getting all milestones: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error getting all milestones' });
-    }
+  getMilestones: () => async (request, reply) => {
+    const milestones = await milestoneService.getAllMilestones();
+    reply.status(200).send(milestones);
   },
 
   getBudgetStatus: fastify => async (req, reply) => {
@@ -93,7 +84,7 @@ module.exports = {
   updateMilestone: fastify => async (req, reply) => {
     fastify.log.info(
       `[Milestone Routes] :: PUT request at /milestones/${
-        req.params.milestoneId
+      req.params.milestoneId
       }:`,
       req.body
     );

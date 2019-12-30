@@ -23,20 +23,9 @@ module.exports = {
     reply.send(user);
   },
 
-  getUsers: fastify => async (request, reply) => {
-    fastify.log.info('[User Routes] :: Getting all users');
-    try {
-      const users = await userService.getUsers();
-      reply.status(200).send({ users });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all users:',
-        error
-      );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting all users'
-      });
-    }
+  getUsers: () => async (request, reply) => {
+    const users = await userService.getUsers();
+    reply.status(200).send({ users });
   },
 
   getUserRole: fastify => async (request, reply) => {
@@ -65,21 +54,9 @@ module.exports = {
     }
   },
 
-  getAllRoles: fastify => async (request, reply) => {
-    try {
-      fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
-
-      const roles = await userService.getAllRoles();
-      reply.status(200).send({ roles });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all user roles:',
-        error
-      );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting all user roles'
-      });
-    }
+  getAllRoles: () => (request, reply) => {
+    const roles = userService.getAllRoles();
+    reply.status(200).send(roles);
   },
 
   loginUser: fastify => async (request, reply) => {

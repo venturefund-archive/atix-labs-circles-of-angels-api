@@ -650,12 +650,12 @@ module.exports = {
 
   async getAllMilestones() {
     logger.info('[Milestone Service] :: Getting all milestones');
+
     try {
       const milestones = await this.milestoneDao.getAllMilestones();
 
-      if (milestones.length === 0) {
+      if (!milestones.length)
         logger.info('[Milestone Service] :: There are no milestones');
-      }
 
       return milestones;
     } catch (error) {

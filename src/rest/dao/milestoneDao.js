@@ -78,10 +78,9 @@ module.exports = {
   async getAllMilestones() {
     const milestones = await this.model
       .find()
-      .populate('status')
       .populate('project')
-      .populate('budgetStatus')
-      .sort('id DESC');
+      .populate('tasks')
+      .sort('createdAt DESC');
 
     return milestones || [];
   },

@@ -9,6 +9,62 @@
 const basePath = '/milestones';
 const handlers = require('./handlers/milestoneHandlers');
 const routeTags = require('../util/routeTags');
+const {
+  successResponse,
+  clientErrorResponse,
+  serverErrorResponse
+} = require('../util/responses');
+
+const projectResponse = {
+  type: 'object',
+  properties: {
+    projectName: { type: 'string' },
+    mission: { type: 'string' },
+    problemAddressed: { type: 'string' },
+    location: { type: 'string' },
+    timeframe: { type: 'string' },
+    proposal: { type: 'string' },
+    faqLink: { type: 'string' },
+    coverPhotoPath: { type: 'string' },
+    cardPhotoPath: { type: 'string' },
+    milestonePath: { type: 'string' },
+    goalAmount: { type: 'integer' },
+    status: { type: 'string' },
+    createdAt: { type: 'string', autoCreatedAt: true, required: false },
+    transactionHash: { type: 'string', required: false },
+    id: { type: 'integer' }
+  }
+};
+
+const taskResponse = {
+  type: 'object',
+  properties: {
+    taskHash: { type: 'string' },
+    description: { type: 'string' },
+    reviewCriteria: { type: 'string' },
+    category: { type: 'string' },
+    keyPersonnel: { type: 'string' },
+    budget: { type: 'string' },
+    createdAt: { type: 'string' },
+    id: { type: 'number' }
+  }
+};
+
+const milestonesResponse = {
+  type: 'object',
+  properties: {
+    id: { type: 'integer' },
+    createdAt: { type: 'string' },
+    description: { type: 'string' },
+    category: { type: 'string' },
+    tasks: {
+      type: 'array',
+      items: taskResponse
+    },
+    project: projectResponse
+  },
+  description: 'Returns all milestones'
+};
 
 const routes = {
   getMilestones: {
@@ -22,105 +78,9 @@ const routes = {
         summary: 'Get all milestones'
       },
       response: {
-        200: {
-          type: 'object',
-          description:
-            'Returns an array with all milestones and their project information',
-          properties: {
-            milestones: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  tasks: { type: 'string' },
-                  impact: { type: 'string' },
-                  impactCriterion: { type: 'string' },
-                  signsOfSuccess: { type: 'string' },
-                  signsOfSuccessCriterion: { type: 'string' },
-                  category: { type: 'string' },
-                  keyPersonnel: { type: 'string' },
-                  budget: { type: 'string' },
-                  quarter: { type: 'string' },
-                  createdAt: { type: 'string' },
-                  updatedAt: { type: 'string' },
-                  transactionHash: { type: 'string' },
-                  id: { type: 'integer' },
-                  project: {
-                    type: 'object',
-                    properties: {
-                      projectName: { type: 'string' },
-                      mission: { type: 'string' },
-                      problemAddressed: { type: 'string' },
-                      location: { type: 'string' },
-                      timeframe: { type: 'string' },
-                      pitchProposal: { type: 'string' },
-                      faqLink: { type: 'string' },
-                      milestonesFile: { type: 'string' },
-                      goalAmount: { type: 'integer' },
-                      status: { type: 'integer' },
-                      ownerId: { type: 'integer' },
-                      projectAgreement: { type: 'string' },
-                      createdAt: { type: 'string' },
-                      updatedAt: { type: 'string' },
-                      transactionHash: { type: 'string' },
-                      creationTransactionHash: { type: 'string' },
-                      id: { type: 'integer' },
-                      startBlockchainStatus: { type: 'integer' },
-                      coverPhoto: { type: 'integer' },
-                      cardPhoto: { type: 'integer' },
-                      blockchainStatus: { type: 'integer' }
-                    }
-                  },
-                  status: {
-                    type: 'object',
-                    properties: {
-                      status: { type: 'integer' },
-                      name: { type: 'string' }
-                    }
-                  },
-                  budgetStatus: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'integer' },
-                      name: { type: 'string' }
-                    }
-                  },
-                  blockchainStatus: { type: 'integer' }
-                }
-              }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
+        ...successResponse(milestonesResponse),
+        ...clientErrorResponse(),
+        ...serverErrorResponse()
       }
     },
     handler: handlers.getMilestones

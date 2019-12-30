@@ -9,6 +9,44 @@
 const basePath = '/users';
 const handlers = require('./handlers/userHandlers');
 const routeTags = require('../util/routeTags');
+const {
+  successResponse,
+  serverErrorResponse,
+  clientErrorResponse
+} = require('../util/responses');
+
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    email: { type: 'string' },
+    password: { type: 'string' },
+    address: { type: 'string' },
+    createdAt: { type: 'string' },
+    id: { type: 'integer' },
+    role: { type: 'string' },
+    blocked: { type: 'boolean' }
+  },
+  description: "User's information"
+};
+
+const successWithUserResponse = {
+  type: 'object',
+  properties: {
+    users: {
+      type: 'array',
+      items: userResponse
+    }
+  },
+  description: 'Returns an array of objects with the users information'
+};
+
+const successWithRolesResponse = {
+  type: 'array',
+  items: { type: 'string' },
+  description: 'Returns an array of objects with each available user roles'
+};
 
 const routes = {
   getUser: {
@@ -74,93 +112,9 @@ const routes = {
         description: 'Returns the information of all the existing COA users',
         summary: 'Get all existing users',
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              users: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    username: { type: 'string' },
-                    email: { type: 'string' },
-                    address: { type: 'string' },
-                    createdAt: { type: 'string' },
-                    updatedAt: { type: 'string' },
-                    id: { type: 'integer' },
-                    role: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'integer' },
-                        name: { type: 'string' }
-                      }
-                    },
-                    registrationStatus: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'integer' },
-                        name: { type: 'string' }
-                      }
-                    },
-                    answers: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          customAnswer: { type: 'string' },
-                          id: { type: 'integer' },
-                          question: {
-                            type: 'object',
-                            properties: {
-                              question: { type: 'string' },
-                              role: { type: 'integer' },
-                              answerLimit: { type: 'integer' },
-                              id: { type: 'integer' }
-                            }
-                          },
-                          answer: {
-                            type: 'object',
-                            properties: {
-                              answer: { type: 'string' },
-                              id: { type: 'integer' },
-                              question: { type: 'integer' }
-                            }
-                          },
-                          user: { type: 'integer' }
-                        }
-                      }
-                    },
-                    detail: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'integer' },
-                        phoneNumber: { type: ['string', 'null'] },
-                        company: { type: ['string', 'null'] },
-                        user: { type: 'integer' }
-                      }
-                    }
-                  },
-                  description: 'Information of an individual user'
-                }
-              }
-            },
-            description:
-              'Returns an array of objects with the users information'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithUserResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
@@ -224,37 +178,9 @@ const routes = {
         description: 'Returns all available user roles in COA',
         summary: 'Get all user roles',
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              roles: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' }
-                  }
-                }
-              }
-            },
-            description:
-              'Returns an array of objects with each available user roles'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithRolesResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
