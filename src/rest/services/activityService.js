@@ -872,7 +872,8 @@ module.exports = {
         return { error: 'User not found', status: 404 };
       }
 
-      if (user.role && user.role.id !== userRoles.ORACLE) {
+      // TODO refactor this because oracle role doesnt exist now
+      if (user.role && user.role.id !== userRoles.PROJECT_SUPPORTER) {
         logger.error(
           `[Activity Service] :: User ID ${userId} is not an oracle`
         );
