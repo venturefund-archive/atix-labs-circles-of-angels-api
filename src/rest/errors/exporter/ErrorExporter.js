@@ -3,6 +3,10 @@ module.exports = {
     message: 'Invalid email',
     statusCode: 400
   },
+  InvalidUserOrPassword: {
+    message: 'Invalid user or password',
+    statusCode: 400
+  },
   EmailAlreadyInUse: {
     message: 'The email is already in use',
     statusCode: 400
