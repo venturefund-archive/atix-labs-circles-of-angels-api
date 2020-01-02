@@ -63,26 +63,20 @@ module.exports = {
     const { email, pwd } = request.body;
     const user = await userService.login(email, pwd);
 
-    try {
-      const token = fastify.jwt.sign(user);
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + 1);
+    const token = fastify.jwt.sign(user);
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 1);
 
-      reply
-        .status(200)
-        .setCookie('userAuth', token, {
-          domain: fastify.configs.server.host,
-          path: '/',
-          httpOnly: true,
-          expires: expirationDate
-          // secure: true
-        })
-        .send(user);
-    } catch (error) {
-      reply
-        .status(500)
-        .send({ error: 'There was an unexpected error logging in' });
-    }
+    reply
+      .status(200)
+      .setCookie('userAuth', token, {
+        domain: fastify.configs.server.host,
+        path: '/',
+        httpOnly: true,
+        expires: expirationDate
+        // secure: true
+      })
+      .send(user);
   },
 
   signupUser: () => async (request, reply) => {
