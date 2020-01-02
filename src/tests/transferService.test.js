@@ -9,7 +9,7 @@
  */
 
 const {
-  projectStatusType,
+  projectStatuses,
   userRoles,
   txFunderStatus
 } = require('../rest/util/constants');
@@ -25,12 +25,12 @@ describe('Testing transferService', () => {
 
   const consensusProject = {
     id: 1,
-    status: projectStatusType.CONSENSUS
+    status: projectStatuses.CONSENSUS
   };
 
   const draftProject = {
     id: 2,
-    status: projectStatusType.DRAFT
+    status: projectStatuses.NEW
   };
 
   const userFunder = {

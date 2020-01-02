@@ -9,7 +9,7 @@
 const projectService = require('../../services/projectService');
 const projectServiceExperience = require('../../services/projectExperienceService');
 
-const { projectStatusType } = require('../../util/constants');
+const { projectStatuses } = require('../../util/constants');
 
 module.exports = {
   createProjectThumbnail: fastify => async (request, reply) => {
@@ -297,7 +297,7 @@ module.exports = {
   getActiveProjects: fastify => async (request, reply) => {
     try {
       const projects = await projectService.getProjects({
-        status: projectStatusType.ONGOING
+        status: projectStatuses.EXECUTING
       });
       reply.status(200).send(projects);
     } catch (error) {

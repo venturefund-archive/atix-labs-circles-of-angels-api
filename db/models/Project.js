@@ -25,7 +25,7 @@
  *@attribute `projectAgreement`: project consensus file
  */
 
-const { projectStatusType } = require('../../src/rest/util/constants');
+const { projectStatuses } = require('../../src/rest/util/constants');
 
 module.exports = {
   identity: 'project',
@@ -42,7 +42,7 @@ module.exports = {
     cardPhotoPath: { type: 'string', required: false },
     milestonePath: { type: 'string', required: false },
     goalAmount: { type: 'number', required: false },
-    status: { type: 'string', defaultsTo: projectStatusType.DRAFT },
+    status: { type: 'string', defaultsTo: projectStatuses.NEW },
     owner: {
       columnName: 'ownerId',
       model: 'user'

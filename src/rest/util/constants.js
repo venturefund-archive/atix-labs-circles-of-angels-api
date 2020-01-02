@@ -27,14 +27,6 @@ const projectStatus = {
   IN_PROGRESS: 4
 };
 
-const projectStatusType = {
-  DRAFT: 'draft',
-  PENDING: 'pending',
-  CONSENSUS: 'consensus',
-  ONGOING: 'ongoing'
-};
-
-// TODO replace "projectStatusType" with this new statuses
 const projectStatuses = {
   NEW: 'new',
   TO_REVIEW: 'toreview',
@@ -138,6 +130,5 @@ module.exports = {
   milestoneBudgetStatus,
   blockchainStatus,
   xlsxConfigs,
-  projectStatusType,
   transactionTypes
 };

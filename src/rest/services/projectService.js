@@ -7,7 +7,7 @@
  */
 
 const path = require('path');
-const { projectStatusType } = require('../util/constants');
+const { projectStatuses } = require('../util/constants');
 const { saveFile, fileExists } = require('../util/files');
 const {
   validateExistence,
@@ -330,7 +330,7 @@ module.exports = {
       projectId,
       'project'
     );
-    if (project.status !== projectStatusType.DRAFT)
+    if (project.status !== projectStatuses.NEW)
       throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
     this.validateOwnership(project.ownerId, ownerId);
     const milestones = (await this.milestoneService.createMilestones(
@@ -392,12 +392,12 @@ module.exports = {
       'project'
     );
     this.validateOwnership(project.ownerId, ownerId);
-    if (project.status !== projectStatusType.DRAFT) {
+    if (project.status !== projectStatuses.NEW) {
       throw new COAError(errors.ProjectIsNotPublishable);
     }
     return {
       projectId: await this.updateProject(projectId, {
-        status: projectStatusType.PENDING_APPROVAL
+        status: projectStatuses.TO_REVIEW
       })
     };
   },
