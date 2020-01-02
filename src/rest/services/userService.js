@@ -27,41 +27,38 @@ module.exports = {
    * @returns user information | error message
    */
   async login(email, pwd) {
+    logger.info(`[User Service] :: Trying to login ${email} user`);
     const user = await this.userDao.getUserByEmail(email);
 
-    if (user && user !== null) {
-      // logger.info('[User Service] :: User found in database:', user);
-
-      // if an user was found with that email, verify with encrypted pwd
-      const match = await bcrypt.compare(pwd, user.password);
-
-      if (match) {
-        // logger.info('[User Service] :: User authenticated:', user.email);
-
-        const authenticatedUser = {
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          id: user.id,
-          role: user.role
-        };
-
-        if (user.blocked) {
-          logger.error(`[User Service] :: User ID ${user.id} is blocked`);
-          throw new COAError(errors.UserNotFound);
-        }
-
-        return authenticatedUser;
-      }
-
-      // error if wrong password
-      logger.error('[User Service] :: Password failed to authenticate');
-    } else {
-      // error if user not found
-      logger.error('[User Service] :: User not found in database:', email);
+    if (!user) {
+      logger.error('[User Service] :: User is not found');
+      throw new COAError(errors.UserNotFound);
     }
 
-    return { error: 'Login failed. Incorrect user or password.' };
+    logger.info(`[User Service] :: User email ${email} found`);
+    const match = await bcrypt.compare(pwd, user.password);
+
+    if (!match) {
+      logger.error(
+        '[User Service] :: Login failed. Incorrect user or password'
+      );
+      throw new COAError(errors.InvalidUserOrPassword);
+    }
+
+    const authenticatedUser = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      id: user.id,
+      role: user.role
+    };
+
+    if (user.blocked) {
+      logger.error(`[User Service] :: User ID ${user.id} is blocked`);
+      throw new COAError(errors.UserRejected);
+    }
+
+    return authenticatedUser;
   },
 
   /**
