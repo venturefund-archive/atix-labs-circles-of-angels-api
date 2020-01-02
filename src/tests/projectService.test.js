@@ -222,7 +222,7 @@ describe('Project Service Test', () => {
     });
   });
 
-  describe('Project thumbnail', () => {
+  describe.only('Project thumbnail', () => {
     beforeAll(() => {
       injectMocks(projectService, { projectDao, userDao });
     });
