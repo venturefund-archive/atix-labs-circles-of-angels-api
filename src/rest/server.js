@@ -8,6 +8,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const env = require('@nomiclabs/buidler');
 const COAError = require('./errors/COAError');
 
 /**
@@ -17,6 +18,11 @@ const COAError = require('./errors/COAError');
  * @param serverConfigs server configs for the connection. I.e -> {host: 'localhost', port: 3000}
  */
 module.exports.start = async ({ db, logger, configs }) => {
+  console.log(Object.keys(env.ethers.provider));
+  console.log(typeof(env.ethers.provider._events));
+  console.log(Object.keys(env.ethers.provider._events));
+  await env.coa.addMember('aaa');
+  console.log(env.ethers.provider._events);
   try {
     const swaggerConfigs = configs.swagger;
     const fastify = require('fastify')({ logger });

@@ -17,6 +17,10 @@
   "author": "Atix Labs S.R.L",
   "license": "ISC",
   "dependencies": {
+    "@nomiclabs/buidler": "^1.0.1",
+    "@nomiclabs/buidler-ethers": "^1.0.1",
+    "@nomiclabs/buidler-truffle5": "^1.0.1",
+    "@nomiclabs/buidler-web3": "^1.0.1",
     "@truffle/hdwallet-provider": "^1.0.22",
     "bcrypt": "3.0.5",
     "md5-file": "^4.0.0",
@@ -42,7 +46,8 @@
     "sha256": "0.2.0",
     "sharp": "0.23.1",
     "web3": "1.2.1",
-    "xlsx": "0.14.1"
+    "xlsx": "0.14.1",
+    "@openzeppelin/contracts": "^2.3.0"
   },
   "devDependencies": {
     "babel-eslint": "10.0.1",
@@ -57,6 +62,8 @@
     "eslint-plugin-promise": "4.0.1",
     "eslint-plugin-react": "7.12.4",
     "jest": "24.1.0",
-    "prettier": "1.16.4"
+    "prettier": "1.16.4",
+    "ethers": "^4.0.40",
+    "ganache-cli": "^6.7.0"
   }
 }
