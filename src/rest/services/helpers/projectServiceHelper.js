@@ -1,6 +1,7 @@
 const mime = require('mime');
 const errors = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
+const { projectStatuses, userRoles } = require('../../util/constants');
 
 const logger = require('../../logger');
 
@@ -83,11 +84,25 @@ const validatePhotoSize = file => {
   }
 };
 
+const validateStatusChange = (userRole, currentStatus, newStatus) => {
+  // TODO add all the possible transitions
+  const allowedTransitions = {
+    [projectStatuses.TO_REVIEW]: {
+      validator: () => userRole === userRoles.PROJECT_CURATOR,
+      nextSteps: [projectStatuses.PUBLISHED, projectStatuses.REJECTED]
+    }
+  };
+
+  const { validator, nextSteps } = allowedTransitions[currentStatus];
+  return validator() && nextSteps.includes(newStatus);
+};
+
 module.exports = {
   validateExistence,
   validateParams,
   validateMtype,
   validatePhotoSize,
+  validateStatusChange,
   xslValidator,
   imgValidator
 };

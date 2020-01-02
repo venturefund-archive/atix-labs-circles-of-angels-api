@@ -13,7 +13,8 @@ const {
   validateExistence,
   validateParams,
   validateMtype,
-  validatePhotoSize
+  validatePhotoSize,
+  validateStatusChange
 } = require('./helpers/projectServiceHelper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
@@ -382,6 +383,7 @@ module.exports = {
     return response;
   },
 
+  // TODO analize if this method will be useful
   async publishProject(projectId, { ownerId }) {
     validateParams(projectId, ownerId);
     const project = await validateExistence(
@@ -397,6 +399,34 @@ module.exports = {
       projectId: await this.updateProject(projectId, {
         status: projectStatusType.PENDING_APPROVAL
       })
+    };
+  },
+
+  async updateProjectStatus(user, projectId, newStatus) {
+    validateParams(projectId, user);
+
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
+
+    const { status: currentStatus } = project;
+    const { role } = user;
+
+    logger.info(
+      `[Project Service] :: Updating project ${projectId} from ${currentStatus} to ${newStatus}`
+    );
+
+    if (!validateStatusChange(role, currentStatus, newStatus)) {
+      logger.error(
+        '[Project Service] :: Project status transition is not valid'
+      );
+      throw new COAError(errors.InvalidProjectTransition());
+    }
+
+    return {
+      projectId: await this.updateProject(projectId, { status: newStatus })
     };
   },
 

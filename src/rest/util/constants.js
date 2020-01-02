@@ -34,6 +34,25 @@ const projectStatusType = {
   ONGOING: 'ongoing'
 };
 
+// TODO replace "projectStatusType" with this new statuses
+const projectStatuses = {
+  NEW: 'new',
+  TO_REVIEW: 'toreview',
+  REJECTED: 'rejected',
+  DELETED: 'deleted',
+  PUBLISHED: 'published',
+  CONSENSUS: 'consensus',
+  FUNDING: 'funding',
+  EXECUTING: 'executing',
+  CHANGING_SCOPE: 'changingscope',
+  FINISHED: 'finished',
+  ABORTED: 'aborted',
+  ARCHIVED: 'archived',
+  CANCELLED: 'cancelled'
+  // TODO this status might be a boolean field in project table
+  // SUSPENDED: 'suspended'
+};
+
 const activityStatus = {
   PENDING: 1,
   STARTED: 2,
@@ -113,6 +132,7 @@ module.exports = {
   txFunderStatus,
   transferStatus,
   projectStatus,
+  projectStatuses,
   activityStatus,
   userRoles,
   milestoneBudgetStatus,

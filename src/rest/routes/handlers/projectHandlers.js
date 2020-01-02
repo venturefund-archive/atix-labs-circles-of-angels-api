@@ -261,9 +261,11 @@ module.exports = {
     }
   },
 
+  // TODO analize if this method will be useful
   publishProject: () => async (request, reply) => {
     const { projectId } = request.params;
     const ownerId = request.user.id;
+    console.log('User :: ', request.user);
 
     try {
       const response = await projectService.publishProject(projectId, ownerId);
@@ -271,6 +273,20 @@ module.exports = {
     } catch (error) {
       reply.status(error.statusCode).send(error.message);
     }
+  },
+
+  updateProjectStatus: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const { user } = request;
+    const { status } = request.body;
+
+    const response = await projectService.updateProjectStatus(
+      user,
+      projectId,
+      status
+    );
+
+    reply.send(response);
   },
 
   getProjects: () => async (request, reply) => {
