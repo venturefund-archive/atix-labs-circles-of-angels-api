@@ -1,5 +1,6 @@
 const COAError = require('../rest/errors/COAError');
 const files = require('../rest/util/files');
+const { userRoles } = require('../rest/util/constants');
 const errors = require('../rest/errors/exporter/ErrorExporter');
 
 const { injectMocks } = require('../rest/util/injection');
@@ -7,7 +8,7 @@ const { injectMocks } = require('../rest/util/injection');
 const projectService = require('../rest/services/projectService');
 
 const projectName = 'validProjectName';
-const countryOfImpact = 'Argentina';
+const location = 'Argentina';
 const timeframe = '12';
 const goalAmount = 124123;
 const mission = 'mission';
@@ -22,7 +23,7 @@ const milestone = { id: 2, tasks: [{ id: 1 }, { id: 2 }, { id: 3 }] };
 const pendingProject = {
   id: 3,
   projectName,
-  countryOfImpact,
+  location,
   timeframe,
   goalAmount,
   ownerId,
@@ -38,7 +39,7 @@ const pendingProject = {
 const draftProjectWithMilestone = {
   id: 10,
   projectName,
-  countryOfImpact,
+  location,
   timeframe,
   goalAmount,
   ownerId,
@@ -54,7 +55,7 @@ const draftProjectWithMilestone = {
 const draftProject = {
   id: 1,
   projectName,
-  countryOfImpact,
+  location,
   timeframe,
   goalAmount,
   ownerId,
@@ -70,7 +71,8 @@ const userDao = {
   findById: id => {
     if (id === 2 || id === 3) {
       return {
-        id
+        id,
+        role: userRoles.ENTREPRENEUR
       };
     }
     return undefined;
@@ -220,7 +222,7 @@ describe('Project Service Test', () => {
     });
   });
 
-  describe('Project thumbnail', () => {
+  describe.only('Project thumbnail', () => {
     beforeAll(() => {
       injectMocks(projectService, { projectDao, userDao });
     });
@@ -229,7 +231,7 @@ describe('Project Service Test', () => {
       it('Should create a new project when all the fields are valid', async () => {
         const { projectId } = await projectService.createProjectThumbnail({
           projectName,
-          countryOfImpact,
+          location,
           timeframe,
           goalAmount,
           ownerId,
@@ -242,7 +244,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.createProjectThumbnail({
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             ownerId
           })
@@ -253,7 +255,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.createProjectThumbnail({
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             goalAmount,
             ownerId,
@@ -266,7 +268,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.createProjectThumbnail({
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             goalAmount,
             ownerId: 34,
@@ -279,7 +281,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.createProjectThumbnail({
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             goalAmount,
             ownerId: 34,
@@ -293,7 +295,7 @@ describe('Project Service Test', () => {
       it('Should update the project whenever the fields are valid and the project already exists', async () => {
         const { projectId } = await projectService.updateProjectThumbnail(1, {
           projectName,
-          countryOfImpact,
+          location,
           timeframe,
           goalAmount,
           ownerId,
@@ -306,7 +308,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.updateProjectThumbnail(1, {
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             file
           })
@@ -317,7 +319,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.updateProjectThumbnail(2, {
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             goalAmount,
             ownerId,
@@ -330,7 +332,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.updateProjectThumbnail(2, {
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             goalAmount,
             ownerId: 3,
@@ -343,7 +345,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.updateProjectThumbnail(2, {
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             goalAmount,
             ownerId,
@@ -356,7 +358,7 @@ describe('Project Service Test', () => {
         expect(
           projectService.updateProjectThumbnail(2, {
             projectName,
-            countryOfImpact,
+            location,
             timeframe,
             goalAmount,
             ownerId,
@@ -368,7 +370,7 @@ describe('Project Service Test', () => {
       it('Should update the project although file field is missing', async () => {
         const { projectId } = await projectService.updateProjectThumbnail(1, {
           projectName,
-          countryOfImpact,
+          location,
           timeframe,
           goalAmount,
           ownerId
@@ -381,7 +383,7 @@ describe('Project Service Test', () => {
       it('Should return the project thumbnail when the project exists', async () => {
         const response = await projectService.getProjectThumbnail(1);
         expect(response.projectName).toEqual('validProjectName');
-        expect(response.countryOfImpact).toEqual('Argentina');
+        expect(response.location).toEqual('Argentina');
         expect(response.timeframe).toEqual('12');
         expect(response.goalAmount).toEqual(124123);
         expect(response.imgPath).toEqual('cardPhotoPath');

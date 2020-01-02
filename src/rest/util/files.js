@@ -101,5 +101,5 @@ exports.saveFile = async (type, file) => {
   await mkdirp(path);
   path = path.concat(fileExtension);
   await saver.save(file, path);
-  return path;
+  return path.replace(configs.fileServer.filePath, '/files');
 };
