@@ -7,6 +7,22 @@ const logger = require('../../logger');
 
 const MAX_PHOTO_SIZE = 500000;
 
+const {
+  NEW,
+  TO_REVIEW,
+  REJECTED,
+  DELETED,
+  PUBLISHED,
+  CONSENSUS,
+  FUNDING,
+  EXECUTING,
+  CHANGING_SCOPE,
+  FINISHED,
+  ABORTED,
+  ARCHIVED,
+  CANCELLED
+} = projectStatuses;
+
 const validateExistence = async (dao, id, model) => {
   logger.info('[ProjectServiceHelper] :: Entering validaExistence method');
   logger.info(
@@ -85,16 +101,97 @@ const validatePhotoSize = file => {
 };
 
 const validateStatusChange = (userRole, currentStatus, newStatus) => {
-  // TODO add all the possible transitions
   const allowedTransitions = {
-    [projectStatuses.TO_REVIEW]: {
-      validator: () => userRole === userRoles.PROJECT_CURATOR,
-      nextSteps: [projectStatuses.PUBLISHED, projectStatuses.REJECTED]
-    }
+    [NEW]: [
+      {
+        validator: () => userRole === userRoles.ENTREPRENEUR,
+        nextSteps: [TO_REVIEW, DELETED]
+      }
+    ],
+    [TO_REVIEW]: [
+      {
+        validator: () => userRole === userRoles.PROJECT_CURATOR,
+        nextSteps: [PUBLISHED, REJECTED]
+      }
+    ],
+    [REJECTED]: [
+      {
+        validator: () => userRole === userRoles.ENTREPRENEUR,
+        nextSteps: [TO_REVIEW, DELETED]
+      }
+    ],
+    [DELETED]: [
+      {
+        nextSteps: []
+      }
+    ],
+    [PUBLISHED]: [
+      {
+        // TODO add validation to check that time set already happen
+        nextSteps: [CONSENSUS]
+      }
+    ],
+    [CONSENSUS]: [
+      {
+        // TODO add validations for funding case
+        // - At least one oracle and one supporter assigned to each milestone/activity
+        // - Time of consensus has finished
+        nextSteps: [FUNDING]
+      },
+      {
+        // TODO add validations for rejected case
+        // - Project doesn't reach specifications and the time has finished
+        nextSteps: [REJECTED]
+      }
+    ],
+    [FUNDING]: [
+      {
+        // TODO add validation to check that time set already happen
+        nextSteps: [EXECUTING]
+      }
+    ],
+    [EXECUTING]: [
+      {
+        validator: () => userRole === userRoles.ENTREPRENEUR,
+        nextSteps: [ABORTED, CHANGING_SCOPE]
+      },
+      {
+        // TODO check that project has each milestone in done
+        nextSteps: [FINISHED]
+      }
+    ],
+    [CHANGING_SCOPE]: [
+      {
+        validator: () => userRole === userRoles.ENTREPRENEUR,
+        nextSteps: [EXECUTING, ABORTED]
+      }
+    ],
+    [ABORTED]: [
+      {
+        // TODO add validation to check that time set already happen
+        nextSteps: [ARCHIVED]
+      }
+    ],
+    [FINISHED]: [
+      {
+        // TODO add validation to check that time set already happen
+        nextSteps: [ARCHIVED]
+      }
+    ],
+    [CANCELLED]: [
+      {
+        nextSteps: []
+      }
+    ]
   };
 
-  const { validator, nextSteps } = allowedTransitions[currentStatus];
-  return validator() && nextSteps.includes(newStatus);
+  const [transition] = allowedTransitions[currentStatus].filter(
+    ({ nextSteps }) => nextSteps.includes(newStatus)
+  );
+
+  if (!transition) return false;
+  const { validator } = transition;
+  return !validator || validator();
 };
 
 module.exports = {

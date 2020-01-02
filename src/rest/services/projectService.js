@@ -422,7 +422,7 @@ module.exports = {
       logger.error(
         '[Project Service] :: Project status transition is not valid'
       );
-      throw new COAError(errors.InvalidProjectTransition());
+      throw new COAError(errors.InvalidProjectTransition);
     }
 
     return {
