@@ -281,44 +281,34 @@ module.exports = {
     return { mission, problemAddressed, imgPath: coverPhotoPath };
   },
 
-  async createProjectProposal(projectId, { projectProposal, ownerId }) {
-    validateParams(projectId, projectProposal, ownerId);
+  async updateProjectProposal(projectId, { proposal, ownerId }) {
+    logger.info('[ProjectService] :: Entering updateProjectProposal method');
+    validateRequiredParams({
+      method: 'updateProjectProposal',
+      params: { projectId, proposal, ownerId }
+    });
 
-    await validateExistence(this.userDao, ownerId, 'user');
-    const project = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
+    await checkExistence(this.userDao, ownerId, 'user');
+    const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
-    return {
-      projectId: await this.updateProject(projectId, {
-        proposal: projectProposal
-      })
-    };
-  },
-
-  async updateProjectProposal(projectId, { projectProposal, ownerId }) {
-    validateParams(projectProposal, ownerId, projectId);
-    const project = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
+    logger.info(
+      `[ProjectService] :: Saving proposal for project id ${projectId}`
     );
-    await validateExistence(this.userDao, ownerId, 'user');
-    validateOwnership(project.owner, ownerId);
-
-    return {
-      projectId: await this.updateProject(projectId, {
-        proposal: projectProposal
-      })
-    };
+    const updatedProjectId = await this.updateProject(projectId, { proposal });
+    logger.info(
+      `[ProjectService] :: Proposal saved for project id ${updatedProjectId}`
+    );
+    return { projectId: updatedProjectId };
   },
 
   async getProjectProposal(projectId) {
-    validateParams(projectId);
-    const { proposal } = await validateExistence(
+    logger.info('[ProjectService] :: Entering getProjectProposal method');
+    validateRequiredParams({
+      method: 'getProjectProposal',
+      params: { projectId }
+    });
+    const { proposal } = await checkExistence(
       this.projectDao,
       projectId,
       'project'
