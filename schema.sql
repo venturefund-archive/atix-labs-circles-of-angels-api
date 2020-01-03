@@ -36,10 +36,19 @@ CREATE TABLE public.user (
 );
 
 CREATE TYPE ProjectStatus AS ENUM (
-    'draft',
-    'pending',
-    'consensus',
-    'ongoing'
+  'new',
+  'toreview',
+  'rejected',
+  'deleted',
+  'published',
+  'consensus',
+  'funding',
+  'executing',
+  'changingscope',
+  'finished',
+  'aborted',
+  'archived',
+  'cancelled'
 );
 
 CREATE TABLE public.project (

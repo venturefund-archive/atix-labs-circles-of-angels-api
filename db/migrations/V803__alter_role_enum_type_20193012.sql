@@ -1,10 +1,5 @@
-ALTER TYPE ROLE ADD VALUE 'supporter';
-ALTER TYPE ROLE ADD VALUE 'curator';
-ALTER TYPE ROLE ADD VALUE 'bankoperator';
-
-UPDATE public.user SET role = 'supporter' WHERE role = 'oracle' OR role = 'funder';
-
-ALTER TYPE ROLE RENAME TO ROLE_OLD;
+ALTER TABLE public.user ALTER COLUMN role TYPE VARCHAR(255);
+DROP TYPE IF EXISTS ROLE;
 
 CREATE TYPE ROLE AS ENUM(
   'admin',
@@ -14,6 +9,5 @@ CREATE TYPE ROLE AS ENUM(
   'bankoperator'
 );
 
+UPDATE public.user SET role = 'supporter' WHERE role = 'oracle' OR role = 'funder';
 ALTER TABLE public.user ALTER COLUMN role TYPE ROLE USING role::text::ROLE;
-
-DROP TYPE ROLE_OLD;

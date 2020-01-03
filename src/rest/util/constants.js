@@ -27,11 +27,22 @@ const projectStatus = {
   IN_PROGRESS: 4
 };
 
-const projectStatusType = {
-  DRAFT: 'draft',
-  PENDING: 'pending',
+const projectStatuses = {
+  NEW: 'new',
+  TO_REVIEW: 'toreview',
+  REJECTED: 'rejected',
+  DELETED: 'deleted',
+  PUBLISHED: 'published',
   CONSENSUS: 'consensus',
-  ONGOING: 'ongoing'
+  FUNDING: 'funding',
+  EXECUTING: 'executing',
+  CHANGING_SCOPE: 'changingscope',
+  FINISHED: 'finished',
+  ABORTED: 'aborted',
+  ARCHIVED: 'archived',
+  CANCELLED: 'cancelled'
+  // TODO this status might be a boolean field in project table
+  // SUSPENDED: 'suspended'
 };
 
 const activityStatus = {
@@ -113,11 +124,11 @@ module.exports = {
   txFunderStatus,
   transferStatus,
   projectStatus,
+  projectStatuses,
   activityStatus,
   userRoles,
   milestoneBudgetStatus,
   blockchainStatus,
   xlsxConfigs,
-  projectStatusType,
   transactionTypes
 };

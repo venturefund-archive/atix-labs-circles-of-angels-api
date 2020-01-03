@@ -7,13 +7,15 @@
  */
 
 const path = require('path');
-const { projectStatusType } = require('../util/constants');
+const { projectStatuses } = require('../util/constants');
 const { saveFile, fileExists } = require('../util/files');
 const {
   validateExistence,
   validateParams,
   validateMtype,
-  validatePhotoSize
+  validatePhotoSize,
+  validateOwnership,
+  validateStatusChange
 } = require('./helpers/projectServiceHelper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
@@ -49,11 +51,6 @@ module.exports = {
     const savedProject = await this.projectDao.saveProject(project);
     if (!savedProject) throw new COAError(errors.CantSaveProject);
     return savedProject.id;
-  },
-
-  validateOwnership(realOwnerId, userId) {
-    if (realOwnerId !== userId)
-      throw new COAError(errors.UserIsNotOwnerOfProject);
   },
 
   async createProjectThumbnail({
@@ -108,7 +105,7 @@ module.exports = {
       projectId,
       'project'
     );
-    this.validateOwnership(project.ownerId, ownerId);
+    validateOwnership(project.ownerId, ownerId);
     if (file) {
       validateMtype(thumbnailType)(file);
       validatePhotoSize(file);
@@ -160,7 +157,7 @@ module.exports = {
     );
     validateMtype(coverPhotoType)(file);
     validatePhotoSize(file);
-    this.validateOwnership(project.ownerId, ownerId);
+    validateOwnership(project.ownerId, ownerId);
 
     const filePath = await saveFile(coverPhotoType, file);
 
@@ -181,7 +178,7 @@ module.exports = {
 
     await validateExistence(this.userDao, ownerId);
     const project = await validateExistence(this.projectDao, projectId);
-    this.validateOwnership(project.ownerId, ownerId);
+    validateOwnership(project.ownerId, ownerId);
     if (file) {
       validateMtype(coverPhotoType)(file);
       validatePhotoSize(file);
@@ -218,7 +215,7 @@ module.exports = {
       projectId,
       'project'
     );
-    this.validateOwnership(project.ownerId, ownerId);
+    validateOwnership(project.ownerId, ownerId);
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -235,7 +232,7 @@ module.exports = {
       'project'
     );
     await validateExistence(this.userDao, ownerId, 'user');
-    this.validateOwnership(project.ownerId, ownerId);
+    validateOwnership(project.ownerId, ownerId);
 
     return {
       projectId: await this.updateProject(projectId, {
@@ -311,7 +308,7 @@ module.exports = {
     if (project.milestonePath)
       throw new COAError(errors.MilestoneFileHasBeenAlreadyUploaded);
 
-    this.validateOwnership(project.ownerId, ownerId);
+    validateOwnership(project.ownerId, ownerId);
 
     validateMtype(milestonesType)(file);
 
@@ -329,9 +326,9 @@ module.exports = {
       projectId,
       'project'
     );
-    if (project.status !== projectStatusType.DRAFT)
+    if (project.status !== projectStatuses.NEW)
       throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
-    this.validateOwnership(project.ownerId, ownerId);
+    validateOwnership(project.ownerId, ownerId);
     const milestones = (await this.milestoneService.createMilestones(
       project.milestonePath,
       projectId
@@ -382,6 +379,7 @@ module.exports = {
     return response;
   },
 
+  // TODO analize if this method will be useful
   async publishProject(projectId, { ownerId }) {
     validateParams(projectId, ownerId);
     const project = await validateExistence(
@@ -389,14 +387,48 @@ module.exports = {
       projectId,
       'project'
     );
-    this.validateOwnership(project.ownerId, ownerId);
-    if (project.status !== projectStatusType.DRAFT) {
+    validateOwnership(project.ownerId, ownerId);
+    if (project.status !== projectStatuses.NEW) {
       throw new COAError(errors.ProjectIsNotPublishable);
     }
     return {
       projectId: await this.updateProject(projectId, {
-        status: projectStatusType.PENDING_APPROVAL
+        status: projectStatuses.TO_REVIEW
       })
+    };
+  },
+
+  async updateProjectStatus(user, projectId, newStatus) {
+    validateParams(projectId, user);
+
+    const project = await validateExistence(
+      this.projectDao,
+      projectId,
+      'project'
+    );
+
+    const { status: currentStatus, owner } = project;
+
+    logger.info(
+      `[Project Service] :: Updating project ${projectId} from ${currentStatus} to ${newStatus}`
+    );
+
+    if (
+      !validateStatusChange({
+        user,
+        currentStatus,
+        newStatus,
+        projectOwner: owner
+      })
+    ) {
+      logger.error(
+        '[Project Service] :: Project status transition is not valid'
+      );
+      throw new COAError(errors.InvalidProjectTransition);
+    }
+
+    return {
+      projectId: await this.updateProject(projectId, { status: newStatus })
     };
   },
 

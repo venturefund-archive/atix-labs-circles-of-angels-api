@@ -9,7 +9,7 @@
 const projectService = require('../../services/projectService');
 const projectServiceExperience = require('../../services/projectExperienceService');
 
-const { projectStatusType } = require('../../util/constants');
+const { projectStatuses } = require('../../util/constants');
 
 module.exports = {
   createProjectThumbnail: fastify => async (request, reply) => {
@@ -261,6 +261,7 @@ module.exports = {
     }
   },
 
+  // TODO analize if this method will be useful
   publishProject: () => async (request, reply) => {
     const { projectId } = request.params;
     const ownerId = request.user.id;
@@ -273,6 +274,20 @@ module.exports = {
     }
   },
 
+  updateProjectStatus: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const { user } = request;
+    const { status } = request.body;
+
+    const response = await projectService.updateProjectStatus(
+      user,
+      projectId,
+      status
+    );
+
+    reply.send(response);
+  },
+
   getProjects: () => async (request, reply) => {
     const projects = await projectService.getProjects();
     reply.status(200).send(projects);
@@ -281,7 +296,7 @@ module.exports = {
   getActiveProjects: fastify => async (request, reply) => {
     try {
       const projects = await projectService.getProjects({
-        status: projectStatusType.ONGOING
+        status: projectStatuses.EXECUTING
       });
       reply.status(200).send(projects);
     } catch (error) {
