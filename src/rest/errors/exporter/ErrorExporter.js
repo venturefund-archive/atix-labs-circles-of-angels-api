@@ -116,5 +116,9 @@ module.exports = {
   InvalidProjectTransition: {
     message: 'Project status transition is not valid',
     statusCode: 400
-  }
+  },
+  ProjectCantBeUpdated: status => ({
+    message: `Project with status ${status} can't be updated`,
+    statusCode: 403
+  })
 };

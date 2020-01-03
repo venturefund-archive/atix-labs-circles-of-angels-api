@@ -21,7 +21,7 @@ const ownerIdProperty = {
 };
 const projectThumbnailProperties = {
   projectName: { type: 'string' },
-  countryOfImpact: { type: 'string' },
+  location: { type: 'string' },
   timeframe: { type: 'string' },
   goalAmount: { type: 'number' }
 };
@@ -171,9 +171,9 @@ const projectThumbnailRoutes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Updates the thumbnail of an existing draft project',
+        summary: 'Updates an existing project thumbnail',
         type: 'multipart/form-data',
         raw: {
           files: { type: 'object' },
@@ -198,9 +198,9 @@ const projectThumbnailRoutes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets the thumbnail information of an existing project',
+        summary: 'Gets a project thumbnail info',
         params: projectIdParam,
         response: {
           ...successResponse({
@@ -634,7 +634,7 @@ const commonProjectRoutes = {
   },
   getProject: {
     method: 'get',
-    path: '/project/:projectId',
+    path: `${basePath}/:projectId`,
     handler: handlers.getProject,
     options: {
       beforeHandler: []
@@ -642,7 +642,7 @@ const commonProjectRoutes = {
   },
   getProjectFull: {
     method: 'get',
-    path: '/project/:projectId/full',
+    path: `${basePath}/:projectId/full`,
     handler: handlers.getProjectFull,
     options: {
       beforeHandler: []
