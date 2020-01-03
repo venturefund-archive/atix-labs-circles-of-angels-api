@@ -112,5 +112,9 @@ module.exports = {
   ErrorGetting: model => ({
     message: `Error getting ${model}`,
     statusCode: 500
-  })
+  }),
+  InvalidProjectTransition: {
+    message: 'Project status transition is not valid',
+    statusCode: 400
+  }
 };

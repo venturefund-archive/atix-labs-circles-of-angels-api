@@ -9,34 +9,12 @@
 const basePath = '/projects';
 const handlers = require('./handlers/projectHandlers');
 const routeTags = require('../util/routeTags');
-
-const clientErrorResponse = () => ({
-  '4xx': {
-    type: 'object',
-    properties: {
-      status: { type: 'integer' },
-      error: { type: 'string' }
-    },
-    description: 'Returns a message describing the error'
-  }
-});
-
-const serverErrorResponse = () => ({
-  500: {
-    type: 'object',
-    properties: {
-      status: { type: 'integer' },
-      error: { type: 'string' }
-    },
-    description: 'Returns a message describing the error'
-  }
-});
-
-const successResponse = response => ({
-  200: {
-    ...response
-  }
-});
+const {
+  successResponse,
+  serverErrorResponse,
+  clientErrorResponse
+} = require('../util/responses');
+const { projectStatuses } = require('../util/constants');
 
 const ownerIdProperty = {
   ownerId: { type: 'integer' }
@@ -669,6 +647,38 @@ const commonProjectRoutes = {
     options: {
       beforeHandler: []
     }
+  },
+  updateProjectStatus: {
+    method: 'put',
+    path: `${basePath}/:projectId/status`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Update project status',
+        summary: 'Update project status',
+        body: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: Object.values(projectStatuses)
+            }
+          },
+          required: ['status'],
+          description: 'New project status'
+        },
+        type: 'object',
+        params: projectIdParam,
+        response: {
+          // TODO send project updated to update on front too
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateProjectStatus
   }
 };
 

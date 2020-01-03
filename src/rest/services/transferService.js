@@ -8,7 +8,7 @@
 
 const {
   txFunderStatus,
-  projectStatusType,
+  projectStatuses,
   userRoles,
   transferStatus
 } = require('../util/constants');
@@ -65,7 +65,7 @@ module.exports = {
     }
 
     // TODO: change allowed project status to FUNDING when implemented
-    if (project.status !== projectStatusType.CONSENSUS) {
+    if (project.status !== projectStatuses.CONSENSUS) {
       logger.error(
         `[TransferService] :: Project ${project.id} is not on consensus phase`
       );
@@ -174,8 +174,8 @@ module.exports = {
 
     // TODO: define in which project phase/s this list would make sense
     if (
-      project.status !== projectStatusType.CONSENSUS &&
-      project.status !== projectStatusType.ONGOING
+      project.status !== projectStatuses.CONSENSUS &&
+      project.status !== projectStatuses.EXECUTING
     ) {
       logger.error(
         '[TransferService] :: Project has not been approved yet',
