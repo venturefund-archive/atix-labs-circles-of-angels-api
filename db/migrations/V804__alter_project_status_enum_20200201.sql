@@ -1,12 +1,6 @@
-ALTER TYPE ProjectStatus ADD VALUE 'new';
-ALTER TYPE ProjectStatus ADD VALUE 'toreview';
-ALTER TYPE ProjectStatus ADD VALUE 'executing';
-
-UPDATE public.project SET status = 'new' WHERE status = 'draft';
-UPDATE public.project SET status = 'toreview' WHERE status = 'pending';
-UPDATE public.project SET status = 'executing' WHERE status = 'ongoing';
-
-ALTER TYPE ProjectStatus RENAME TO ProjectStatusOld;
+ALTER TABLE public.project ALTER COLUMN status TYPE VARCHAR(255);
+ALTER TABLE public.project ALTER COLUMN status DROP DEFAULT;
+DROP TYPE IF EXISTS ProjectStatus;
 
 CREATE TYPE ProjectStatus AS ENUM (
   'new',
@@ -23,9 +17,8 @@ CREATE TYPE ProjectStatus AS ENUM (
   'archived',
   'cancelled'
 );
-
-ALTER TABLE public.project ALTER COLUMN status DROP DEFAULT;
+​
+-- UPDATE public.project SET status = 'new' WHERE status = 'draft';
+-- UPDATE public.project SET status = 'executing' WHERE status = 'ongoing';
 ALTER TABLE public.project ALTER COLUMN status TYPE ProjectStatus USING status::text::ProjectStatus;
 ALTER TABLE public.project ALTER COLUMN status SET DEFAULT 'new';
-
-DROP TYPE ProjectStatusOld;
