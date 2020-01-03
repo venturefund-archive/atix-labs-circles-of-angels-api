@@ -1,6 +1,6 @@
 const COAError = require('../rest/errors/COAError');
 const files = require('../rest/util/files');
-const { userRoles } = require('../rest/util/constants');
+const { userRoles, projectStatuses } = require('../rest/util/constants');
 const errors = require('../rest/errors/exporter/ErrorExporter');
 
 const { injectMocks } = require('../rest/util/injection');
@@ -32,7 +32,7 @@ const pendingProject = {
   problemAddressed,
   proposal,
   mission,
-  status: 'pending',
+  status: projectStatuses.TO_REVIEW,
   milestones: [milestone],
   milestonePath: 'milestonePath'
 };
@@ -48,7 +48,7 @@ const draftProjectWithMilestone = {
   problemAddressed,
   proposal,
   mission,
-  status: 'draft',
+  status: projectStatuses.NEW,
   milestones: [milestone],
   milestonePath: 'milestonePath'
 };
@@ -64,7 +64,7 @@ const draftProject = {
   problemAddressed,
   proposal,
   mission,
-  status: 'draft'
+  status: projectStatuses.NEW
 };
 
 const userDao = {
