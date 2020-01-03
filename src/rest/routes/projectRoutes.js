@@ -30,8 +30,7 @@ const imgPathProperty = {
 };
 const projectDetailProperties = {
   mission: { type: 'string' },
-  problemAddressed: { type: 'string' },
-  imgPath: { type: 'string' }
+  problemAddressed: { type: 'string' }
 };
 const projectProposalProperties = {
   proposal: { type: 'string' }
@@ -236,11 +235,7 @@ const projectDetailRoutes = {
           files: { type: 'object' },
           body: {
             type: 'object',
-            properties: Object.assign(
-              {},
-              projectDetailProperties,
-              ownerIdProperty
-            )
+            properties: projectDetailProperties
           }
         },
         response: {
@@ -259,8 +254,8 @@ const projectDetailRoutes = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        description: 'Updates the detail of an existing project.',
+        summary: 'Updates a project detail',
         raw: {
           files: { type: 'object' },
           body: {
@@ -285,13 +280,17 @@ const projectDetailRoutes = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        description: 'Returns the detail of an existing project',
+        summary: 'Get project detail',
         params: projectIdParam,
         response: {
           ...successResponse({
             type: 'object',
-            properties: projectDetailProperties,
+            properties: Object.assign(
+              {},
+              projectDetailProperties,
+              imgPathProperty
+            ),
             description: 'Returns the project detail'
           }),
           ...clientErrorResponse(),

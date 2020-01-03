@@ -55,51 +55,44 @@ module.exports = {
     reply.status(200).send(response);
   },
 
-  createProjectDetail: fastify => async (request, reply) => {
-    const { projectMission, theProblem } = request.raw.body;
-    const { file } = request.raw.files;
+  createProjectDetail: () => async (request, reply) => {
+    const body = request.raw.body || {};
+    const files = request.raw.files || {};
+
     const { projectId } = request.params;
     const ownerId = request.user.id;
-
-    try {
-      const response = await projectService.createProjectDetail(projectId, {
-        projectMission,
-        theProblem,
-        file,
-        ownerId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const { mission, problemAddressed } = body;
+    const { file } = files;
+    const response = await projectService.createProjectDetail(projectId, {
+      mission,
+      problemAddressed,
+      file,
+      ownerId
+    });
+    reply.status(200).send(response);
   },
 
-  updateProjectDetail: fastify => async (request, reply) => {
+  updateProjectDetail: () => async (request, reply) => {
+    const body = request.raw.body || {};
+    const files = request.raw.files || {};
+
     const { projectId } = request.params;
-    const { projectMission, theProblem } = request.raw.body;
     const ownerId = request.user.id;
-    const file = request.raw.files.file ? request.raw.files.file : undefined;
-    try {
-      const response = await projectService.updateProjectDetail(projectId, {
-        projectMission,
-        theProblem,
-        file,
-        ownerId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const { mission, problemAddressed } = body;
+    const { file } = files;
+    const response = await projectService.updateProjectDetail(projectId, {
+      mission,
+      problemAddressed,
+      file,
+      ownerId
+    });
+    reply.status(200).send(response);
   },
 
-  getProjectDetail: fastify => async (request, reply) => {
+  getProjectDetail: () => async (request, reply) => {
     const { projectId } = request.params;
-    try {
-      const response = await projectService.getProjectDetail(projectId);
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const response = await projectService.getProjectDetail(projectId);
+    reply.status(200).send(response);
   },
 
   createProjectProposal: fastify => async (request, reply) => {
