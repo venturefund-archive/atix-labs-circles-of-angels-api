@@ -418,7 +418,7 @@ module.exports = {
         user,
         currentStatus,
         newStatus,
-        projectOwner: ownerId
+        projectOwner: owner
       })
     ) {
       logger.error(
