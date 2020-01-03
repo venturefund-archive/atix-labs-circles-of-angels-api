@@ -265,7 +265,6 @@ module.exports = {
   publishProject: () => async (request, reply) => {
     const { projectId } = request.params;
     const ownerId = request.user.id;
-    console.log('User :: ', request.user);
 
     try {
       const response = await projectService.publishProject(projectId, ownerId);
