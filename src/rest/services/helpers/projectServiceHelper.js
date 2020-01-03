@@ -100,23 +100,39 @@ const validatePhotoSize = file => {
   }
 };
 
-const validateStatusChange = (userRole, currentStatus, newStatus) => {
+const validateOwnership = (realOwnerId, userId) => {
+  if (realOwnerId !== userId)
+    throw new COAError(errors.UserIsNotOwnerOfProject);
+};
+
+const validateStatusChange = ({
+  user,
+  currentStatus,
+  newStatus,
+  projectOwner
+}) => {
+  const { role, id } = user;
+
   const allowedTransitions = {
     [NEW]: [
       {
-        validator: () => userRole === userRoles.ENTREPRENEUR,
+        validator: () =>
+          role === userRoles.ENTREPRENEUR &&
+          validateOwnership(projectOwner, id),
         nextSteps: [TO_REVIEW, DELETED]
       }
     ],
     [TO_REVIEW]: [
       {
-        validator: () => userRole === userRoles.PROJECT_CURATOR,
+        validator: () => role === userRoles.PROJECT_CURATOR,
         nextSteps: [PUBLISHED, REJECTED]
       }
     ],
     [REJECTED]: [
       {
-        validator: () => userRole === userRoles.ENTREPRENEUR,
+        validator: () =>
+          role === userRoles.ENTREPRENEUR &&
+          validateOwnership(projectOwner, id),
         nextSteps: [TO_REVIEW, DELETED]
       }
     ],
@@ -152,7 +168,9 @@ const validateStatusChange = (userRole, currentStatus, newStatus) => {
     ],
     [EXECUTING]: [
       {
-        validator: () => userRole === userRoles.ENTREPRENEUR,
+        validator: () =>
+          role === userRoles.ENTREPRENEUR &&
+          validateOwnership(projectOwner, id),
         nextSteps: [ABORTED, CHANGING_SCOPE]
       },
       {
@@ -162,7 +180,9 @@ const validateStatusChange = (userRole, currentStatus, newStatus) => {
     ],
     [CHANGING_SCOPE]: [
       {
-        validator: () => userRole === userRoles.ENTREPRENEUR,
+        validator: () =>
+          role === userRoles.ENTREPRENEUR &&
+          validateOwnership(projectOwner, id),
         nextSteps: [EXECUTING, ABORTED]
       }
     ],
@@ -199,6 +219,7 @@ module.exports = {
   validateParams,
   validateMtype,
   validatePhotoSize,
+  validateOwnership,
   validateStatusChange,
   xslValidator,
   imgValidator
