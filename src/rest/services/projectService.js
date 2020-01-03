@@ -407,7 +407,7 @@ module.exports = {
       'project'
     );
 
-    const { status: currentStatus, ownerId } = project;
+    const { status: currentStatus, owner } = project;
 
     logger.info(
       `[Project Service] :: Updating project ${projectId} from ${currentStatus} to ${newStatus}`
