@@ -7,16 +7,18 @@
  */
 
 const path = require('path');
-const { projectStatuses } = require('../util/constants');
+const { projectStatuses, userRoles } = require('../util/constants');
 const { saveFile, fileExists } = require('../util/files');
 const {
   validateExistence,
   validateParams,
-  validateMtype,
-  validatePhotoSize,
   validateOwnership,
   validateStatusChange
 } = require('./helpers/projectServiceHelper');
+const checkExistence = require('./helpers/checkExistence');
+const validateRequiredParams = require('./helpers/validateRequiredParams');
+const validateMtype = require('./helpers/validateMtype');
+const validatePhotoSize = require('./helpers/validatePhotoSize');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -32,8 +34,10 @@ module.exports = {
       fields,
       projectId
     );
-    if (!updatedProject)
+    if (!updatedProject) {
+      logger.error('[ProjectService] :: Error updating project in DB');
       throw new COAError(errors.CantUpdateProject(projectId));
+    }
     return updatedProject.id;
   },
 
@@ -49,56 +53,66 @@ module.exports = {
 
   async saveProject(project) {
     const savedProject = await this.projectDao.saveProject(project);
-    if (!savedProject) throw new COAError(errors.CantSaveProject);
+    if (!savedProject) {
+      logger.error('[ProjectService] :: Error saving project in DB');
+      throw new COAError(errors.CantSaveProject);
+    }
     return savedProject.id;
   },
 
   async createProjectThumbnail({
     projectName,
-    countryOfImpact,
+    location,
     timeframe,
     goalAmount,
     ownerId,
     file
   }) {
-    validateParams(
-      projectName,
-      countryOfImpact,
-      timeframe,
-      goalAmount,
-      ownerId,
-      file
-    );
-    await validateExistence(this.userDao, ownerId, 'user');
-    validateMtype(thumbnailType)(file);
+    logger.info('[ProjectService] :: Entering createProjectThumbnail method');
+    validateRequiredParams({
+      method: 'createProjectThumbnail',
+      params: { projectName, location, timeframe, goalAmount, ownerId, file }
+    });
+    const user = await checkExistence(this.userDao, ownerId, 'user');
+
+    if (user.role !== userRoles.ENTREPRENEUR) {
+      logger.error(
+        `[ProjectService] :: User ${user.id} is not ${userRoles.ENTREPRENEUR}`
+      );
+      throw new COAError(errors.UnauthorizedUserRole(user.role));
+    }
+
+    validateMtype(thumbnailType, file);
     validatePhotoSize(file);
 
+    logger.info(`[ProjectService] :: Saving file of type '${thumbnailType}'`);
     const cardPhotoPath = await saveFile(thumbnailType, file);
+    logger.info(`[ProjectService] :: File saved to: ${cardPhotoPath}`);
 
     const project = {
       projectName,
-      countryOfImpact,
+      location,
       timeframe,
       goalAmount,
       cardPhotoPath,
       ownerId
     };
 
-    return { projectId: await this.saveProject(project) };
+    logger.info(
+      `[ProjectService] :: Saving project ${projectName} description`
+    );
+    const projectId = await this.saveProject(project);
+
+    logger.info(`[ProjectService] :: New project created with id ${projectId}`);
+
+    return { projectId };
   },
 
   async updateProjectThumbnail(
     projectId,
-    { projectName, countryOfImpact, timeframe, goalAmount, ownerId, file }
+    { projectName, location, timeframe, goalAmount, ownerId, file }
   ) {
-    validateParams(
-      projectName,
-      countryOfImpact,
-      timeframe,
-      goalAmount,
-      ownerId,
-      projectId
-    );
+    logger.info('[ProjectService] :: Entering updateProjectThumbnail method');
     await validateExistence(this.userDao, ownerId, 'user');
     const project = await validateExistence(
       this.projectDao,
@@ -106,38 +120,54 @@ module.exports = {
       'project'
     );
     validateOwnership(project.ownerId, ownerId);
-    if (file) {
-      validateMtype(thumbnailType)(file);
-      validatePhotoSize(file);
+
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[ProjectService] :: Status of project with id ${projectId} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(errors.ProjectCantBeUpdated);
     }
 
-    const cardPhotoPath = file
-      ? await saveFile(thumbnailType, file)
-      : project.filePath;
+    let { cardPhotoPath } = project;
 
-    return {
-      projectId: await this.updateProject(projectId, {
-        projectName,
-        countryOfImpact,
-        timeframe,
-        goalAmount,
-        cardPhotoPath
-      })
-    };
+    if (file) {
+      validateMtype(thumbnailType, file);
+      validatePhotoSize(file);
+      logger.info(`[ProjectService] :: Saving file of type '${thumbnailType}'`);
+      cardPhotoPath = await saveFile(thumbnailType, file);
+      logger.info(`[ProjectService] :: File saved to: ${cardPhotoPath}`);
+    }
+
+    logger.info(`[ProjectService] :: Updating project of id ${projectId}`);
+
+    const updatedProjectId = await this.updateProject(projectId, {
+      projectName,
+      location,
+      timeframe,
+      goalAmount,
+      cardPhotoPath
+    });
+    logger.info(`[ProjectService] :: Project of id ${projectId} updated`);
+
+    return { projectId: updatedProjectId };
   },
 
   async getProjectThumbnail(projectId) {
+    logger.info('[ProjectService] :: Entering getProjectThumbnail method');
     validateParams(projectId);
     const {
       projectName,
-      countryOfImpact,
+      location,
       timeframe,
       goalAmount,
       cardPhotoPath
     } = await validateExistence(this.projectDao, projectId, 'project');
+    logger.info(`[ProjectService] :: Project of id ${projectId} found`);
     return {
       projectName,
-      countryOfImpact,
+      location,
       timeframe,
       goalAmount,
       imgPath: cardPhotoPath
@@ -155,7 +185,7 @@ module.exports = {
       projectId,
       'project'
     );
-    validateMtype(coverPhotoType)(file);
+    validateMtype(coverPhotoType, file);
     validatePhotoSize(file);
     validateOwnership(project.ownerId, ownerId);
 
@@ -180,7 +210,7 @@ module.exports = {
     const project = await validateExistence(this.projectDao, projectId);
     validateOwnership(project.ownerId, ownerId);
     if (file) {
-      validateMtype(coverPhotoType)(file);
+      validateMtype(coverPhotoType, file);
       validatePhotoSize(file);
     }
     const filePath = file
@@ -310,7 +340,7 @@ module.exports = {
 
     validateOwnership(project.ownerId, ownerId);
 
-    validateMtype(milestonesType)(file);
+    validateMtype(milestonesType, file);
 
     const milestonePath = await saveFile(milestonesType, file);
 

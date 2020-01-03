@@ -12,65 +12,47 @@ const projectServiceExperience = require('../../services/projectExperienceServic
 const { projectStatuses } = require('../../util/constants');
 
 module.exports = {
-  createProjectThumbnail: fastify => async (request, reply) => {
-    const {
-      projectName,
-      countryOfImpact,
-      timeframe,
-      goalAmount
-    } = request.raw.body;
+  createProjectThumbnail: () => async (request, reply) => {
+    const body = request.raw.body || {};
+    const files = request.raw.files || {};
 
-    // assuming it's already logged.
+    const { projectName, location, timeframe, goalAmount } = body;
     const ownerId = request.user.id;
-    const { file } = request.raw.files;
-    try {
-      const response = await projectService.createProjectThumbnail({
-        projectName,
-        countryOfImpact,
-        timeframe,
-        goalAmount,
-        file,
-        ownerId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const { file } = files;
+    const response = await projectService.createProjectThumbnail({
+      projectName,
+      location,
+      timeframe,
+      goalAmount,
+      file,
+      ownerId
+    });
+    reply.status(200).send(response);
   },
 
-  updateProjectThumbnail: fastify => async (request, reply) => {
+  updateProjectThumbnail: () => async (request, reply) => {
+    const body = request.raw.body || {};
+    const files = request.raw.files || {};
+
     const { projectId } = request.params;
-    const {
-      projectName,
-      countryOfImpact,
-      timeframe,
-      goalAmount
-    } = request.raw.body;
+    const { projectName, location, timeframe, goalAmount } = body;
     const ownerId = request.user.id;
-    const file = request.raw.files ? request.raw.files.file : undefined;
-    try {
-      const response = await projectService.updateProjectThumbnail(projectId, {
-        projectName,
-        countryOfImpact,
-        timeframe,
-        goalAmount,
-        file,
-        ownerId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const { file } = files;
+    const response = await projectService.updateProjectThumbnail(projectId, {
+      projectName,
+      location,
+      timeframe,
+      goalAmount,
+      file,
+      ownerId
+    });
+    reply.status(200).send(response);
   },
 
-  getProjectThumbnail: fastify => async (request, reply) => {
+  getProjectThumbnail: () => async (request, reply) => {
     const { projectId } = request.params;
-    try {
-      const response = await projectService.getProjectThumbnail(projectId);
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const response = await projectService.getProjectThumbnail(projectId);
+    reply.status(200).send(response);
   },
 
   createProjectDetail: fastify => async (request, reply) => {
