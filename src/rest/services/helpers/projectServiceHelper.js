@@ -103,6 +103,8 @@ const validatePhotoSize = file => {
 const validateOwnership = (realOwnerId, userId) => {
   if (realOwnerId !== userId)
     throw new COAError(errors.UserIsNotOwnerOfProject);
+
+  return true;
 };
 
 const validateStatusChange = ({
