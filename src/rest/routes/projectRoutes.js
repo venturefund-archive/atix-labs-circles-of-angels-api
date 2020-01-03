@@ -303,45 +303,19 @@ const projectDetailRoutes = {
 };
 
 const projectProposalRoutes = {
-  createProjectProposal: {
-    method: 'post',
-    path: `${basePath}/:projectId/proposal`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates new project and adds project proposal to it.',
-        summary: 'Create new project and project proposal',
-        params: projectIdParam,
-        raw: {
-          body: {
-            type: 'object',
-            properties: projectProposalProperties
-          }
-        },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.createProjectProposal
-  },
   updateProjectProposal: {
     method: 'put',
     path: `${basePath}/:projectId/proposal`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        raw: {
-          body: {
-            type: 'object',
-            properties: projectProposalProperties
-          }
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description:
+          'Adds or modifies the project proposal of an existing project.',
+        summary: 'Adds or modifies project proposal',
+        body: {
+          type: 'object',
+          properties: projectProposalProperties
         },
         params: projectIdParam,
         response: {
@@ -359,18 +333,14 @@ const projectProposalRoutes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Returns the project proposal of a project',
+        summary: 'Gets project proposal',
         params: projectIdParam,
         response: {
           ...successResponse({
             type: 'object',
-            properties: Object.assign(
-              {},
-              projectProposalProperties,
-              imgPathProperty
-            ),
+            properties: projectProposalProperties,
             description: 'Returns the project proposal'
           }),
           ...clientErrorResponse(),

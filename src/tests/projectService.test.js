@@ -552,79 +552,39 @@ describe('Project Service Test', () => {
   });
 
   describe('Project proposal', () => {
-    describe('Create project proposal', () => {
-      it('Should create the project proposal on an existent project when all fields are valid', async () => {
-        const { projectId } = await projectService.createProjectProposal(1, {
-          ownerId: 2,
-          projectProposal: proposal
-        });
-        expect(projectId).toEqual(1);
-      });
-      it('Should not create the project proposal when the project does not exist, and throw an error', () => {
-        expect(
-          projectService.createProjectProposal(2, {
-            ownerId: 2,
-            projectProposal: proposal
-          })
-        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
-      });
-      it('Should not create the project proposal when the project exists but proposal is missing and throw an error', () => {
-        expect(
-          projectService.createProjectProposal(1, {
-            ownerId: 2
-          })
-        ).rejects.toThrow(errors.CreateProjectFieldsNotValid);
-      });
-      it('Should not create the project proposal when the project exists but owner does not exist and throw an error', () => {
-        expect(
-          projectService.createProjectProposal(2, {
-            ownerId: 34,
-            projectProposal: proposal
-          })
-        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
-      });
-      it('Should not create the project proposal when the project exists but user is not owner, and throw an error', () => {
-        expect(
-          projectService.createProjectProposal(2, {
-            ownerId: 3,
-            projectProposal: proposal
-          })
-        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
-      });
-    });
     describe('Update project proposal', () => {
       it('Should update the project when the project exists and all the fields are valid', async () => {
         const { projectId } = await projectService.updateProjectProposal(1, {
-          projectProposal: proposal,
+          proposal,
           ownerId: 2
         });
         expect(projectId).toEqual(1);
       });
-      it('Should not update the project when it does not exist and throw an error', () => {
-        expect(
+      it('Should not update the project when it does not exist and throw an error', async () => {
+        await expect(
           projectService.updateProjectProposal(2, {
-            projectProposal: proposal,
+            proposal,
             ownerId: 2
           })
         ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
       });
-      it('Should not update the project when the project exists but proposal is missing and throw an error', () => {
-        expect(
+      it('Should not update the project when the project exists but proposal is missing and throw an error', async () => {
+        await expect(
           projectService.updateProjectProposal(1, { ownerId: 2 })
         ).rejects.toThrow(COAError);
       });
-      it('Should not update the project when the project exists, all fields are valid but owner does not exist and throw an error', () => {
-        expect(
+      it('Should not update the project when the project exists, all fields are valid but owner does not exist and throw an error', async () => {
+        await expect(
           projectService.updateProjectProposal(1, {
-            projectProposal: proposal,
+            proposal,
             ownerId: 34
           })
         ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
       });
-      it('Should not update the project when user is not owner, and throw an error', () => {
-        expect(
-          projectService.updateProjectProposal(2, {
-            projectProposal: proposal,
+      it('Should not update the project when user is not owner, and throw an error', async () => {
+        await expect(
+          projectService.updateProjectProposal(1, {
+            proposal,
             ownerId: 3
           })
         ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
@@ -636,8 +596,8 @@ describe('Project Service Test', () => {
         const response = await projectService.getProjectProposal(1);
         expect(response.proposal).toEqual('proposal');
       });
-      it('Should throw an error when the project does not exist, and throw an error', () => {
-        expect(projectService.getProjectProposal(2)).rejects.toThrow(
+      it('Should throw an error when the project does not exist, and throw an error', async () => {
+        await expect(projectService.getProjectProposal(2)).rejects.toThrow(
           errors.CantFindModelWithId('project', 2)
         );
       });
