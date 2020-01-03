@@ -649,12 +649,12 @@ const commonProjectRoutes = {
     }
   },
   updateProjectStatus: {
-    method: 'post',
+    method: 'put',
     path: `${basePath}/:projectId/status`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
         description: 'Update project status',
         summary: 'Update project status',
         body: {
