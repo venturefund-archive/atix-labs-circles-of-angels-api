@@ -95,44 +95,21 @@ module.exports = {
     reply.status(200).send(response);
   },
 
-  createProjectProposal: fastify => async (request, reply) => {
+  updateProjectProposal: () => async (request, reply) => {
     const { projectId } = request.params;
     const ownerId = request.user.id;
-    const { projectProposal } = request.raw.body;
-    try {
-      const response = await projectService.createProjectProposal(projectId, {
-        projectProposal,
-        ownerId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const { proposal } = request.body;
+    const response = await projectService.updateProjectProposal(projectId, {
+      proposal,
+      ownerId
+    });
+    reply.status(200).send(response);
   },
 
-  updateProjectProposal: fastify => async (request, reply) => {
-    const ownerId = request.user.id;
+  getProjectProposal: () => async (request, reply) => {
     const { projectId } = request.params;
-    const { projectProposal } = request.raw.body;
-    try {
-      const response = await projectService.updateProjectProposal(projectId, {
-        projectProposal,
-        ownerId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
-  },
-
-  getProjectProposal: fastify => async (request, reply) => {
-    const { projectId } = request.params;
-    try {
-      const response = await projectService.getProjectProposal(projectId);
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const response = await projectService.getProjectProposal(projectId);
+    reply.status(200).send(response);
   },
 
   getMilestonesFile: () => async (request, reply) => {
