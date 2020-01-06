@@ -48,6 +48,7 @@ const milestonesResponse = {
   items: {
     type: 'object',
     properties: {
+      id: { type: 'integer' },
       category: { type: 'string' },
       description: { type: 'string' },
       tasks: {
@@ -55,6 +56,7 @@ const milestonesResponse = {
         items: {
           type: 'object',
           properties: {
+            id: { type: 'integer' },
             taskHash: { type: 'string' },
             description: { type: 'string' },
             reviewCriteria: { type: 'string' },
@@ -89,6 +91,26 @@ const successWithProjectIdResponse = {
     projectId: { type: 'integer' }
   },
   description: 'Returns the id of the project'
+};
+
+// FIXME: I don't think this is the best way to do this but ¯\_(ツ)_/¯
+const responseWithMilestoneErrors = {
+  type: 'object',
+  properties: {
+    errors: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          rowNumber: { type: 'number' },
+          msg: { type: 'string' }
+        }
+      }
+    },
+    projectId: { type: 'integer' }
+  },
+  description:
+    'Returns an array with all errors while processing the milestone file or the project id if successful'
 };
 
 const userResponse = {
@@ -467,15 +489,16 @@ const projectMilestonesRoute = {
     },
     handler: handlers.getTemplateOfProjectMilestone
   },
-  uploadsMilestonesFile: {
+  processMilestonesFile: {
     method: 'put',
-    path: `${basePath}/:projectId/milestones/file`,
+    path: `${basePath}/:projectId/milestones`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description:
+          'Process excel file and creates the milestones of a project',
+        summary: 'Creates milestones from file',
         type: 'multipart/form-data',
         raw: {
           type: 'object',
@@ -485,25 +508,7 @@ const projectMilestonesRoute = {
         },
         params: projectIdParam,
         response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.uploadMilestoneFile
-  },
-  processMilestonesFile: {
-    method: 'post',
-    path: `${basePath}/:projectId/milestones`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates new project and adds project proposal to it.',
-        summary: 'Create new project and project proposal',
-        response: {
-          ...successResponse(successWithProjectIdResponse),
+          ...successResponse(responseWithMilestoneErrors),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
@@ -518,8 +523,8 @@ const projectMilestonesRoute = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        description: 'Returns the milestones of an existing project',
+        summary: 'Gets milestones of a project',
         params: projectIdParam,
         response: {
           ...successResponse(milestonesResponse),

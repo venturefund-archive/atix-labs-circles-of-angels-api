@@ -174,43 +174,22 @@ module.exports = {
     );
   },
 
-  uploadMilestoneFile: fastify => async (request, reply) => {
+  processMilestonesFile: () => async (request, reply) => {
+    const files = request.raw.files || {};
     const { projectId } = request.params;
-    const { file } = request.raw.files;
+    const { file } = files;
     const ownerId = request.user.id;
-    try {
-      const response = await projectService.uploadMilestoneFile(projectId, {
-        file,
-        ownerId
-      });
-      reply.send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const response = await projectService.processMilestoneFile(projectId, {
+      file,
+      ownerId
+    });
+    reply.status(200).send(response);
   },
 
-  processMilestonesFile: fastify => async (request, reply) => {
+  getProjectMilestones: () => async (request, reply) => {
     const { projectId } = request.params;
-    const ownerId = request.user.id;
-    try {
-      const response = await projectService.processMilestoneFile(
-        projectId,
-        ownerId
-      );
-      reply.send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
-  },
-
-  getProjectMilestones: fastify => async (request, reply) => {
-    const { projectId } = request.params;
-    try {
-      const response = await projectService.getProjectMilestones(projectId);
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+    const response = await projectService.getProjectMilestones(projectId);
+    reply.status(200).send(response);
   },
 
   // TODO analize if this method will be useful
