@@ -699,64 +699,6 @@ describe('Project Service Test', () => {
       it('Should not delete task of milestone if milestone exists but task does not belongs to milestone, and throw an error', () => {});
     });
 
-    describe('Upload milestone file', () => {
-      it('Should add milestone file to an existent project', async () => {
-        const { projectId } = await projectService.uploadMilestoneFile(1, {
-          file: milestoneFile,
-          ownerId: 2
-        });
-        expect(projectId).toEqual(1);
-      });
-      it('Should not add milestone file to a non-existent project, and throw an error', () => {
-        expect(
-          projectService.uploadMilestoneFile(5, {
-            file: milestoneFile,
-            ownerId: 2
-          })
-        ).rejects.toThrow(errors.CantFindModelWithId('project', 5));
-      });
-      it('Should not add milestone file to an existent project if user is not owner, and throw an error', () => {
-        expect(
-          projectService.uploadMilestoneFile(1, {
-            file: milestoneFile,
-            ownerId: 3
-          })
-        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
-      });
-      it('Should not add milestone file to an existent project with a milestone file already uploaded, and throw an error', () => {
-        expect(
-          projectService.uploadMilestoneFile(3, {
-            file: milestoneFile,
-            ownerId: 2
-          })
-        ).rejects.toThrow(errors.MilestoneFileHasBeenAlreadyUploaded);
-      });
-      it('Should not add milestone file to an existent project if file has not a valid type, and throw an error', () => {
-        expect(
-          projectService.uploadMilestoneFile(3, {
-            file: milestoneFile,
-            ownerId: 2
-          })
-        ).rejects.toThrow(errors.MilestoneFileTypeNotValid);
-      });
-      it('Should not add milestone file to an existent project if file has not a valid size, and throw an error', () => {
-        expect(
-          projectService.uploadMilestoneFile(3, {
-            file: {
-              name: 'name.xslx',
-              size: 1982319823
-            },
-            ownerId: 2
-          })
-        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
-      });
-      it('Should not add milestone file to an existent project if file field is missing, and throw an error', () => {
-        expect(projectService.uploadMilestoneFile(3, { file })).rejects.toThrow(
-          errors.CreateProjectFieldsNotValid
-        );
-      });
-    });
-
     describe('Process milestone file', () => {
       beforeAll(() => {
         injectMocks(projectService, {
@@ -767,24 +709,50 @@ describe('Project Service Test', () => {
       });
       it('Should create milestones and activities to an existent project without an already process file', async () => {
         const { projectId } = await projectService.processMilestoneFile(1, {
+          file: milestoneFile,
           ownerId: 2
         });
         expect(projectId).toEqual(1);
       });
-      it('Should not create milestones and activities to a non-existent project, and throw an error', () => {
-        expect(
-          projectService.processMilestoneFile(2, { ownerId: 2 })
+      it('Should not create milestones and activities to a non-existent project, and throw an error', async () => {
+        await expect(
+          projectService.processMilestoneFile(2, {
+            file: milestoneFile,
+            ownerId: 2
+          })
         ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
       });
-      it('Should not create milestones and activities to an existent project with status different than draft', () => {
-        expect(
-          projectService.processMilestoneFile(3, { ownerId: 2 })
+      it('Should not create milestones and activities to an existent project with status different than new', async () => {
+        await expect(
+          projectService.processMilestoneFile(3, {
+            file: milestoneFile,
+            ownerId: 2
+          })
         ).rejects.toThrow(errors.InvalidStatusForMilestoneFileProcess);
       });
-      it('Should not create milestones and activities to an existent project whenever user is not the owner of it', () => {
-        expect(
-          projectService.processMilestoneFile(3, { ownerId: 5 })
+      it('Should not create milestones and activities to an existent project whenever user is not the owner of it', async () => {
+        await expect(
+          projectService.processMilestoneFile(1, {
+            file: milestoneFile,
+            ownerId: 5
+          })
         ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      });
+      it('Should not create milestones and activities to an existent project whenever the file type is not valid', async () => {
+        await expect(
+          projectService.processMilestoneFile(1, {
+            file: { name: 'project.pdf', size: 1234 },
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.MilestoneFileTypeNotValid);
+      });
+      it('Should not create milestones and activities to an existent project if it already has a milestone file', async () => {
+        await expect(
+          projectService.processMilestoneFile(10, {
+            file: { name: 'project.xls', size: 1234 },
+            ownerId: 2
+          })
+        ).rejects.toThrow(errors.MilestoneFileHasBeenAlreadyUploaded);
       });
     });
 

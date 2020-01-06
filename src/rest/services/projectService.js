@@ -363,47 +363,60 @@ module.exports = {
     };
   },
 
-  async uploadMilestoneFile(projectId, { file, ownerId }) {
-    validateParams(projectId, file, ownerId);
-    const project = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
+  async processMilestoneFile(projectId, { file, ownerId }) {
+    logger.info('[ProjectService] :: Entering processMilestoneFile method');
+    validateRequiredParams({
+      method: 'processMilestoneFile',
+      params: { projectId, ownerId, file }
+    });
+    const project = await checkExistence(this.projectDao, projectId, 'project');
+
+    validateOwnership(project.owner, ownerId);
+    // should we validate file size?
+    validateMtype(milestonesType, file);
+
+    if (project.status !== projectStatuses.NEW)
+      throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
+
+    // TODO?: in this case it should probably overwrite all milestones and file
     if (project.milestonePath)
       throw new COAError(errors.MilestoneFileHasBeenAlreadyUploaded);
 
-    validateOwnership(project.owner, ownerId);
-
-    validateMtype(milestonesType, file);
-
-    const milestonePath = await files.saveFile(milestonesType, file);
-
-    return {
-      projectId: await this.updateProject(projectId, { milestonePath })
-    };
-  },
-
-  async processMilestoneFile(projectId, { ownerId }) {
-    validateParams(projectId, ownerId);
-    const project = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
-    if (project.status !== projectStatuses.NEW)
-      throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
-    validateOwnership(project.owner, ownerId);
-    const milestones = (await this.milestoneService.createMilestones(
-      project.milestonePath,
+    const milestones = await this.milestoneService.createMilestones(
+      file,
       projectId
-    )).map(({ id }) => id);
-    return { projectId: await this.updateProject(projectId, { milestones }) };
+    );
+
+    if (milestones.errors) {
+      logger.info(
+        '[ProjectService] :: Found errors while processing milestone file',
+        milestones.errors
+      );
+      return {
+        errors: milestones.errors
+      };
+    }
+
+    logger.info(`[ProjectService] :: Saving file of type '${milestonesType}'`);
+    const milestonePath = await files.saveFile(milestonesType, file);
+    logger.info(`[ProjectService] :: File saved to: ${milestonePath}`);
+
+    const savedProjectId = await this.updateProject(projectId, {
+      milestonePath
+    });
+    logger.info(
+      `[ProjectService] :: Milestones of project ${savedProjectId} saved`
+    );
+    return { projectId: savedProjectId };
   },
 
   async getProjectMilestones(projectId) {
-    validateParams(projectId);
-    await validateExistence(this.projectDao, projectId, 'project');
+    logger.info('[ProjectService] :: Entering getProjectMilestones method');
+    validateRequiredParams({
+      method: 'getProjectMilestones',
+      params: { projectId }
+    });
+    await checkExistence(this.projectDao, projectId, 'project');
     return this.milestoneDao.getMilestoneByProjectId(projectId);
   },
 

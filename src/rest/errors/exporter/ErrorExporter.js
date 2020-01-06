@@ -120,5 +120,14 @@ module.exports = {
   ProjectCantBeUpdated: status => ({
     message: `Project with status ${status} can't be updated`,
     statusCode: 403
-  })
+  }),
+  CantProcessMilestonesFile: {
+    message: 'The milestone file cannot be processed'
+  },
+  ErrorProcessingMilestonesFile: {
+    message: 'An error occurred while processing the milestones file'
+  },
+  ErrorCreatingMilestonesFromFile: {
+    message: 'Error creating milestones from file'
+  }
 };
