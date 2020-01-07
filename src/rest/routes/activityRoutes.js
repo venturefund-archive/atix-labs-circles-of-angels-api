@@ -9,8 +9,69 @@
 const basePath = '/activities';
 const handlers = require('./handlers/activityHandlers');
 const routeTags = require('../util/routeTags');
+const {
+  successResponse,
+  serverErrorResponse,
+  clientErrorResponse
+} = require('../util/responses');
+
+const idParam = (description, param) => ({
+  type: 'object',
+  properties: {
+    [param]: {
+      type: 'integer',
+      description
+    }
+  }
+});
+
+const taskIdParam = idParam('Task identification', 'taskId');
+
+const taskProperties = {
+  description: { type: 'string' },
+  reviewCriteria: { type: 'string' },
+  category: { type: 'string' },
+  keyPersonnel: { type: 'string' },
+  budget: { type: 'string' }
+};
+
+const successWithTaskIdResponse = {
+  type: 'object',
+  properties: {
+    taskId: { type: 'integer' }
+  },
+  description: 'Returns the id of the task'
+};
+
+const taskRoutes = {
+  // TODO: this should replace updateActivity route
+  updateTask: {
+    method: 'put',
+    path: '/tasks/:taskId', // different basePath because duplicate route
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.PUT.name],
+        description: 'Edits the information of an existing task',
+        summary: 'Edits task information',
+        params: { taskIdParam },
+        body: {
+          type: 'object',
+          properties: taskProperties
+        },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateTask
+  }
+};
 
 const routes = {
+  ...taskRoutes,
   createActivity: {
     method: 'post',
     path: `${basePath}`,

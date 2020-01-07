@@ -11,8 +11,15 @@
 const sha256 = require('sha256');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
-const { projectStatus, activityStatus } = require('../rest/util/constants');
+const {
+  projectStatus,
+  projectStatuses,
+  activityStatus,
+  userRoles
+} = require('../rest/util/constants');
 const { injectMocks } = require('../rest/util/injection');
+const errors = require('../rest/errors/exporter/ErrorExporter');
+const activityService = require('../rest/services/activityService');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
@@ -21,6 +28,150 @@ const fastify = {
     uploadHashEvidenceToActivity: ethServicesMock.uploadHashEvidenceToActivity
   }
 };
+
+describe('Testing activityService', () => {
+  let dbTask = [];
+  let dbMilestone = [];
+  let dbProject = [];
+  let dbUser = [];
+
+  const resetDb = () => {
+    dbTask = [];
+    dbMilestone = [];
+    dbProject = [];
+    dbUser = [];
+  };
+
+  const userEntrepreneur = {
+    id: 1,
+    role: userRoles.ENTREPRENEUR
+  };
+
+  const newProject = {
+    id: 1,
+    status: projectStatuses.NEW,
+    owner: userEntrepreneur.id
+  };
+
+  const executingProject = {
+    id: 2,
+    status: projectStatuses.EXECUTING,
+    owner: userEntrepreneur.id
+  };
+
+  const updatableMilestone = {
+    id: 1,
+    project: newProject.id
+  };
+
+  const nonUpdatableMilestone = {
+    id: 2,
+    project: executingProject.id
+  };
+
+  const updatableTask = {
+    id: 1,
+    description: 'TaskDescription',
+    reviewCriteria: 'TaskReview',
+    category: 'TaskCategory',
+    keyPersonnel: 'TaskPersonnel',
+    budget: '5000',
+    milestone: updatableMilestone.id
+  };
+
+  const nonUpdatableTask = {
+    id: 2,
+    milestone: nonUpdatableMilestone.id
+  };
+
+  const activityDao = {
+    findById: id => dbTask.find(task => task.id === id),
+    updateActivity: (params, activityId) => {
+      const found = dbTask.find(task => task.id === activityId);
+      if (!found) return;
+      const updated = { ...found, ...params };
+      dbTask[dbTask.indexOf(found)] = updated;
+      return updated;
+    }
+  };
+  const milestoneService = {
+    getProjectFromMilestone: id => {
+      const found = dbMilestone.find(milestone => milestone.id === id);
+      return found
+        ? dbProject.find(project => project.id === found.project)
+        : found;
+    }
+  };
+
+  describe('Testing updateTask', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        milestoneService
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProject.push(newProject, executingProject);
+      dbTask.push(updatableTask, nonUpdatableTask);
+      dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should update the task and return its id', async () => {
+      const taskParams = {
+        description: 'UpdatedDescription',
+        category: 'UpdatedCategory'
+      };
+      const response = await activityService.updateTask(updatableTask.id, {
+        userId: userEntrepreneur.id,
+        taskParams
+      });
+      const updated = dbTask.find(task => task.id === response.taskId);
+      expect(response).toEqual({ taskId: updatableTask.id });
+      expect(updated.description).toEqual(taskParams.description);
+      expect(updated.category).toEqual(taskParams.category);
+    });
+
+    it('should throw an error if parameters are not valid', async () => {
+      await expect(
+        activityService.updateTask(updatableTask.id, {
+          userId: userEntrepreneur.id
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('updateTask'));
+    });
+
+    it('should throw an error if task does not exist', async () => {
+      await expect(
+        activityService.updateTask(0, {
+          userId: userEntrepreneur.id,
+          taskParams: { description: 'wontupdate' }
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
+    });
+
+    it('should throw an error if the user is not the project owner', async () => {
+      await expect(
+        activityService.updateTask(updatableTask.id, {
+          userId: 0,
+          taskParams: { description: 'wontupdate' }
+        })
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+
+    it('should throw an error if the project status is not NEW', async () => {
+      await expect(
+        activityService.updateTask(nonUpdatableTask.id, {
+          userId: userEntrepreneur.id,
+          taskParams: { description: 'wontupdate' }
+        })
+      ).rejects.toThrow(
+        errors.task.UpdateWithInvalidProjectStatus(projectStatuses.EXECUTING)
+      );
+    });
+  });
+});
 
 jest.mock('sha256');
 
@@ -196,7 +347,7 @@ describe.skip('Testing activityService updateActivity', () => {
 
   beforeAll(() => {
     activityDao = {
-      async getActivityById(id) {
+      async findById(id) {
         if (id === '') {
           throw Error('Error getting activity');
         }
@@ -295,7 +446,7 @@ describe.skip('Testing activityService updateStatus', () => {
 
   beforeAll(() => {
     activityDao = {
-      async getActivityById(id) {
+      async findById(id) {
         if (id === '') {
           throw Error('Error getting activity');
         }
@@ -391,7 +542,7 @@ describe.skip('Testing ActivityService addEvidenceFiles', () => {
 
   beforeEach(() => {
     activityDao = {
-      async getActivityById(id) {
+      async findById(id) {
         if (id === '') {
           throw Error('Error getting activity');
         }

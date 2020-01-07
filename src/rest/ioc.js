@@ -103,7 +103,8 @@ module.exports = fastify => {
       activityFileDao: undefined,
       activityPhotoDao: undefined,
       oracleActivityDao: undefined,
-      userService
+      userService,
+      milestoneService
     };
     injectDependencies(service, dependencies);
   }
@@ -146,6 +147,7 @@ module.exports = fastify => {
       activityService,
       milestoneBudgetStatusDao,
       projectDao,
+      activityDao,
       userDao
     };
     injectDependencies(service, dependencies);

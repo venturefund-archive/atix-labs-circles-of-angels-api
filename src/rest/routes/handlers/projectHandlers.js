@@ -134,19 +134,6 @@ module.exports = {
     }
   },
 
-  editTaskOfMilestone: fastify => async (request, reply) => {
-    const { milestoneId, taskId } = request.params;
-    try {
-      const response = await projectService.editTaskOfMilestone({
-        milestoneId,
-        taskId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
-  },
-
   deleteTaskOfMilestone: fastify => async (request, reply) => {
     const { milestoneId, taskId } = request.params;
     try {

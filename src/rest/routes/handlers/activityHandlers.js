@@ -41,6 +41,17 @@ module.exports = {
       reply.status(500).send({ error: 'Error creating activity' });
     }
   },
+  // TODO: this should replace updateActivity
+  updateTask: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const taskParams = request.body;
+    const userId = request.user.id;
+    const response = await activityService.updateTask(taskId, {
+      userId,
+      taskParams
+    });
+    reply.status(200).send(response);
+  },
 
   updateActivity: fastify => async (req, reply) => {
     fastify.log.info(

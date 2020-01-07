@@ -394,31 +394,6 @@ const milestoneRoutes = {
     },
     handler: handlers.deleteMilestoneOfProject
   },
-  editTaskOfMilestone: {
-    method: 'put',
-    path: '/milestones/:milestoneId/activities/:taskId',
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        params: { projectIdParam, milestoneIdParam },
-        raw: {
-          body: {
-            type: 'object',
-            properties: taskProperties
-          }
-        },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.editTaskOfMilestone
-  },
   deleteTaskOfMilestone: {
     method: 'delete',
     path: '/milestones/:milestoneId/activities/:taskId',

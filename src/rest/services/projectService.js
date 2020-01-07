@@ -342,8 +342,6 @@ module.exports = {
     };
   },
 
-  async editTaskOfMilestone(milestoneId, taskId, taskParams) {}, // TODO
-
   async deleteTaskOfMilestone({ milestoneId, taskId }) {
     // TODO shouldnt this belong to milestoneService?
     // FIXME ADD OWNER VALIDATION
