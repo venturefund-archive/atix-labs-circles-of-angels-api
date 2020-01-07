@@ -10,7 +10,7 @@ const imgValidator = file => {
   const fileType = mime.lookup(file.name);
   if (!fileType.includes('image/')) {
     logger.error('[ValidateMtype] :: File type is not a valid img type');
-    throw new COAError(errors.ImgFileTyPeNotValid);
+    throw new COAError(errors.file.ImgFileTyPeNotValid);
   }
 };
 
@@ -26,7 +26,7 @@ const xlsValidator = file => {
     )
   ) {
     logger.error('[ValidateMtype] :: File type is not a valid excel type');
-    throw new COAError(errors.MilestoneFileTypeNotValid);
+    throw new COAError(errors.file.MilestoneFileTypeNotValid);
   }
 };
 

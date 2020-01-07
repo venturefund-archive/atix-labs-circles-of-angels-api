@@ -156,26 +156,26 @@ describe('Testing transferService', () => {
     it('should throw an error if parameters are not valid', async () => {
       await expect(
         transferService.createTransfer({ ...newTransfer, projectId: undefined })
-      ).rejects.toThrow(errors.RequiredParamsMissing('createTransfer'));
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('createTransfer'));
     });
 
     it('should throw an error if project does not exist', async () => {
       await expect(
         transferService.createTransfer({ ...newTransfer, projectId: 0 })
-      ).rejects.toThrow(errors.CantFindModelWithId('project', 0));
+      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 0));
     });
 
     it('should throw an error if sender user does not exist', async () => {
       await expect(
         transferService.createTransfer({ ...newTransfer, senderId: 0 })
-      ).rejects.toThrow(errors.CantFindModelWithId('user', 0));
+      ).rejects.toThrow(errors.common.CantFindModelWithId('user', 0));
     });
 
     it('should throw an error if sender user is not a funder', async () => {
       dbUser.push(oracleUser);
       await expect(
         transferService.createTransfer({ ...newTransfer, senderId: 2 })
-      ).rejects.toThrow(errors.UnauthorizedUserRole(oracleUser.role));
+      ).rejects.toThrow(errors.user.UnauthorizedUserRole(oracleUser.role));
     });
 
     it('should throw an error if project status is not consensus', async () => {
@@ -183,7 +183,7 @@ describe('Testing transferService', () => {
       await expect(
         transferService.createTransfer({ ...newTransfer, projectId: 2 })
       ).rejects.toThrow(
-        errors.ProjectCantReceiveTransfers(draftProject.status)
+        errors.transfer.ProjectCantReceiveTransfers(draftProject.status)
       );
     });
 
@@ -198,7 +198,7 @@ describe('Testing transferService', () => {
             transferId: verifiedTransfer.transferId
           })
         ).rejects.toThrow(
-          errors.TransferIdAlreadyExists(verifiedTransfer.transferId)
+          errors.transfer.TransferIdAlreadyExists(verifiedTransfer.transferId)
         );
       }
     );
@@ -209,7 +209,7 @@ describe('Testing transferService', () => {
           ...newTransfer,
           receiptFile: { name: 'receipt.doc', size: 20000 }
         })
-      ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+      ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
     });
 
     it('should throw an error if the receipt image size is bigger than allowed', async () => {
@@ -218,7 +218,7 @@ describe('Testing transferService', () => {
           ...newTransfer,
           receiptFile: { name: 'receipt.jpg', size: 10000000 }
         })
-      ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+      ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
     });
   });
 
@@ -249,19 +249,19 @@ describe('Testing transferService', () => {
     it('should throw an error if parameters are not valid', async () => {
       await expect(
         transferService.updateTransfer(pendingTransfer.id, {})
-      ).rejects.toThrow(errors.RequiredParamsMissing('updateTransfer'));
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('updateTransfer'));
     });
 
     it('should throw an error if transfer does not exist', async () => {
       await expect(
         transferService.updateTransfer(0, { status: txFunderStatus.VERIFIED })
-      ).rejects.toThrow(errors.CantFindModelWithId('fund_transfer', 0));
+      ).rejects.toThrow(errors.common.CantFindModelWithId('fund_transfer', 0));
     });
 
     it('should throw an error if new status is not valid', async () => {
       await expect(
         transferService.updateTransfer(pendingTransfer.id, { status: 'wrong' })
-      ).rejects.toThrow(errors.TransferStatusNotValid('wrong'));
+      ).rejects.toThrow(errors.transfer.TransferStatusNotValid('wrong'));
     });
 
     it('should throw an error if transfer status is not pending', async () => {
@@ -271,7 +271,7 @@ describe('Testing transferService', () => {
           status: txFunderStatus.CANCELLED
         })
       ).rejects.toThrow(
-        errors.TransferStatusCannotChange(verifiedTransfer.status)
+        errors.transfer.TransferStatusCannotChange(verifiedTransfer.status)
       );
     });
   });
@@ -303,13 +303,13 @@ describe('Testing transferService', () => {
 
     it('should throw an error if projectId is undefined', async () => {
       await expect(transferService.getAllTransfersByProject()).rejects.toThrow(
-        errors.RequiredParamsMissing('getAllTransfersByProject')
+        errors.common.RequiredParamsMissing('getAllTransfersByProject')
       );
     });
 
     it('should throw an error if project does not exist', async () => {
       await expect(transferService.getAllTransfersByProject(0)).rejects.toThrow(
-        errors.CantFindModelWithId('project', 0)
+        errors.common.CantFindModelWithId('project', 0)
       );
     });
 
@@ -317,7 +317,7 @@ describe('Testing transferService', () => {
       dbProject.push(draftProject);
       await expect(
         transferService.getAllTransfersByProject(draftProject.id)
-      ).rejects.toThrow(errors.ProjectNotApproved);
+      ).rejects.toThrow(errors.project.ProjectNotApproved);
     });
   });
 

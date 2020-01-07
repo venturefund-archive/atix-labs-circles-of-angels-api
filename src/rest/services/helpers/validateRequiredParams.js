@@ -1,6 +1,4 @@
-const {
-  RequiredParamsMissing
-} = require('../../errors/exporter/ErrorExporter');
+const { common } = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
 
 const logger = require('../../logger');
@@ -26,6 +24,6 @@ module.exports = ({ method, params }) => {
     logger.error(
       `[ValidateRequiredParams] :: There are one or more params that are undefined for ${method}. Request is not valid`
     );
-    throw new COAError(RequiredParamsMissing(method));
+    throw new COAError(common.RequiredParamsMissing(method));
   }
 };

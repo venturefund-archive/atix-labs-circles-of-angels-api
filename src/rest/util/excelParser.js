@@ -12,12 +12,12 @@ exports.readExcelData = data => {
     workbook = XLSX.read(data, { raw: true });
   } catch (err) {
     logger.error('[ExcelParser] :: Error reading excel file:', err);
-    throw new COAError(errors.ErrorProcessingMilestonesFile);
+    throw new COAError(errors.milestone.ErrorProcessingMilestonesFile);
   }
 
   if (!workbook) {
     logger.error('[ExcelParser] :: Error reading Milestone excel file');
-    throw new COAError(errors.ErrorProcessingMilestonesFile);
+    throw new COAError(errors.milestone.ErrorProcessingMilestonesFile);
   }
 
   const sheetNameList = workbook.SheetNames;
