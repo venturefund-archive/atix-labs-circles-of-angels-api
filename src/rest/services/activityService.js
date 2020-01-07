@@ -93,6 +93,65 @@ module.exports = {
   },
 
   /**
+   * Deletes an existing task.
+   *
+   * @param {number} taskId task identifier
+   * @param {number} userId user performing the operation. Must be the owner of the project
+   */
+  async deleteTask(taskId, userId) {
+    // TODO: This function should replace deleteActivity
+    logger.info('[ActivityService] :: Entering deleteTask method');
+    validateRequiredParams({
+      method: 'deleteTask',
+      params: { taskId, userId }
+    });
+
+    const task = await checkExistence(this.activityDao, taskId, 'task');
+    logger.info(
+      `[ActivityService] :: Found task ${task.id} of milestone ${
+        task.milestone
+      }`
+    );
+
+    const project = await this.milestoneService.getProjectFromMilestone(
+      task.milestone
+    );
+
+    // if the task exists this shouldn't happen
+    if (!project) {
+      logger.info(
+        `[ActivityService] :: No project found for milestone ${task.milestone}`
+      );
+      throw new COAError(errors.task.ProjectNotFound(taskId));
+    }
+
+    validateOwnership(project.owner, userId);
+
+    // TODO: define in which statuses is ok to delete a task
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[ActivityService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.task.DeleteWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for deleting?
+
+    logger.info(`[ActivityService] :: Deleting task of id ${taskId}`);
+    const deletedTask = await this.activityDao.deleteActivity(taskId);
+    logger.info(`[ActivityService] :: Task of id ${deletedTask.id} deleted`);
+
+    // if all activities of a milestone are deleted,
+    // should the milestone be deleted as well?
+
+    return { taskId: deletedTask.id };
+  },
+
+  /**
    * Creates an Activity for an existing Milestone
    *
    * @param {object} activity

@@ -52,6 +52,13 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+  // TODO: this should replace deleteActivity
+  deleteTask: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const response = await activityService.deleteTask(taskId, userId);
+    reply.status(200).send(response);
+  },
 
   updateActivity: fastify => async (req, reply) => {
     fastify.log.info(

@@ -67,6 +67,26 @@ const taskRoutes = {
       }
     },
     handler: handlers.updateTask
+  },
+  // TODO: this should replace deleteActivity route
+  deleteTask: {
+    method: 'delete',
+    path: '/tasks/:taskId', // different basePath because duplicate route
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.DELETE.name],
+        description: 'Deletes an existing task',
+        summary: 'Deletes task',
+        params: { taskIdParam },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.deleteTask
   }
 };
 

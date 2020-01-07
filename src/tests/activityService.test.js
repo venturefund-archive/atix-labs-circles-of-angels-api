@@ -92,6 +92,12 @@ describe('Testing activityService', () => {
       const updated = { ...found, ...params };
       dbTask[dbTask.indexOf(found)] = updated;
       return updated;
+    },
+    deleteActivity: id => {
+      const found = dbTask.find(task => task.id === id);
+      if (!found) return;
+      dbTask.splice(dbTask.indexOf(found), 1);
+      return found;
     }
   };
   const milestoneService = {
@@ -168,6 +174,59 @@ describe('Testing activityService', () => {
         })
       ).rejects.toThrow(
         errors.task.UpdateWithInvalidProjectStatus(projectStatuses.EXECUTING)
+      );
+    });
+  });
+
+  describe('Testing deleteTask', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        milestoneService
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProject.push(newProject, executingProject);
+      dbTask.push(updatableTask, nonUpdatableTask);
+      dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should delete the task and return its id', async () => {
+      const response = await activityService.deleteTask(
+        updatableTask.id,
+        userEntrepreneur.id
+      );
+      const updated = dbTask.find(task => task.id === response.taskId);
+      expect(response).toEqual({ taskId: updatableTask.id });
+      expect(updated).toEqual(undefined);
+    });
+
+    it('should throw an error if parameters are not valid', async () => {
+      await expect(
+        activityService.deleteTask(updatableTask.id)
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('deleteTask'));
+    });
+
+    it('should throw an error if task does not exist', async () => {
+      await expect(
+        activityService.deleteTask(0, userEntrepreneur.id)
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
+    });
+
+    it('should throw an error if the user is not the project owner', async () => {
+      await expect(
+        activityService.deleteTask(updatableTask.id, 0)
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+
+    it('should throw an error if the project status is not NEW', async () => {
+      await expect(
+        activityService.deleteTask(nonUpdatableTask.id, userEntrepreneur.id)
+      ).rejects.toThrow(
+        errors.task.DeleteWithInvalidProjectStatus(projectStatuses.EXECUTING)
       );
     });
   });
