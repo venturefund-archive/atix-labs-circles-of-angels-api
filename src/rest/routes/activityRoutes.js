@@ -44,10 +44,9 @@ const successWithTaskIdResponse = {
 };
 
 const taskRoutes = {
-  // TODO: this should replace updateActivity route
   updateTask: {
     method: 'put',
-    path: '/tasks/:taskId', // different basePath because duplicate route
+    path: `${basePath}/:taskId`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -57,7 +56,8 @@ const taskRoutes = {
         params: { taskIdParam },
         body: {
           type: 'object',
-          properties: taskProperties
+          properties: taskProperties,
+          additionalProperties: false
         },
         response: {
           ...successResponse(successWithTaskIdResponse),
@@ -68,10 +68,9 @@ const taskRoutes = {
     },
     handler: handlers.updateTask
   },
-  // TODO: this should replace deleteActivity route
   deleteTask: {
     method: 'delete',
-    path: '/tasks/:taskId', // different basePath because duplicate route
+    path: `${basePath}/:taskId`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -156,72 +155,6 @@ const routes = {
     handler: handlers.createActivity
   },
 
-  updateActivity: {
-    method: 'put',
-    path: `${basePath}/:activityId`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.ACTIVITY.name, routeTags.PUT.name],
-        description: 'Modifies an existing activity',
-        summary: 'Update activity',
-        type: 'object',
-        params: {
-          type: 'object',
-          properties: {
-            activityId: { type: 'integer', description: 'Activity to modify' }
-          }
-        },
-        body: {
-          type: 'object',
-          properties: {
-            activity: {
-              type: 'object',
-              properties: {
-                tasks: { type: 'string' },
-                impact: { type: 'string' },
-                impactCriterion: { type: 'string' },
-                signsOfSuccess: { type: 'string' },
-                signsOfSuccessCriterion: { type: 'string' },
-                category: { type: 'string' },
-                keyPersonnel: { type: 'string' },
-                budget: { type: 'number' }
-              },
-              additionalProperties: false,
-              description: 'Fields to modify'
-            }
-          },
-          required: ['activity']
-        },
-        response: {
-          200: {
-            type: 'object',
-            description: 'Success message if the activity was updated',
-            properties: {
-              success: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.updateActivity
-  },
-
   updateStatus: {
     method: 'put',
     path: `${basePath}/:activityId/status`,
@@ -281,53 +214,6 @@ const routes = {
       }
     },
     handler: handlers.updateStatus
-  },
-
-  deleteActivity: {
-    method: 'delete',
-    path: `${basePath}/:activityId`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.ACTIVITY.name, routeTags.DELETE.name],
-        description: 'Deletes an existing activity',
-        summary: 'Delete activity',
-        params: {
-          type: 'object',
-          properties: {
-            activityId: { type: 'integer', description: 'Activity to delete' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              tasks: { type: 'string' },
-              impact: { type: 'string' },
-              impactCriterion: { type: 'string' },
-              signsOfSuccess: { type: 'string' },
-              signsOfSuccessCriterion: { type: 'string' },
-              category: { type: 'string' },
-              keyPersonnel: { type: 'string' },
-              budget: { type: 'string' },
-              createdAt: { type: 'string' },
-              updatedAt: { type: 'string' },
-              transactionHash: { type: 'string' },
-              id: { type: 'integer' },
-              milestone: { type: 'integer' },
-              status: { type: 'integer' },
-              blockchainStatus: { type: 'integer' }
-            },
-            description: 'Returns the deleted activity'
-          },
-          500: {
-            type: 'string',
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.deleteActivity
   },
 
   uploadEvidence: {

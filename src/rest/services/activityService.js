@@ -40,7 +40,6 @@ module.exports = {
    * @param {object} taskParams task fields to update
    */
   async updateTask(taskId, { userId, taskParams }) {
-    // TODO: This function should replace updateActivity
     logger.info('[ActivityService] :: Entering updateTask method');
     validateRequiredParams({
       method: 'updateTask',
@@ -99,7 +98,6 @@ module.exports = {
    * @param {number} userId user performing the operation. Must be the owner of the project
    */
   async deleteTask(taskId, userId) {
-    // TODO: This function should replace deleteActivity
     logger.info('[ActivityService] :: Entering deleteTask method');
     validateRequiredParams({
       method: 'deleteTask',
@@ -224,77 +222,6 @@ module.exports = {
 
     await forEachPromise(activities, createActivity, savedActivities);
     return savedActivities;
-  },
-
-  /**
-   * Updates an Activity
-   *
-   * @param {object} activity
-   * @param {number} id
-   */
-  async updateActivity(newActivity, id) {
-    try {
-      const activity = await this.activityDao.findById(id);
-      if (!activity) {
-        logger.error(`[Activity Service] Activity ${id} doesn't exist`);
-        return { error: "Activity doesn't exist", status: 404 };
-      }
-
-      const project = await this.getProjectByActivity(activity);
-
-      if (project.error) {
-        return project;
-      }
-
-      if (
-        project.status === projectStatuses.EXECUTING ||
-        project.startBlockchainStatus !== blockchainStatus.PENDING
-      ) {
-        logger.error(
-          `[Activity Service] :: Project ${
-            project.id
-          } is IN PROGRESS or sent to the blockchain`
-        );
-        return {
-          error:
-            'Activity cannot be updated. Project has already started or sent to the blockchain.',
-          status: 409
-        };
-      }
-
-      if (this.canActivityUpdate(newActivity)) {
-        logger.info('[Activity Service] :: Updating activity:', newActivity);
-
-        const savedActivity = await this.activityDao.updateActivity(
-          newActivity,
-          id
-        );
-
-        if (!savedActivity || savedActivity == null) {
-          logger.error(
-            `[Activity Service] :: Could not update Activity ID ${id}`,
-            savedActivity
-          );
-          return {
-            status: 409,
-            error: ' Could not update Activity'
-          };
-        }
-
-        logger.info('[Activity Service] :: Activity updated:', savedActivity);
-
-        return savedActivity;
-      }
-
-      logger.error('[Activity Service] :: Activity not valid', newActivity);
-      return {
-        status: 409,
-        error: 'Activity has empty mandatory fields'
-      };
-    } catch (error) {
-      logger.error('[Activity Service] :: Error updating Activity:', error);
-      return { status: 500, error: 'Error updating Activity' };
-    }
   },
 
   /**
@@ -953,21 +880,6 @@ module.exports = {
     }
 
     return valid;
-  },
-
-  /**
-   * Delete an activity with id
-   * @param {number} activityId
-   */
-  async deleteActivity(activityId) {
-    const { milestoneService } = apiHelper.helper.services;
-    const deleted = await this.activityDao.deleteActivity(activityId);
-    const milestoneEmpty =
-      deleted &&
-      !(await milestoneService.milestoneHasActivities(deleted.milestone));
-    if (milestoneEmpty)
-      await milestoneService.deleteMilestone(deleted.milestone);
-    return deleted;
   },
 
   /**
