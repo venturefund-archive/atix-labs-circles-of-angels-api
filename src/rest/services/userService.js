@@ -159,7 +159,7 @@ module.exports = {
     );
 
     const profile = firstName + ' ' + lastName;
-    await coa.addMember({ profile });
+    await coa.createMember(profile);
 
     return savedUser;
   },
