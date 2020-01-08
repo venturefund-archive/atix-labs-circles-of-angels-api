@@ -61,7 +61,7 @@ module.exports = {
 
     if (user.role !== userRoles.PROJECT_SUPPORTER) {
       logger.error(`[TransferService] :: User ${user.id} is not a funder`);
-      throw new COAError(errors.UnauthorizedUserRole(user.role));
+      throw new COAError(errors.user.UnauthorizedUserRole(user.role));
     }
 
     // TODO: change allowed project status to FUNDING when implemented
@@ -69,7 +69,9 @@ module.exports = {
       logger.error(
         `[TransferService] :: Project ${project.id} is not on consensus phase`
       );
-      throw new COAError(errors.ProjectCantReceiveTransfers(project.status));
+      throw new COAError(
+        errors.transfer.ProjectCantReceiveTransfers(project.status)
+      );
     }
 
     const existingTransfer = await this.transferDao.getTransferById({
@@ -86,7 +88,7 @@ module.exports = {
           existingTransfer.id
         } with same tranferId already exists`
       );
-      throw new COAError(errors.TransferIdAlreadyExists(transferId));
+      throw new COAError(errors.transfer.TransferIdAlreadyExists(transferId));
     }
 
     validateMtype('transferReceipt', receiptFile);
@@ -140,7 +142,7 @@ module.exports = {
       logger.error(
         `[TransferService] :: Transfer status '${status}' is not valid`
       );
-      throw new COAError(errors.TransferStatusNotValid(status));
+      throw new COAError(errors.transfer.TransferStatusNotValid(status));
     }
 
     // TODO: define what to do with RECONCILIATION status
@@ -149,7 +151,9 @@ module.exports = {
         id: transfer.id,
         status: transfer.status
       });
-      throw new COAError(errors.TransferStatusCannotChange(transfer.status));
+      throw new COAError(
+        errors.transfer.TransferStatusCannotChange(transfer.status)
+      );
     }
 
     const updated = await this.transferDao.update({ id, status });
@@ -181,7 +185,7 @@ module.exports = {
         '[TransferService] :: Project has not been approved yet',
         project
       );
-      throw new COAError(errors.ProjectNotApproved);
+      throw new COAError(errors.project.ProjectNotApproved);
     }
 
     logger.info(

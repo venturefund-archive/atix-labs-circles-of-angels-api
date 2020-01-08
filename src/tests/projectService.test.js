@@ -151,7 +151,7 @@ describe('Project Service Test', () => {
           field: 'field1',
           field2: 'field2'
         })
-      ).rejects.toThrow(errors.CantUpdateProject(3));
+      ).rejects.toThrow(errors.project.CantUpdateProject(3));
     });
     it('When an update is done, it should return the id of the updated project', async () => {
       const projectUpdated = await projectService.updateProject(1, {
@@ -199,7 +199,7 @@ describe('Project Service Test', () => {
           field: 'field1',
           field2: 'field2'
         })
-      ).rejects.toThrow(errors.CantUpdateMilestone(3));
+      ).rejects.toThrow(errors.milestone.CantUpdateMilestone(3));
     });
   });
 
@@ -218,7 +218,7 @@ describe('Project Service Test', () => {
     it('Whenever an error occurs and the project cant be saved, an error should be thrown', () => {
       expect(
         projectService.saveProject({ projectName: 'invalidProject' })
-      ).rejects.toThrow(errors.CantSaveProject);
+      ).rejects.toThrow(errors.project.CantSaveProject);
     });
   });
 
@@ -249,7 +249,7 @@ describe('Project Service Test', () => {
             ownerId
           })
         ).rejects.toThrow(
-          errors.RequiredParamsMissing('createProjectThumbnail')
+          errors.common.RequiredParamsMissing('createProjectThumbnail')
         );
       });
 
@@ -263,7 +263,7 @@ describe('Project Service Test', () => {
             ownerId,
             file: { name: 'invalidFile.json' }
           })
-        ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+        ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
       });
 
       it('Should not create a project when the owner does not exist and throw an error', async () => {
@@ -276,7 +276,7 @@ describe('Project Service Test', () => {
             ownerId: 34,
             file
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('user', 34));
       });
 
       it('Should not create a project when the file is too big and throw an error', async () => {
@@ -289,7 +289,7 @@ describe('Project Service Test', () => {
             ownerId,
             file: { name: 'project.jpeg', size: 123455555 }
           })
-        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+        ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
       });
     });
 
@@ -316,7 +316,7 @@ describe('Project Service Test', () => {
             ownerId,
             file
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
 
       it('Should not update the project whenever the fields are valid and the project does exist but user is not owner of the project, and throw an error', async () => {
@@ -329,7 +329,7 @@ describe('Project Service Test', () => {
             ownerId: 3,
             file
           })
-        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+        ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
       });
 
       it('Should not update the project whenever the photo has an invalid file type and throw an error', async () => {
@@ -342,7 +342,7 @@ describe('Project Service Test', () => {
             ownerId,
             file: { name: 'file.json', size: 1234 }
           })
-        ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+        ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
       });
 
       it('Should not update the project whenever the photo has an invalid size and throw an error', async () => {
@@ -355,7 +355,7 @@ describe('Project Service Test', () => {
             ownerId,
             file: { name: 'file.jpeg', size: 90000000 }
           })
-        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+        ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
       });
 
       it('Should update the project although file field is missing', async () => {
@@ -381,7 +381,7 @@ describe('Project Service Test', () => {
       });
       it('Should throw an error when the project does not exist', async () => {
         await expect(projectService.getProjectThumbnail(4)).rejects.toThrow(
-          errors.CantFindModelWithId('project', 4)
+          errors.common.CantFindModelWithId('project', 4)
         );
       });
     });
@@ -404,7 +404,9 @@ describe('Project Service Test', () => {
       it('Should not create project detail when there are not all the needed fields, and throw an error', async () => {
         await expect(
           projectService.createProjectDetail(1, { mission })
-        ).rejects.toThrow(errors.RequiredParamsMissing('createProjectDetail'));
+        ).rejects.toThrow(
+          errors.common.RequiredParamsMissing('createProjectDetail')
+        );
       });
       it('Should not create project detail when the owner does not exist, and throw an error', async () => {
         await expect(
@@ -414,7 +416,7 @@ describe('Project Service Test', () => {
             ownerId: 34,
             file
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('user', 34));
       });
       it('Should not create project detail when the user is not the owner of the project, and throw an error', async () => {
         await expect(
@@ -424,7 +426,7 @@ describe('Project Service Test', () => {
             ownerId: 3,
             file
           })
-        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+        ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
       });
       it('Should not create project detail when there is not an existent project created, and throw an error', async () => {
         await expect(
@@ -434,7 +436,7 @@ describe('Project Service Test', () => {
             ownerId: 2,
             file
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
       it('Should not create project detail when the file type is not a valid, and throw an error', async () => {
         await expect(
@@ -444,7 +446,7 @@ describe('Project Service Test', () => {
             ownerId,
             file: { name: 'hi.json' }
           })
-        ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+        ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
       });
       it('Should not create project detail when the file size is bigger than allowed, and throw an error', async () => {
         await expect(
@@ -454,7 +456,7 @@ describe('Project Service Test', () => {
             ownerId,
             file: { name: 'hi.jpeg', size: 12319023 }
           })
-        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+        ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
       });
     });
 
@@ -484,7 +486,7 @@ describe('Project Service Test', () => {
             file,
             ownerId: 2
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
       it('Should not update the project if it exists but some needed fields are missing and throw an error', async () => {
         await expect(
@@ -492,7 +494,9 @@ describe('Project Service Test', () => {
             mission,
             file
           })
-        ).rejects.toThrow(errors.RequiredParamsMissing('updateProjectDetail'));
+        ).rejects.toThrow(
+          errors.common.RequiredParamsMissing('updateProjectDetail')
+        );
       });
       it('Should not update the project if it exists and have all valid fields but file size is bigger than allowed', async () => {
         await expect(
@@ -502,7 +506,7 @@ describe('Project Service Test', () => {
             file: { name: 'hi.jpeg', size: 1231232 },
             ownerId: 2
           })
-        ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+        ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
       });
       it('Should not update the project if it exists and have all valid fields but file type is not a valid one', async () => {
         await expect(
@@ -512,7 +516,7 @@ describe('Project Service Test', () => {
             file: { name: 'hi.json', size: 4123 },
             ownerId: 2
           })
-        ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+        ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
       });
       it('Should not update the project if owner does not exist', async () => {
         await expect(
@@ -522,7 +526,7 @@ describe('Project Service Test', () => {
             file: { name: 'hi.jpeg', size: 3123 },
             ownerId: 34
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('user', 34));
       });
       it('Should not update the project if user is not owner', async () => {
         await expect(
@@ -532,7 +536,7 @@ describe('Project Service Test', () => {
             file: { name: 'hi.jpeg', size: 3123 },
             ownerId: 3
           })
-        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+        ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
       });
     });
 
@@ -545,7 +549,7 @@ describe('Project Service Test', () => {
       });
       it('Should throw an error when the project does not exist', async () => {
         await expect(projectService.getProjectDetail(4)).rejects.toThrow(
-          errors.CantFindModelWithId('project', 4)
+          errors.common.CantFindModelWithId('project', 4)
         );
       });
     });
@@ -566,7 +570,7 @@ describe('Project Service Test', () => {
             proposal,
             ownerId: 2
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
       it('Should not update the project when the project exists but proposal is missing and throw an error', async () => {
         await expect(
@@ -579,7 +583,7 @@ describe('Project Service Test', () => {
             proposal,
             ownerId: 34
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('user', 34));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('user', 34));
       });
       it('Should not update the project when user is not owner, and throw an error', async () => {
         await expect(
@@ -587,7 +591,7 @@ describe('Project Service Test', () => {
             proposal,
             ownerId: 3
           })
-        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+        ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
       });
     });
 
@@ -598,7 +602,7 @@ describe('Project Service Test', () => {
       });
       it('Should throw an error when the project does not exist, and throw an error', async () => {
         await expect(projectService.getProjectProposal(2)).rejects.toThrow(
-          errors.CantFindModelWithId('project', 2)
+          errors.common.CantFindModelWithId('project', 2)
         );
       });
     });
@@ -616,21 +620,21 @@ describe('Project Service Test', () => {
         projectService.publishProject(2, {
           ownerId: 2
         })
-      ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
     });
     it('Should not publish project if it exist but is already published, and throw an error', () => {
       expect(
         projectService.publishProject(3, {
           ownerId: 2
         })
-      ).rejects.toThrow(errors.ProjectIsNotPublishable);
+      ).rejects.toThrow(errors.project.ProjectIsNotPublishable);
     });
     it('Should not publish project if it exist but user is not the owner of it, and throw an error', () => {
       expect(
         projectService.publishProject(3, {
           ownerId: 15
         })
-      ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
     });
   });
 
@@ -668,12 +672,12 @@ describe('Project Service Test', () => {
       });
       it('Should not delete milestone of project if project does not exist, and throw an error', () => {
         expect(projectService.deleteMilestoneOfProject(2, 2)).rejects.toThrow(
-          errors.CantFindModelWithId('project', 2)
+          errors.common.CantFindModelWithId('project', 2)
         );
       });
       it('Should not delete milestone of project if project exists and milestone does not belongs to project, and throw an error', () => {
         expect(projectService.deleteMilestoneOfProject(3, 5)).rejects.toThrow(
-          errors.MilestoneDoesNotBelongToProject
+          errors.milestone.MilestoneDoesNotBelongToProject
         );
       });
     });
@@ -720,7 +724,7 @@ describe('Project Service Test', () => {
             file: milestoneFile,
             ownerId: 2
           })
-        ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+        ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
       it('Should not create milestones and activities to an existent project with status different than new', async () => {
         await expect(
@@ -728,7 +732,7 @@ describe('Project Service Test', () => {
             file: milestoneFile,
             ownerId: 2
           })
-        ).rejects.toThrow(errors.InvalidStatusForMilestoneFileProcess);
+        ).rejects.toThrow(errors.project.InvalidStatusForMilestoneFileProcess);
       });
       it('Should not create milestones and activities to an existent project whenever user is not the owner of it', async () => {
         await expect(
@@ -736,7 +740,7 @@ describe('Project Service Test', () => {
             file: milestoneFile,
             ownerId: 5
           })
-        ).rejects.toThrow(errors.UserIsNotOwnerOfProject);
+        ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
       });
       it('Should not create milestones and activities to an existent project whenever the file type is not valid', async () => {
         await expect(
@@ -744,7 +748,7 @@ describe('Project Service Test', () => {
             file: { name: 'project.pdf', size: 1234 },
             ownerId: 2
           })
-        ).rejects.toThrow(errors.MilestoneFileTypeNotValid);
+        ).rejects.toThrow(errors.file.MilestoneFileTypeNotValid);
       });
       it('Should not create milestones and activities to an existent project if it already has a milestone file', async () => {
         await expect(
@@ -752,7 +756,7 @@ describe('Project Service Test', () => {
             file: { name: 'project.xls', size: 1234 },
             ownerId: 2
           })
-        ).rejects.toThrow(errors.MilestoneFileHasBeenAlreadyUploaded);
+        ).rejects.toThrow(errors.project.MilestoneFileHasBeenAlreadyUploaded);
       });
     });
 
@@ -768,7 +772,7 @@ describe('Project Service Test', () => {
       });
       it('Should not return project milestones of a non-existent project, and throw an error', () => {
         expect(projectService.getProjectMilestones(4)).rejects.toThrow(
-          errors.CantFindModelWithId('project', 4)
+          errors.common.CantFindModelWithId('project', 4)
         );
       });
     });

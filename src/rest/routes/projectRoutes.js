@@ -71,19 +71,19 @@ const milestonesResponse = {
   description: 'Returns all milestones of a project'
 };
 
-const idParam = description => ({
+const idParam = (description, param) => ({
   type: 'object',
   properties: {
-    projectId: {
+    [param]: {
       type: 'integer',
       description
     }
   }
 });
 
-const projectIdParam = idParam('Project identification');
-const milestoneIdParam = idParam('Milestone identification');
-const taskIdParam = idParam('Task identification');
+const projectIdParam = idParam('Project identification', 'projectId');
+const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
+const taskIdParam = idParam('Task identification', 'taskId');
 
 const successWithProjectIdResponse = {
   type: 'object',

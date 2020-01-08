@@ -109,7 +109,7 @@ describe('Project experience service', () => {
           projectId: 1,
           userId: 1
         })
-      ).rejects.toThrow(errors.CreateProjectFieldsNotValid);
+      ).rejects.toThrow(errors.project.CreateProjectFieldsNotValid);
     });
     it('Should throw an error when the project exists but some photo has an invalid size', () => {
       expect(
@@ -119,7 +119,7 @@ describe('Project experience service', () => {
           userId: 1,
           photos: [invalidSizePhoto]
         })
-      ).rejects.toThrow(errors.ImgSizeBiggerThanAllowed);
+      ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
     });
     it('Should throw an error when the project exists but some photo has an invalid type', () => {
       expect(
@@ -129,7 +129,7 @@ describe('Project experience service', () => {
           userId: 1,
           photos: [invalidMtypePhoto]
         })
-      ).rejects.toThrow(errors.ImgFileTyPeNotValid);
+      ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
     });
     it('Should throw an error when the project does not exist', () => {
       expect(
@@ -139,7 +139,7 @@ describe('Project experience service', () => {
           userId: 1,
           photos: [validPhoto]
         })
-      ).rejects.toThrow(errors.CantFindModelWithId('project', 2));
+      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
     });
     it('Should throw an error when the user does not exist', () => {
       expect(
@@ -149,7 +149,7 @@ describe('Project experience service', () => {
           userId: 5,
           photos: [validPhoto]
         })
-      ).rejects.toThrow(errors.CantFindModelWithId('user', 5));
+      ).rejects.toThrow(errors.common.CantFindModelWithId('user', 5));
     });
   });
   describe('Get experiences on project', () => {
@@ -168,7 +168,7 @@ describe('Project experience service', () => {
     it('Should throw an error when the project does not exist', () => {
       expect(
         projectExperienceService.getExperiencesOnProject({ projectId: 3 })
-      ).rejects.toThrow(errors.CantFindModelWithId('project', 3));
+      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 3));
     });
   });
 });

@@ -12,13 +12,13 @@ const files = require('../util/files');
 const {
   validateExistence,
   validateParams,
-  validateOwnership,
   validateStatusChange
 } = require('./helpers/projectServiceHelper');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
+const validateOwnership = require('./helpers/validateOwnership');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -36,7 +36,7 @@ module.exports = {
     );
     if (!updatedProject) {
       logger.error('[ProjectService] :: Error updating project in DB');
-      throw new COAError(errors.CantUpdateProject(projectId));
+      throw new COAError(errors.project.CantUpdateProject(projectId));
     }
     return updatedProject.id;
   },
@@ -47,7 +47,7 @@ module.exports = {
       milestoneId
     );
     if (!updatedMilestone)
-      throw new COAError(errors.CantUpdateMilestone(milestoneId));
+      throw new COAError(errors.milestone.CantUpdateMilestone(milestoneId));
     return updatedMilestone.id;
   },
 
@@ -55,7 +55,7 @@ module.exports = {
     const savedProject = await this.projectDao.saveProject(project);
     if (!savedProject) {
       logger.error('[ProjectService] :: Error saving project in DB');
-      throw new COAError(errors.CantSaveProject);
+      throw new COAError(errors.project.CantSaveProject);
     }
     return savedProject.id;
   },
@@ -79,7 +79,7 @@ module.exports = {
       logger.error(
         `[ProjectService] :: User ${user.id} is not ${userRoles.ENTREPRENEUR}`
       );
-      throw new COAError(errors.UnauthorizedUserRole(user.role));
+      throw new COAError(errors.user.UnauthorizedUserRole(user.role));
     }
 
     validateMtype(thumbnailType, file);
@@ -127,7 +127,7 @@ module.exports = {
           projectStatuses.NEW
         }`
       );
-      throw new COAError(errors.ProjectCantBeUpdated);
+      throw new COAError(errors.project.ProjectCantBeUpdated(project.status));
     }
 
     let { cardPhotoPath } = project;
@@ -240,7 +240,7 @@ module.exports = {
           projectStatuses.NEW
         }`
       );
-      throw new COAError(errors.ProjectCantBeUpdated);
+      throw new COAError(errors.project.ProjectCantBeUpdated(project.status));
     }
 
     let { coverPhotoPath } = project;
@@ -321,7 +321,7 @@ module.exports = {
       ({ id }) => id !== milestoneIdToFilter
     );
     if (filteredMilestones.length === milestones.length) {
-      throw new COAError(errors.MilestoneDoesNotBelongToProject);
+      throw new COAError(errors.milestone.MilestoneDoesNotBelongToProject);
     }
     return filteredMilestones;
   },
@@ -376,11 +376,11 @@ module.exports = {
     validateMtype(milestonesType, file);
 
     if (project.status !== projectStatuses.NEW)
-      throw new COAError(errors.InvalidStatusForMilestoneFileProcess);
+      throw new COAError(errors.project.InvalidStatusForMilestoneFileProcess);
 
     // TODO?: in this case it should probably overwrite all milestones and file
     if (project.milestonePath)
-      throw new COAError(errors.MilestoneFileHasBeenAlreadyUploaded);
+      throw new COAError(errors.project.MilestoneFileHasBeenAlreadyUploaded);
 
     const milestones = await this.milestoneService.createMilestones(
       file,
@@ -433,7 +433,9 @@ module.exports = {
     );
 
     if (!milestonesFilePath)
-      throw new COAError(errors.ProjectDoesntHaveMilestonesFile(projectId));
+      throw new COAError(
+        errors.project.ProjectDoesntHaveMilestonesFile(projectId)
+      );
 
     const { milestonePath } = milestonesFilePath;
     logger.info('[Project Routes] :: MilestonesFilePath: ', milestonesFilePath);
@@ -442,7 +444,7 @@ module.exports = {
 
     if (!milestonesFileExists)
       throw new COAError(
-        errors.MilestonesFileNotFound(projectId, milestonePath)
+        errors.project.MilestonesFileNotFound(projectId, milestonePath)
       );
 
     const response = {
@@ -467,7 +469,7 @@ module.exports = {
     );
     validateOwnership(project.owner, ownerId);
     if (project.status !== projectStatuses.NEW) {
-      throw new COAError(errors.ProjectIsNotPublishable);
+      throw new COAError(errors.project.ProjectIsNotPublishable);
     }
     return {
       projectId: await this.updateProject(projectId, {
@@ -502,7 +504,7 @@ module.exports = {
       logger.error(
         '[Project Service] :: Project status transition is not valid'
       );
-      throw new COAError(errors.InvalidProjectTransition);
+      throw new COAError(errors.project.InvalidProjectTransition);
     }
 
     return {
