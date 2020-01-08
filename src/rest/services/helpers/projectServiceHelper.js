@@ -2,6 +2,7 @@ const mime = require('mime');
 const errors = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
 const { projectStatuses, userRoles } = require('../../util/constants');
+const validateOwnership = require('./validateOwnership');
 
 const logger = require('../../logger');
 
@@ -35,7 +36,7 @@ const validateExistence = async (dao, id, model) => {
   }
   logger.error(`${model} with id ${id} not found`);
   return new Promise((resolve, reject) =>
-    reject(new COAError(errors.CantFindModelWithId(model, id)))
+    reject(new COAError(errors.common.CantFindModelWithId(model, id)))
   );
 };
 
@@ -45,7 +46,7 @@ const validateParams = (...params) => {
     logger.error(
       '[ProjectServiceHelper] :: There are one or more params that are undefined. Request is not valid'
     );
-    throw new COAError(errors.CreateProjectFieldsNotValid);
+    throw new COAError(errors.project.CreateProjectFieldsNotValid);
   }
 };
 
@@ -57,7 +58,7 @@ const imgValidator = file => {
   const fileType = mime.lookup(file.name);
   if (!fileType.includes('image/')) {
     logger.error('[ProjectServiceHelper] :: File type is not a valid img type');
-    throw new COAError(errors.ImgFileTyPeNotValid);
+    throw new COAError(errors.file.ImgFileTyPeNotValid);
   }
 };
 
@@ -77,7 +78,7 @@ const xslValidator = file => {
     logger.error(
       '[ProjectServiceHelper] :: File type is not a valid excel type'
     );
-    throw new COAError(errors.MilestoneFileTypeNotValid);
+    throw new COAError(errors.file.MilestoneFileTypeNotValid);
   }
 };
 
@@ -96,15 +97,8 @@ const validatePhotoSize = file => {
     logger.error(
       '[ProjectServiceHelper] :: File size is bigger than the size allowed'
     );
-    throw new COAError(errors.ImgSizeBiggerThanAllowed);
+    throw new COAError(errors.file.ImgSizeBiggerThanAllowed);
   }
-};
-
-const validateOwnership = (realOwnerId, userId) => {
-  if (realOwnerId !== userId)
-    throw new COAError(errors.UserIsNotOwnerOfProject);
-
-  return true;
 };
 
 const validateStatusChange = ({

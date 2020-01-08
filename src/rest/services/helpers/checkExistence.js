@@ -1,4 +1,4 @@
-const { CantFindModelWithId } = require('../../errors/exporter/ErrorExporter');
+const { common } = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
 
 const logger = require('../../logger');
@@ -21,5 +21,5 @@ module.exports = async (dao, id, model) => {
     return object;
   }
   logger.error(`[CheckExistence] :: ${model} with id ${id} not found`);
-  throw new COAError(CantFindModelWithId(model, id));
+  throw new COAError(common.CantFindModelWithId(model, id));
 };

@@ -32,7 +32,7 @@ module.exports = {
 
     if (!user) {
       logger.error('[User Service] :: User is not found');
-      throw new COAError(errors.UserNotFound);
+      throw new COAError(errors.user.UserNotFound);
     }
 
     logger.info(`[User Service] :: User email ${email} found`);
@@ -42,7 +42,7 @@ module.exports = {
       logger.error(
         '[User Service] :: Login failed. Incorrect user or password'
       );
-      throw new COAError(errors.InvalidUserOrPassword);
+      throw new COAError(errors.user.InvalidUserOrPassword);
     }
 
     const authenticatedUser = {
@@ -55,7 +55,7 @@ module.exports = {
 
     if (user.blocked) {
       logger.error(`[User Service] :: User ID ${user.id} is blocked`);
-      throw new COAError(errors.UserRejected);
+      throw new COAError(errors.user.UserRejected);
     }
 
     return authenticatedUser;
@@ -119,7 +119,7 @@ module.exports = {
       logger.error(
         `[User Service] :: User with email ${email} already exists.`
       );
-      throw new COAError(errors.EmailAlreadyInUse);
+      throw new COAError(errors.user.EmailAlreadyInUse);
     }
 
     const user = {
@@ -168,7 +168,7 @@ module.exports = {
 
     if (!user || user == null) {
       logger.error(`[User Service] :: User ID ${userId} not found in database`);
-      throw new COAError(errors.UserNotFound);
+      throw new COAError(errors.user.UserNotFound);
     }
 
     return user.role;
@@ -189,7 +189,7 @@ module.exports = {
     // TODO : duplicate logic, should we extract it?
     if (!existingUser) {
       logger.error(`[User Service] :: User ID ${userId} does not exist`);
-      throw new COAError(errors.UserNotFound);
+      throw new COAError(errors.user.UserNotFound);
     }
 
     const { pwd, email } = user;
@@ -207,7 +207,7 @@ module.exports = {
         logger.error(
           `[User Service] :: User with email ${email} already exists.`
         );
-        throw new COAError(errors.EmailAlreadyInUse);
+        throw new COAError(errors.user.EmailAlreadyInUse);
       }
     }
 
@@ -231,7 +231,7 @@ module.exports = {
       return Object.values(userRoleWithoutAdmin);
     } catch (error) {
       logger.error('[User Service] :: Error getting all User Roles:', error);
-      throw new COAError(error.ErrorGetting('user roles'));
+      throw new COAError(errors.common.ErrorGetting('user roles'));
     }
   },
 

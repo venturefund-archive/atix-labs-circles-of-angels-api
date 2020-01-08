@@ -12,7 +12,7 @@ const {
   milestoneBudgetStatus,
   blockchainStatus,
   xlsxConfigs,
-  projectStatus
+  projectStatuses
 } = require('../util/constants');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
@@ -104,7 +104,8 @@ module.exports = {
    */
   async createMilestones(file, projectId) {
     try {
-      if (!file.data) throw new COAError(errors.CantProcessMilestonesFile);
+      if (!file.data)
+        throw new COAError(errors.milestone.CantProcessMilestonesFile);
       const response = await this.processMilestones(file.data);
 
       if (response.errors.length > 0) {
@@ -157,7 +158,7 @@ module.exports = {
       return savedMilestones;
     } catch (err) {
       logger.error('[Milestone Service] :: Error creating Milestones:', err);
-      throw new COAError(errors.ErrorCreatingMilestonesFromFile);
+      throw new COAError(errors.milestone.ErrorCreatingMilestonesFromFile);
     }
   },
 
@@ -208,13 +209,13 @@ module.exports = {
 
         const { project } = existingMilestone;
         if (
-          project.status === projectStatus.IN_PROGRESS ||
+          project.status === projectStatuses.EXECUTING ||
           project.startBlockchainStatus !== blockchainStatus.PENDING
         ) {
           logger.error(
             `[Milestone Service] :: Project ${
               project.id
-            } is IN PROGRESS or sent to the blockchain`
+            } is EXECUTING or sent to the blockchain`
           );
           return {
             error:
@@ -676,9 +677,9 @@ module.exports = {
       }
 
       const { project } = milestone;
-      if (project.status !== projectStatus.IN_PROGRESS) {
+      if (project.status !== projectStatuses.EXECUTING) {
         logger.error(
-          `[Milestone Service] :: Project ${project.id} is not IN PROGRESS`
+          `[Milestone Service] :: Project ${project.id} is not EXECUTING`
         );
         return {
           error:
