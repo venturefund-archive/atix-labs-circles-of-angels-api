@@ -6,9 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { isEmpty, remove, invert } = require('lodash');
-const XLSX = require('xlsx');
-const { forEachPromise } = require('../util/promises');
+const { isEmpty, remove } = require('lodash');
 const {
   activityStatus,
   milestoneBudgetStatus,
@@ -16,6 +14,9 @@ const {
   xlsxConfigs,
   projectStatus
 } = require('../util/constants');
+const COAError = require('../errors/COAError');
+const errors = require('../errors/exporter/ErrorExporter');
+const { readExcelData } = require('../util/excelParser');
 
 const logger = require('../logger');
 
@@ -83,6 +84,7 @@ module.exports = {
     return newMilestone;
   },
   deleteFieldsFromActivities(activities) {
+    // TODO: check this
     return activities.map(activity => {
       activity.reviewCriteria = 'review criteria';
       activity.description = activity.tasks;
@@ -97,12 +99,13 @@ module.exports = {
    * associated to the Project passed by parameter.
    *
    * Returns an array with all the Milestones created.
-   * @param {*} milestonesPath
+   * @param {*} file
    * @param {number} projectId
    */
-  async createMilestones(milestonesPath, projectId) {
+  async createMilestones(file, projectId) {
     try {
-      const response = await this.readMilestones(milestonesPath);
+      if (!file.data) throw new COAError(errors.CantProcessMilestonesFile);
+      const response = await this.processMilestones(file.data);
 
       if (response.errors.length > 0) {
         logger.error(
@@ -113,53 +116,48 @@ module.exports = {
       }
 
       const { milestones } = response;
+
       logger.info(
         '[Milestone Service] :: Creating Milestones for Project ID:',
         projectId
       );
 
-      const savedMilestones = [];
+      const savedMilestones = await Promise.all(
+        milestones.map(async milestone => {
+          if (!this.isMilestoneEmpty(milestone)) {
+            // const isFirstMilestone = isEmpty(
+            //   await this.milestoneDao.getMilestonesByProject(projectId)
+            // );
+            const activityList = milestone.activityList.slice(0);
+            const milestoneWithoutFields = this.deleteFieldsFromMilestone(
+              milestone
+            );
 
-      // for each milestone call this function
-      const createMilestone = (milestone, context) =>
-        new Promise(resolve => {
-          process.nextTick(async () => {
-            if (!this.isMilestoneEmpty(milestone)) {
-              // const isFirstMilestone = isEmpty(
-              //   await this.milestoneDao.getMilestonesByProject(projectId)
-              // );
-              const activityList = milestone.activityList.slice(0);
-              const milestoneWithoutFields = this.deleteFieldsFromMilestone(
-                milestone
-              );
-
-              const savedMilestone = await this.milestoneDao.saveMilestone({
-                milestone: milestoneWithoutFields,
-                projectId
-                // budgetStatus: isFirstMilestone
-                //   ? milestoneBudgetStatus.CLAIMABLE
-                //   : milestoneBudgetStatus.BLOCKED
-              });
-              logger.info(
-                '[Milestone Service] :: Milestone created:',
-                savedMilestone
-              );
-              context.push(savedMilestone);
-              // create the activities for this milestone
-              await this.activityService.createActivities(
-                this.deleteFieldsFromActivities(activityList),
-                savedMilestone.id
-              );
-            }
-            resolve();
-          });
-        });
-      await forEachPromise(milestones, createMilestone, savedMilestones);
+            const savedMilestone = await this.milestoneDao.saveMilestone({
+              milestone: milestoneWithoutFields,
+              projectId
+              // budgetStatus: isFirstMilestone
+              //   ? milestoneBudgetStatus.CLAIMABLE
+              //   : milestoneBudgetStatus.BLOCKED
+            });
+            logger.info(
+              '[Milestone Service] :: Milestone created:',
+              savedMilestone
+            );
+            // create the activities for this milestone
+            await this.activityService.createActivities(
+              this.deleteFieldsFromActivities(activityList),
+              savedMilestone.id
+            );
+            return savedMilestone;
+          }
+        })
+      );
 
       return savedMilestones;
     } catch (err) {
       logger.error('[Milestone Service] :: Error creating Milestones:', err);
-      throw Error('Error creating Milestone from file');
+      throw new COAError(errors.ErrorCreatingMilestonesFromFile);
     }
   },
 
@@ -321,43 +319,21 @@ module.exports = {
   },
 
   /**
-   * Reads the excel file with the Milestones and Activities' information.
+   * Process the excel file with the Milestones and Activities' information.
    *
    * Returns an array with all the information retrieved.
-   * @param {string} file path
+   * @param {Buffer} data buffer data from the excel file
    */
-  async readMilestones(file) {
+  async processMilestones(data) {
     const response = {
       milestones: [],
       errors: []
     };
 
-    let workbook = null;
-    try {
-      logger.info('[Milestone Service] :: Reading Milestone excel:', file);
-      workbook = XLSX.readFile(file, { raw: true });
-    } catch (err) {
-      logger.error('[Milestone Service] :: Error reading excel file:', err);
-      throw Error('Error reading excel file');
-    }
+    const { worksheet, cellKeys, nameMap } = readExcelData(data);
 
-    if (workbook == null) {
-      logger.error('[Milestone Service] :: Error reading Milestone excel file');
-      throw Error('Error reading excel file');
-    }
-
-    const sheetNameList = workbook.SheetNames;
-    const worksheet = workbook.Sheets[sheetNameList[0]];
-
-    const nameMap = invert({ ...xlsxConfigs.keysMap });
-
-    delete worksheet['!autofilter'];
-    delete worksheet['!merges'];
-    delete worksheet['!margins'];
-    delete worksheet['!ref'];
-
-    const cellKeys = Object.keys(worksheet);
-    remove(cellKeys, k => k.slice(1) <= xlsxConfigs.startRow);
+    // TODO: everything below this is a mess.
+    //       We will need to refactor it eventually
     let milestone;
     let actualQuarter;
     const COLUMN_KEY = 0;
@@ -480,8 +456,7 @@ module.exports = {
 
   verifyMilestone(milestone, pushError) {
     let valid = true;
-    const toVerify = ['tasks', 'impact'];
-
+    const toVerify = ['tasks', 'category'];
     toVerify.forEach(field => {
       if (!milestone[field] || milestone[field] === '') {
         valid = false;
