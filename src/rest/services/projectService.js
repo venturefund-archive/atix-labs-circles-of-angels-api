@@ -342,27 +342,6 @@ module.exports = {
     };
   },
 
-  async editTaskOfMilestone(milestoneId, taskId, taskParams) {}, // TODO
-
-  async deleteTaskOfMilestone({ milestoneId, taskId }) {
-    // TODO shouldnt this belong to milestoneService?
-    // FIXME ADD OWNER VALIDATION
-    validateParams(milestoneId, taskId);
-    const { tasks } = await validateExistence(
-      this.milestoneDao,
-      milestoneId,
-      'milestone'
-    );
-    await validateExistence(this.activityDao, taskId, 'task');
-
-    return {
-      milestoneId: this.updateMilestone(
-        milestoneId,
-        tasks.filter(({ id }) => taskId !== id)
-      )
-    };
-  },
-
   async processMilestoneFile(projectId, { file, ownerId }) {
     logger.info('[ProjectService] :: Entering processMilestoneFile method');
     validateRequiredParams({

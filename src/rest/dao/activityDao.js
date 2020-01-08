@@ -20,8 +20,8 @@ module.exports = {
     return createdActivity;
   },
 
-  async getActivityById(activityId) {
-    const activity = await this.model.findOne({ id: activityId });
+  async findById(id) {
+    const activity = await this.model.findOne({ id });
     return activity;
   },
 
