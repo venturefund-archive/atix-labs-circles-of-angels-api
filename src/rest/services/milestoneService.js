@@ -22,6 +22,22 @@ const logger = require('../logger');
 
 module.exports = {
   /**
+   * Returns the project that the milestone belongs to
+   * or `undefined` if the milestone doesn't exist
+   *
+   * @param {number} id
+   * @returns project | `undefined`
+   */
+  async getProjectFromMilestone(id) {
+    logger.info(
+      '[MilestoneService] :: Entering getProjectFromMilestone method'
+    );
+    const milestone = await this.milestoneDao.getMilestoneByIdWithProject(id);
+    if (!milestone) return;
+    return milestone.project;
+  },
+
+  /**
    * Creates a Milestone for an existing Project.
    *
    * @param {object} milestone

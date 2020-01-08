@@ -18,19 +18,137 @@ const { evidenceFileTypes, userRoles } = require('../util/constants');
 const {
   activityStatus,
   blockchainStatus,
-  projectStatus
+  projectStatuses
 } = require('../util/constants');
-const apiHelper = require('./helper');
 
-// TODO : replace with a logger;
-const logger = {
-  log: () => {},
-  error: () => {},
-  info: () => {}
-};
+const checkExistence = require('./helpers/checkExistence');
+const validateRequiredParams = require('./helpers/validateRequiredParams');
+const validateOwnership = require('./helpers/validateOwnership');
+const apiHelper = require('./helper');
+const COAError = require('../errors/COAError');
+const errors = require('../errors/exporter/ErrorExporter');
+const logger = require('../logger');
 
 module.exports = {
   readFile: promisify(fs.readFile),
+
+  /**
+   * Updates an existing task.
+   *
+   * @param {number} taskId task identifier
+   * @param {number} userId user performing the operation. Must be the owner of the project
+   * @param {object} taskParams task fields to update
+   */
+  async updateTask(taskId, { userId, taskParams }) {
+    logger.info('[ActivityService] :: Entering updateTask method');
+    validateRequiredParams({
+      method: 'updateTask',
+      params: { userId, taskId, taskParams }
+    });
+
+    const task = await checkExistence(this.activityDao, taskId, 'task');
+    logger.info(
+      `[ActivityService] :: Found task ${task.id} of milestone ${
+        task.milestone
+      }`
+    );
+
+    const project = await this.milestoneService.getProjectFromMilestone(
+      task.milestone
+    );
+
+    // if the task exists this shouldn't happen
+    if (!project) {
+      logger.info(
+        `[ActivityService] :: No project found for milestone ${task.milestone}`
+      );
+      throw new COAError(errors.task.ProjectNotFound(taskId));
+    }
+
+    validateOwnership(project.owner, userId);
+
+    // TODO: define in which statuses is ok to edit a task
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[ActivityService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.task.UpdateWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for editing?
+
+    logger.info(`[ActivityService] :: Updating task of id ${taskId}`);
+    const updatedTask = await this.activityDao.updateActivity(
+      taskParams,
+      taskId
+    );
+    logger.info(`[ActivityService] :: Task of id ${updatedTask.id} updated`);
+
+    return { taskId: updatedTask.id };
+  },
+
+  /**
+   * Deletes an existing task.
+   *
+   * @param {number} taskId task identifier
+   * @param {number} userId user performing the operation. Must be the owner of the project
+   */
+  async deleteTask(taskId, userId) {
+    logger.info('[ActivityService] :: Entering deleteTask method');
+    validateRequiredParams({
+      method: 'deleteTask',
+      params: { taskId, userId }
+    });
+
+    const task = await checkExistence(this.activityDao, taskId, 'task');
+    logger.info(
+      `[ActivityService] :: Found task ${task.id} of milestone ${
+        task.milestone
+      }`
+    );
+
+    const project = await this.milestoneService.getProjectFromMilestone(
+      task.milestone
+    );
+
+    // if the task exists this shouldn't happen
+    if (!project) {
+      logger.info(
+        `[ActivityService] :: No project found for milestone ${task.milestone}`
+      );
+      throw new COAError(errors.task.ProjectNotFound(taskId));
+    }
+
+    validateOwnership(project.owner, userId);
+
+    // TODO: define in which statuses is ok to delete a task
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[ActivityService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.task.DeleteWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for deleting?
+
+    logger.info(`[ActivityService] :: Deleting task of id ${taskId}`);
+    const deletedTask = await this.activityDao.deleteActivity(taskId);
+    logger.info(`[ActivityService] :: Task of id ${deletedTask.id} deleted`);
+
+    // if all activities of a milestone are deleted,
+    // should the milestone be deleted as well?
+
+    return { taskId: deletedTask.id };
+  },
+
   /**
    * Creates an Activity for an existing Milestone
    *
@@ -107,77 +225,6 @@ module.exports = {
   },
 
   /**
-   * Updates an Activity
-   *
-   * @param {object} activity
-   * @param {number} id
-   */
-  async updateActivity(newActivity, id) {
-    try {
-      const activity = await this.activityDao.getActivityById(id);
-      if (!activity) {
-        logger.error(`[Activity Service] Activity ${id} doesn't exist`);
-        return { error: "Activity doesn't exist", status: 404 };
-      }
-
-      const project = await this.getProjectByActivity(activity);
-
-      if (project.error) {
-        return project;
-      }
-
-      if (
-        project.status === projectStatus.IN_PROGRESS ||
-        project.startBlockchainStatus !== blockchainStatus.PENDING
-      ) {
-        logger.error(
-          `[Activity Service] :: Project ${
-            project.id
-          } is IN PROGRESS or sent to the blockchain`
-        );
-        return {
-          error:
-            'Activity cannot be updated. Project has already started or sent to the blockchain.',
-          status: 409
-        };
-      }
-
-      if (this.canActivityUpdate(newActivity)) {
-        logger.info('[Activity Service] :: Updating activity:', newActivity);
-
-        const savedActivity = await this.activityDao.updateActivity(
-          newActivity,
-          id
-        );
-
-        if (!savedActivity || savedActivity == null) {
-          logger.error(
-            `[Activity Service] :: Could not update Activity ID ${id}`,
-            savedActivity
-          );
-          return {
-            status: 409,
-            error: ' Could not update Activity'
-          };
-        }
-
-        logger.info('[Activity Service] :: Activity updated:', savedActivity);
-
-        return savedActivity;
-      }
-
-      logger.error('[Activity Service] :: Activity not valid', newActivity);
-      return {
-        status: 409,
-        error: 'Activity has empty mandatory fields'
-      };
-    } catch (error) {
-      logger.error('[Activity Service] :: Error updating Activity:', error);
-      return { status: 500, error: 'Error updating Activity' };
-    }
-  },
-
-  /**
    * Updates the status of an activity
    *
    * @param {integer} status activity status
@@ -187,7 +234,7 @@ module.exports = {
   async updateStatus(status, id) {
     try {
       logger.info('[Activity Service] :: Updating activity status');
-      const activity = await this.activityDao.getActivityById(id);
+      const activity = await this.activityDao.findById(id);
       if (!activity) {
         logger.error(`[Activity Service] :: Activity ${id} doesn't exist`);
         return { error: "Activity doesn't exist", status: 404 };
@@ -199,7 +246,7 @@ module.exports = {
         return project;
       }
 
-      if (project.status !== projectStatus.IN_PROGRESS) {
+      if (project.status !== projectStatuses.EXECUTING) {
         logger.error(
           `[Activity Service] :: Project ${project.id} is not IN PROGRESS`
         );
@@ -331,13 +378,13 @@ module.exports = {
    * @returns success | errors
    */
   async addEvidenceFiles(activityId, files, user) {
-    const errors = [];
+    const evidenceErrors = [];
     logger.info(
       '[Activity Service] :: Uploading evidence files for activity ID',
       activityId
     );
     try {
-      const activity = await this.activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.findById(activityId);
       if (!activity) {
         logger.error(
           `[Activity Service] :: Activity ${activityId} doesn't exist`
@@ -351,7 +398,7 @@ module.exports = {
         return project;
       }
 
-      if (project.status !== projectStatus.IN_PROGRESS) {
+      if (project.status !== projectStatuses.EXECUTING) {
         logger.error(
           `[Activity Service] :: Project ${project.id} is not IN PROGRESS`
         );
@@ -374,7 +421,7 @@ module.exports = {
           files.map(async file => {
             const addedEvidence = await this.addEvidence(activityId, file);
             if (addedEvidence.error) {
-              errors.push({
+              evidenceErrors.push({
                 error: addedEvidence.error,
                 file: file.name
               });
@@ -386,7 +433,7 @@ module.exports = {
       } else {
         const addedEvidence = await this.addEvidence(activityId, files);
         if (addedEvidence.error) {
-          errors.push({
+          evidenceErrors.push({
             error: addedEvidence.error,
             file: files.name
           });
@@ -412,8 +459,8 @@ module.exports = {
       };
     }
 
-    if (errors.length > 0) {
-      return { errors };
+    if (evidenceErrors.length > 0) {
+      return { errors: evidenceErrors };
     }
     return { success: 'The evidence was successfully uploaded!' };
   },
@@ -432,7 +479,7 @@ module.exports = {
     );
     // verify activity exists
     try {
-      const activity = await this.activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.findById(activityId);
       if (!activity || activity == null) {
         logger.error(
           `[Activity Service] :: Activity ID ${activityId} could not be found`
@@ -708,7 +755,7 @@ module.exports = {
   async downloadEvidence(activityId, evidenceId, fileType) {
     try {
       // check if activity exists in database
-      const activity = await this.activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.findById(activityId);
 
       if (!activity || activity == null) {
         logger.error(
@@ -833,21 +880,6 @@ module.exports = {
     }
 
     return valid;
-  },
-
-  /**
-   * Delete an activity with id
-   * @param {number} activityId
-   */
-  async deleteActivity(activityId) {
-    const { milestoneService } = apiHelper.helper.services;
-    const deleted = await this.activityDao.deleteActivity(activityId);
-    const milestoneEmpty =
-      deleted &&
-      !(await milestoneService.milestoneHasActivities(deleted.milestone));
-    if (milestoneEmpty)
-      await milestoneService.deleteMilestone(deleted.milestone);
-    return deleted;
   },
 
   /**
@@ -976,7 +1008,7 @@ module.exports = {
     logger.info('[Activity Service] :: Getting activity ID', activityId);
     try {
       // find activity
-      const activity = await this.activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.findById(activityId);
 
       if (!activity || activity == null) {
         logger.error(
@@ -1066,7 +1098,7 @@ module.exports = {
    */
   async completeActivity(activityId) {
     try {
-      const activity = await this.activityDao.getActivityById(activityId);
+      const activity = await this.activityDao.findById(activityId);
       if (!activity) {
         logger.error(`[Activity Service] Activity ${activityId} doesnt exists`);
         return { error: 'Activity doesnt exists', status: 404 };
