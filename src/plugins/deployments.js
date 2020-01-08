@@ -1,39 +1,36 @@
-const {
-  readArtifact,
-  readArtifactSync
-} = require("@nomiclabs/buidler/plugins");
-const { ContractFactory } = require("ethers");
-const {
-  createChainIdGetter
-} = require("@nomiclabs/buidler/internal/core/providers/provider-utils");
-const {
+import { readArtifact, readArtifactSync } from '@nomiclabs/buidler/plugins';
+import { BuidlerRuntimeEnvironment } from '@nomiclabs/buidler/types';
+import { Contract, ContractFactory, Signer, utils } from 'ethers';
+
+import {
   ensureFileSync,
   existsSync,
   readJsonSync,
   writeJSONSync
-} = require("fs-extra");
+} from 'fs-extra';
+
 // TODO : this can be placed into the buidler's config.
-const stateFilename = "state.json";
+const stateFilename = 'state.json';
 
-const readState = () => readJsonSync(stateFilename);
+export const readState = () => readJsonSync(stateFilename);
 
-const writeState = state => writeJSONSync(stateFilename, state);
+export const writeState = state => writeJSONSync(stateFilename, state);
 
-const setInitialState = () => writeState({});
+export const setInitialState = () => writeState({});
 
-const ensureStateFile = () => {
+export const ensureStateFile = () => {
   if (!existsSync(stateFilename)) {
     ensureFileSync(stateFilename);
     setInitialState();
   }
 };
 
-ensureStateFile();
-
-module.exports = class Deployments {
-  constructor(env) {
+export class Deployments {
+  constructor(env, chainIdGetter, setup) {
+    this.context = {};
+    this.setup = this.env.network.config.erasureSetup;
     this.env = env;
-    this.chainIdGetter = createChainIdGetter(env.ethereum);
+    this.chainIdGetter = chainIdGetter;
   }
 
   async getDeployedAddresses(name, chainId) {
@@ -53,18 +50,16 @@ module.exports = class Deployments {
   }
 
   async getDeployedContracts(name, chainId) {
-    const factory = await this.getContract(name);
+    const factory = await this.getContractFactory(name);
     const addresses = await this.getDeployedAddresses(name, chainId);
     const artifact = readArtifactSync(this.env.config.paths.artifacts, name);
-    // console.log()
+
     // TODO : should use deployedBytecode instead?
-    // console.log(artifact.bytecode.length, artifact.deployedBytecode.length)
-    // console.log(factory.bytecode.length)
     if (artifact.bytecode !== factory.bytecode) {
       console.warn(
-        "Deployed contract",
+        'Deployed contract',
         name,
-        " does not match compiled local contract"
+        ' does not match compiled local contract'
       );
     }
 
@@ -74,7 +69,7 @@ module.exports = class Deployments {
   async saveDeployedContract(name, instance) {
     const state = readState();
     if (name === undefined) {
-      throw new Error("saving contract with no name");
+      throw new Error('saving contract with no name');
     }
 
     const chainId = await this.getChainId();
@@ -105,15 +100,52 @@ module.exports = class Deployments {
     writeState(state);
   }
 
-  async deploy(contractName, params, signer) {
-    console.log(contractName, params)
-    const contractFactory = await this.getContract(contractName, signer);
-    contractFactory.connect(await this.getSigner(signer));
+  async deploySetup() {
+    const contracts = {};
+    for (const config of this.setup.contracts) {
+      let { signer } = config;
 
-    const contract = await contractFactory.deploy(...params);
+      contracts[config.name] = await this.deployContract({ ...config, signer });
+    }
+
+    return contracts;
+  }
+
+  async deployContract(config) {
+    const { name, params, signer, context, artifact, after } = config;
+    // build local context
+    const ctx = { ...this.context, ...context };
+    const values = typeof params === 'function' ? params(ctx) : params;
+    const [contract, receipt] = await this.deploy(
+      artifact === undefined ? name : artifact,
+      values === undefined ? [] : values,
+      signer
+    );
+
+    // TODO : store events in context
+    this.context[name] = {
+      // address: receipt.contractAddress,
+      address: contract.address,
+      contract,
+      receipt
+    };
+
+    if (after !== undefined) {
+      // store return value into context?
+      await after(contract, receipt, ctx);
+    }
+
+    return contract;
+  }
+
+  async deploy(contractName, params, signer) {
+    const factory = await this.getContractFactory(contractName, signer);
+    factory.connect(await this.getSigner(signer));
+
+    const contract = await factory.deploy(...params);
     await contract.deployed();
 
-    console.log("Deployed", contractName, "at", contract.address);
+    console.log('Deployed', contractName, 'at', contract.address);
     await this.saveDeployedContract(contractName, contract);
     const receipt = await this.env.ethers.provider.getTransactionReceipt(
       contract.deployTransaction.hash
@@ -121,7 +153,35 @@ module.exports = class Deployments {
     return [contract, receipt];
   }
 
-  async getContract(name, signer) {
+  getContractConfig(name) {
+    const config = this.setup.contracts.find(c => c.name === name);
+    if (config === undefined) {
+      throw new Error('unknown contract' + name);
+    }
+    return config;
+  }
+
+  async getContractInstance(name, address, signer) {
+    const config = this.getContractConfig(name);
+
+    if (address === undefined) {
+      if (address === undefined) {
+        const contract = await this.getLastDeployedContract(name);
+        address = contract.address;
+      } else {
+        address = config.address;
+      }
+    }
+    if (address === undefined) {
+      throw new Error('unable to resolve' + name + 'contract address');
+    }
+
+    const factory = await this.getContractFactory(name, signer);
+
+    return factory.attach(address);
+  }
+
+  async getContractFactory(name, signer) {
     signer = await this.getSigner(signer);
     const { abi, bytecode } = await readArtifact(
       this.env.config.paths.artifacts,
@@ -143,7 +203,7 @@ module.exports = class Deployments {
   async getSigner(account) {
     return account === undefined
       ? (await this.env.ethers.signers())[0]
-      : typeof account === "string"
+      : typeof account === 'string'
       ? this.env.ethers.provider.getSigner(account)
       : account;
   }
@@ -155,4 +215,4 @@ module.exports = class Deployments {
       state[chainId][name].length > 0
     );
   }
-};
+}

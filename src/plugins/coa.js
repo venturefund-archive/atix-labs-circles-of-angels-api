@@ -11,27 +11,39 @@ module.exports = class COA {
   constructor(env) {
     this.env = env;
     this.chainIdGetter = createChainIdGetter(env.ethereum);
+    this.contracts = {};
   }
 
-  async addMember(params) {
-    // 0x0000000000000000000000000000000000000000000000000000000000000000
-    // 0xb94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
-    // 0xC2C22CeE68625D65105fE98a92B283b79845F609
-    const { profile } = params;
+  async createMember(profile) {
     const coa = await this.getCOA();
-    console.log(coa.abi);
+    // console.log(coa)
+    // console.log(coa.iCnterface.functions)
     const tx = await coa.createMember(profile);
-    console.log(tx);
+    // console.log(tx);
   }
 
-  async createProject(params, env) {
-    const { name, agreement } = params;
+  async fail() {
+    const coa = await this.getCOA();
+    return coa.fail();
+  }
+
+  async success() {
+    const coa = await this.getCOA();
+    return coa.success();
+  }
+
+  async emitEvent() {
+    const coa = await this.getCOA();
+    return coa.emitEvent();
+  }
+
+  async createProject(name, agreement) {
     const coa = await getCOA();
     const projectId = await coa.createProject(name, agreement);
-    console.log(await projectId.wait());
-    const projectAddress = await env.run('get-project', { projectId });
-    console.log(projectAddress);
-    return getProject(projectAddress);
+    // console.log(await projectId.wait());
+    // const projectAddress = await env.run('get-project', { projectId });
+    // console.log(projectAddress);
+    // return getProject(projectAddress);
   }
 
   async createDAO(params, env) {
@@ -40,15 +52,6 @@ module.exports = class COA {
     const tx = await coa.createDAO(name);
     console.log(tx);
   }
-
-  // async addClaim(projectId, claim, proof) {
-  //   const { projectId, claim, proof } = params;
-  //   const coa = await getCOA();
-  //   const registry = await getRegistry();
-  //   const projectAddress = await env.run("get-project", { projectId });
-
-  //   await coa.approveClaim(projectAddress, claim, proof);
-  // };
 
   async getClaim(projectId, validator, claim) {
     const coa = await getCOA();
@@ -97,16 +100,13 @@ module.exports = class COA {
 
   async getMember(address) {
     const coa = await this.getCOA();
-    // const signers = await env.ethers.signers();
-    // const address = await signers[0].getAddress();
-    console.log('getting member for', address);
-    console.log(await coa.members(address));
+    return coa.members(address);
   }
 
   async getProject(projectId) {
     const coa = await getCOA();
     const address = await coa.getProject(projectId);
-    console.log('Project', projectId, address);
+    // console.log('Project', projectId, address);
     return address;
   }
 
@@ -125,11 +125,28 @@ module.exports = class COA {
   }
 
   async getCOA() {
-    return this.getContract('COA');
+    if (this.contracts.coa === undefined) {
+      const contract = await this.env.deployments.getLastDeployedContract(
+        'COA'
+      );
+      console.log('coa address', contract.address);
+      // contract.on('DAOCreated', args => console.log('getCOA', args));
+      this.contracts.coa = contract;
+    }
+
+    return this.contracts.coa;
   }
 
   async getRegistry() {
-    return this.getContract('ClaimsRegistry');
+    if (this.contracts.registry === undefined) {
+      const contract = await this.env.deployments.getLastDeployedContract(
+        'ClaimsRegistry'
+      );
+
+      this.contracts.registry = contract;
+    }
+
+    return this.contracts.registry;
   }
 
   async getProject(address) {
@@ -161,4 +178,4 @@ module.exports = class COA {
       state[chainId][name].length > 0
     );
   }
-}
+};

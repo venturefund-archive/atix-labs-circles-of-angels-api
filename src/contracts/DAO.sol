@@ -96,7 +96,7 @@ contract DAO {
         });
         members[memberAddress] = member;
     }
-    
+
     function submitProposal(
         address _applicant,
         uint8 _proposalType,

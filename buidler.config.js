@@ -5,8 +5,8 @@ const COA = require('./src/plugins/coa');
 const Deployments = require('./src/plugins/deployments');
 
 const INFURA_API_KEY = '';
-const MAINNET_PRIVATE_KEY = '';
 const ROPSTEN_PRIVATE_KEY = '';
+const MAINNET_PRIVATE_KEY = '';
 
 // const Deployments = require("./scripts/deployments");
 
@@ -46,6 +46,7 @@ module.exports = {
   paths: {
     sources: './src/contracts'
   },
+  defaultNetwork: 'develop',
   networks: {
     develop: {
       url: 'http://localhost:8545'

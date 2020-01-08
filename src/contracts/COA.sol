@@ -39,6 +39,16 @@ contract COA is Ownable {
         members[msg.sender] = member;
     }
 
+    function success() public returns(uint) {
+        return 42;
+    }
+    function fail() public {
+        revert();
+    }
+    function emitEvent() public {
+        emit DAOCreated(address(this));
+    }
+
     // the agreement hash can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
     // we could strip the first two bytes but for now it seems unnecessary
     function createProject(string memory _name, string memory _agreementHash) public returns(uint256) {
