@@ -14,6 +14,7 @@ const {
   xlsxConfigs,
   projectStatuses
 } = require('../util/constants');
+const checkExistence = require('./helpers/checkExistence');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
@@ -23,7 +24,9 @@ const logger = require('../logger');
 module.exports = {
   /**
    * Returns the project that the milestone belongs to
-   * or `undefined` if the milestone doesn't exist
+   * or `undefined` if the milestone doesn't have a project.
+   *
+   * Throws an error if the milestone does not exist
    *
    * @param {number} id
    * @returns project | `undefined`
@@ -32,9 +35,9 @@ module.exports = {
     logger.info(
       '[MilestoneService] :: Entering getProjectFromMilestone method'
     );
-    const milestone = await this.milestoneDao.getMilestoneByIdWithProject(id);
-    if (!milestone) return;
-    return milestone.project;
+    await checkExistence(this.milestoneDao, id, 'milestone');
+    const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
+    return project;
   },
 
   /**

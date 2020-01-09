@@ -18,6 +18,7 @@ const {
   userRoles
 } = require('../rest/util/constants');
 const { injectMocks } = require('../rest/util/injection');
+const COAError = require('../rest/errors/COAError');
 const errors = require('../rest/errors/exporter/ErrorExporter');
 const activityService = require('../rest/services/activityService');
 
@@ -40,6 +41,14 @@ describe('Testing activityService', () => {
     dbMilestone = [];
     dbProject = [];
     dbUser = [];
+  };
+
+  const newTaskParams = {
+    description: 'NewDescription',
+    reviewCriteria: 'NewReviewCriteria',
+    category: 'NewCategory',
+    keyPersonnel: 'NewKeyPersonnel',
+    budget: 5000
   };
 
   const userEntrepreneur = {
@@ -98,14 +107,25 @@ describe('Testing activityService', () => {
       if (!found) return;
       dbTask.splice(dbTask.indexOf(found), 1);
       return found;
+    },
+    saveActivity: (activity, milestoneId) => {
+      const newTaskId =
+        dbTask.length > 0 ? dbTask[dbTask.length - 1].id + 1 : 1;
+      const newTask = {
+        milestone: milestoneId,
+        id: newTaskId,
+        ...activity
+      };
+      dbTask.push(newTask);
+      return newTask;
     }
   };
   const milestoneService = {
     getProjectFromMilestone: id => {
       const found = dbMilestone.find(milestone => milestone.id === id);
-      return found
-        ? dbProject.find(project => project.id === found.project)
-        : found;
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('milestone', id));
+      return dbProject.find(project => project.id === found.project);
     }
   };
 
@@ -230,6 +250,89 @@ describe('Testing activityService', () => {
       );
     });
   });
+
+  describe('Testing createTask', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        milestoneService
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProject.push(newProject, executingProject);
+      dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should create the task and return its id', async () => {
+      const response = await activityService.createTask(updatableMilestone.id, {
+        userId: userEntrepreneur.id,
+        taskParams: newTaskParams
+      });
+      const createdTask = dbTask.find(task => task.id === response.taskId);
+      expect(response).toHaveProperty('taskId');
+      expect(response.taskId).toBeDefined();
+      expect(createdTask).toHaveProperty('id', response.taskId);
+      expect(createdTask).toHaveProperty('milestone', updatableMilestone.id);
+      expect(createdTask).toHaveProperty('description', 'NewDescription');
+      expect(createdTask).toHaveProperty('reviewCriteria', 'NewReviewCriteria');
+      expect(createdTask).toHaveProperty('category', 'NewCategory');
+      expect(createdTask).toHaveProperty('keyPersonnel', 'NewKeyPersonnel');
+      expect(createdTask).toHaveProperty('budget', 5000);
+    });
+
+    it('should throw an error if an argument is not defined', async () => {
+      await expect(
+        activityService.createTask(updatableMilestone.id, {
+          taskParams: newTaskParams
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('createTask'));
+    });
+
+    it('should throw an error if any required task property is not defined', async () => {
+      const missingTaskParams = {
+        description: 'NewDescription',
+        reviewCriteria: 'NewReviewCriteria'
+      };
+      await expect(
+        activityService.createTask(updatableMilestone.id, {
+          userId: userEntrepreneur.id,
+          taskParams: missingTaskParams
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('createTask'));
+    });
+
+    it('should throw an error if the milestone does not exist', async () => {
+      await expect(
+        activityService.createTask(0, {
+          userId: userEntrepreneur.id,
+          taskParams: newTaskParams
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('milestone', 0));
+    });
+
+    it('should throw an error if the user is not the project owner', async () => {
+      await expect(
+        activityService.createTask(updatableMilestone.id, {
+          userId: 0,
+          taskParams: newTaskParams
+        })
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+
+    it('should throw an error if the project status is not NEW', async () => {
+      await expect(
+        activityService.createTask(nonUpdatableMilestone.id, {
+          userId: userEntrepreneur.id,
+          taskParams: newTaskParams
+        })
+      ).rejects.toThrow(
+        errors.task.CreateWithInvalidProjectStatus(projectStatuses.EXECUTING)
+      );
+    });
+  });
 });
 
 jest.mock('sha256');
@@ -292,101 +395,6 @@ describe.skip('Testing activityService createActivities', () => {
       milestoneId
     );
     expect(activities).toEqual(expected);
-  });
-});
-
-describe.skip('Testing activityService createActivity', () => {
-  let activityDao;
-  let activityService;
-
-  const newActivityId = 1;
-  const milestoneId = 12;
-
-  let mockActivity;
-  let incompleteActivity;
-
-  beforeEach(() => {
-    const {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel,
-      budget
-    } = testHelper.buildActivity({});
-    mockActivity = {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel,
-      budget
-    };
-
-    incompleteActivity = {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel
-    };
-  });
-
-  beforeAll(() => {
-    activityDao = {
-      async saveActivity(activity, milestone) {
-        if (milestone === 0) {
-          throw Error('Error creating activity');
-        }
-        const toSave = {
-          ...activity,
-          milestone,
-          id: newActivityId
-        };
-        return toSave;
-      }
-    };
-    activityService = require('../rest/services/activityService');
-    injectMocks(activityService, {
-      activityDao
-    });
-  });
-
-  it('should return the created activity', async () => {
-    const expected = {
-      ...mockActivity,
-      milestone: milestoneId,
-      id: newActivityId
-    };
-    const response = await activityService.createActivity(
-      mockActivity,
-      milestoneId
-    );
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity is incomplete', async () => {
-    const response = await activityService.createActivity(
-      incompleteActivity,
-      milestoneId
-    );
-    const expected = {
-      status: 409,
-      error: 'Activity is missing mandatory fields'
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity could not be created', async () => {
-    const response = await activityService.createActivity(mockActivity, 0);
-    const expected = { status: 500, error: 'Error creating Activity' };
-    return expect(response).toEqual(expected);
   });
 });
 

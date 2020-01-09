@@ -13,5 +13,9 @@ module.exports = {
   },
   ErrorCreatingMilestonesFromFile: {
     message: 'Error creating milestones from file'
-  }
+  },
+  ProjectNotFound: milestoneId => ({
+    message: `Project of milestone id ${milestoneId} not found`,
+    statusCode: 404
+  })
 };

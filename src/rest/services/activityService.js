@@ -34,10 +34,12 @@ module.exports = {
 
   /**
    * Updates an existing task.
+   * Returns an object with the id of the updated task
    *
    * @param {number} taskId task identifier
    * @param {number} userId user performing the operation. Must be the owner of the project
    * @param {object} taskParams task fields to update
+   * @returns { {taskId: number} } id of updated task
    */
   async updateTask(taskId, { userId, taskParams }) {
     logger.info('[ActivityService] :: Entering updateTask method');
@@ -93,9 +95,11 @@ module.exports = {
 
   /**
    * Deletes an existing task.
+   * Returns an object with the id of the deleted task
    *
    * @param {number} taskId task identifier
    * @param {number} userId user performing the operation. Must be the owner of the project
+   * @returns { {taskId: number} } id of deleted task
    */
   async deleteTask(taskId, userId) {
     logger.info('[ActivityService] :: Entering deleteTask method');
@@ -150,42 +154,82 @@ module.exports = {
   },
 
   /**
-   * Creates an Activity for an existing Milestone
+   * Creates an task for an existing Milestone.
+   * Returns an object with the id of the new task
    *
-   * @param {object} activity
    * @param {number} milestoneId
-   * @returns new activity | error message
+   * @param {number} userId user performing the operation. Must be the owner of the project
+   * @param {object} taskParams task data
+   * @returns { {taskId: number} } id of updated task
    */
-  async createActivity(activity, milestoneId) {
-    try {
-      logger.info(
-        `[Activity Service] :: Creating a new Activity for Milestone ID ${milestoneId}: `,
-        activity
-      );
-      // TODO: should verify milestone existence and project status ????
+  async createTask(milestoneId, { userId, taskParams }) {
+    logger.info('[ActivityService] :: Entering createTask method');
+    validateRequiredParams({
+      method: 'createTask',
+      params: { milestoneId, userId, taskParams }
+    });
 
-      if (this.verifyActivity(activity)) {
-        const savedActivity = await this.activityDao.saveActivity(
-          activity,
-          milestoneId
-        );
-
-        logger.info('[Activity Service] :: Activity created:', savedActivity);
-
-        return savedActivity;
+    const {
+      description,
+      reviewCriteria,
+      category,
+      keyPersonnel,
+      budget
+    } = taskParams;
+    validateRequiredParams({
+      method: 'createTask',
+      params: {
+        description,
+        reviewCriteria,
+        category,
+        keyPersonnel,
+        budget
       }
+    });
 
-      logger.error('[Activity Service] :: Activity not valid', activity);
-      return {
-        status: 409,
-        error: 'Activity is missing mandatory fields'
-      };
-    } catch (error) {
-      logger.error('[Activity Service] :: Error creating Activity:', error);
-      return { status: 500, error: 'Error creating Activity' };
+    logger.info(
+      `[ActivityService] :: Getting project of milestone ${milestoneId}`
+    );
+    const project = await this.milestoneService.getProjectFromMilestone(
+      milestoneId
+    );
+
+    // if the milestone exists this shouldn't happen
+    if (!project) {
+      logger.info(
+        `[ActivityService] :: No project found for milestone ${milestoneId}`
+      );
+      throw new COAError(errors.milestone.ProjectNotFound(milestoneId));
     }
-  },
+    validateOwnership(project.owner, userId);
 
+    // TODO: define in which statuses is ok to create a task
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[ActivityService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.task.CreateWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for creating?
+    logger.info(
+      `[ActivityService] :: Creating new task in project ${
+        project.id
+      }, milestone ${milestoneId}`
+    );
+    const createdTask = await this.activityDao.saveActivity(
+      taskParams,
+      milestoneId
+    );
+    logger.info(
+      `[ActivityService] :: New task with id ${createdTask.id} created`
+    );
+    return { taskId: createdTask.id };
+  },
   /**
    * Creates new Activities and associates them to the Milestone passed by parameter.
    *
