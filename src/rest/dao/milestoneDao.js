@@ -9,11 +9,7 @@
 const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
 
 module.exports = {
-  async getMilestoneById(milestoneId) {
-    const milestone = await this.model.findOne({ id: milestoneId });
-    return milestone;
-  },
-  async findById(milestoneId) { //TODO remove getMilestoneById
+  async findById(milestoneId) {
     const milestone = await this.model.findOne({ id: milestoneId });
     return milestone;
   },
@@ -27,13 +23,10 @@ module.exports = {
   async getMilestoneByProjectId(project) {
     return this.model.find({ project }).populate('tasks');
   },
-  async saveMilestone({ milestone, projectId, budgetStatus }) {
+  async saveMilestone({ milestone, projectId }) {
     const toSave = {
       ...milestone,
       project: projectId
-      // status: activityStatus.PENDING,
-      // budgetStatus: budgetStatus || milestoneBudgetStatus.BLOCKED,
-      // blockchainStatus: 1
     };
     const createdMilestone = await this.model.create(toSave);
     return createdMilestone;

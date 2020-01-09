@@ -222,7 +222,13 @@ module.exports = {
       }, milestone ${milestoneId}`
     );
     const createdTask = await this.activityDao.saveActivity(
-      taskParams,
+      {
+        description,
+        reviewCriteria,
+        category,
+        keyPersonnel,
+        budget
+      },
       milestoneId
     );
     logger.info(

@@ -15,6 +15,8 @@ const {
   projectStatuses
 } = require('../util/constants');
 const checkExistence = require('./helpers/checkExistence');
+const validateRequiredParams = require('./helpers/validateRequiredParams');
+const validateOwnership = require('./helpers/validateOwnership');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
@@ -42,45 +44,67 @@ module.exports = {
 
   /**
    * Creates a Milestone for an existing Project.
+   * Returns an object with the id of the new milestone
    *
-   * @param {object} milestone
    * @param {number} projectId
-   * @returns new milestone | error message
+   * @param {number} userId user performing the operation. Must be the owner of the project
+   * @param {object} milestoneParams milestone data
+   * @returns { {milestoneId: number} } id of updated milestone
    */
-  async createMilestone(milestone, projectId) {
-    try {
-      logger.info(
-        `[Milestone Service] :: Creating a new Milestone for Project ID ${projectId}: `,
-        milestone
-      );
-      // TODO: should verify project existence and status <- inject projectDao <- inject userDao
+  async createMilestone(projectId, { userId, milestoneParams }) {
+    logger.info('[MilestoneService] :: Entering createMilestone method');
+    validateRequiredParams({
+      method: 'createMilestone',
+      params: { projectId, userId, milestoneParams }
+    });
 
-      if (
-        !this.isMilestoneEmpty(milestone) &&
-        this.isMilestoneValid(milestone)
-      ) {
-        const savedMilestone = await this.milestoneDao.saveMilestone({
-          milestone,
-          projectId
-        });
-
-        logger.info(
-          '[Milestone Service] :: Milestone created:',
-          savedMilestone
-        );
-
-        return savedMilestone;
+    const { description, category } = milestoneParams;
+    validateRequiredParams({
+      method: 'createMilestone',
+      params: {
+        description,
+        category
       }
-
-      logger.error('[Milestone Service] :: Milestone not valid', milestone);
-      return {
-        status: 409,
-        error: 'Milestone is missing mandatory fields'
-      };
-    } catch (error) {
-      logger.error('[Milestone Service] :: Error creating Milestone:', error);
-      return { status: 500, error: 'Error creating Milestone' };
+    });
+    logger.info(`[MilestoneService] :: Getting project ${projectId}`);
+    const project = await this.projectService.getProject(projectId);
+    if (!project) {
+      logger.info(`[MilestoneService] :: Project ${projectId} not found`);
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
     }
+    validateOwnership(project.owner, userId);
+
+    // TODO: define in which statuses is ok to create a milestone
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[MilestoneService] :: Status of project with id ${projectId} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.milestone.CreateWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for creating?
+    logger.info(
+      `[MilestoneService] :: Creating new milestone in project ${projectId}`
+    );
+    const createdMilestone = await this.milestoneDao.saveMilestone({
+      milestone: { description, category },
+      projectId
+    });
+    logger.info(
+      `[MilestoneService] :: New milestone with id ${
+        createdMilestone.id
+      } created`
+    );
+
+    // TODO: should it be able to create tasks if provided?
+
+    return { milestoneId: createdMilestone.id };
   },
 
   deleteFieldsFromMilestone(milestone) {
@@ -156,9 +180,6 @@ module.exports = {
             const savedMilestone = await this.milestoneDao.saveMilestone({
               milestone: milestoneWithoutFields,
               projectId
-              // budgetStatus: isFirstMilestone
-              //   ? milestoneBudgetStatus.CLAIMABLE
-              //   : milestoneBudgetStatus.BLOCKED
             });
             logger.info(
               '[Milestone Service] :: Milestone created:',
@@ -549,9 +570,7 @@ module.exports = {
 
       const projects = await Promise.all(
         milestones.map(async milestoneId => {
-          const milestone = await this.milestoneDao.getMilestoneById(
-            milestoneId
-          );
+          const milestone = await this.milestoneDao.findById(milestoneId);
           return milestone.project;
         })
       );
@@ -640,7 +659,7 @@ module.exports = {
   },
 
   async getMilestoneById(milestoneId) {
-    return this.milestoneDao.getMilestoneById(milestoneId);
+    return this.milestoneDao.findById(milestoneId);
   },
 
   async getAllMilestones() {

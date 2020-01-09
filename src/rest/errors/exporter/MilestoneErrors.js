@@ -17,5 +17,9 @@ module.exports = {
   ProjectNotFound: milestoneId => ({
     message: `Project of milestone id ${milestoneId} not found`,
     statusCode: 404
+  }),
+  CreateWithInvalidProjectStatus: status => ({
+    message: `Can't create new milestone in project with status ${status}`,
+    statusCode: 403
   })
 };

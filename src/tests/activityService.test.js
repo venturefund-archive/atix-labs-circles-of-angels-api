@@ -291,7 +291,7 @@ describe('Testing activityService', () => {
       ).rejects.toThrow(errors.common.RequiredParamsMissing('createTask'));
     });
 
-    it('should throw an error if any required task property is not defined', async () => {
+    it('should throw an error if any mandatory task property is not defined', async () => {
       const missingTaskParams = {
         description: 'NewDescription',
         reviewCriteria: 'NewReviewCriteria'

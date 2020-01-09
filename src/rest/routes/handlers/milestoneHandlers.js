@@ -16,6 +16,16 @@ module.exports = {
     const milestones = await milestoneService.getAllMilestones();
     reply.status(200).send(milestones);
   },
+  createMilestone: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const milestoneParams = request.body;
+    const userId = request.user.id;
+    const response = await milestoneService.createMilestone(projectId, {
+      userId,
+      milestoneParams
+    });
+    reply.status(200).send(response);
+  },
 
   getBudgetStatus: fastify => async (req, reply) => {
     fastify.log.info(
@@ -49,42 +59,10 @@ module.exports = {
     }
   },
 
-  createMilestone: fastify => async (req, reply) => {
-    fastify.log.info(
-      '[Milestone Routes] :: POST request at /milestones:',
-      req.body
-    );
-
-    const { milestone, projectId } = req.body;
-
-    try {
-      const response = await milestoneService.createMilestone(
-        milestone,
-        projectId
-      );
-
-      if (response.error) {
-        fastify.log.error(
-          '[Milestone Routes] :: Error creating milestone: ',
-          response.error
-        );
-        reply.status(response.status).send(response);
-      } else {
-        reply.send({ success: 'Milestone created successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error creating milestone: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error creating milestone' });
-    }
-  },
-
   updateMilestone: fastify => async (req, reply) => {
     fastify.log.info(
       `[Milestone Routes] :: PUT request at /milestones/${
-      req.params.milestoneId
+        req.params.milestoneId
       }:`,
       req.body
     );

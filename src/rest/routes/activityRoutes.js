@@ -26,6 +26,7 @@ const idParam = (description, param) => ({
 });
 
 const taskIdParam = idParam('Task identification', 'taskId');
+const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
 const taskProperties = {
   description: { type: 'string' },
@@ -96,6 +97,7 @@ const taskRoutes = {
         tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
         description: 'Creates a new task for an existing milestone',
         summary: 'Creates new task',
+        params: { milestoneIdParam },
         body: {
           type: 'object',
           properties: taskProperties,
