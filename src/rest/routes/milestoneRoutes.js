@@ -26,6 +26,7 @@ const idParam = (description, param) => ({
 });
 
 const projectIdParam = idParam('Project identification', 'projectId');
+const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
 const projectResponse = {
   type: 'object',
@@ -116,6 +117,30 @@ const milestoneRoutes = {
       }
     },
     handler: handlers.createMilestone
+  },
+  updateMilestone: {
+    method: 'put',
+    path: `${basePath}/:milestoneId`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
+        description: 'Edits the information of an existing milestone',
+        summary: 'Edits milestone information',
+        params: { milestoneIdParam },
+        body: {
+          type: 'object',
+          properties: milestoneProperties,
+          additionalProperties: false
+        },
+        response: {
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateMilestone
   }
 };
 
@@ -228,74 +253,6 @@ const routes = {
       }
     },
     handler: handlers.deleteMilestone
-  },
-
-  updateMilestone: {
-    method: 'put',
-    path: `${basePath}/:milestoneId`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
-        description: 'Modifies an existing milestone',
-        summary: 'Update milestone',
-        type: 'object',
-        params: {
-          type: 'object',
-          properties: {
-            milestoneId: { type: 'integer', description: 'Milestone to update' }
-          }
-        },
-        body: {
-          type: 'object',
-          properties: {
-            milestone: {
-              type: 'object',
-              properties: {
-                quarter: { type: 'string' },
-                tasks: { type: 'string' },
-                impact: { type: 'string' },
-                impactCriterion: { type: 'string' },
-                signsOfSuccess: { type: 'string' },
-                signsOfSuccessCriterion: { type: 'string' },
-                category: { type: 'string' },
-                keyPersonnel: { type: 'string' },
-                budget: { type: 'string' },
-                budgetStatus: { type: 'integer' }
-              },
-              additionalProperties: false,
-              description: 'Fields to modify'
-            }
-          },
-          required: ['milestone']
-        },
-        response: {
-          200: {
-            type: 'object',
-            description: 'Success message if the milestone was updated',
-            properties: {
-              success: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.updateMilestone
   }
 };
 

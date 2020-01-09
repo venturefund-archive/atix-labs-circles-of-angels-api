@@ -154,8 +154,8 @@ describe('Testing activityService', () => {
         userId: userEntrepreneur.id,
         taskParams
       });
-      const updated = dbTask.find(task => task.id === response.taskId);
       expect(response).toEqual({ taskId: updatableTask.id });
+      const updated = dbTask.find(task => task.id === response.taskId);
       expect(updated.description).toEqual(taskParams.description);
       expect(updated.category).toEqual(taskParams.category);
     });

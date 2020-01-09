@@ -21,5 +21,9 @@ module.exports = {
   CreateWithInvalidProjectStatus: status => ({
     message: `Can't create new milestone in project with status ${status}`,
     statusCode: 403
+  }),
+  UpdateWithInvalidProjectStatus: status => ({
+    message: `Milestone of project with status ${status} can't be updated`,
+    statusCode: 403
   })
 };

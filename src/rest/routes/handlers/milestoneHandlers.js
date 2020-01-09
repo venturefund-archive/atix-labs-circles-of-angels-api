@@ -9,7 +9,6 @@
 const basePath = '/milestones';
 
 const milestoneService = require('../../services/milestoneService');
-const userService = require('../../services/userService');
 
 module.exports = {
   getMilestones: () => async (request, reply) => {
@@ -21,6 +20,16 @@ module.exports = {
     const milestoneParams = request.body;
     const userId = request.user.id;
     const response = await milestoneService.createMilestone(projectId, {
+      userId,
+      milestoneParams
+    });
+    reply.status(200).send(response);
+  },
+  updateMilestone: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const milestoneParams = request.body;
+    const userId = request.user.id;
+    const response = await milestoneService.updateMilestone(milestoneId, {
       userId,
       milestoneParams
     });
@@ -56,43 +65,6 @@ module.exports = {
     } catch (error) {
       fastify.log.error(error);
       reply.status(500).send('Error deleting milestone');
-    }
-  },
-
-  updateMilestone: fastify => async (req, reply) => {
-    fastify.log.info(
-      `[Milestone Routes] :: PUT request at /milestones/${
-        req.params.milestoneId
-      }:`,
-      req.body
-    );
-
-    const { milestone } = req.body;
-    const { milestoneId } = req.params;
-
-    try {
-      const user = await userService.getUserById(req.user.id);
-      const response = await milestoneService.updateMilestone(
-        milestone,
-        milestoneId,
-        user
-      );
-
-      if (response.error) {
-        fastify.log.error(
-          '[Milestone Routes] :: Error updating milestone: ',
-          response.error
-        );
-        reply.status(response.status).send(response);
-      } else {
-        reply.send({ success: 'Milestone updated successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error updating milestone: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error updating milestone' });
     }
   }
 };

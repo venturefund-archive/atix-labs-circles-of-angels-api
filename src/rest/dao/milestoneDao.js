@@ -34,11 +34,6 @@ module.exports = {
   async updateMilestone(milestone, milestoneId) {
     const toUpdate = { ...milestone };
 
-    toUpdate.status = toUpdate.status || activityStatus.PENDING;
-    toUpdate.budgetStatus =
-      toUpdate.budgetStatus || milestoneBudgetStatus.BLOCKED;
-    toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
-
     const savedMilestone = await this.model
       .updateOne({ id: milestoneId })
       .set({ ...toUpdate });

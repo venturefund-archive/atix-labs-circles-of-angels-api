@@ -89,7 +89,6 @@ module.exports = {
       taskId
     );
     logger.info(`[ActivityService] :: Task of id ${updatedTask.id} updated`);
-
     return { taskId: updatedTask.id };
   },
 
@@ -149,7 +148,6 @@ module.exports = {
 
     // if all activities of a milestone are deleted,
     // should the milestone be deleted as well?
-
     return { taskId: deletedTask.id };
   },
 
