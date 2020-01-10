@@ -74,6 +74,7 @@ module.exports = fastify => {
     const dependencies = {
       userDao,
       mailService,
+      projectService,
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
       questionnaireService: undefined

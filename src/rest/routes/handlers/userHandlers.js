@@ -170,24 +170,9 @@ module.exports = {
     }
   },
 
-  getUserProjects: fastify => async (request, reply) => {
-    const { userProjectService, projectService } = apiHelper.helper.services;
-    const { userId } = request.params;
-    fastify.log.info('[User Routes] :: getting list of oracles');
-    try {
-      const projects = await userService.getProjectsOfUser(
-        userId,
-        userProjectService,
-        projectService
-      );
-      if (projects.error) {
-        reply.status(projects.status).send(projects);
-      } else {
-        reply.status(200).send(projects);
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error getting oracles' });
-    }
+  getMyProjects: () => async (request, reply) => {
+    const userId = request.user.id;
+    const projects = await userService.getProjectsOfUser(userId);
+    reply.status(200).send(projects);
   }
 };

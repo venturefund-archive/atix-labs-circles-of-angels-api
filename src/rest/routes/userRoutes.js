@@ -15,6 +15,18 @@ const {
   clientErrorResponse
 } = require('../util/responses');
 
+const idParam = (description, param) => ({
+  type: 'object',
+  properties: {
+    [param]: {
+      type: 'integer',
+      description
+    }
+  }
+});
+
+const userIdParam = idParam('User identification', 'userId');
+
 const userResponse = {
   type: 'object',
   properties: {
@@ -45,6 +57,33 @@ const successWithRolesResponse = {
   type: 'array',
   items: { type: 'string' },
   description: 'Returns an array of objects with each available user roles'
+};
+
+const projectResponse = {
+  projectName: { type: 'string' },
+  mission: { type: 'string' },
+  problemAddressed: { type: 'string' },
+  location: { type: 'string' },
+  timeframe: { type: 'string' },
+  proposal: { type: 'string' },
+  faqLink: { type: 'string' },
+  coverPhotoPath: { type: 'string' },
+  cardPhotoPath: { type: 'string' },
+  goalAmount: { type: 'number' },
+  status: { type: 'string' },
+  owner: { type: 'number' },
+  createdAt: { type: 'string' },
+  transactionHash: { type: 'string' },
+  id: { type: 'number' }
+};
+
+const successWithProjectsResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: projectResponse
+  },
+  description: 'Returns an array of objects with the projects information'
 };
 
 const routes = {
@@ -481,73 +520,23 @@ const routes = {
     handler: handlers.updatePassword
   },
 
-  getUserProjects: {
+  getMyProjects: {
     method: 'get',
-    path: `${basePath}/:userId/projects`,
+    path: `${basePath}/me/projects`,
     options: {
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns all projects related to an existing user',
         summary: 'Get all projects by user',
-        params: {
-          type: 'object',
-          properties: {
-            userId: { type: 'integer' }
-          },
-          description: 'User to get their projects from'
-        },
         response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                projectName: { type: 'string' },
-                mission: { type: 'string' },
-                problemAddressed: { type: 'string' },
-                location: { type: 'string' },
-                timeframe: { type: 'string' },
-                pitchProposal: { type: 'string' },
-                faqLink: { type: 'string' },
-                milestonesFile: { type: 'string' },
-                goalAmount: { type: 'integer' },
-                status: { type: 'integer' },
-                ownerId: { type: 'integer' },
-                projectAgreement: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                transactionHash: { type: 'string' },
-                creationTransactionHash: { type: 'string' },
-                id: { type: 'integer' },
-                startBlockchainStatus: { type: 'integer' },
-                coverPhoto: { type: 'integer' },
-                cardPhoto: { type: 'integer' },
-                blockchainStatus: { type: 'integer' }
-              }
-            },
-            description:
-              'Returns an array of objects with the information of each project'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithProjectsResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
         }
       }
     },
-    handler: handlers.getUserProjects
+    handler: handlers.getMyProjects
   }
 };
 

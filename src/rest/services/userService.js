@@ -9,6 +9,7 @@
 const bcrypt = require('bcrypt');
 const { userRoles } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
+const checkExistence = require('./helpers/checkExistence');
 
 const logger = require('../logger');
 const COAError = require('../errors/COAError');
@@ -252,40 +253,46 @@ module.exports = {
     return this.userDao.getUsers();
   },
 
-  // TODO FIXME: fix this.
-  async getProjectsOfUser(userId, userProjectService, projectService) {
+  /**
+   * Returns an array of projects associated with the specified user.
+   *
+   * @param {number} userId
+   * @returns {Promise<Project[]>} array of found projects
+   */
+  async getProjectsOfUser(userId) {
+    logger.info('[UserService] :: Entering getProjectsOfUser method');
+    validateRequiredParams({
+      method: 'getProjectsOfUser',
+      params: { userId }
+    });
+    const user = await checkExistence(this.userDao, userId, 'user');
+    if (user.role === userRoles.ENTREPRENEUR) {
+      const projects = await this.projectService.getProjectsByOwner(userId);
+      return projects;
+    }
+
+    if (user.role === userRoles.PROJECT_SUPPORTER) {
+      // TODO: Do this when the relation between supporter and project exists
+      //   switch (user.role.id) {
+      //     case userRoles.IMPACT_FUNDER:
+      //       response = (await userProjectService.getProjectsOfUser(
+      //         userId
+      //       )).filter(
+      //         project =>
+      //           project.status === projectStatus.PUBLISHED ||
+      //           project.status === projectStatus.IN_PROGRESS
+      //       );
+      //       break;
+      //     case userRoles.ORACLE:
+      //       response = await projectService.getAllProjectsById(
+      //         (await projectService.getProjectsAsOracle(userId)).projects
+      //       );
+      //       break;
+      const projects = [];
+      return projects;
+    }
+
     return [];
-    // try {
-    //   const user = await this.getUserById(userId);
-    //   let response = [];
-    //   if (!user) {
-    //     throw new UserNotFoundError('Nonexistent User');
-    //   }
-    //   switch (user.role.id) {
-    //     case userRoles.IMPACT_FUNDER:
-    //       response = (await userProjectService.getProjectsOfUser(
-    //         userId
-    //       )).filter(
-    //         project =>
-    //           project.status === projectStatus.PUBLISHED ||
-    //           project.status === projectStatus.IN_PROGRESS
-    //       );
-    //       break;
-    //     case userRoles.ORACLE:
-    //       response = await projectService.getAllProjectsById(
-    //         (await projectService.getProjectsAsOracle(userId)).projects
-    //       );
-    //       break;
-    //     case userRoles.SOCIAL_ENTREPRENEUR:
-    //       response = await projectService.getProjectsOfOwner(userId);
-    //       break;
-    //     default:
-    //       throw new InvalidUserError('Invalid User');
-    //   }
-    //   return response;
-    // } catch (error) {
-    //   throw new COAUserServiceError('Error getting projects of user');
-    // }
   },
 
   async validUser(user, roleId) {
