@@ -72,24 +72,4 @@ contract COA is Ownable {
         registry.addClaim(project, claim, proof, false);
     }
 
-    // function processProposal(uint proposalIndex) {
-
-    // }
-
-    function getDAO(uint256 _index) public view returns(address) {
-        return address(daos[_index]);
-    }
-
-    function getProject(uint256 _index) public view returns(address) {
-        return address(projects[_index]);
-    }
-
-    function getMember(address _address) public view returns(string memory) {
-        Member memory member = members[_address];
-            // member.role,
-        return (
-            member.profile
-        );
-    }
-
 }

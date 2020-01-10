@@ -81,6 +81,9 @@ contract DAO {
         bool processed;
     }
 
+    // bank operators
+    // curators 
+
     constructor(string memory _name) public {
         name = _name;
         creationTime = now;
