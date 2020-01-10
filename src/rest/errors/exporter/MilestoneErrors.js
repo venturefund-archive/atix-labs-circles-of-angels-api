@@ -13,5 +13,21 @@ module.exports = {
   },
   ErrorCreatingMilestonesFromFile: {
     message: 'Error creating milestones from file'
-  }
+  },
+  ProjectNotFound: milestoneId => ({
+    message: `Project of milestone id ${milestoneId} not found`,
+    statusCode: 404
+  }),
+  CreateWithInvalidProjectStatus: status => ({
+    message: `Can't create new milestone in project with status ${status}`,
+    statusCode: 403
+  }),
+  UpdateWithInvalidProjectStatus: status => ({
+    message: `Milestone of project with status ${status} can't be updated`,
+    statusCode: 403
+  }),
+  DeleteWithInvalidProjectStatus: status => ({
+    message: `Milestone of project with status ${status} can't be deleted`,
+    statusCode: 403
+  })
 };

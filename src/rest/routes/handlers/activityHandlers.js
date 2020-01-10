@@ -10,36 +10,15 @@ const activityService = require('../../services/activityService');
 const milestoneService = require('../../services/milestoneService'); // this wont work until milestoneService MR is merged
 
 module.exports = {
-  createActivity: fastify => async (req, reply) => {
-    fastify.log.info(
-      '[Activity Routes] :: POST request at /activities:',
-      req.body
-    );
-
-    const { activity, milestoneId } = req.body;
-
-    try {
-      const response = await activityService.createActivity(
-        activity,
-        milestoneId
-      );
-
-      if (response.error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error creating activity: ',
-          response.error
-        );
-        reply.status(response.status).send(response);
-      } else {
-        reply.send({ success: 'Activity created successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Activity Routes] :: Error creating activity: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error creating activity' });
-    }
+  createTask: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const taskParams = request.body;
+    const userId = request.user.id;
+    const response = await activityService.createTask(milestoneId, {
+      userId,
+      taskParams
+    });
+    reply.status(200).send(response);
   },
   updateTask: () => async (request, reply) => {
     const { taskId } = request.params;

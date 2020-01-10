@@ -41,16 +41,6 @@ module.exports = {
     return updatedProject.id;
   },
 
-  async updateMilestone(milestoneId, fields) {
-    const updatedMilestone = await this.milestoneDao.updateMilestone(
-      fields,
-      milestoneId
-    );
-    if (!updatedMilestone)
-      throw new COAError(errors.milestone.CantUpdateMilestone(milestoneId));
-    return updatedMilestone.id;
-  },
-
   async saveProject(project) {
     const savedProject = await this.projectDao.saveProject(project);
     if (!savedProject) {
@@ -314,32 +304,6 @@ module.exports = {
       'project'
     );
     return { proposal };
-  },
-
-  filterMilestones(milestones, milestoneIdToFilter) {
-    const filteredMilestones = milestones.filter(
-      ({ id }) => id !== milestoneIdToFilter
-    );
-    if (filteredMilestones.length === milestones.length) {
-      throw new COAError(errors.milestone.MilestoneDoesNotBelongToProject);
-    }
-    return filteredMilestones;
-  },
-
-  async deleteMilestoneOfProject(projectId, milestoneId) {
-    //FIXME ADD OWNER VALIDATION
-    validateParams(projectId, milestoneId);
-    await validateExistence(this.milestoneDao, milestoneId, 'milestone');
-    const { milestones } = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
-    return {
-      projectId: await this.updateProject(projectId, {
-        milestones: this.filterMilestones(milestones, milestoneId)
-      })
-    };
   },
 
   async processMilestoneFile(projectId, { file, ownerId }) {

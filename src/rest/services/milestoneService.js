@@ -14,6 +14,9 @@ const {
   xlsxConfigs,
   projectStatuses
 } = require('../util/constants');
+const checkExistence = require('./helpers/checkExistence');
+const validateRequiredParams = require('./helpers/validateRequiredParams');
+const validateOwnership = require('./helpers/validateOwnership');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
@@ -23,7 +26,9 @@ const logger = require('../logger');
 module.exports = {
   /**
    * Returns the project that the milestone belongs to
-   * or `undefined` if the milestone doesn't exist
+   * or `undefined` if the milestone doesn't have a project.
+   *
+   * Throws an error if the milestone does not exist
    *
    * @param {number} id
    * @returns project | `undefined`
@@ -32,52 +37,183 @@ module.exports = {
     logger.info(
       '[MilestoneService] :: Entering getProjectFromMilestone method'
     );
-    const milestone = await this.milestoneDao.getMilestoneByIdWithProject(id);
-    if (!milestone) return;
-    return milestone.project;
+    const milestone = await checkExistence(this.milestoneDao, id, 'milestone');
+    logger.info(
+      `[MilestoneService] :: Found milestone ${milestone.id} of project ${
+        milestone.project
+      }`
+    );
+    const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
+    return project;
   },
-
   /**
    * Creates a Milestone for an existing Project.
+   * Returns an object with the id of the new milestone
    *
-   * @param {object} milestone
    * @param {number} projectId
-   * @returns new milestone | error message
+   * @param {number} userId user performing the operation. Must be the owner of the project
+   * @param {object} milestoneParams milestone data
+   * @returns { {milestoneId: number} } id of updated milestone
    */
-  async createMilestone(milestone, projectId) {
-    try {
-      logger.info(
-        `[Milestone Service] :: Creating a new Milestone for Project ID ${projectId}: `,
-        milestone
-      );
-      // TODO: should verify project existence and status <- inject projectDao <- inject userDao
+  async createMilestone(projectId, { userId, milestoneParams }) {
+    logger.info('[MilestoneService] :: Entering createMilestone method');
+    validateRequiredParams({
+      method: 'createMilestone',
+      params: { projectId, userId, milestoneParams }
+    });
 
-      if (
-        !this.isMilestoneEmpty(milestone) &&
-        this.isMilestoneValid(milestone)
-      ) {
-        const savedMilestone = await this.milestoneDao.saveMilestone({
-          milestone,
-          projectId
-        });
-
-        logger.info(
-          '[Milestone Service] :: Milestone created:',
-          savedMilestone
-        );
-
-        return savedMilestone;
+    const { description, category } = milestoneParams;
+    validateRequiredParams({
+      method: 'createMilestone',
+      params: {
+        description,
+        category
       }
-
-      logger.error('[Milestone Service] :: Milestone not valid', milestone);
-      return {
-        status: 409,
-        error: 'Milestone is missing mandatory fields'
-      };
-    } catch (error) {
-      logger.error('[Milestone Service] :: Error creating Milestone:', error);
-      return { status: 500, error: 'Error creating Milestone' };
+    });
+    logger.info(`[MilestoneService] :: Getting project ${projectId}`);
+    const project = await this.projectService.getProject(projectId);
+    if (!project) {
+      logger.info(`[MilestoneService] :: Project ${projectId} not found`);
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
     }
+    validateOwnership(project.owner, userId);
+
+    // TODO: define in which statuses is ok to create a milestone
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[MilestoneService] :: Status of project with id ${projectId} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.milestone.CreateWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for creating?
+    logger.info(
+      `[MilestoneService] :: Creating new milestone in project ${projectId}`
+    );
+    const createdMilestone = await this.milestoneDao.saveMilestone({
+      milestone: { description, category },
+      projectId
+    });
+    logger.info(
+      `[MilestoneService] :: New milestone with id ${
+        createdMilestone.id
+      } created`
+    );
+
+    // TODO: should it be able to create tasks if provided?
+
+    return { milestoneId: createdMilestone.id };
+  },
+  /**
+   * Updates an existing milestone.
+   * Returns an object with the id of the updated milestone
+   *
+   * @param {number} milestoneId milestone identifier
+   * @param {number} userId user performing the operation. Must be the owner of the project
+   * @param {object} milestoneParams milestoneId fields to update
+   * @returns { {milestoneId: number} } id of updated milestone
+   */
+  async updateMilestone(milestoneId, { userId, milestoneParams }) {
+    // TODO: should replace updateMilestone
+    logger.info('[MilestoneService] :: Entering updateMilestone method');
+    validateRequiredParams({
+      method: 'updateMilestone',
+      params: { userId, milestoneId, milestoneParams }
+    });
+
+    const project = await this.getProjectFromMilestone(milestoneId);
+
+    // if the milestone exists this shouldn't happen
+    if (!project) {
+      logger.info(
+        `[MilestoneService] :: No project found for milestone ${milestoneId}`
+      );
+      throw new COAError(errors.milestone.ProjectNotFound(milestoneId));
+    }
+
+    validateOwnership(project.owner, userId);
+
+    // TODO: define in which statuses is ok to edit a milestone
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[MilestoneService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.milestone.UpdateWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for editing?
+
+    logger.info(
+      `[MilestoneService] :: Updating milestone of id ${milestoneId}`
+    );
+    const updatedMilestone = await this.milestoneDao.updateMilestone(
+      milestoneParams,
+      milestoneId
+    );
+    logger.info(
+      `[MilestoneService] :: Milestone of id ${updatedMilestone.id} updated`
+    );
+    return { milestoneId: updatedMilestone.id };
+  },
+  /**
+   * Permanently remove an existing milestone and all its tasks
+   * Returns an object with the id of the deleted milestone
+   *
+   * @param milestoneId
+   * @param userId user performing the operation. Must be the owner of the project
+   * @returns { {milestoneId: number} } id of deleted milestone
+   */
+  async deleteMilestone(milestoneId, userId) {
+    logger.info('[MilestoneService] :: Entering deleteMilestone method');
+    validateRequiredParams({
+      method: 'deleteMilestone',
+      params: { milestoneId, userId }
+    });
+
+    const project = await this.getProjectFromMilestone(milestoneId);
+    // if the milestone exists this shouldn't happen
+    if (!project) {
+      logger.info(
+        `[MilestoneService] :: No project found for milestone ${milestoneId}`
+      );
+      throw new COAError(errors.milestone.ProjectNotFound(milestoneId));
+    }
+    validateOwnership(project.owner, userId);
+
+    // TODO: define in which statuses is ok to delete a milestone
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[MilestoneService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.milestone.DeleteWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for deleting?
+
+    logger.info(
+      `[MilestoneService] :: Deleting milestone of id ${milestoneId}`
+    );
+    const deletedMilestone = await this.milestoneDao.deleteMilestone(
+      milestoneId
+    );
+    logger.info(
+      `[MilestoneService] :: Milestone of id ${deletedMilestone.id} deleted`
+    );
+    return { milestoneId: deletedMilestone.id };
   },
 
   deleteFieldsFromMilestone(milestone) {
@@ -153,9 +289,6 @@ module.exports = {
             const savedMilestone = await this.milestoneDao.saveMilestone({
               milestone: milestoneWithoutFields,
               projectId
-              // budgetStatus: isFirstMilestone
-              //   ? milestoneBudgetStatus.CLAIMABLE
-              //   : milestoneBudgetStatus.BLOCKED
             });
             logger.info(
               '[Milestone Service] :: Milestone created:',
@@ -175,110 +308,6 @@ module.exports = {
     } catch (err) {
       logger.error('[Milestone Service] :: Error creating Milestones:', err);
       throw new COAError(errors.milestone.ErrorCreatingMilestonesFromFile);
-    }
-  },
-
-  /**
-   * Updates a Milestone
-   *
-   * @param {object} milestone
-   * @param {number} id
-   * @returns updated milestone | error message
-   */
-  async updateMilestone(milestone, id, user) {
-    try {
-      logger.info('[Milestone Service] :: Updating milestone:', milestone);
-
-      if (milestone.budgetStatus) {
-        const updatedBudgetStatus = await this.updateBudgetStatus(
-          id,
-          milestone.budgetStatus,
-          user
-        );
-        if (updatedBudgetStatus.error) {
-          logger.error(
-            '[Milestone Service] :: Error updating budget status:',
-            updatedBudgetStatus.error
-          );
-        }
-
-        return updatedBudgetStatus;
-      }
-
-      const toUpdateMilestone = { ...milestone };
-      delete toUpdateMilestone.budgetStatus;
-
-      if (!isEmpty(toUpdateMilestone)) {
-        const existingMilestone = await this.milestoneDao.getMilestoneByIdWithProject(
-          id
-        );
-
-        if (!existingMilestone || existingMilestone == null) {
-          logger.error(
-            `[Milestone Service] :: Milestone ID ${id} does not exist`
-          );
-          return {
-            status: 404,
-            error: 'Milestone does not exist'
-          };
-        }
-
-        const { project } = existingMilestone;
-        if (
-          project.status === projectStatuses.EXECUTING ||
-          project.startBlockchainStatus !== blockchainStatus.PENDING
-        ) {
-          logger.error(
-            `[Milestone Service] :: Project ${
-              project.id
-            } is EXECUTING or sent to the blockchain`
-          );
-          return {
-            error:
-              'Milestone cannot be updated. Project has already started or sent to the blockchain.',
-            status: 409
-          };
-        }
-
-        if (this.canMilestoneUpdate(toUpdateMilestone)) {
-          const savedMilestone = await this.milestoneDao.updateMilestone(
-            toUpdateMilestone,
-            id
-          );
-
-          if (!savedMilestone || savedMilestone == null) {
-            logger.error(
-              `[Milestone Service] :: Milestone ID ${id} could not be updated`,
-              savedMilestone
-            );
-            return {
-              status: 404,
-              error: 'Milestone could not be updated'
-            };
-          }
-
-          logger.info(
-            '[Milestone Service] :: Milestone updated:',
-            savedMilestone
-          );
-
-          return savedMilestone;
-        }
-
-        logger.error(
-          '[Milestone Service] :: Milestone not valid',
-          toUpdateMilestone
-        );
-        return {
-          status: 409,
-          error: 'Milestone has empty mandatory fields'
-        };
-      }
-
-      return toUpdateMilestone;
-    } catch (error) {
-      logger.error('[Milestone Service] :: Error updating Milestone:', error);
-      return { status: 500, error: 'Error updating Milestone' };
     }
   },
 
@@ -514,15 +543,6 @@ module.exports = {
 
     return valid;
   },
-
-  /**
-   * Permanent remove milestone
-   * @param milestoneId
-   */
-  deleteMilestone(milestoneId) {
-    return this.milestoneDao.deleteMilestone(milestoneId);
-  },
-
   /**
    * Returns an array of the projects' id that an oracle
    * has any of its activities assigned
@@ -546,9 +566,7 @@ module.exports = {
 
       const projects = await Promise.all(
         milestones.map(async milestoneId => {
-          const milestone = await this.milestoneDao.getMilestoneById(
-            milestoneId
-          );
+          const milestone = await this.milestoneDao.findById(milestoneId);
           return milestone.project;
         })
       );
@@ -637,7 +655,7 @@ module.exports = {
   },
 
   async getMilestoneById(milestoneId) {
-    return this.milestoneDao.getMilestoneById(milestoneId);
+    return this.milestoneDao.findById(milestoneId);
   },
 
   async getAllMilestones() {
