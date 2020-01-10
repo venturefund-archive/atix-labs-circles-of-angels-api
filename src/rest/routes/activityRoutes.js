@@ -26,6 +26,7 @@ const idParam = (description, param) => ({
 });
 
 const taskIdParam = idParam('Task identification', 'taskId');
+const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
 const taskProperties = {
   description: { type: 'string' },
@@ -86,75 +87,42 @@ const taskRoutes = {
       }
     },
     handler: handlers.deleteTask
+  },
+  createTask: {
+    method: 'post',
+    path: `/milestones/:milestoneId${basePath}`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
+        description: 'Creates a new task for an existing milestone',
+        summary: 'Creates new task',
+        params: { milestoneIdParam },
+        body: {
+          type: 'object',
+          properties: taskProperties,
+          required: [
+            'description',
+            'reviewCriteria',
+            'category',
+            'keyPersonnel',
+            'budget'
+          ],
+          additionalProperties: false
+        },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.createTask
   }
 };
 
 const routes = {
   ...taskRoutes,
-  createActivity: {
-    method: 'post',
-    path: `${basePath}`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
-        description:
-          'Creates a new activity for an existing Milestone specified in the body request',
-        summary: 'Create new activity',
-        type: 'object',
-        body: {
-          type: 'object',
-          properties: {
-            activity: {
-              type: 'object',
-              properties: {
-                tasks: { type: 'string' },
-                impact: { type: 'string' },
-                impactCriterion: { type: 'string' },
-                signsOfSuccess: { type: 'string' },
-                signsOfSuccessCriterion: { type: 'string' },
-                category: { type: 'string' },
-                keyPersonnel: { type: 'string' },
-                budget: { type: 'number' }
-              },
-              description: 'New activity object'
-            },
-            milestoneId: {
-              type: 'integer',
-              description: 'Milestone to which the activity belongs to'
-            }
-          },
-          required: ['activity', 'milestoneId']
-        },
-        response: {
-          200: {
-            type: 'object',
-            description: 'Success message if the activity was created',
-            properties: {
-              success: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.createActivity
-  },
-
   updateStatus: {
     method: 'put',
     path: `${basePath}/:activityId/status`,

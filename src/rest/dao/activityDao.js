@@ -12,9 +12,7 @@ module.exports = {
   async saveActivity(activity, milestoneId) {
     const toSave = {
       ...activity,
-      milestone: milestoneId,
-      status: 1,
-      blockchainStatus: 1
+      milestone: milestoneId
     };
     const createdActivity = await this.model.create(toSave);
     return createdActivity;

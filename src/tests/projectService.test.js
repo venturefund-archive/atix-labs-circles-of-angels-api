@@ -168,41 +168,6 @@ describe('Project Service Test', () => {
     });
   });
 
-  describe('Update milestone', () => {
-    beforeAll(() => {
-      const newMilestoneDao = {
-        updateMilestone: (fields, milestoneId) => {
-          if (milestoneId === 1) {
-            return { id: 1 };
-          }
-          return undefined;
-        }
-      };
-      injectMocks(projectService, { milestoneDao: newMilestoneDao });
-    });
-    it('When an update is done, it should return the id of the updated milestone', async () => {
-      const projectUpdated = await projectService.updateMilestone(1, {
-        field: 'field1',
-        field2: 'field2'
-      });
-      expect(
-        projectService.updateMilestone(1, {
-          field: 'field1',
-          field2: 'field2'
-        })
-      ).resolves.not.toThrow(COAError);
-      expect(projectUpdated).toEqual(1);
-    });
-    it('Whenever there is no update, an error should be thrown', () => {
-      expect(
-        projectService.updateMilestone(3, {
-          field: 'field1',
-          field2: 'field2'
-        })
-      ).rejects.toThrow(errors.milestone.CantUpdateMilestone(3));
-    });
-  });
-
   describe('Save project', () => {
     beforeAll(() => {
       injectMocks(projectService, { projectDao });
@@ -661,46 +626,6 @@ describe('Project Service Test', () => {
   describe('Project milestone', () => {
     beforeAll(() => {
       injectMocks(projectService, { milestoneDao, projectDao, userDao });
-    });
-    describe('Delete milestone of project', () => {
-      it('Should delete milestone of project if project exists and milestone belongs to project', async () => {
-        const { projectId } = await projectService.deleteMilestoneOfProject(
-          3,
-          2
-        );
-        expect(projectId).toEqual(3);
-      });
-      it('Should not delete milestone of project if project does not exist, and throw an error', () => {
-        expect(projectService.deleteMilestoneOfProject(2, 2)).rejects.toThrow(
-          errors.common.CantFindModelWithId('project', 2)
-        );
-      });
-      it('Should not delete milestone of project if project exists and milestone does not belongs to project, and throw an error', () => {
-        expect(projectService.deleteMilestoneOfProject(3, 5)).rejects.toThrow(
-          errors.milestone.MilestoneDoesNotBelongToProject
-        );
-      });
-    });
-
-    describe('Filter milestones', () => {
-      it('Should filter milestone with id = milestoneId from milestones array', () => {
-        const milestones = [{ id: 1 }, { id: 2 }, { id: 3 }];
-        const milestonesFiltered = projectService.filterMilestones(
-          milestones,
-          2
-        );
-        expect(milestonesFiltered[0]).toEqual({ id: 1 });
-        expect(milestonesFiltered[1]).toEqual({ id: 3 });
-      });
-    });
-
-    describe('Edit task of milestone', () => {}); // TODO
-
-    describe('Delete task of milestone', () => {
-      // TODO
-      it('Should delete task of milestone if milestone exists and task belongs to milestone', () => {});
-      it('Should not delete task of milestone if milestone does not exist, and throw an error', () => {});
-      it('Should not delete task of milestone if milestone exists but task does not belongs to milestone, and throw an error', () => {});
     });
 
     describe('Process milestone file', () => {
