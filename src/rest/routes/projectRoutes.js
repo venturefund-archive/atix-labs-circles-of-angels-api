@@ -577,6 +577,24 @@ const commonProjectRoutes = {
       beforeHandler: []
     }
   },
+  getPublicProjects: {
+    method: 'get',
+    path: `${basePath}/public`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Get all public projects.',
+        summary: 'Get all public project',
+        response: {
+          ...successResponse(projectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getPublicProjects
+  },
   updateProjectStatus: {
     method: 'put',
     path: `${basePath}/:projectId/status`,

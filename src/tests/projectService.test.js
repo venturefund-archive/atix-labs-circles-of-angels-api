@@ -807,4 +807,42 @@ describe('Project Service Test', () => {
       expect(response).toHaveLength(0);
     });
   });
+
+  describe('Get public projects', () => {
+    let dbProject = [
+      { id: 1, status: projectStatuses.EXECUTING },
+      { id: 2, status: projectStatuses.NEW },
+      { id: 3, status: projectStatuses.DELETED },
+      { id: 3, status: projectStatuses.FINISHED }
+    ];
+    beforeAll(() => {
+      injectMocks(projectService, {
+        projectDao: Object.assign({}, projectDao, {
+          findAllByProps: filter =>
+            dbProject.filter(project =>
+              Object.keys(filter).every(key => {
+                if (filter[key].in) {
+                  return filter[key].in.includes(project[key]);
+                }
+                return project[key] === filter[key];
+              })
+            )
+        })
+      });
+    });
+
+    it('should return an array of projects with public statuses', async () => {
+      const response = await projectService.getPublicProjects();
+      expect(response).toHaveLength(2);
+    });
+
+    it('should return an empty array if no public projects were found', async () => {
+      dbProject = [
+        { id: 2, status: projectStatuses.NEW },
+        { id: 3, status: projectStatuses.DELETED }
+      ];
+      const response = await projectService.getPublicProjects();
+      expect(response).toHaveLength(0);
+    });
+  });
 });
