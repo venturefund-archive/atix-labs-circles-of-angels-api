@@ -27,22 +27,34 @@ const projectStatus = {
   IN_PROGRESS: 4
 };
 
-const projectStatuses = {
-  NEW: 'new',
-  TO_REVIEW: 'toreview',
-  REJECTED: 'rejected',
-  DELETED: 'deleted',
+const publicProjectStatuses = {
   PUBLISHED: 'published',
   CONSENSUS: 'consensus',
   FUNDING: 'funding',
   EXECUTING: 'executing',
   CHANGING_SCOPE: 'changingscope',
   FINISHED: 'finished',
-  ABORTED: 'aborted',
+  ABORTED: 'aborted'
+};
+
+const privateProjectStatuses = {
+  NEW: 'new',
+  TO_REVIEW: 'toreview',
+  REJECTED: 'rejected'
+};
+
+const inactiveProjectStatuses = {
+  DELETED: 'deleted',
   ARCHIVED: 'archived',
   CANCELLED: 'cancelled'
   // TODO this status might be a boolean field in project table
   // SUSPENDED: 'suspended'
+};
+
+const projectStatuses = {
+  ...privateProjectStatuses,
+  ...publicProjectStatuses,
+  ...inactiveProjectStatuses
 };
 
 const activityStatus = {
@@ -125,6 +137,9 @@ module.exports = {
   transferStatus,
   projectStatus,
   projectStatuses,
+  publicProjectStatuses,
+  privateProjectStatuses,
+  inactiveProjectStatuses,
   activityStatus,
   userRoles,
   milestoneBudgetStatus,

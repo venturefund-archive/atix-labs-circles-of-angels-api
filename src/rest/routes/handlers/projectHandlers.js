@@ -178,15 +178,9 @@ module.exports = {
     reply.status(200).send(projects);
   },
 
-  getActiveProjects: fastify => async (request, reply) => {
-    try {
-      const projects = await projectService.getProjects({
-        status: projectStatuses.EXECUTING
-      });
-      reply.status(200).send(projects);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
+  getPublicProjects: () => async (request, reply) => {
+    const projects = await projectService.getPublicProjects();
+    reply.status(200).send(projects);
   },
 
   // FIXME --> thumbnail?
