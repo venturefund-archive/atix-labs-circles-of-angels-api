@@ -703,4 +703,33 @@ describe('Project Service Test', () => {
     });
   });
   // TODO whenever mail is answered describe('Project milestone activities', () => {});
+
+  describe('Get projects by owner', () => {
+    beforeAll(() => {
+      injectMocks(projectService, {
+        projectDao: Object.assign({}, projectDao, {
+          findAllByProps: filter => {
+            const projects = [
+              { id: 1, owner: 3 },
+              { id: 2, owner: 2 },
+              { id: 3, owner: 3 }
+            ];
+            return projects.filter(project =>
+              Object.keys(filter).every(key => project[key] === filter[key])
+            );
+          }
+        })
+      });
+    });
+
+    it('should return an array of projects for the specified onwer', async () => {
+      const response = await projectService.getProjectsByOwner(3);
+      expect(response).toHaveLength(2);
+    });
+
+    it('should return an empty array of projects if none were found', async () => {
+      const response = await projectService.getProjectsByOwner(0);
+      expect(response).toHaveLength(0);
+    });
+  });
 });
