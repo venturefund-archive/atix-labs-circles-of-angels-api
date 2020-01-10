@@ -467,7 +467,20 @@ module.exports = {
   },
 
   async getProjects() {
+    // TODO: implement pagination
     logger.info('Getting all the projects.');
-    return this.projectDao.findAllByProps();
+    return this.projectDao.findAllByProps(undefined, { owner: true });
+  },
+
+  /**
+   * Returns the projects that belong to the specified user
+   *
+   * @param {number} ownerId
+   * @returns {object[]} array of projects
+   */
+  async getProjectsByOwner(ownerId) {
+    // TODO: implement pagination
+    logger.info('[ProjectService] :: Entering getProjectsByOwner method');
+    return this.projectDao.findAllByProps({ owner: ownerId });
   }
 };
