@@ -40,10 +40,6 @@ module.exports = class COA {
   async createProject(name, agreement) {
     const coa = await getCOA();
     const projectId = await coa.createProject(name, agreement);
-    // console.log(await projectId.wait());
-    // const projectAddress = await env.run('get-project', { projectId });
-    // console.log(projectAddress);
-    // return getProject(projectAddress);
   }
 
   async createDAO(params, env) {
@@ -74,7 +70,7 @@ module.exports = class COA {
   async approveTask(projectId, taskId, proof) {
     const coa = await getCOA();
 
-    const projectAddress = '0xC2C22CeE68625D65105fE98a92B283b79845F609'; //await coa.projects(projectId);
+    const projectAddress = '0xC2C22CeE68625D65105fE98a92B283b79845F609';
     const project = await getProject(projectAddress);
     const owner = await project.owner();
 
@@ -129,8 +125,8 @@ module.exports = class COA {
       const contract = await this.env.deployments.getLastDeployedContract(
         'COA'
       );
-      console.log('coa address', contract.address);
-      // contract.on('DAOCreated', args => console.log('getCOA', args));
+      console.log('coa address', contract.address, 'setting events for coa');
+      contract.on('DAOCreated', args => console.log('getCOA', args));
       this.contracts.coa = contract;
     }
 
