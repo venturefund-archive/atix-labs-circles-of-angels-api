@@ -7,7 +7,11 @@
  */
 
 const path = require('path');
-const { projectStatuses, userRoles } = require('../util/constants');
+const {
+  projectStatuses,
+  userRoles,
+  publicProjectStatuses
+} = require('../util/constants');
 const files = require('../util/files');
 const {
   validateExistence,
@@ -464,6 +468,14 @@ module.exports = {
     const project = await this.getProject(id);
     project.milestones = await this.milestoneService.getMilestonesByProject(id);
     return project;
+  },
+
+  async getPublicProjects() {
+    // TODO: implement pagination
+    logger.info('[ProjectService] :: Entering getPublicProjects method');
+    return this.projectDao.findAllByProps({
+      status: { in: Object.values(publicProjectStatuses) }
+    });
   },
 
   async getProjects() {
