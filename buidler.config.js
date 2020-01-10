@@ -4,6 +4,10 @@ usePlugin('@nomiclabs/buidler-ethers');
 const COA = require('./src/plugins/coa');
 const Deployments = require('./src/plugins/deployments');
 
+const {
+  createChainIdGetter
+} = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
+
 const INFURA_API_KEY = '';
 const ROPSTEN_PRIVATE_KEY = '';
 const MAINNET_PRIVATE_KEY = '';
@@ -15,9 +19,10 @@ task('deploy', 'Deploys COA contracts')
   .setAction(async ({ reset }, env) => {
     // Make sure everything is compiled
     await run('compile');
-
+    // await env.deployments.deploySetup();
+    
     reset = reset === 'true';
-
+    
     let [registry] = await env.deployments.getDeployedContracts(
       'ClaimsRegistry'
     );
@@ -37,16 +42,31 @@ task('deploy', 'Deploys COA contracts')
     console.log('COA attached to', coa.address);
   });
 
+const coaDeploySetup = {
+  contracts: [
+    {
+      name: 'ClaimsRegistry'
+    },
+    {
+      name: 'COA',
+      params: context => [context.ClaimsRegistry.address]
+    }
+  ]
+};
+
 extendEnvironment(env => {
+  // console.log(createChainIdGetter);
+  const chainIdGetter = createChainIdGetter(env.ethereum);
   env.coa = new COA(env);
-  env.deployments = new Deployments(env);
+  env.deployments = new Deployments(env, chainIdGetter, coaDeploySetup);
 });
 
 module.exports = {
   paths: {
+    tests: './src/tests/contracts',
     sources: './src/contracts'
   },
-  defaultNetwork: 'develop',
+  // defaultNetwork: 'develop',
   networks: {
     develop: {
       url: 'http://localhost:8545'
