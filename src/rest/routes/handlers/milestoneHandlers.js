@@ -35,6 +35,15 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+  deleteMilestone: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const userId = request.user.id;
+    const response = await milestoneService.deleteMilestone(
+      milestoneId,
+      userId
+    );
+    reply.status(200).send(response);
+  },
 
   getBudgetStatus: fastify => async (req, reply) => {
     fastify.log.info(
@@ -51,20 +60,6 @@ module.exports = {
       reply.status(500).send({
         error: 'Error getting all available budget transfer status'
       });
-    }
-  },
-
-  deleteMilestone: fastify => async (request, reply) => {
-    const { milestoneId } = request.params;
-    fastify.log.info(
-      `[Milestone Routes] Deleting milestone with id: ${milestoneId}`
-    );
-    try {
-      const deleted = await milestoneService.deleteMilestone(milestoneId);
-      reply.status(200).send(deleted);
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send('Error deleting milestone');
     }
   }
 };

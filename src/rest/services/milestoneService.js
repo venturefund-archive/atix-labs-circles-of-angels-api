@@ -46,7 +46,6 @@ module.exports = {
     const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
     return project;
   },
-
   /**
    * Creates a Milestone for an existing Project.
    * Returns an object with the id of the new milestone
@@ -111,7 +110,6 @@ module.exports = {
 
     return { milestoneId: createdMilestone.id };
   },
-
   /**
    * Updates an existing milestone.
    * Returns an object with the id of the updated milestone
@@ -166,6 +164,56 @@ module.exports = {
       `[MilestoneService] :: Milestone of id ${updatedMilestone.id} updated`
     );
     return { milestoneId: updatedMilestone.id };
+  },
+  /**
+   * Permanently remove an existing milestone and all its tasks
+   * Returns an object with the id of the deleted milestone
+   *
+   * @param milestoneId
+   * @param userId user performing the operation. Must be the owner of the project
+   * @returns { {milestoneId: number} } id of deleted milestone
+   */
+  async deleteMilestone(milestoneId, userId) {
+    logger.info('[MilestoneService] :: Entering deleteMilestone method');
+    validateRequiredParams({
+      method: 'deleteMilestone',
+      params: { milestoneId, userId }
+    });
+
+    const project = await this.getProjectFromMilestone(milestoneId);
+    // if the milestone exists this shouldn't happen
+    if (!project) {
+      logger.info(
+        `[MilestoneService] :: No project found for milestone ${milestoneId}`
+      );
+      throw new COAError(errors.milestone.ProjectNotFound(milestoneId));
+    }
+    validateOwnership(project.owner, userId);
+
+    // TODO: define in which statuses is ok to delete a milestone
+    if (project.status !== projectStatuses.NEW) {
+      logger.error(
+        `[MilestoneService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.NEW
+        }`
+      );
+      throw new COAError(
+        errors.milestone.DeleteWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    // TODO: any other restriction for deleting?
+
+    logger.info(
+      `[MilestoneService] :: Deleting milestone of id ${milestoneId}`
+    );
+    const deletedMilestone = await this.milestoneDao.deleteMilestone(
+      milestoneId
+    );
+    logger.info(
+      `[MilestoneService] :: Milestone of id ${deletedMilestone.id} deleted`
+    );
+    return { milestoneId: deletedMilestone.id };
   },
 
   deleteFieldsFromMilestone(milestone) {
@@ -495,15 +543,6 @@ module.exports = {
 
     return valid;
   },
-
-  /**
-   * Permanent remove milestone
-   * @param milestoneId
-   */
-  deleteMilestone(milestoneId) {
-    return this.milestoneDao.deleteMilestone(milestoneId);
-  },
-
   /**
    * Returns an array of the projects' id that an oracle
    * has any of its activities assigned

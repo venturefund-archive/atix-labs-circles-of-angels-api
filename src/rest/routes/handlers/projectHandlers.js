@@ -121,26 +121,6 @@ module.exports = {
     reply.status(200).sendFile(response.filepath);
   },
 
-  deleteMilestoneOfProject: fastify => async (request, reply) => {
-    const { projectId, milestoneId } = request.params;
-    try {
-      const response = await projectService.deleteMilestoneOfProject({
-        projectId,
-        milestoneId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(200).send(error.message);
-    }
-  },
-
-  addTaskOnMilestone: fastify => async (request, reply) => {
-    // TODO
-    const { milestoneId } = request.params;
-    const task = request.raw.body;
-    reply.send('DALE QUE VA addTaskOnMilestone');
-  },
-
   getTemplateOfProjectMilestone: fastify => async (request, reply) => {
     // TODO
     reply.send(

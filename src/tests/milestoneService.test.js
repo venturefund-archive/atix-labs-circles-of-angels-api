@@ -103,13 +103,19 @@ describe('Testing milestoneService', () => {
         ...found,
         project: dbProject.find(project => project.id === found.project)
       };
+    },
+    deleteMilestone: id => {
+      const found = dbMilestone.find(milestone => milestone.id === id);
+      if (!found) return;
+      dbMilestone.splice(dbMilestone.indexOf(found), 1);
+      return found;
     }
   };
   const projectService = {
     getProject: id => dbProject.find(project => project.id === id)
   };
 
-  describe('Testing milestoneService createMilestone', () => {
+  describe('Testing createMilestone', () => {
     beforeAll(() => {
       injectMocks(milestoneService, {
         milestoneDao,
@@ -185,11 +191,10 @@ describe('Testing milestoneService', () => {
       );
     });
   });
-  describe('Testing milestoneService updateMilestone', () => {
+  describe('Testing updateMilestone', () => {
     beforeAll(() => {
       injectMocks(milestoneService, {
-        milestoneDao,
-        projectService
+        milestoneDao
       });
     });
 
@@ -254,6 +259,63 @@ describe('Testing milestoneService', () => {
         })
       ).rejects.toThrow(
         errors.milestone.UpdateWithInvalidProjectStatus(
+          projectStatuses.EXECUTING
+        )
+      );
+    });
+  });
+  describe('Testing deleteMilestone', () => {
+    beforeAll(() => {
+      injectMocks(milestoneService, {
+        milestoneDao
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProject.push(newProject, executingProject);
+      dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should delete the milestone and return its id', async () => {
+      const response = await milestoneService.deleteMilestone(
+        updatableMilestone.id,
+        userEntrepreneur.id
+      );
+      const deleted = dbMilestone.find(
+        milestone => milestone.id === response.milestoneId
+      );
+      expect(response).toEqual({ milestoneId: updatableMilestone.id });
+      expect(deleted).toEqual(undefined);
+    });
+
+    it('should throw an error if parameters are not valid', async () => {
+      await expect(
+        milestoneService.deleteMilestone(updatableMilestone.id)
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('deleteMilestone'));
+    });
+
+    it('should throw an error if milestone does not exist', async () => {
+      await expect(
+        milestoneService.deleteMilestone(0, userEntrepreneur.id)
+      ).rejects.toThrow(errors.common.CantFindModelWithId('milestone', 0));
+    });
+
+    it('should throw an error if the user is not the project owner', async () => {
+      await expect(
+        milestoneService.deleteMilestone(updatableMilestone.id, 0)
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+
+    it('should throw an error if the project status is not NEW', async () => {
+      await expect(
+        milestoneService.deleteMilestone(
+          nonUpdatableMilestone.id,
+          userEntrepreneur.id
+        )
+      ).rejects.toThrow(
+        errors.milestone.DeleteWithInvalidProjectStatus(
           projectStatuses.EXECUTING
         )
       );

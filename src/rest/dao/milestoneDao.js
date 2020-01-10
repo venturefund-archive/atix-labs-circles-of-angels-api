@@ -6,8 +6,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
-
 module.exports = {
   async findById(milestoneId) {
     const milestone = await this.model.findOne({ id: milestoneId });
@@ -40,6 +38,10 @@ module.exports = {
 
     return savedMilestone;
   },
+  async deleteMilestone(milestoneId) {
+    const deleted = await this.model.destroyOne(milestoneId);
+    return deleted;
+  },
 
   // FIXME : unclear name
   async getMilestoneActivities(milestoneId) {
@@ -48,10 +50,6 @@ module.exports = {
       .populate('tasks');
 
     return milestone || [];
-  },
-  async deleteMilestone(milestoneId) {
-    const deleted = await this.model.destroy(milestoneId).fetch();
-    return deleted;
   },
   async getMilestonesByProject(projectId) {
     const milestones = await this.model

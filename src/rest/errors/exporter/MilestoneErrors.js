@@ -25,5 +25,9 @@ module.exports = {
   UpdateWithInvalidProjectStatus: status => ({
     message: `Milestone of project with status ${status} can't be updated`,
     statusCode: 403
+  }),
+  DeleteWithInvalidProjectStatus: status => ({
+    message: `Milestone of project with status ${status} can't be deleted`,
+    statusCode: 403
   })
 };

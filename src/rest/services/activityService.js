@@ -31,7 +31,6 @@ const logger = require('../logger');
 
 module.exports = {
   readFile: promisify(fs.readFile),
-
   /**
    * Updates an existing task.
    * Returns an object with the id of the updated task
@@ -91,7 +90,6 @@ module.exports = {
     logger.info(`[ActivityService] :: Task of id ${updatedTask.id} updated`);
     return { taskId: updatedTask.id };
   },
-
   /**
    * Deletes an existing task.
    * Returns an object with the id of the deleted task
@@ -150,7 +148,6 @@ module.exports = {
     // should the milestone be deleted as well?
     return { taskId: deletedTask.id };
   },
-
   /**
    * Creates an task for an existing Milestone.
    * Returns an object with the id of the new task

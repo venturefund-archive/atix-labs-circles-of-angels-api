@@ -141,6 +141,26 @@ const milestoneRoutes = {
       }
     },
     handler: handlers.updateMilestone
+  },
+  deleteMilestone: {
+    method: 'delete',
+    path: `${basePath}/:milestoneId`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.DELETE.name],
+        description:
+          'Deletes an existing milestone for an existing project and all its tasks',
+        summary: 'Delete milestone',
+        params: milestoneIdParam,
+        response: {
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.deleteMilestone
   }
 };
 
@@ -201,58 +221,6 @@ const routes = {
       }
     },
     handler: handlers.getBudgetStatus
-  },
-
-  deleteMilestone: {
-    method: 'delete',
-    path: `${basePath}/:milestoneId`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.DELETE.name],
-        description: 'Deletes an existing milestone',
-        summary: 'Delete milestone',
-        params: {
-          type: 'object',
-          properties: {
-            milestoneId: { type: 'integer', description: 'Milestone to delete' }
-          }
-        },
-        response: {
-          200: {
-            type: 'array',
-            description: 'Returns an object with the deleted milestone',
-            items: {
-              type: 'object',
-              properties: {
-                tasks: { type: 'string' },
-                impact: { type: 'string' },
-                impactCriterion: { type: 'string' },
-                signsOfSuccess: { type: 'string' },
-                signsOfSuccessCriterion: { type: 'string' },
-                category: { type: 'string' },
-                keyPersonnel: { type: 'string' },
-                budget: { type: 'string' },
-                quarter: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                transactionHash: { type: 'string' },
-                id: { type: 'integer' },
-                project: { type: 'integer' },
-                status: { type: 'integer' },
-                budgetStatus: { type: 'integer' },
-                blockchainStatus: { type: 'integer' }
-              }
-            }
-          },
-          500: {
-            type: 'string',
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.deleteMilestone
   }
 };
 

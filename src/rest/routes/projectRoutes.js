@@ -373,53 +373,6 @@ const projectProposalRoutes = {
   }
 };
 
-const milestoneRoutes = {
-  deleteMilestone: {
-    method: 'delete',
-    path: `${basePath}/:projectId/milestones/:milestoneId`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        params: { projectIdParam, milestoneIdParam },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.deleteMilestoneOfProject
-  },
-  addTaskOnMilestone: {
-    method: 'put',
-    path: '/milestones/:milestoneId/activities',
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        params: milestoneIdParam,
-        raw: {
-          body: {
-            type: 'object',
-            properties: taskProperties
-          }
-        },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.addTaskOnMilestone
-  }
-};
-
 const projectMilestonesRoute = {
   getMilestonesTemplate: {
     // this endpoint should be in any other place and serve the static file
@@ -516,8 +469,7 @@ const projectMilestonesRoute = {
       }
     },
     handler: handlers.getMilestonesFile
-  },
-  ...milestoneRoutes
+  }
 };
 
 const createProjectRoute = {
