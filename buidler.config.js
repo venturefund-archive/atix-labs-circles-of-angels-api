@@ -1,8 +1,10 @@
 usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
+usePlugin('solidity-coverage');
 
 const COA = require('./src/plugins/coa');
-const Deployments = require('./src/plugins/deployments');
+// const deployments = ;
+const { lazyObject } = require('@nomiclabs/buidler/plugins');
 
 const {
   createChainIdGetter
@@ -20,14 +22,15 @@ task('deploy', 'Deploys COA contracts')
     // Make sure everything is compiled
     await run('compile');
     // await env.deployments.deploySetup();
-    
+
     reset = reset === 'true';
-    
+
     let [registry] = await env.deployments.getDeployedContracts(
       'ClaimsRegistry'
     );
     if (registry === undefined || reset === true) {
       [registry] = await env.deployments.deploy('ClaimsRegistry', []);
+      await env.deployments.saveDeployedContract('ClaimsRegistry', registry);
       console.log('ClaimsRegistry deployed. Address:', registry.address);
     }
 
@@ -35,6 +38,7 @@ task('deploy', 'Deploys COA contracts')
     // console.log(coa, registry.address)
     if (coa === undefined || reset === true) {
       [coa] = await env.deployments.deploy('COA', [registry.address]);
+      await env.deployments.saveDeployedContract('COA', coa);
       console.log('COA deployed. Address:', coa.address);
     }
 
@@ -58,7 +62,7 @@ extendEnvironment(env => {
   // console.log(createChainIdGetter);
   const chainIdGetter = createChainIdGetter(env.ethereum);
   env.coa = new COA(env);
-  env.deployments = new Deployments(env, chainIdGetter, coaDeploySetup);
+  env.deployments = lazyObject(() => require('./src/plugins/deployments'));
 });
 
 module.exports = {
@@ -66,7 +70,7 @@ module.exports = {
     tests: './src/tests/contracts',
     sources: './src/contracts'
   },
-  // defaultNetwork: 'develop',
+  defaultNetwork: 'develop',
   networks: {
     develop: {
       url: 'http://localhost:8545'
