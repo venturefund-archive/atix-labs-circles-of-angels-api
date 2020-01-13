@@ -15,8 +15,8 @@ module.exports = {
     return createdProject;
   },
 
-  async findAllByProps(props) {
-    return this.model.find({ ...props });
+  async findAllByProps(filters, populate) {
+    return this.model.find(filters, populate);
   },
 
   async getProjecListWithStatusFrom({ status }) {
@@ -78,7 +78,7 @@ module.exports = {
   async getProjectMilestonesFilePath(projectId) {
     return this.model.findOne({
       where: { id: projectId },
-      select: ['milestonesFile']
+      select: ['milestonePath']
     });
   },
 

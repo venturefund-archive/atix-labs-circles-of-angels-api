@@ -15,6 +15,6 @@ module.exports = file => {
     logger.error(
       '[ValidatePhotoSize] :: File size is bigger than the size allowed'
     );
-    throw new COAError(errors.ImgSizeBiggerThanAllowed);
+    throw new COAError(errors.file.ImgSizeBiggerThanAllowed);
   }
 };

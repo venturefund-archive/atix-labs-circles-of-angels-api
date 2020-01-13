@@ -9,41 +9,19 @@
 const basePath = '/projects';
 const handlers = require('./handlers/projectHandlers');
 const routeTags = require('../util/routeTags');
-
-const clientErrorResponse = () => ({
-  '4xx': {
-    type: 'object',
-    properties: {
-      status: { type: 'integer' },
-      error: { type: 'string' }
-    },
-    description: 'Returns a message describing the error'
-  }
-});
-
-const serverErrorResponse = () => ({
-  500: {
-    type: 'object',
-    properties: {
-      status: { type: 'integer' },
-      error: { type: 'string' }
-    },
-    description: 'Returns a message describing the error'
-  }
-});
-
-const successResponse = response => ({
-  200: {
-    ...response
-  }
-});
+const {
+  successResponse,
+  serverErrorResponse,
+  clientErrorResponse
+} = require('../util/responses');
+const { projectStatuses } = require('../util/constants');
 
 const ownerIdProperty = {
   ownerId: { type: 'integer' }
 };
 const projectThumbnailProperties = {
   projectName: { type: 'string' },
-  countryOfImpact: { type: 'string' },
+  location: { type: 'string' },
   timeframe: { type: 'string' },
   goalAmount: { type: 'number' }
 };
@@ -52,8 +30,7 @@ const imgPathProperty = {
 };
 const projectDetailProperties = {
   mission: { type: 'string' },
-  problemAddressed: { type: 'string' },
-  imgPath: { type: 'string' }
+  problemAddressed: { type: 'string' }
 };
 const projectProposalProperties = {
   proposal: { type: 'string' }
@@ -71,6 +48,7 @@ const milestonesResponse = {
   items: {
     type: 'object',
     properties: {
+      id: { type: 'integer' },
       category: { type: 'string' },
       description: { type: 'string' },
       tasks: {
@@ -78,6 +56,7 @@ const milestonesResponse = {
         items: {
           type: 'object',
           properties: {
+            id: { type: 'integer' },
             taskHash: { type: 'string' },
             description: { type: 'string' },
             reviewCriteria: { type: 'string' },
@@ -92,19 +71,18 @@ const milestonesResponse = {
   description: 'Returns all milestones of a project'
 };
 
-const idParam = description => ({
+const idParam = (description, param) => ({
   type: 'object',
   properties: {
-    projectId: {
+    [param]: {
       type: 'integer',
       description
     }
   }
 });
 
-const projectIdParam = idParam('Project identification');
-const milestoneIdParam = idParam('Milestone identification');
-const taskIdParam = idParam('Task identification');
+const projectIdParam = idParam('Project identification', 'projectId');
+const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
 const successWithProjectIdResponse = {
   type: 'object',
@@ -112,6 +90,38 @@ const successWithProjectIdResponse = {
     projectId: { type: 'integer' }
   },
   description: 'Returns the id of the project'
+};
+
+// FIXME: I don't think this is the best way to do this but ¯\_(ツ)_/¯
+const responseWithMilestoneErrors = {
+  type: 'object',
+  properties: {
+    errors: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          rowNumber: { type: 'number' },
+          msg: { type: 'string' }
+        }
+      }
+    },
+    projectId: { type: 'integer' }
+  },
+  description:
+    'Returns an array with all errors while processing the milestone file or the project id if successful'
+};
+
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    email: { type: 'string' },
+    id: { type: 'integer' },
+    role: { type: 'string' }
+  },
+  description: 'Returns and object with the user information'
 };
 
 const projectsResponse = {
@@ -130,7 +140,7 @@ const projectsResponse = {
       cardPhotoPath: { type: 'string' },
       goalAmount: { type: 'number' },
       status: { type: 'string' },
-      ownerId: { type: 'number' },
+      owner: userResponse,
       createdAt: { type: 'string' },
       transactionHash: { type: 'string' },
       id: { type: 'number' }
@@ -181,9 +191,9 @@ const projectThumbnailRoutes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Updates the thumbnail of an existing draft project',
+        summary: 'Updates an existing project thumbnail',
         type: 'multipart/form-data',
         raw: {
           files: { type: 'object' },
@@ -208,9 +218,9 @@ const projectThumbnailRoutes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets the thumbnail information of an existing project',
+        summary: 'Gets a project thumbnail info',
         params: projectIdParam,
         response: {
           ...successResponse({
@@ -246,11 +256,7 @@ const projectDetailRoutes = {
           files: { type: 'object' },
           body: {
             type: 'object',
-            properties: Object.assign(
-              {},
-              projectDetailProperties,
-              ownerIdProperty
-            )
+            properties: projectDetailProperties
           }
         },
         response: {
@@ -269,8 +275,8 @@ const projectDetailRoutes = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        description: 'Updates the detail of an existing project.',
+        summary: 'Updates a project detail',
         raw: {
           files: { type: 'object' },
           body: {
@@ -295,13 +301,17 @@ const projectDetailRoutes = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        description: 'Returns the detail of an existing project',
+        summary: 'Get project detail',
         params: projectIdParam,
         response: {
           ...successResponse({
             type: 'object',
-            properties: projectDetailProperties,
+            properties: Object.assign(
+              {},
+              projectDetailProperties,
+              imgPathProperty
+            ),
             description: 'Returns the project detail'
           }),
           ...clientErrorResponse(),
@@ -314,45 +324,19 @@ const projectDetailRoutes = {
 };
 
 const projectProposalRoutes = {
-  createProjectProposal: {
-    method: 'post',
-    path: `${basePath}/:projectId/proposal`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates new project and adds project proposal to it.',
-        summary: 'Create new project and project proposal',
-        params: projectIdParam,
-        raw: {
-          body: {
-            type: 'object',
-            properties: projectProposalProperties
-          }
-        },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.createProjectProposal
-  },
   updateProjectProposal: {
     method: 'put',
     path: `${basePath}/:projectId/proposal`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        raw: {
-          body: {
-            type: 'object',
-            properties: projectProposalProperties
-          }
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description:
+          'Adds or modifies the project proposal of an existing project.',
+        summary: 'Adds or modifies project proposal',
+        body: {
+          type: 'object',
+          properties: projectProposalProperties
         },
         params: projectIdParam,
         response: {
@@ -370,18 +354,14 @@ const projectProposalRoutes = {
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Returns the project proposal of a project',
+        summary: 'Gets project proposal',
         params: projectIdParam,
         response: {
           ...successResponse({
             type: 'object',
-            properties: Object.assign(
-              {},
-              projectProposalProperties,
-              imgPathProperty
-            ),
+            properties: projectProposalProperties,
             description: 'Returns the project proposal'
           }),
           ...clientErrorResponse(),
@@ -390,97 +370,6 @@ const projectProposalRoutes = {
       }
     },
     handler: handlers.getProjectProposal
-  }
-};
-
-const milestoneRoutes = {
-  deleteMilestone: {
-    method: 'delete',
-    path: `${basePath}/:projectId/milestones/:milestoneId`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        params: { projectIdParam, milestoneIdParam },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.deleteMilestoneOfProject
-  },
-  editTaskOfMilestone: {
-    method: 'put',
-    path: '/milestones/:milestoneId/activities/:taskId',
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        params: { projectIdParam, milestoneIdParam },
-        raw: {
-          body: {
-            type: 'object',
-            properties: taskProperties
-          }
-        },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.editTaskOfMilestone
-  },
-  deleteTaskOfMilestone: {
-    method: 'delete',
-    path: '/milestones/:milestoneId/activities/:taskId',
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        params: { milestoneIdParam, taskIdParam },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.deleteTaskOfMilestone
-  },
-  addTaskOnMilestone: {
-    method: 'put',
-    path: '/milestones/:milestoneId/activities',
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
-        params: milestoneIdParam,
-        raw: {
-          body: {
-            type: 'object',
-            properties: taskProperties
-          }
-        },
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.addTaskOnMilestone
   }
 };
 
@@ -508,15 +397,16 @@ const projectMilestonesRoute = {
     },
     handler: handlers.getTemplateOfProjectMilestone
   },
-  uploadsMilestonesFile: {
+  processMilestonesFile: {
     method: 'put',
-    path: `${basePath}/:projectId/milestones/file`,
+    path: `${basePath}/:projectId/milestones`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description:
+          'Process excel file and creates the milestones of a project',
+        summary: 'Creates milestones from file',
         type: 'multipart/form-data',
         raw: {
           type: 'object',
@@ -526,25 +416,7 @@ const projectMilestonesRoute = {
         },
         params: projectIdParam,
         response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.uploadMilestoneFile
-  },
-  processMilestonesFile: {
-    method: 'post',
-    path: `${basePath}/:projectId/milestones`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates new project and adds project proposal to it.',
-        summary: 'Create new project and project proposal',
-        response: {
-          ...successResponse(successWithProjectIdResponse),
+          ...successResponse(responseWithMilestoneErrors),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
@@ -559,8 +431,8 @@ const projectMilestonesRoute = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'descriptionHard',
-        summary: 'summaryHard',
+        description: 'Returns the milestones of an existing project',
+        summary: 'Gets milestones of a project',
         params: projectIdParam,
         response: {
           ...successResponse(milestonesResponse),
@@ -571,7 +443,33 @@ const projectMilestonesRoute = {
     },
     handler: handlers.getProjectMilestones
   },
-  ...milestoneRoutes
+  getMilestonesFile: {
+    method: 'get',
+    path: `${basePath}/:projectId/milestonesFile`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: "Returns the specified project's milestones file",
+        summary: 'Get a project milestones file',
+        params: {
+          type: 'object',
+          properties: {
+            projectId: {
+              type: 'integer',
+              description: 'Project to download the milestones file from'
+            }
+          }
+        },
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getMilestonesFile
+  }
 };
 
 const createProjectRoute = {
@@ -600,7 +498,7 @@ const createProjectRoute = {
 const commonProjectRoutes = {
   getProjects: {
     method: 'get',
-    path: `${basePath}/`,
+    path: `${basePath}`,
     options: {
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
@@ -617,7 +515,7 @@ const commonProjectRoutes = {
   },
   getProject: {
     method: 'get',
-    path: '/project/:projectId',
+    path: `${basePath}/:projectId`,
     handler: handlers.getProject,
     options: {
       beforeHandler: []
@@ -625,12 +523,61 @@ const commonProjectRoutes = {
   },
   getProjectFull: {
     method: 'get',
-    path: '/project/:projectId/full',
+    path: `${basePath}/:projectId/full`,
     handler: handlers.getProjectFull,
     options: {
       beforeHandler: []
     }
-
+  },
+  getPublicProjects: {
+    method: 'get',
+    path: `${basePath}/public`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Get all public projects.',
+        summary: 'Get all public project',
+        response: {
+          ...successResponse(projectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getPublicProjects
+  },
+  updateProjectStatus: {
+    method: 'put',
+    path: `${basePath}/:projectId/status`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Update project status',
+        summary: 'Update project status',
+        body: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: Object.values(projectStatuses)
+            }
+          },
+          required: ['status'],
+          description: 'New project status'
+        },
+        type: 'object',
+        params: projectIdParam,
+        response: {
+          // TODO send project updated to update on front too
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateProjectStatus
   }
 };
 

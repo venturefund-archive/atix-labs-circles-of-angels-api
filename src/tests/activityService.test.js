@@ -11,8 +11,16 @@
 const sha256 = require('sha256');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
-const { projectStatus, activityStatus } = require('../rest/util/constants');
+const {
+  projectStatus,
+  projectStatuses,
+  activityStatus,
+  userRoles
+} = require('../rest/util/constants');
 const { injectMocks } = require('../rest/util/injection');
+const COAError = require('../rest/errors/COAError');
+const errors = require('../rest/errors/exporter/ErrorExporter');
+const activityService = require('../rest/services/activityService');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
@@ -21,6 +29,311 @@ const fastify = {
     uploadHashEvidenceToActivity: ethServicesMock.uploadHashEvidenceToActivity
   }
 };
+
+describe('Testing activityService', () => {
+  let dbTask = [];
+  let dbMilestone = [];
+  let dbProject = [];
+  let dbUser = [];
+
+  const resetDb = () => {
+    dbTask = [];
+    dbMilestone = [];
+    dbProject = [];
+    dbUser = [];
+  };
+
+  const newTaskParams = {
+    description: 'NewDescription',
+    reviewCriteria: 'NewReviewCriteria',
+    category: 'NewCategory',
+    keyPersonnel: 'NewKeyPersonnel',
+    budget: 5000
+  };
+
+  const userEntrepreneur = {
+    id: 1,
+    role: userRoles.ENTREPRENEUR
+  };
+
+  const newProject = {
+    id: 1,
+    status: projectStatuses.NEW,
+    owner: userEntrepreneur.id
+  };
+
+  const executingProject = {
+    id: 2,
+    status: projectStatuses.EXECUTING,
+    owner: userEntrepreneur.id
+  };
+
+  const updatableMilestone = {
+    id: 1,
+    project: newProject.id
+  };
+
+  const nonUpdatableMilestone = {
+    id: 2,
+    project: executingProject.id
+  };
+
+  const updatableTask = {
+    id: 1,
+    description: 'TaskDescription',
+    reviewCriteria: 'TaskReview',
+    category: 'TaskCategory',
+    keyPersonnel: 'TaskPersonnel',
+    budget: '5000',
+    milestone: updatableMilestone.id
+  };
+
+  const nonUpdatableTask = {
+    id: 2,
+    milestone: nonUpdatableMilestone.id
+  };
+
+  const activityDao = {
+    findById: id => dbTask.find(task => task.id === id),
+    updateActivity: (params, activityId) => {
+      const found = dbTask.find(task => task.id === activityId);
+      if (!found) return;
+      const updated = { ...found, ...params };
+      dbTask[dbTask.indexOf(found)] = updated;
+      return updated;
+    },
+    deleteActivity: id => {
+      const found = dbTask.find(task => task.id === id);
+      if (!found) return;
+      dbTask.splice(dbTask.indexOf(found), 1);
+      return found;
+    },
+    saveActivity: (activity, milestoneId) => {
+      const newTaskId =
+        dbTask.length > 0 ? dbTask[dbTask.length - 1].id + 1 : 1;
+      const newTask = {
+        milestone: milestoneId,
+        id: newTaskId,
+        ...activity
+      };
+      dbTask.push(newTask);
+      return newTask;
+    }
+  };
+  const milestoneService = {
+    getProjectFromMilestone: id => {
+      const found = dbMilestone.find(milestone => milestone.id === id);
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('milestone', id));
+      return dbProject.find(project => project.id === found.project);
+    }
+  };
+
+  describe('Testing updateTask', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        milestoneService
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProject.push(newProject, executingProject);
+      dbTask.push(updatableTask, nonUpdatableTask);
+      dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should update the task and return its id', async () => {
+      const taskParams = {
+        description: 'UpdatedDescription',
+        category: 'UpdatedCategory'
+      };
+      const response = await activityService.updateTask(updatableTask.id, {
+        userId: userEntrepreneur.id,
+        taskParams
+      });
+      expect(response).toEqual({ taskId: updatableTask.id });
+      const updated = dbTask.find(task => task.id === response.taskId);
+      expect(updated.description).toEqual(taskParams.description);
+      expect(updated.category).toEqual(taskParams.category);
+    });
+
+    it('should throw an error if parameters are not valid', async () => {
+      await expect(
+        activityService.updateTask(updatableTask.id, {
+          userId: userEntrepreneur.id
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('updateTask'));
+    });
+
+    it('should throw an error if task does not exist', async () => {
+      await expect(
+        activityService.updateTask(0, {
+          userId: userEntrepreneur.id,
+          taskParams: { description: 'wontupdate' }
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
+    });
+
+    it('should throw an error if the user is not the project owner', async () => {
+      await expect(
+        activityService.updateTask(updatableTask.id, {
+          userId: 0,
+          taskParams: { description: 'wontupdate' }
+        })
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+
+    it('should throw an error if the project status is not NEW', async () => {
+      await expect(
+        activityService.updateTask(nonUpdatableTask.id, {
+          userId: userEntrepreneur.id,
+          taskParams: { description: 'wontupdate' }
+        })
+      ).rejects.toThrow(
+        errors.task.UpdateWithInvalidProjectStatus(projectStatuses.EXECUTING)
+      );
+    });
+  });
+
+  describe('Testing deleteTask', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        milestoneService
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProject.push(newProject, executingProject);
+      dbTask.push(updatableTask, nonUpdatableTask);
+      dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should delete the task and return its id', async () => {
+      const response = await activityService.deleteTask(
+        updatableTask.id,
+        userEntrepreneur.id
+      );
+      const updated = dbTask.find(task => task.id === response.taskId);
+      expect(response).toEqual({ taskId: updatableTask.id });
+      expect(updated).toEqual(undefined);
+    });
+
+    it('should throw an error if parameters are not valid', async () => {
+      await expect(
+        activityService.deleteTask(updatableTask.id)
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('deleteTask'));
+    });
+
+    it('should throw an error if task does not exist', async () => {
+      await expect(
+        activityService.deleteTask(0, userEntrepreneur.id)
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
+    });
+
+    it('should throw an error if the user is not the project owner', async () => {
+      await expect(
+        activityService.deleteTask(updatableTask.id, 0)
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+
+    it('should throw an error if the project status is not NEW', async () => {
+      await expect(
+        activityService.deleteTask(nonUpdatableTask.id, userEntrepreneur.id)
+      ).rejects.toThrow(
+        errors.task.DeleteWithInvalidProjectStatus(projectStatuses.EXECUTING)
+      );
+    });
+  });
+
+  describe('Testing createTask', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        milestoneService
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProject.push(newProject, executingProject);
+      dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should create the task and return its id', async () => {
+      const response = await activityService.createTask(updatableMilestone.id, {
+        userId: userEntrepreneur.id,
+        taskParams: newTaskParams
+      });
+      const createdTask = dbTask.find(task => task.id === response.taskId);
+      expect(response).toHaveProperty('taskId');
+      expect(response.taskId).toBeDefined();
+      expect(createdTask).toHaveProperty('id', response.taskId);
+      expect(createdTask).toHaveProperty('milestone', updatableMilestone.id);
+      expect(createdTask).toHaveProperty('description', 'NewDescription');
+      expect(createdTask).toHaveProperty('reviewCriteria', 'NewReviewCriteria');
+      expect(createdTask).toHaveProperty('category', 'NewCategory');
+      expect(createdTask).toHaveProperty('keyPersonnel', 'NewKeyPersonnel');
+      expect(createdTask).toHaveProperty('budget', 5000);
+    });
+
+    it('should throw an error if an argument is not defined', async () => {
+      await expect(
+        activityService.createTask(updatableMilestone.id, {
+          taskParams: newTaskParams
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('createTask'));
+    });
+
+    it('should throw an error if any mandatory task property is not defined', async () => {
+      const missingTaskParams = {
+        description: 'NewDescription',
+        reviewCriteria: 'NewReviewCriteria'
+      };
+      await expect(
+        activityService.createTask(updatableMilestone.id, {
+          userId: userEntrepreneur.id,
+          taskParams: missingTaskParams
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('createTask'));
+    });
+
+    it('should throw an error if the milestone does not exist', async () => {
+      await expect(
+        activityService.createTask(0, {
+          userId: userEntrepreneur.id,
+          taskParams: newTaskParams
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('milestone', 0));
+    });
+
+    it('should throw an error if the user is not the project owner', async () => {
+      await expect(
+        activityService.createTask(updatableMilestone.id, {
+          userId: 0,
+          taskParams: newTaskParams
+        })
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+
+    it('should throw an error if the project status is not NEW', async () => {
+      await expect(
+        activityService.createTask(nonUpdatableMilestone.id, {
+          userId: userEntrepreneur.id,
+          taskParams: newTaskParams
+        })
+      ).rejects.toThrow(
+        errors.task.CreateWithInvalidProjectStatus(projectStatuses.EXECUTING)
+      );
+    });
+  });
+});
 
 jest.mock('sha256');
 
@@ -85,199 +398,6 @@ describe.skip('Testing activityService createActivities', () => {
   });
 });
 
-describe.skip('Testing activityService createActivity', () => {
-  let activityDao;
-  let activityService;
-
-  const newActivityId = 1;
-  const milestoneId = 12;
-
-  let mockActivity;
-  let incompleteActivity;
-
-  beforeEach(() => {
-    const {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel,
-      budget
-    } = testHelper.buildActivity({});
-    mockActivity = {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel,
-      budget
-    };
-
-    incompleteActivity = {
-      tasks,
-      impact,
-      impactCriterion,
-      signsOfSuccess,
-      signsOfSuccessCriterion,
-      category,
-      keyPersonnel
-    };
-  });
-
-  beforeAll(() => {
-    activityDao = {
-      async saveActivity(activity, milestone) {
-        if (milestone === 0) {
-          throw Error('Error creating activity');
-        }
-        const toSave = {
-          ...activity,
-          milestone,
-          id: newActivityId
-        };
-        return toSave;
-      }
-    };
-    activityService = require('../rest/services/activityService');
-    injectMocks(activityService, {
-      activityDao
-    });
-  });
-
-  it('should return the created activity', async () => {
-    const expected = {
-      ...mockActivity,
-      milestone: milestoneId,
-      id: newActivityId
-    };
-    const response = await activityService.createActivity(
-      mockActivity,
-      milestoneId
-    );
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity is incomplete', async () => {
-    const response = await activityService.createActivity(
-      incompleteActivity,
-      milestoneId
-    );
-    const expected = {
-      status: 409,
-      error: 'Activity is missing mandatory fields'
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity could not be created', async () => {
-    const response = await activityService.createActivity(mockActivity, 0);
-    const expected = { status: 500, error: 'Error creating Activity' };
-    return expect(response).toEqual(expected);
-  });
-});
-
-describe.skip('Testing activityService updateActivity', () => {
-  let activityDao;
-  let activityService;
-
-  const activityId = 12;
-
-  let mockActivity;
-  let invalidActivity;
-
-  beforeEach(() => {
-    mockActivity = testHelper.buildActivity({});
-    invalidActivity = { ...mockActivity, tasks: '' };
-  });
-
-  beforeAll(() => {
-    activityDao = {
-      async getActivityById(id) {
-        if (id === '') {
-          throw Error('Error getting activity');
-        }
-        if (id === 0) {
-          return undefined;
-        }
-        return testHelper.buildActivity({ id });
-      },
-
-      async updateActivity(activity) {
-        return activity;
-      }
-    };
-    activityService = require('../rest/services/activityService');
-    injectMocks(activityService, {
-      activityDao
-    });
-
-    activityService.getProjectByActivity = activity => {
-      if (activity.id === activityId) {
-        return testHelper.buildProject(1, 1, {
-          status: projectStatus.PUBLISHED
-        });
-      }
-
-      return testHelper.buildProject(1, 1, {
-        status: projectStatus.IN_PROGRESS
-      });
-    };
-  });
-
-  it('should return the updated activity', async () => {
-    const response = await activityService.updateActivity(
-      mockActivity,
-      activityId
-    );
-    const expected = mockActivity;
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity project is IN PROGRESS', async () => {
-    const response = await activityService.updateActivity(
-      invalidActivity,
-      activityId + 1
-    );
-    const expected = {
-      error:
-        'Activity cannot be updated. Project has already started or sent to the blockchain.',
-      status: 409
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity has empty mandatory fields', async () => {
-    const response = await activityService.updateActivity(
-      invalidActivity,
-      activityId
-    );
-    const expected = {
-      status: 409,
-      error: 'Activity has empty mandatory fields'
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity does not exist', async () => {
-    const response = await activityService.updateActivity(mockActivity, 0);
-    const expected = {
-      status: 404,
-      error: "Activity doesn't exist"
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if an exception is caught', async () => {
-    const response = await activityService.updateActivity(mockActivity, '');
-    const expected = { status: 500, error: 'Error updating Activity' };
-    return expect(response).toEqual(expected);
-  });
-});
-
 describe.skip('Testing activityService updateStatus', () => {
   let activityDao;
   let activityService;
@@ -295,7 +415,7 @@ describe.skip('Testing activityService updateStatus', () => {
 
   beforeAll(() => {
     activityDao = {
-      async getActivityById(id) {
+      async findById(id) {
         if (id === '') {
           throw Error('Error getting activity');
         }
@@ -391,7 +511,7 @@ describe.skip('Testing ActivityService addEvidenceFiles', () => {
 
   beforeEach(() => {
     activityDao = {
-      async getActivityById(id) {
+      async findById(id) {
         if (id === '') {
           throw Error('Error getting activity');
         }

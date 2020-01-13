@@ -10,71 +10,31 @@ const activityService = require('../../services/activityService');
 const milestoneService = require('../../services/milestoneService'); // this wont work until milestoneService MR is merged
 
 module.exports = {
-  createActivity: fastify => async (req, reply) => {
-    fastify.log.info(
-      '[Activity Routes] :: POST request at /activities:',
-      req.body
-    );
-
-    const { activity, milestoneId } = req.body;
-
-    try {
-      const response = await activityService.createActivity(
-        activity,
-        milestoneId
-      );
-
-      if (response.error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error creating activity: ',
-          response.error
-        );
-        reply.status(response.status).send(response);
-      } else {
-        reply.send({ success: 'Activity created successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Activity Routes] :: Error creating activity: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error creating activity' });
-    }
+  createTask: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const taskParams = request.body;
+    const userId = request.user.id;
+    const response = await activityService.createTask(milestoneId, {
+      userId,
+      taskParams
+    });
+    reply.status(200).send(response);
   },
-
-  updateActivity: fastify => async (req, reply) => {
-    fastify.log.info(
-      `[Activity Routes] :: PUT request at /activities/${
-        req.params.activityId
-      }:`,
-      req.body
-    );
-
-    const { activity } = req.body;
-    const { activityId } = req.params;
-
-    try {
-      const response = await activityService.updateActivity(
-        activity,
-        activityId
-      );
-
-      if (response.error) {
-        fastify.log.error(
-          '[Activity Routes] :: Error updating activity: ',
-          response.error
-        );
-        reply.status(response.status).send(response);
-      } else {
-        reply.send({ success: 'Activity updated successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Activity Routes] :: Error updating activity: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error updating activity' });
-    }
+  updateTask: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const taskParams = request.body;
+    const userId = request.user.id;
+    const response = await activityService.updateTask(taskId, {
+      userId,
+      taskParams
+    });
+    reply.status(200).send(response);
+  },
+  deleteTask: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const response = await activityService.deleteTask(taskId, userId);
+    reply.status(200).send(response);
   },
 
   updateStatus: fastify => async (req, reply) => {
@@ -106,20 +66,6 @@ module.exports = {
         error
       );
       reply.status(500).send({ error: 'Error updating activity' });
-    }
-  },
-
-  deleteActivity: fastify => async (request, reply) => {
-    const { activityId } = request.params;
-    fastify.log.info(
-      `[Activity Routes] Deleting activity with id: ${activityId}`
-    );
-    try {
-      const deleted = await activityService.deleteActivity(activityId);
-      reply.status(200).send(deleted);
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send('Error deleting activity');
     }
   },
 

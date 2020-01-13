@@ -3,11 +3,12 @@ CREATE DATABASE coadb;
 ALTER DATABASE coadb OWNER TO postgres;
 
 \connect coadb
-CREATE TYPE ROLE AS ENUM (
-    'entrepreneur',
-    'funder',
-    'oracle',
-    'admin'
+CREATE TYPE ROLE AS ENUM(
+  'admin',
+  'entrepreneur',
+  'supporter',
+  'curator',
+  'bankoperator'
 );
 
 CREATE TYPE TX_FUNDER_STATUS AS ENUM (
@@ -35,10 +36,19 @@ CREATE TABLE public.user (
 );
 
 CREATE TYPE ProjectStatus AS ENUM (
-    'draft',
-    'pending',
-    'consensus',
-    'ongoing'
+  'new',
+  'toreview',
+  'rejected',
+  'deleted',
+  'published',
+  'consensus',
+  'funding',
+  'executing',
+  'changingscope',
+  'finished',
+  'aborted',
+  'archived',
+  'cancelled'
 );
 
 CREATE TABLE public.project (
@@ -70,7 +80,7 @@ CREATE TABLE public.milestone (
     description text,
     category text,
     PRIMARY KEY (id),
-    FOREIGN KEY ("projectId") REFERENCES public.project (id)
+    FOREIGN KEY ("projectId") REFERENCES public.project (id) ON DELETE CASCADE
 );
 
 -- CREATE TABLE public.activity (
@@ -86,7 +96,7 @@ CREATE TABLE public.task (
     "keyPersonnel" text,
     budget text,
     PRIMARY KEY (id),
-    FOREIGN KEY ("milestoneId") REFERENCES public.milestone (id),
+    FOREIGN KEY ("milestoneId") REFERENCES public.milestone (id) ON DELETE CASCADE,
     FOREIGN KEY ("oracleAddress") REFERENCES public.user (address)
 );
 

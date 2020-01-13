@@ -16,6 +16,14 @@ exports.getFileFromPath = filepath => {
   return file;
 };
 
+exports.fileExists = filepath =>
+  new Promise(resolve =>
+    fs.access(filepath, fs.constants.F_OK, error => {
+      if (error) resolve(false);
+      resolve(true);
+    })
+  );
+
 const jpeg = '.jpeg';
 
 const getCoverPhotoPath = () =>
@@ -93,5 +101,5 @@ exports.saveFile = async (type, file) => {
   await mkdirp(path);
   path = path.concat(fileExtension);
   await saver.save(file, path);
-  return path;
+  return path.replace(configs.fileServer.filePath, '/files');
 };
