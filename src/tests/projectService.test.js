@@ -874,7 +874,7 @@ describe('Project Service Test', () => {
     });
   });
 
-  describe.only('Generate project agreement', () => {
+  describe('Generate project agreement', () => {
     beforeAll(() => {
       injectMocks(projectService, {
         milestoneService,
