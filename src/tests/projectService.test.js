@@ -1,12 +1,17 @@
 const COAError = require('../rest/errors/COAError');
 const files = require('../rest/util/files');
-const { userRoles, projectStatuses } = require('../rest/util/constants');
+const {
+  userRoles,
+  projectStatuses,
+  txFunderStatus
+} = require('../rest/util/constants');
 const errors = require('../rest/errors/exporter/ErrorExporter');
 
 const { injectMocks } = require('../rest/util/injection');
 
 const projectService = require('../rest/services/projectService');
 
+const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 const projectName = 'validProjectName';
 const location = 'Argentina';
 const timeframe = '12';
@@ -18,7 +23,48 @@ const proposal = 'proposal';
 const ownerId = 2;
 const file = { name: 'project.jpeg', size: 1234 };
 const milestoneFile = { name: 'project.xlsx', size: 1234 };
-const milestone = { id: 2, tasks: [{ id: 1 }, { id: 2 }, { id: 3 }] };
+const milestone = {
+  id: 2,
+  description: 'Milestone description',
+  tasks: [
+    {
+      id: 1,
+      oracle: '0x11111111',
+      description: 'Task 1 Description',
+      reviewCriteria: 'Task 1 Review',
+      category: 'Task 1 Category',
+      keyPersonnel: 'Task 1 KeyPersonnel',
+      budget: 3500
+    },
+    {
+      id: 2,
+      oracle: '0x22222222',
+      description: 'Task 2 Description',
+      reviewCriteria: 'Task 2 Review',
+      category: 'Task 2 Category',
+      keyPersonnel: 'Task 2 KeyPersonnel',
+      budget: 1000
+    },
+    {
+      id: 3,
+      oracle: '0x33333333',
+      description: 'Task 3 Description',
+      reviewCriteria: 'Task 3 Review',
+      category: 'Task 3 Category',
+      keyPersonnel: 'Task 3 KeyPersonnel',
+      budget: 500
+    }
+  ]
+};
+
+const entrepreneurUser = {
+  id: 2,
+  firstName: 'Social',
+  lastName: 'Entrepreneur',
+  role: userRoles.ENTREPRENEUR,
+  email: 'seuser@email.com',
+  address: '0x02222222'
+};
 
 const pendingProject = {
   id: 3,
@@ -66,6 +112,39 @@ const draftProject = {
   mission,
   status: projectStatuses.NEW
 };
+const executingProject = {
+  id: 15,
+  projectName,
+  location,
+  timeframe,
+  goalAmount,
+  owner: ownerId,
+  cardPhotoPath: 'path/to/cardPhoto.jpg',
+  coverPhotoPath: 'path/to/coverPhoto.jpg',
+  problemAddressed,
+  proposal,
+  mission,
+  status: projectStatuses.EXECUTING,
+  milestones: [milestone],
+  milestonePath: 'path/to/milestone.xls'
+};
+
+const supporterUser = {
+  id: 5,
+  firstName: 'Supporter',
+  lastName: 'User',
+  role: userRoles.PROJECT_SUPPORTER,
+  email: 'suppuser@email.com',
+  address: '0x05555555'
+};
+
+const verifiedTransfers = [
+  {
+    id: 1,
+    sender: supporterUser,
+    status: txFunderStatus.VERIFIED
+  }
+];
 
 const userDao = {
   findById: id => {
@@ -108,7 +187,22 @@ const projectDao = {
     if (id === 10) {
       return draftProjectWithMilestone;
     }
+    if (id === 15) {
+      return executingProject;
+    }
     return undefined;
+  },
+  findOneByProps: (filters, populate) => {
+    if (filters && filters.id === 15) {
+      if (populate && populate.owner) {
+        return {
+          ...executingProject,
+          owner: entrepreneurUser,
+          milestones: undefined
+        };
+      }
+      return { ...executingProject, milestones: undefined };
+    }
   }
 };
 
@@ -118,12 +212,6 @@ const milestoneDao = {
       return milestone;
     }
     return undefined;
-  },
-  getMilestoneByProjectId: projectId => {
-    if (projectId === 3) {
-      return [milestone];
-    }
-    return undefined;
   }
 };
 
@@ -131,6 +219,21 @@ const milestoneService = {
   createMilestones: (milestonePath, projectId) => {
     if (projectId === 1) {
       return [milestone];
+    }
+  },
+  getAllMilestonesByProject: projectId => {
+    if (projectId === 3 || projectId === 15) {
+      return [milestone];
+    }
+    return undefined;
+  }
+};
+
+const transferService = {
+  getAllTransfersByProps: props => {
+    const { filters } = props || {};
+    if (filters && filters.project === 15) {
+      return verifiedTransfers;
     }
   }
 };
@@ -687,7 +790,7 @@ describe('Project Service Test', () => {
 
     describe('Get project milestones', () => {
       beforeAll(() => {
-        injectMocks(projectService, { milestoneDao, projectDao, userDao });
+        injectMocks(projectService, { milestoneService, projectDao, userDao });
       });
 
       it('Should return project milestones of an existent project', async () => {
@@ -768,6 +871,74 @@ describe('Project Service Test', () => {
       ];
       const response = await projectService.getPublicProjects();
       expect(response).toHaveLength(0);
+    });
+  });
+
+  describe.only('Generate project agreement', () => {
+    beforeAll(() => {
+      injectMocks(projectService, {
+        milestoneService,
+        transferService,
+        projectDao
+      });
+    });
+
+    it('should return a stringified JSON with the project information', async () => {
+      const response = await projectService.generateProjectAgreement(
+        executingProject.id
+      );
+
+      const parsedResponse = JSON.parse(response);
+      expect(parsedResponse.name).toEqual(executingProject.projectName);
+      expect(parsedResponse.mission).toEqual(executingProject.mission);
+      expect(parsedResponse.problem).toEqual(executingProject.problemAddressed);
+    });
+
+    it('should return a stringified JSON with the milestones and tasks information', async () => {
+      const response = await projectService.generateProjectAgreement(
+        executingProject.id
+      );
+
+      const parsedResponse = JSON.parse(response);
+      expect(parsedResponse.milestones).toHaveLength(1);
+      expect(parsedResponse.milestones[0].goal).toEqual(5000);
+      expect(parsedResponse.milestones[0].tasks).toHaveLength(3);
+      expect(parsedResponse.milestones[0].tasks[0].id).toEqual(
+        sha3(executingProject.id, '0x11111111', 1)
+      );
+    });
+
+    it('should return a stringified JSON with the funders information', async () => {
+      const response = await projectService.generateProjectAgreement(
+        executingProject.id
+      );
+
+      const parsedResponse = JSON.parse(response);
+      expect(parsedResponse.funders).toHaveLength(1);
+      expect(parsedResponse.funders[0].address).toEqual(supporterUser.address);
+    });
+
+    it(
+      'should not return duplicated funders if there is ' +
+        'more than one transfer sent by the same user',
+      async () => {
+        verifiedTransfers.push({
+          id: 2,
+          sender: supporterUser,
+          status: txFunderStatus.VERIFIED
+        });
+        const response = await projectService.generateProjectAgreement(
+          executingProject.id
+        );
+        const parsedResponse = JSON.parse(response);
+        expect(parsedResponse.funders).toHaveLength(1);
+      }
+    );
+
+    it('should throw an error if the project does not exist', async () => {
+      await expect(projectService.generateProjectAgreement(0)).rejects.toThrow(
+        errors.common.CantFindModelWithId('project', 0)
+      );
     });
   });
 });

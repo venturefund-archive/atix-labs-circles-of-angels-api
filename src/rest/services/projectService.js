@@ -7,10 +7,12 @@
  */
 
 const path = require('path');
+const { uniqWith } = require('lodash');
 const {
   projectStatuses,
   userRoles,
-  publicProjectStatuses
+  publicProjectStatuses,
+  txFunderStatus
 } = require('../util/constants');
 const files = require('../util/files');
 const {
@@ -30,6 +32,9 @@ const logger = require('../logger');
 const thumbnailType = 'thumbnail';
 const coverPhotoType = 'coverPhoto';
 const milestonesType = 'milestones';
+
+// TODO: replace with actual function
+const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 
 module.exports = {
   async updateProject(projectId, fields) {
@@ -364,7 +369,7 @@ module.exports = {
       params: { projectId }
     });
     await checkExistence(this.projectDao, projectId, 'project');
-    return this.milestoneDao.getMilestoneByProjectId(projectId);
+    return this.milestoneService.getAllMilestonesByProject(projectId);
   },
 
   async getProjectMilestonesPath(projectId) {
@@ -494,5 +499,90 @@ module.exports = {
     // TODO: implement pagination
     logger.info('[ProjectService] :: Entering getProjectsByOwner method');
     return this.projectDao.findAllByProps({ owner: ownerId });
+  },
+
+  /**
+   * Returns a JSON object containing the description and
+   * information of milestones, tasks and funders of a project
+   *
+   * @param {number} projectId
+   * @returns {Promise<string>} agreement in JSON format
+   */
+  async generateProjectAgreement(projectId) {
+    logger.info('[ProjectService] :: Entering generateProjectAgreement method');
+    logger.info(`[ProjectService] :: Looking up project of id ${projectId}`);
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { owner: true }
+    );
+
+    if (!project) {
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+    const milestonesWithTasks = await this.milestoneService.getAllMilestonesByProject(
+      projectId
+    );
+
+    const milestones = milestonesWithTasks.map(milestone => {
+      const { description } = milestone;
+      const goal = milestone.tasks.reduce(
+        (total, task) => total + Number(task.budget),
+        0
+      );
+      const tasks = milestone.tasks.map(task => ({
+        // TODO: define task fields
+        id: sha3(projectId, task.oracle, task.id),
+        oracle: task.oracle,
+        description: task.description,
+        reviewCriteria: task.reviewCriteria,
+        category: task.category,
+        keyPersonnel: task.keyPersonnel
+      }));
+
+      return {
+        description,
+        goal,
+        tasks
+      };
+    });
+
+    const transfersWithSender = await this.transferService.getAllTransfersByProps(
+      {
+        filters: { project: projectId, status: txFunderStatus.VERIFIED },
+        populate: { sender: true }
+      }
+    );
+    const funders = uniqWith(
+      transfersWithSender.map(transfer => transfer.sender),
+      (a, b) => a.id === b.id
+    ).map(funder => ({
+      // TODO: define funder fields
+      firstName: funder.firstName,
+      lastName: funder.lastName,
+      email: funder.email,
+      address: funder.address
+    }));
+
+    const projectOwner = {
+      firstName: project.owner.firstName,
+      lastName: project.owner.lastName,
+      email: project.owner.email,
+      address: project.owner.address
+    };
+
+    // TODO: define project fields
+    const agreement = {
+      name: project.projectName,
+      mission: project.mission,
+      problem: project.problemAddressed,
+      owner: projectOwner,
+      milestones,
+      funders
+    };
+
+    const agreementJson = JSON.stringify(agreement, undefined, 2);
+    return agreementJson;
   }
 };

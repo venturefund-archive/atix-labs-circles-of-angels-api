@@ -329,39 +329,6 @@ module.exports = {
       milestone.id
     );
     return milestoneTasks;
-
-    // FIXME : keeping this because I can't understand what it's trying to achieve.
-    //         but I may need it in the future.
-    // const activities = [];
-
-    // await forEachPromise(
-    //   milestoneActivities.activities,
-    //   (activity, context) =>
-    //     new Promise(resolve => {
-    //       process.nextTick(async () => {
-    //         const oracle = await this.activityService.getOracleFromActivity(
-    //           activity.id
-    //         );
-    //         const activityWithType = {
-    //           ...activity,
-    //           type: 'Activity',
-    //           quarter: milestone.quarter,
-    //           oracle: oracle ? oracle.user : {}
-    //         };
-
-    //         context.push(activityWithType);
-    //         resolve();
-    //       });
-    //     }),
-    //   activities
-    // );
-
-    // const activitiesWithType = {
-    //   ...milestoneActivities,
-    //   activities
-    // };
-
-    // return activitiesWithType;
   },
 
   /**
@@ -578,6 +545,21 @@ module.exports = {
     }
   },
 
+  /**
+   * Returns an array with all milestones and its tasks of an specified project
+   *
+   * @param {number} projectId
+   * @returns
+   */
+  async getAllMilestonesByProject(projectId) {
+    logger.info(
+      '[MilestoneService] :: Entering getAllMilestonesByProject method'
+    );
+    return this.milestoneDao.getMilestonesByProjectId(projectId);
+  },
+
+  // TODO: check if this method does anything different than getAllMilestonesByProject,
+  //       delete if no
   async getMilestonesByProject(projectId) {
     logger.info(
       '[Milestone Service] :: Getting milestones for Project',
