@@ -23,20 +23,9 @@ module.exports = {
     reply.send(user);
   },
 
-  getUsers: fastify => async (request, reply) => {
-    fastify.log.info('[User Routes] :: Getting all users');
-    try {
-      const users = await userService.getUsers();
-      reply.status(200).send({ users });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all users:',
-        error
-      );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting all users'
-      });
-    }
+  getUsers: () => async (request, reply) => {
+    const users = await userService.getUsers();
+    reply.status(200).send({ users });
   },
 
   getUserRole: fastify => async (request, reply) => {
@@ -65,54 +54,29 @@ module.exports = {
     }
   },
 
-  getAllRoles: fastify => async (request, reply) => {
-    try {
-      fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
-
-      const roles = await userService.getAllRoles();
-      reply.status(200).send({ roles });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all user roles:',
-        error
-      );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting all user roles'
-      });
-    }
+  getAllRoles: () => (request, reply) => {
+    const roles = userService.getAllRoles();
+    reply.status(200).send(roles);
   },
 
   loginUser: fastify => async (request, reply) => {
-    try {
-      const { email, pwd } = request.body;
-      fastify.log.info('[User Routes] :: Trying to log in user:', email);
+    const { email, pwd } = request.body;
+    const user = await userService.login(email, pwd);
 
-      const user = await userService.login(email, pwd);
+    const token = fastify.jwt.sign(user);
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 1);
 
-      if (user.error) {
-        fastify.log.error('[User Routes] :: Log in failed for user:', email);
-        reply.status(401).send({ error: user });
-      } else {
-        fastify.log.info('[User Routes] :: Log in successful for user:', email);
-        const token = fastify.jwt.sign(user);
-        const expirationDate = new Date();
-        expirationDate.setDate(expirationDate.getDate() + 1);
-        reply
-          .status(200)
-          .setCookie('userAuth', token, {
-            domain: fastify.configs.server.host,
-            path: '/',
-            httpOnly: true,
-            expires: expirationDate
-            // secure: true
-          })
-          .send(user);
-      }
-    } catch (err) {
-      reply
-        .status(500)
-        .send({ error: 'There was an unexpected error logging in' });
-    }
+    reply
+      .status(200)
+      .setCookie('userAuth', token, {
+        domain: fastify.configs.server.host,
+        path: '/',
+        httpOnly: true,
+        expires: expirationDate
+        // secure: true
+      })
+      .send(user);
   },
 
   signupUser: () => async (request, reply) => {
@@ -206,24 +170,9 @@ module.exports = {
     }
   },
 
-  getUserProjects: fastify => async (request, reply) => {
-    const { userProjectService, projectService } = apiHelper.helper.services;
-    const { userId } = request.params;
-    fastify.log.info('[User Routes] :: getting list of oracles');
-    try {
-      const projects = await userService.getProjectsOfUser(
-        userId,
-        userProjectService,
-        projectService
-      );
-      if (projects.error) {
-        reply.status(projects.status).send(projects);
-      } else {
-        reply.status(200).send(projects);
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error getting oracles' });
-    }
+  getMyProjects: () => async (request, reply) => {
+    const userId = request.user.id;
+    const projects = await userService.getProjectsOfUser(userId);
+    reply.status(200).send(projects);
   }
 };

@@ -74,6 +74,7 @@ module.exports = fastify => {
     const dependencies = {
       userDao,
       mailService,
+      projectService,
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
       questionnaireService: undefined
@@ -103,7 +104,8 @@ module.exports = fastify => {
       activityFileDao: undefined,
       activityPhotoDao: undefined,
       oracleActivityDao: undefined,
-      userService
+      userService,
+      milestoneService
     };
     injectDependencies(service, dependencies);
   }
@@ -145,7 +147,7 @@ module.exports = fastify => {
       milestoneDao,
       activityService,
       milestoneBudgetStatusDao,
-      projectDao,
+      projectService,
       userDao
     };
     injectDependencies(service, dependencies);

@@ -27,14 +27,14 @@ describe('Project service helper', () => {
       const params = undefined;
       const notParamUndefined = 'this is not undefined';
       expect(() => validateParams(params, notParamUndefined)).toThrow(
-        errors.CreateProjectFieldsNotValid
+        errors.project.CreateProjectFieldsNotValid
       );
     });
 
     it('Whenever the only param is undefined, validateParams should throw COAError', async () => {
       const params = undefined;
       expect(() => validateParams(params)).toThrow(
-        errors.CreateProjectFieldsNotValid
+        errors.project.CreateProjectFieldsNotValid
       );
     });
 

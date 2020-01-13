@@ -6,14 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { activityStatus, milestoneBudgetStatus } = require('../util/constants');
-
 module.exports = {
-  async getMilestoneById(milestoneId) {
-    const milestone = await this.model.findOne({ id: milestoneId });
-    return milestone;
-  },
-  async findById(milestoneId) { //TODO remove getMilestoneById
+  async findById(milestoneId) {
     const milestone = await this.model.findOne({ id: milestoneId });
     return milestone;
   },
@@ -27,13 +21,10 @@ module.exports = {
   async getMilestoneByProjectId(project) {
     return this.model.find({ project }).populate('tasks');
   },
-  async saveMilestone({ milestone, projectId, budgetStatus }) {
+  async saveMilestone({ milestone, projectId }) {
     const toSave = {
       ...milestone,
       project: projectId
-      // status: activityStatus.PENDING,
-      // budgetStatus: budgetStatus || milestoneBudgetStatus.BLOCKED,
-      // blockchainStatus: 1
     };
     const createdMilestone = await this.model.create(toSave);
     return createdMilestone;
@@ -41,16 +32,15 @@ module.exports = {
   async updateMilestone(milestone, milestoneId) {
     const toUpdate = { ...milestone };
 
-    toUpdate.status = toUpdate.status || activityStatus.PENDING;
-    toUpdate.budgetStatus =
-      toUpdate.budgetStatus || milestoneBudgetStatus.BLOCKED;
-    toUpdate.blockchainStatus = toUpdate.blockchainStatus || 1;
-
     const savedMilestone = await this.model
       .updateOne({ id: milestoneId })
       .set({ ...toUpdate });
 
     return savedMilestone;
+  },
+  async deleteMilestone(milestoneId) {
+    const deleted = await this.model.destroyOne(milestoneId);
+    return deleted;
   },
 
   // FIXME : unclear name
@@ -60,10 +50,6 @@ module.exports = {
       .populate('tasks');
 
     return milestone || [];
-  },
-  async deleteMilestone(milestoneId) {
-    const deleted = await this.model.destroy(milestoneId).fetch();
-    return deleted;
   },
   async getMilestonesByProject(projectId) {
     const milestones = await this.model
@@ -78,10 +64,9 @@ module.exports = {
   async getAllMilestones() {
     const milestones = await this.model
       .find()
-      .populate('status')
       .populate('project')
-      .populate('budgetStatus')
-      .sort('id DESC');
+      .populate('tasks')
+      .sort('createdAt DESC');
 
     return milestones || [];
   },

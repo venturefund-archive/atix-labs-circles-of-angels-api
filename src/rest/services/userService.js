@@ -9,6 +9,7 @@
 const bcrypt = require('bcrypt');
 const { userRoles } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
+const checkExistence = require('./helpers/checkExistence');
 
 const logger = require('../logger');
 const COAError = require('../errors/COAError');
@@ -27,41 +28,38 @@ module.exports = {
    * @returns user information | error message
    */
   async login(email, pwd) {
+    logger.info(`[User Service] :: Trying to login ${email} user`);
     const user = await this.userDao.getUserByEmail(email);
 
-    if (user && user !== null) {
-      // logger.info('[User Service] :: User found in database:', user);
-
-      // if an user was found with that email, verify with encrypted pwd
-      const match = await bcrypt.compare(pwd, user.password);
-
-      if (match) {
-        // logger.info('[User Service] :: User authenticated:', user.email);
-
-        const authenticatedUser = {
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          id: user.id,
-          role: user.role
-        };
-
-        if (user.blocked) {
-          logger.error(`[User Service] :: User ID ${user.id} is blocked`);
-          throw new COAError(errors.UserNotFound);
-        }
-
-        return authenticatedUser;
-      }
-
-      // error if wrong password
-      logger.error('[User Service] :: Password failed to authenticate');
-    } else {
-      // error if user not found
-      logger.error('[User Service] :: User not found in database:', email);
+    if (!user) {
+      logger.error('[User Service] :: User is not found');
+      throw new COAError(errors.user.UserNotFound);
     }
 
-    return { error: 'Login failed. Incorrect user or password.' };
+    logger.info(`[User Service] :: User email ${email} found`);
+    const match = await bcrypt.compare(pwd, user.password);
+
+    if (!match) {
+      logger.error(
+        '[User Service] :: Login failed. Incorrect user or password'
+      );
+      throw new COAError(errors.user.InvalidUserOrPassword);
+    }
+
+    const authenticatedUser = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      id: user.id,
+      role: user.role
+    };
+
+    if (user.blocked) {
+      logger.error(`[User Service] :: User ID ${user.id} is blocked`);
+      throw new COAError(errors.user.UserRejected);
+    }
+
+    return authenticatedUser;
   },
 
   /**
@@ -122,7 +120,7 @@ module.exports = {
       logger.error(
         `[User Service] :: User with email ${email} already exists.`
       );
-      throw new COAError(errors.EmailAlreadyInUse);
+      throw new COAError(errors.user.EmailAlreadyInUse);
     }
 
     const user = {
@@ -147,14 +145,15 @@ module.exports = {
 
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
 
-    await this.mailService.sendMail(
-      '"Circles of Angels Support" <coa@support.com>',
-      email,
-      'Circles of Angels - Welcome!',
-      `<p>Your Circles Of Angels account was created successfully! </br></p>
-          <p>We are reviewing your account details. You will be notified once we are done. </br></p>
-          <p>Thank you for your support. </br></p>`
-    );
+    await this.mailService.sendMail({
+      from: '"Circles of Angels Support" <coa@support.com>',
+      to: email,
+      subject: 'Circles of Angels - Welcome',
+      text: 'Welcome to Circle of Angels!',
+      html: `<p>Your Circles Of Angels account was created successfully! </br></p>
+      <p>We are reviewing your account details. You will be notified once we are done. </br></p>
+      <p>Thank you for your support. </br></p>`
+    });
 
     return savedUser;
   },
@@ -170,7 +169,7 @@ module.exports = {
 
     if (!user || user == null) {
       logger.error(`[User Service] :: User ID ${userId} not found in database`);
-      throw new COAError(errors.UserNotFound);
+      throw new COAError(errors.user.UserNotFound);
     }
 
     return user.role;
@@ -191,7 +190,7 @@ module.exports = {
     // TODO : duplicate logic, should we extract it?
     if (!existingUser) {
       logger.error(`[User Service] :: User ID ${userId} does not exist`);
-      throw new COAError(errors.UserNotFound);
+      throw new COAError(errors.user.UserNotFound);
     }
 
     const { pwd, email } = user;
@@ -209,7 +208,7 @@ module.exports = {
         logger.error(
           `[User Service] :: User with email ${email} already exists.`
         );
-        throw new COAError(errors.EmailAlreadyInUse);
+        throw new COAError(errors.user.EmailAlreadyInUse);
       }
     }
 
@@ -220,23 +219,20 @@ module.exports = {
 
   /**
    * Gets all valid user roles
-   * @returns role list | error
+   * @returns role list
    */
   // TODO : i'd say this function does not make sense anymore.
   getAllRoles() {
     logger.info('[User Service] :: Getting all User Roles');
+
     try {
       const userRoleWithoutAdmin = Object.assign({}, userRoles);
       delete userRoleWithoutAdmin.BO_ADMIN;
 
-      if (userRoleWithoutAdmin.length === 0) {
-        logger.info('[User Service] :: No User Roles loaded');
-      }
-
-      return userRoleWithoutAdmin;
+      return Object.values(userRoleWithoutAdmin);
     } catch (error) {
       logger.error('[User Service] :: Error getting all User Roles:', error);
-      throw new COAError('Error getting all User Roles');
+      throw new COAError(errors.common.ErrorGetting('user roles'));
     }
   },
 
@@ -257,40 +253,46 @@ module.exports = {
     return this.userDao.getUsers();
   },
 
-  // TODO FIXME: fix this.
-  async getProjectsOfUser(userId, userProjectService, projectService) {
+  /**
+   * Returns an array of projects associated with the specified user.
+   *
+   * @param {number} userId
+   * @returns {Promise<Project[]>} array of found projects
+   */
+  async getProjectsOfUser(userId) {
+    logger.info('[UserService] :: Entering getProjectsOfUser method');
+    validateRequiredParams({
+      method: 'getProjectsOfUser',
+      params: { userId }
+    });
+    const user = await checkExistence(this.userDao, userId, 'user');
+    if (user.role === userRoles.ENTREPRENEUR) {
+      const projects = await this.projectService.getProjectsByOwner(userId);
+      return projects;
+    }
+
+    if (user.role === userRoles.PROJECT_SUPPORTER) {
+      // TODO: Do this when the relation between supporter and project exists
+      //   switch (user.role.id) {
+      //     case userRoles.IMPACT_FUNDER:
+      //       response = (await userProjectService.getProjectsOfUser(
+      //         userId
+      //       )).filter(
+      //         project =>
+      //           project.status === projectStatus.PUBLISHED ||
+      //           project.status === projectStatus.IN_PROGRESS
+      //       );
+      //       break;
+      //     case userRoles.ORACLE:
+      //       response = await projectService.getAllProjectsById(
+      //         (await projectService.getProjectsAsOracle(userId)).projects
+      //       );
+      //       break;
+      const projects = [];
+      return projects;
+    }
+
     return [];
-    // try {
-    //   const user = await this.getUserById(userId);
-    //   let response = [];
-    //   if (!user) {
-    //     throw new UserNotFoundError('Nonexistent User');
-    //   }
-    //   switch (user.role.id) {
-    //     case userRoles.IMPACT_FUNDER:
-    //       response = (await userProjectService.getProjectsOfUser(
-    //         userId
-    //       )).filter(
-    //         project =>
-    //           project.status === projectStatus.PUBLISHED ||
-    //           project.status === projectStatus.IN_PROGRESS
-    //       );
-    //       break;
-    //     case userRoles.ORACLE:
-    //       response = await projectService.getAllProjectsById(
-    //         (await projectService.getProjectsAsOracle(userId)).projects
-    //       );
-    //       break;
-    //     case userRoles.SOCIAL_ENTREPRENEUR:
-    //       response = await projectService.getProjectsOfOwner(userId);
-    //       break;
-    //     default:
-    //       throw new InvalidUserError('Invalid User');
-    //   }
-    //   return response;
-    // } catch (error) {
-    //   throw new COAUserServiceError('Error getting projects of user');
-    // }
   },
 
   async validUser(user, roleId) {

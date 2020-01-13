@@ -28,7 +28,8 @@ module.exports = {
   },
 
   async getOracles() {
-    return this.model.find({ role: userRoles.ORACLE });
+    // TODO redifine this, oracle role doesnt exist now
+    return this.model.find({ role: userRoles.PROJECT_SUPPORTER });
   },
 
   async updateUser(id, user) {
@@ -38,10 +39,8 @@ module.exports = {
 
   async getUsers() {
     return this.model
-      .find({
-        where: { role: { '!=': userRoles.BO_ADMIN } }
-      })
-      .populate('registrationStatus');
+      .find({ where: { role: { '!=': userRoles.COA_ADMIN } } })
+      .sort('createdAt ASC');
   },
 
   async updatePasswordByMail(email, pwd) {

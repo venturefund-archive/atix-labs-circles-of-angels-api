@@ -22,6 +22,7 @@ const {
   blockchainStatus,
   userRoles
 } = require('../util/constants');
+
 const MAX_PHOTO_SIZE = 500000;
 
 const { savePhotoJpgFormat } = require('../util/files');
@@ -363,7 +364,7 @@ module.exports = {
           }
           logger.info('[Project Service] :: Project started:', startedProject);
           delete newProject.status;
-        } else if (user.role.id !== userRoles.BO_ADMIN) {
+        } else if (user.role.id !== userRoles.PROJECT_CURATOR) {
           logger.error(
             '[Project Service] :: Could not change project status. User is not an admin'
           );

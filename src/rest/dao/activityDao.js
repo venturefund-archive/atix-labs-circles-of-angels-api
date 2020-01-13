@@ -12,16 +12,14 @@ module.exports = {
   async saveActivity(activity, milestoneId) {
     const toSave = {
       ...activity,
-      milestone: milestoneId,
-      status: 1,
-      blockchainStatus: 1
+      milestone: milestoneId
     };
     const createdActivity = await this.model.create(toSave);
     return createdActivity;
   },
 
-  async getActivityById(activityId) {
-    const activity = await this.model.findOne({ id: activityId });
+  async findById(id) {
+    const activity = await this.model.findOne({ id });
     return activity;
   },
 

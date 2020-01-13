@@ -27,11 +27,34 @@ const projectStatus = {
   IN_PROGRESS: 4
 };
 
-const projectStatusType = {
-  DRAFT: 'draft',
-  PENDING: 'pending',
+const publicProjectStatuses = {
+  PUBLISHED: 'published',
   CONSENSUS: 'consensus',
-  ONGOING: 'ongoing'
+  FUNDING: 'funding',
+  EXECUTING: 'executing',
+  CHANGING_SCOPE: 'changingscope',
+  FINISHED: 'finished',
+  ABORTED: 'aborted'
+};
+
+const privateProjectStatuses = {
+  NEW: 'new',
+  TO_REVIEW: 'toreview',
+  REJECTED: 'rejected'
+};
+
+const inactiveProjectStatuses = {
+  DELETED: 'deleted',
+  ARCHIVED: 'archived',
+  CANCELLED: 'cancelled'
+  // TODO this status might be a boolean field in project table
+  // SUSPENDED: 'suspended'
+};
+
+const projectStatuses = {
+  ...privateProjectStatuses,
+  ...publicProjectStatuses,
+  ...inactiveProjectStatuses
 };
 
 const activityStatus = {
@@ -49,10 +72,11 @@ const txFunderStatus = {
 };
 
 const userRoles = {
-  BO_ADMIN: 'admin',
+  COA_ADMIN: 'admin',
   ENTREPRENEUR: 'entrepreneur',
-  FUNDER: 'funder',
-  ORACLE: 'oracle'
+  PROJECT_SUPPORTER: 'supporter',
+  PROJECT_CURATOR: 'curator',
+  BANK_OPERATOR: 'bankoperator'
 };
 
 const milestoneBudgetStatus = {
@@ -112,11 +136,14 @@ module.exports = {
   txFunderStatus,
   transferStatus,
   projectStatus,
+  projectStatuses,
+  publicProjectStatuses,
+  privateProjectStatuses,
+  inactiveProjectStatuses,
   activityStatus,
   userRoles,
   milestoneBudgetStatus,
   blockchainStatus,
   xlsxConfigs,
-  projectStatusType,
   transactionTypes
 };
