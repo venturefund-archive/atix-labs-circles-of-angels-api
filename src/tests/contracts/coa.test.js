@@ -39,7 +39,6 @@ contract(
         });
       });
       describe('members', () => {
-
         it('should create a member', async () => {
           const userData = ['first user profile'];
           await coa.createMember(...userData);
@@ -83,6 +82,36 @@ contract(
         const claim = await registry.registry(project, creator, claimHash);
         assert.equal(claim.proof, proof);
         assert.equal(claim.approved, approved);
+      });
+
+      it('should check if claims are approved correctly', async () => {
+        const project = await coa.projects(0);
+        const claimHash1 = utils.id('a very useful task 1');
+        const claimHash2 = utils.id('a very useful task 2');
+        const proof = utils.id('an authentic proof');
+        await registry.addClaim(project, claimHash1, proof, true);
+        await registry.addClaim(project, claimHash2, proof, true);
+        const approved = await registry.areApproved(
+          project,
+          [creator, creator],
+          [claimHash1, claimHash2]
+        );
+        assert.equal(approved, true);
+      });
+      it('should check if claims are approved correctly', async () => {
+        const project = await coa.projects(0);
+        const claimHash1 = utils.id('a very useful task 1');
+        const claimHash2 = utils.id('a very useful task 2');
+        const invalidClaimHash = utils.id('invalid');
+        const proof = utils.id('an authentic proof');
+        await registry.addClaim(project, claimHash1, proof, true);
+        await registry.addClaim(project, claimHash2, proof, true);
+        const approved = await registry.areApproved(
+          project,
+          [creator, creator, funder],
+          [claimHash1, claimHash2, invalidClaimHash]
+        );
+        assert.equal(approved, false);
       });
     });
   }

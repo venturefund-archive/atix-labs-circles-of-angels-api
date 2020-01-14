@@ -50,4 +50,18 @@ contract ClaimsRegistry {
         // too much args?
         emit ClaimApproved(_project, validator, _claim, _approved, _proof, now);
     }
+
+    function areApproved(
+        address project,
+        address[] memory validators,
+        bytes32[] memory claims
+    ) public view returns (bool) {
+        require(validators.length == claims.length, "arrays must be equal size");
+        bool approved = true;
+        for (uint i = 0; i < claims.length; i++) {
+            Claim memory claim = registry[project][validators[i]][claims[i]];
+            approved = approved && claim.approved;
+        }
+        return approved;
+    }
 }
