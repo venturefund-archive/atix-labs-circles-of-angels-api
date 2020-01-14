@@ -8,7 +8,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const env = require('@nomiclabs/buidler');
+const { coa, ethers, ethereum } = require('@nomiclabs/buidler');
 const COAError = require('./errors/COAError');
 
 /**
@@ -17,12 +17,26 @@ const COAError = require('./errors/COAError');
  * @param logger instance of a logger that contains the pino interface
  * @param serverConfigs server configs for the connection. I.e -> {host: 'localhost', port: 3000}
  */
+
+// TODO : this should handle the txs that reverted.
+// TODO : move this to another file.
+process.on('unhandledRejection', (reason, p) => {
+  const { data, message, code } = reason;
+  if (message === 'VM Exception while processing transaction: revert') {
+    const txs = Object.keys(data).filter(k => !['stack', 'name'].includes(k));
+    console.log('failed txs', txs);
+  }
+});
+
+ethers.provider.on('block', blockNumber => console.log('block', blockNumber));
+
 module.exports.start = async ({ db, logger, configs }) => {
-  console.log(Object.keys(env.ethers.provider));
-  console.log(typeof(env.ethers.provider._events));
-  console.log(Object.keys(env.ethers.provider._events));
-  await env.coa.addMember('aaa');
-  console.log(env.ethers.provider._events);
+  await coa.success();
+  coa.fail();
+  coa.emitEvent();
+  coa.emitEvent();
+  coa.fail();
+
   try {
     const swaggerConfigs = configs.swagger;
     const fastify = require('fastify')({ logger });
