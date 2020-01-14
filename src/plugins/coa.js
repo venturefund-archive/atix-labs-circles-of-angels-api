@@ -1,8 +1,5 @@
-const {
-  readArtifact,
-  readArtifactSync
-} = require('@nomiclabs/buidler/plugins');
-const { ContractFactory } = require('ethers');
+const { readArtifact } = require('@nomiclabs/buidler/plugins');
+const { ContractFactory, utils } = require('ethers');
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
@@ -14,11 +11,7 @@ module.exports = class COA {
     this.contracts = {};
   }
 
-  async createMember(profile) {
-    const coa = await this.getCOA();
-    const tx = await coa.createMember(profile);
-  }
-
+  // testing methods
   async fail() {
     const coa = await this.getCOA();
     return coa.fail();
@@ -33,74 +26,79 @@ module.exports = class COA {
     const coa = await this.getCOA();
     return coa.emitEvent();
   }
+  // testing methods
 
-  async createProject(name, agreement) {
-    const coa = await getCOA();
-    const projectId = await coa.createProject(name, agreement);
+  async createMember(profile) {
+    const coa = await this.getCOA();
+    await coa.createMember(profile);
   }
 
-  async createDAO(params, env) {
+  async createProject(name, agreement) {
     const coa = await this.getCOA();
-    const { name, agreement } = params;
-    const tx = await coa.createDAO(name);
-    console.log(tx);
+    await coa.createProject(name, agreement);
+  }
+
+  async createDAO(name) {
+    const coa = await this.getCOA();
+    await coa.createDAO(name);
+  }
+
+  async getProject(address) {
+    return this.getContractAt('Project', address);
+  }
+
+  async getProjectById(id) {
+    const coa = await this.getCOA();
+    const address = await coa.projects(id);
+    return this.getContractAt('Project', address);
   }
 
   async getClaim(projectId, validator, claim) {
-    const coa = await getCOA();
-    if (validator === undefined) {
-      signers = await env.ethers.signers();
-    }
-    const projectAddress = await env.run('get-project', { projectId });
-    validator = signers[0];
+    const coa = await this.getCOA();
+    const projectAddress = await coa.projects(projectId);
     const tx = await coa.registry(projectAddress, validator, claim);
     console.log(tx);
   }
 
   async addClaim(project, claim, proof, valid) {
-    const registry = await getRegistry();
+    const registry = await this.getRegistry();
     const tx = await registry.addClaim(project, claim, proof, valid);
     // get receipt and check logs
+    console.log(tx);
     return tx;
   }
 
-  async approveTask(projectId, taskId, proof) {
-    const coa = await getCOA();
+  async approveTask(projectId, validator, taskId, proof) {
+    const coa = await this.getCOA();
 
-    const projectAddress = '0xC2C22CeE68625D65105fE98a92B283b79845F609';
-    const project = await getProject(projectAddress);
+    const address = await coa.projects(projectId);
+    const project = await this.getProject(address);
     const owner = await project.owner();
 
-    const claim = ethers.utils.id(`${projectAddress}${owner}${taskId}`);
+    const claim = utils.id(`${projectId}${owner}${taskId}`);
 
-    return env.run('make-claim', {
-      project: projectId,
-      claim,
-      proof,
-      valid: true
-    });
+    await this.makeClaim(address, validator, claim, proof, true);
   }
 
-  async approveTransfer(projectId, transferId, proof) {
-    const coa = await getCOA();
-    const projectAddress = coa.projects(projectId);
-    // const project = getProject(projectAddress)
+  async approveTransfer(projectId, validator, transferId, proof) {
+    const coa = await this.getCOA();
 
-    const claim = ethers.utils.id(`${projectAddress}${transferId}`);
+    const address = coa.projects(projectId);
+    const claim = utils.id(`${address}${transferId}`);
 
-    return env.run('make-claim', { project, claim, proof, valid: true });
+    await this.makeClaim(address, validator, claim, proof, true);
+  }
+
+  async makeClaim(project, validator, claim, proof, valid) {
+    const coa = await this.getCOA();
+    // TODO : connect Contract instance to a signer (similar to web3's `from` argument)
+    // coa.connect(validator);
+    await coa.addClaim(project, claim, proof, valid);
   }
 
   async getMember(address) {
     const coa = await this.getCOA();
     return coa.members(address);
-  }
-
-  async getProject(projectId) {
-    const coa = await getCOA();
-    const address = await coa.getProject(projectId);
-    // console.log('Project', projectId, address);
-    return address;
   }
 
   async getContract(name, signer) {
@@ -142,26 +140,14 @@ module.exports = class COA {
     return this.contracts.registry;
   }
 
-  async getProject(address) {
-    return this.getContractAt('Project', address);
-  }
-
-  async getChainId(chainId) {
-    if (chainId === undefined) {
-      chainId =
-        this.env.network.config.chainId === undefined
-          ? await this.chainIdGetter()
-          : this.env.network.config.chainId;
-    }
-    return chainId;
-  }
-
   async getSigner(account) {
-    return account === undefined
-      ? (await this.env.ethers.signers())[0]
-      : typeof account === 'string'
-      ? this.env.ethers.provider.getSigner(account)
-      : account;
+    if (account === undefined) {
+      return (await this.env.ethers.signers())[0];
+    }
+    if (typeof account === 'string') {
+      return this.env.ethers.provider.getSigner(account);
+    }
+    return account;
   }
 
   isDeployed(state, chainId, name) {
