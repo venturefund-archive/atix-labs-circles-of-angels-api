@@ -16,10 +16,7 @@ module.exports = class COA {
 
   async createMember(profile) {
     const coa = await this.getCOA();
-    // console.log(coa)
-    // console.log(coa.iCnterface.functions)
     const tx = await coa.createMember(profile);
-    // console.log(tx);
   }
 
   async fail() {
@@ -126,7 +123,7 @@ module.exports = class COA {
         'COA'
       );
       console.log('coa address', contract.address, 'setting events for coa');
-      contract.on('DAOCreated', args => console.log('getCOA', args));
+      contract.on('DAOCreated', args => console.log('DAOCreated', args));
       this.contracts.coa = contract;
     }
 
