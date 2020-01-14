@@ -20,9 +20,4 @@ contract Project is Ownable {
         name = _name;
         agreementHash = _agreementHash;
     }
-
-    function setEntrepreneur(address _entrepreneurAddress) public onlyOwner {
-        entrepreneurAddress = _entrepreneurAddress;
-    }
-
 }

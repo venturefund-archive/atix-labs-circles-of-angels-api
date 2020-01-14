@@ -62,14 +62,4 @@ contract COA is Ownable {
         daos.push(dao);
         emit DAOCreated(address(dao));
     }
-
-    function approveClaim(address project, bytes32 claim, bytes32 proof) public {
-        registry.addClaim(project, claim, proof, true);
-    }
-
-    // ugly name
-    function disapproveClaim(address project, bytes32 claim, bytes32 proof) public {
-        registry.addClaim(project, claim, proof, false);
-    }
-
 }
