@@ -98,7 +98,7 @@ contract(
         );
         assert.equal(approved, true);
       });
-      it('should check if claims are approved correctly', async () => {
+      it('should check non-approved claims are approved correctly', async () => {
         const project = await coa.projects(0);
         const claimHash1 = utils.id('a very useful task 1');
         const claimHash2 = utils.id('a very useful task 2');
@@ -112,6 +112,23 @@ contract(
           [claimHash1, claimHash2, invalidClaimHash]
         );
         assert.equal(approved, false);
+      });
+      it('should handle large set of claims to be checked', async () => {
+        const project = await coa.projects(0);
+        const proof = utils.id('an authentic proof');
+        const claims = [];
+        const validators = [];
+        for (let i = 0; i < 50; i++) {
+          claims.push(utils.id(i));
+          validators.push(creator);
+          await registry.addClaim(project, claims[i], proof, true);
+        }
+        const approved = await registry.areApproved(
+          project,
+          validators,
+          claims
+        );
+        assert.equal(approved, true);
       });
     });
   }
