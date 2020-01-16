@@ -1,0 +1,225 @@
+pragma solidity ^0.5.8;
+
+import '@openzeppelin/contracts/ownership/Ownable.sol';
+import '@openzeppelin/contracts/math/SafeMath.sol';
+import './COA.sol';
+import './IDAO.sol';
+
+contract DAO {
+
+    using SafeMath for uint256;
+
+    mapping (address => Member) public members;
+    // mapping (address => address) public memberAddressByDelegateKey;
+    Proposal[] public proposalQueue;
+    // DAO's name.
+    string public name;
+    uint public creationTime;
+
+    enum ProposalType {
+        NewMember,
+        AssignRole,
+        NewDAO
+    }
+
+    uint256 public periodDuration;
+    uint256 public votingPeriodLength;
+    uint256 public gracePeriodLength;
+    uint256 public proposalDeposit; 
+    
+    // Events 
+    event SubmitProposal(
+        uint256 proposalIndex,
+        address indexed memberAddress,
+        address indexed applicant,
+        uint256 tokenTribute,
+        uint256 sharesRequested
+    );
+
+    event SubmitVote(
+        uint256 indexed proposalIndex,
+        address indexed memberAddress,
+        uint8 vote
+    );
+    event ProcessProposal(
+        uint256 indexed proposalIndex,
+        address indexed applicant,
+        address indexed memberAddress,
+        ProposalType proposalType,
+        bool didPass
+    );
+
+    enum Vote {
+        Null,
+        Yes,
+        No
+    }
+
+    struct Member {
+        // Role role;
+        bool exists;
+        uint shares;        
+        // address delegateKey;
+    }
+
+    struct Proposal {
+        address proposer;
+        address applicant;
+        ProposalType proposalType;
+
+        uint256 goal;
+
+        uint256 yesVotes;
+        uint256 noVotes;
+        bool didPass;
+        
+        string description; // ipfs / rif storage hash
+
+        mapping (address => Vote) votesByMember;
+
+        uint256 startingPeriod; // the period in which voting can start for this proposal}
+        bool processed;
+    }
+
+    // bank operators
+    // curators 
+
+    constructor(string memory _name) public {
+        name = _name;
+        creationTime = now;
+        addMember(msg.sender);
+    }
+
+    function addMember(address memberAddress) private {
+        Member memory member = Member({
+            // role: Role.Activist,
+            exists: true,
+            shares: 1
+            // delegateKey: memberAddress
+        });
+        members[memberAddress] = member;
+    }
+
+    function submitProposal(
+        address _applicant,
+        uint8 _proposalType,
+        uint256 _goal,
+        string memory _description
+    ) public {
+        // require msg.sender is a member.
+        address memberAddress = msg.sender;
+        require(_proposalType < 2, "invalid type");
+        Proposal memory proposal = Proposal({
+            proposer: memberAddress,
+            description: _description,
+            proposalType: ProposalType(_proposalType),
+            applicant: _applicant,
+            goal: _goal,
+            yesVotes: 0,
+            noVotes: 0,
+            didPass: false,
+            startingPeriod: 0,
+            processed: false 
+        });
+
+        proposalQueue.push(proposal);
+    }
+
+    function submitVote(uint _proposalIndex, uint8 _vote) public {
+        address memberAddress = msg.sender;
+        Member storage member = members[memberAddress];
+        // require(member.shares > 0, "no voting power");
+        require(_proposalIndex < proposalQueue.length, "Moloch::submitVote - proposal does not exist");
+        Proposal storage proposal = proposalQueue[_proposalIndex];
+
+        require(_vote < 3, "_vote must be less than 3");
+        Vote vote = Vote(_vote);
+        require(getCurrentPeriod() >= proposal.startingPeriod, "voting period has not started");
+
+        require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
+        // require(proposal.votesByMember[memberAddress] == Vote.Null, "member has already voted on this proposal");
+        require(vote == Vote.Yes || vote == Vote.No, "vote must be either Yes or No");
+
+        // store vote
+        proposal.votesByMember[memberAddress] = vote;
+
+        // count vote
+        if (vote == Vote.Yes) {
+            proposal.yesVotes = proposal.yesVotes.add(member.shares);
+
+        } else if (vote == Vote.No) {
+            proposal.noVotes = proposal.noVotes.add(member.shares);
+        }
+
+        emit SubmitVote(_proposalIndex, memberAddress, _vote);
+    }
+
+    function processProposal(uint256 proposalIndex) public canProcess(proposalIndex) {
+        Proposal storage proposal = proposalQueue[proposalIndex];
+
+        // TODO : this require is needed!
+        // require(proposal.proposalType == ProposalType.NewMember, "only new members proposal");
+        proposal.processed = true;
+
+        bool didPass = proposal.yesVotes > proposal.noVotes;
+
+        if (didPass) {
+            // PROPOSAL PASSED
+            proposal.didPass = true;
+            if (proposal.proposalType == ProposalType.NewMember) {
+                processNewMemberProposal(proposalIndex);
+            } else if (proposal.proposalType == ProposalType.NewMember) {
+            } else if (proposal.proposalType == ProposalType.NewMember) {
+            }
+        } else {
+            // PROPOSAL FAILED
+        }
+
+        emit ProcessProposal(
+            proposalIndex,
+            proposal.applicant,
+            proposal.proposer,
+            proposal.proposalType,
+            didPass
+        );
+    }
+
+    function processNewMemberProposal(uint256 proposalIndex) internal {
+        Proposal storage proposal = proposalQueue[proposalIndex];
+        require(proposal.proposalType == ProposalType.NewMember, "only new members proposal");
+
+        if (members[proposal.applicant].exists) {
+            // member already exists, do nothing.
+        } else {
+            addMember(proposal.applicant);
+        }
+    }
+
+    function processAssignRoleProposal(uint256 proposalIndex) internal {
+        Proposal storage proposal = proposalQueue[proposalIndex];
+
+        require(proposal.proposalType == ProposalType.AssignRole, "only new members proposal");
+        
+        // assign role
+
+    }
+
+    modifier canProcess(uint256 proposalIndex) {
+        require(proposalIndex < proposalQueue.length, "proposal does not exist");
+        Proposal storage proposal = proposalQueue[proposalIndex];
+
+        require(getCurrentPeriod() >= proposal.startingPeriod.add(votingPeriodLength).add(gracePeriodLength), "proposal is not ready to be processed");
+        require(proposal.processed == false, "proposal has already been processed");
+        require(proposalIndex == 0 || proposalQueue[proposalIndex.sub(1)].processed, "previous proposal must be processed");
+        _;
+    }
+
+    function getCurrentPeriod() public view returns (uint256) {
+        return now.sub(creationTime).div(periodDuration);
+    }
+
+    function hasVotingPeriodExpired(uint256 startingPeriod) public view returns (bool) {
+        return getCurrentPeriod() >= startingPeriod.add(votingPeriodLength);
+    }
+
+}

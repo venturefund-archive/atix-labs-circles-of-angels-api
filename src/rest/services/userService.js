@@ -6,7 +6,9 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { coa } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
+
 const { userRoles } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const checkExistence = require('./helpers/checkExistence');
@@ -154,6 +156,9 @@ module.exports = {
       <p>We are reviewing your account details. You will be notified once we are done. </br></p>
       <p>Thank you for your support. </br></p>`
     });
+
+    const profile = firstName + ' ' + lastName;
+    await coa.createMember(profile);
 
     return savedUser;
   },
