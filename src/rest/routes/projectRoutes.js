@@ -15,6 +15,7 @@ const {
   clientErrorResponse
 } = require('../util/responses');
 const { projectStatuses } = require('../util/constants');
+const { idParam } = require('../util/params');
 
 const ownerIdProperty = {
   ownerId: { type: 'integer' }
@@ -71,16 +72,6 @@ const milestonesResponse = {
   description: 'Returns all milestones of a project'
 };
 
-const idParam = (description, param) => ({
-  type: 'object',
-  properties: {
-    [param]: {
-      type: 'integer',
-      description
-    }
-  }
-});
-
 const projectIdParam = idParam('Project identification', 'projectId');
 const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
@@ -122,6 +113,16 @@ const userResponse = {
     role: { type: 'string' }
   },
   description: 'Returns and object with the user information'
+};
+
+const usersResponse = {
+  type: 'object',
+  properties: {
+    owner: userResponse,
+    followers: { type: 'array', items: userResponse },
+    funders: { type: 'array', items: userResponse },
+    oracles: { type: 'array', items: userResponse }
+  }
 };
 
 const projectsResponse = {
@@ -578,6 +579,25 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.updateProjectStatus
+  },
+  getProjectUsers: {
+    method: 'get',
+    path: `${basePath}/:projectId/users`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Returns the users related to an existing project',
+        summary: 'Gets users of a project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(usersResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getProjectUsers
   }
 };
 

@@ -146,6 +146,21 @@ const verifiedTransfers = [
   }
 ];
 
+const consensusProject = {
+  id: 4,
+  projectName,
+  location,
+  timeframe,
+  goalAmount,
+  owner: ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: projectStatuses.CONSENSUS
+};
+
 const userDao = {
   findById: id => {
     if (id === 2 || id === 3) {
@@ -202,6 +217,15 @@ const projectDao = {
         };
       }
       return { ...executingProject, milestones: undefined };
+    }
+    if (filters && filters.id === 4) {
+      if (populate && populate.owner) {
+        return {
+          ...consensusProject,
+          owner: entrepreneurUser
+        };
+      }
+      return { ...consensusProject };
     }
   }
 };
@@ -937,6 +961,33 @@ describe('Project Service Test', () => {
 
     it('should throw an error if the project does not exist', async () => {
       await expect(projectService.generateProjectAgreement(0)).rejects.toThrow(
+        errors.common.CantFindModelWithId('project', 0)
+      );
+    });
+  });
+
+  describe('Get users related to a project', () => {
+    beforeAll(() => {
+      injectMocks(projectService, {
+        projectDao
+      });
+    });
+    it(
+      'should return an object with the information ' +
+        'of the users related to the project',
+      async () => {
+        const response = await projectService.getProjectUsers(
+          consensusProject.id
+        );
+        expect(response.owner).toEqual(entrepreneurUser);
+        expect(response.funders).toHaveLength(0);
+        expect(response.oracles).toHaveLength(0);
+        expect(response.followers).toHaveLength(0);
+      }
+    );
+
+    it('should throw an error if the project does not exist', async () => {
+      await expect(projectService.getProjectUsers(0)).rejects.toThrow(
         errors.common.CantFindModelWithId('project', 0)
       );
     });
