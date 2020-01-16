@@ -50,8 +50,11 @@ class DeploymentSetup {
   async deploy() {
     const contracts = {};
     const signer = (await ethers.signers())[0];
+    // console.log('About to deploy', this.setup.contracts.length, 'contracts')
     for (const cfg of this.setup.contracts) {
+      // console.log('Deploying', cfg.name)
       contracts[cfg.name] = await this.deployContract({ ...cfg, signer });
+      // console.log('Deployed', cfg.name)
     }
     return contracts;
   }
@@ -63,7 +66,7 @@ class DeploymentSetup {
     const ctx = { ...this.context, ...context };
     const values = typeof params === 'function' ? params(ctx) : params;
 
-    const [contract, receipt] = await this.deploy(
+    const [contract, receipt] = await deploy(
       artifact === undefined ? name : artifact,
       values === undefined ? [] : values,
       signer
@@ -83,6 +86,10 @@ class DeploymentSetup {
 
     return contract;
   }
+}
+
+function getDeploymentSetup(setup, deployer) {
+  return new DeploymentSetup(setup, deployer);
 }
 
 async function getDeployedAddresses(name, chainId) {
@@ -243,5 +250,6 @@ module.exports = {
   getDeployedContracts,
   saveDeployedContract,
   getLastDeployedContract,
-  getContractInstance
+  getContractInstance,
+  getDeploymentSetup
 };

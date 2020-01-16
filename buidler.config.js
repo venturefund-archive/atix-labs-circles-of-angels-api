@@ -57,6 +57,10 @@ const coaDeploySetup = {
     }
   ]
 };
+task('deploy2').setAction(async (args, env) => {
+  const setup = env.deployments.getDeploymentSetup(coaDeploySetup);
+  await setup.deploy();
+});
 
 extendEnvironment(env => {
   // console.log(createChainIdGetter);
