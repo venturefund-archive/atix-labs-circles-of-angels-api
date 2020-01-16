@@ -18,7 +18,6 @@ contract COA is Ownable {
         // Role role;
     }
 
-    // Circle of Angels' members aka angels
     Project[] public projects;
     mapping (address => Member) public members;
     DAO[] public daos;
@@ -41,16 +40,6 @@ contract COA is Ownable {
         members[msg.sender] = member;
     }
 
-    // function success() public returns(uint) {
-    //     return 42;
-    // }
-    // function fail() public {
-    //     revert();
-    // }
-    // function emitEvent() public {
-    //     emit DAOCreated(address(this));
-    // }
-
     // the agreement hash can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
     // we could strip the first two bytes but for now it seems unnecessary
     function createProject(string memory _name, string memory _agreementHash) public returns(uint256) {
@@ -59,14 +48,14 @@ contract COA is Ownable {
         return projects.length - 1;
     }
 
-    function createDAO(string memory _name) public {
-        DAO dao = new DAO(_name);
+    function createDAO(string memory _name, address _creator) public {
+        DAO dao = new DAO(_name, _creator);
         daos.push(dao);
         emit DAOCreated(address(dao));
     }
 
     function createSuperDAO() internal {
-        DAO dao = new SuperDAO("Super DAO", address(this));
+        DAO dao = new SuperDAO("Super DAO", msg.sender, address(this));
         daos.push(dao);
         emit DAOCreated(address(dao));
 
