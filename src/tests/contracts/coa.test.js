@@ -9,8 +9,6 @@ const { utils } = require('ethers');
 
 let coa;
 let registry;
-const COA = artifacts.require('./COA');
-const ClaimsRegistry = artifacts.require('./ClaimsRegistry');
 
 async function getProjectAt(address) {
   const project = await deployments.getContractInstance('Project', address);
