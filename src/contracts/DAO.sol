@@ -2,7 +2,8 @@ pragma solidity ^0.5.8;
 
 import '@openzeppelin/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
-
+import './COA.sol';
+import './IDAO.sol';
 
 contract DAO {
 
@@ -15,11 +16,10 @@ contract DAO {
     string public name;
     uint public creationTime;
 
-
     enum ProposalType {
         NewMember,
-        FundProject
-        // KickMember,
+        AssignRole,
+        NewDAO
     }
 
     uint256 public periodDuration;
@@ -73,7 +73,7 @@ contract DAO {
         uint256 noVotes;
         bool didPass;
         
-        bytes32 description; // ipfs / rif storage hash
+        string description; // ipfs / rif storage hash
 
         mapping (address => Vote) votesByMember;
 
@@ -104,7 +104,7 @@ contract DAO {
         address _applicant,
         uint8 _proposalType,
         uint256 _goal,
-        bytes32 _description
+        string memory _description
     ) public {
         // require msg.sender is a member.
         address memberAddress = msg.sender;
@@ -112,7 +112,7 @@ contract DAO {
         Proposal memory proposal = Proposal({
             proposer: memberAddress,
             description: _description,
-            proposalType: ProposalType.NewMember,
+            proposalType: ProposalType(_proposalType),
             applicant: _applicant,
             goal: _goal,
             yesVotes: 0,
@@ -134,20 +134,18 @@ contract DAO {
 
         require(_vote < 3, "_vote must be less than 3");
         Vote vote = Vote(_vote);
-
         require(getCurrentPeriod() >= proposal.startingPeriod, "voting period has not started");
+
         require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
         // require(proposal.votesByMember[memberAddress] == Vote.Null, "member has already voted on this proposal");
         require(vote == Vote.Yes || vote == Vote.No, "vote must be either Yes or No");
 
         // store vote
-        // proposal.votesByMember[memberAddress] = vote;
+        proposal.votesByMember[memberAddress] = vote;
 
         // count vote
         if (vote == Vote.Yes) {
             proposal.yesVotes = proposal.yesVotes.add(member.shares);
-            // TODO : can I leave the DAO at any moment?
-            // TODO : notion of shared within the dao?
 
         } else if (vote == Vote.No) {
             proposal.noVotes = proposal.noVotes.add(member.shares);
@@ -156,46 +154,25 @@ contract DAO {
         emit SubmitVote(_proposalIndex, memberAddress, _vote);
     }
 
-    function processProposal(uint256 proposalIndex) public {
-        require(proposalIndex < proposalQueue.length, "proposal does not exist");
+    function processProposal(uint256 proposalIndex) public canProcess(proposalIndex) {
         Proposal storage proposal = proposalQueue[proposalIndex];
 
-        require(getCurrentPeriod() >= proposal.startingPeriod.add(votingPeriodLength).add(gracePeriodLength), "proposal is not ready to be processed");
-        require(proposal.processed == false, "proposal has already been processed");
-        require(proposalIndex == 0 || proposalQueue[proposalIndex.sub(1)].processed, "previous proposal must be processed");
-
+        // TODO : this require is needed!
+        // require(proposal.proposalType == ProposalType.NewMember, "only new members proposal");
         proposal.processed = true;
 
-        // TODO : a different resolution method can be used, maybe use a library.
         bool didPass = proposal.yesVotes > proposal.noVotes;
 
-        // PROPOSAL PASSED
         if (didPass) {
-
+            // PROPOSAL PASSED
             proposal.didPass = true;
-
-            // TODO : proposalType is unnecesary if the actual money is fiat.
-            //        we could just assume that if no applicant is given, then is a fund project proposal,
-            //        otherwise the applicant is present and it's a new member proposal.
             if (proposal.proposalType == ProposalType.NewMember) {
-                if (members[proposal.applicant].exists) {
-                    // member already exists, do nothing.
-                } else {
-                    addMember(proposal.applicant);
-                }
-            } else if (proposal.proposalType == ProposalType.FundProject) {
-                // The money is fiat, so no need for any token transfers.
-                // ^ I don't think this is the right thing to handle this.
-
-                // TODO : Should accepted SEs be members of the dao? Maybe a member with no voting power?
-                //        ^ consider using shares:
-                //        : 1 shares => 1 vote  
-                //        : 0 shares => no vote
-                //        : n shares => n votes? maybe quadratic voting?
+                processNewMemberProposal(proposalIndex);
+            } else if (proposal.proposalType == ProposalType.NewMember) {
+            } else if (proposal.proposalType == ProposalType.NewMember) {
             }
-        // PROPOSAL FAILED
         } else {
-            // ?? 
+            // PROPOSAL FAILED
         }
 
         emit ProcessProposal(
@@ -205,6 +182,36 @@ contract DAO {
             proposal.proposalType,
             didPass
         );
+    }
+
+    function processNewMemberProposal(uint256 proposalIndex) internal {
+        Proposal storage proposal = proposalQueue[proposalIndex];
+        require(proposal.proposalType == ProposalType.NewMember, "only new members proposal");
+
+        if (members[proposal.applicant].exists) {
+            // member already exists, do nothing.
+        } else {
+            addMember(proposal.applicant);
+        }
+    }
+
+    function processAssignRoleProposal(uint256 proposalIndex) internal {
+        Proposal storage proposal = proposalQueue[proposalIndex];
+
+        require(proposal.proposalType == ProposalType.AssignRole, "only new members proposal");
+        
+        // assign role
+
+    }
+
+    modifier canProcess(uint256 proposalIndex) {
+        require(proposalIndex < proposalQueue.length, "proposal does not exist");
+        Proposal storage proposal = proposalQueue[proposalIndex];
+
+        require(getCurrentPeriod() >= proposal.startingPeriod.add(votingPeriodLength).add(gracePeriodLength), "proposal is not ready to be processed");
+        require(proposal.processed == false, "proposal has already been processed");
+        require(proposalIndex == 0 || proposalQueue[proposalIndex.sub(1)].processed, "previous proposal must be processed");
+        _;
     }
 
     function getCurrentPeriod() public view returns (uint256) {

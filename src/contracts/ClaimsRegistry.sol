@@ -27,11 +27,6 @@ contract ClaimsRegistry {
         uint verifiedAt
     );
 
-    // function getClaim(address project, address validator, bytes32 claim)
-    // public view returns(Claim) {
-    //     return registry[project][validator][claim];
-    // }
-
     // no proof => no positive verification? probably not a good idea (???)
     function addClaim(
         address _project,

@@ -4,6 +4,7 @@ import '@openzeppelin/contracts/ownership/Ownable.sol';
 import "./Project.sol";
 import "./ClaimsRegistry.sol";
 import "./DAO.sol";
+import "./SuperDAO.sol";
 
 contract COA is Ownable {
 
@@ -27,6 +28,7 @@ contract COA is Ownable {
 
     constructor(address _registryAddress) Ownable() public {
         registry = ClaimsRegistry(_registryAddress);
+        createSuperDAO();
     }
 
     // the profile can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
@@ -39,15 +41,15 @@ contract COA is Ownable {
         members[msg.sender] = member;
     }
 
-    function success() public returns(uint) {
-        return 42;
-    }
-    function fail() public {
-        revert();
-    }
-    function emitEvent() public {
-        emit DAOCreated(address(this));
-    }
+    // function success() public returns(uint) {
+    //     return 42;
+    // }
+    // function fail() public {
+    //     revert();
+    // }
+    // function emitEvent() public {
+    //     emit DAOCreated(address(this));
+    // }
 
     // the agreement hash can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
     // we could strip the first two bytes but for now it seems unnecessary
@@ -61,5 +63,12 @@ contract COA is Ownable {
         DAO dao = new DAO(_name);
         daos.push(dao);
         emit DAOCreated(address(dao));
+    }
+
+    function createSuperDAO() internal {
+        DAO dao = new SuperDAO("Super DAO", address(this));
+        daos.push(dao);
+        emit DAOCreated(address(dao));
+
     }
 }
