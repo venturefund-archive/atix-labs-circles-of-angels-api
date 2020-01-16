@@ -10,6 +10,7 @@
 
 const { coa, ethers, ethereum } = require('@nomiclabs/buidler');
 const COAError = require('./errors/COAError');
+const { ethInit } = require('../rest/services/eth/ethInit');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -31,11 +32,11 @@ process.on('unhandledRejection', (reason, p) => {
 ethers.provider.on('block', blockNumber => console.log('block', blockNumber));
 
 module.exports.start = async ({ db, logger, configs }) => {
-  await coa.success();
-  coa.fail();
-  coa.emitEvent();
-  coa.emitEvent();
-  coa.fail();
+  // await coa.success();
+  // coa.fail();
+  // coa.emitEvent();
+  // coa.emitEvent();
+  // coa.fail();
 
   try {
     const swaggerConfigs = configs.swagger;
@@ -74,6 +75,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     await fastify.listen(configs.server);
     // start service initialization, load and inject dependencies
     require('./ioc')(fastify);
+    ethInit();
     // await helperBuilder(fastify);
     // await fastify.eth.initListener();
     // await fastify.eth.listener.startListen();
