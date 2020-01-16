@@ -20,8 +20,7 @@ task('deploy', 'Deploys COA contracts')
   .addOptionalParam('reset', 'force deploy')
   .setAction(async ({ reset }, env) => {
     // Make sure everything is compiled
-    await run('compile');
-    // await env.deployments.deploySetup();
+    // await run('compile');
 
     reset = reset === 'true';
 
@@ -29,9 +28,9 @@ task('deploy', 'Deploys COA contracts')
       'ClaimsRegistry'
     );
     if (registry === undefined || reset === true) {
-      [registry] = await env.deployments.deploy('ClaimsRegistry', []);
+      [registry, receipt] = await env.deployments.deploy('ClaimsRegistry', []);
       await env.deployments.saveDeployedContract('ClaimsRegistry', registry);
-      console.log('ClaimsRegistry deployed. Address:', registry.address);
+      // console.log('ClaimsRegistry deployed. Address:', registry.address);
     }
 
     let [coa] = await env.deployments.getDeployedContracts('COA');
@@ -39,11 +38,11 @@ task('deploy', 'Deploys COA contracts')
     if (coa === undefined || reset === true) {
       [coa] = await env.deployments.deploy('COA', [registry.address]);
       await env.deployments.saveDeployedContract('COA', coa);
-      console.log('COA deployed. Address:', coa.address);
+      // console.log('COA deployed. Address:', coa.address);
     }
 
-    console.log('Registry attached to', registry.address);
-    console.log('COA attached to', coa.address);
+    // console.log('Registry attached to', registry.address);
+    // console.log('COA attached to', coa.address);
   });
 
 const coaDeploySetup = {
@@ -57,6 +56,7 @@ const coaDeploySetup = {
     }
   ]
 };
+
 task('deploy2').setAction(async (args, env) => {
   const setup = env.deployments.getDeploymentSetup(coaDeploySetup);
   await setup.deploy();
@@ -74,7 +74,7 @@ module.exports = {
     tests: './src/tests/contracts',
     sources: './src/contracts'
   },
-  defaultNetwork: 'develop',
+  // defaultNetwork: 'develop',
   networks: {
     develop: {
       url: 'http://localhost:8545'

@@ -3,7 +3,6 @@ pragma solidity ^0.5.8;
 import '@openzeppelin/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import './COA.sol';
-import './IDAO.sol';
 
 contract DAO {
 
@@ -18,14 +17,22 @@ contract DAO {
 
     enum ProposalType {
         NewMember,
-        AssignRole,
-        NewDAO
+        NewDAO,
+        AssignBank,
+        AssignCurator
     }
 
-    uint256 public periodDuration;
-    uint256 public votingPeriodLength;
-    uint256 public gracePeriodLength;
-    uint256 public proposalDeposit; 
+    enum Role {
+        Normal,
+        Bank,
+        Curator
+    }
+
+    uint256 public periodDuration = 17280;
+    uint256 public votingPeriodLength = 35;
+    uint256 public gracePeriodLength = 35;
+    // TODO : use this to avoid proposal spamming
+    uint256 public proposalDeposit;
     
     // Events 
     event SubmitProposal(
@@ -56,9 +63,9 @@ contract DAO {
     }
 
     struct Member {
-        // Role role;
+        Role role;
         bool exists;
-        uint shares;        
+        uint shares;
         // address delegateKey;
     }
 
@@ -66,8 +73,6 @@ contract DAO {
         address proposer;
         address applicant;
         ProposalType proposalType;
-
-        uint256 goal;
 
         uint256 yesVotes;
         uint256 noVotes;
@@ -81,21 +86,17 @@ contract DAO {
         bool processed;
     }
 
-    // bank operators
-    // curators 
-
-    constructor(string memory _name) public {
+    constructor(string memory _name, address _creator) public {
         name = _name;
         creationTime = now;
-        addMember(msg.sender);
+        addMember(_creator);
     }
 
     function addMember(address memberAddress) private {
         Member memory member = Member({
-            // role: Role.Activist,
+            role: Role.Normal,
             exists: true,
             shares: 1
-            // delegateKey: memberAddress
         });
         members[memberAddress] = member;
     }
@@ -103,18 +104,16 @@ contract DAO {
     function submitProposal(
         address _applicant,
         uint8 _proposalType,
-        uint256 _goal,
         string memory _description
     ) public {
         // require msg.sender is a member.
         address memberAddress = msg.sender;
-        require(_proposalType < 2, "invalid type");
+        require(_proposalType < 4, "invalid type");
         Proposal memory proposal = Proposal({
             proposer: memberAddress,
             description: _description,
             proposalType: ProposalType(_proposalType),
             applicant: _applicant,
-            goal: _goal,
             yesVotes: 0,
             noVotes: 0,
             didPass: false,
@@ -136,7 +135,8 @@ contract DAO {
         Vote vote = Vote(_vote);
         require(getCurrentPeriod() >= proposal.startingPeriod, "voting period has not started");
 
-        require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
+        // FIXME : uncomment this
+        // require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
         // require(proposal.votesByMember[memberAddress] == Vote.Null, "member has already voted on this proposal");
         require(vote == Vote.Yes || vote == Vote.No, "vote must be either Yes or No");
 
@@ -168,8 +168,10 @@ contract DAO {
             proposal.didPass = true;
             if (proposal.proposalType == ProposalType.NewMember) {
                 processNewMemberProposal(proposalIndex);
-            } else if (proposal.proposalType == ProposalType.NewMember) {
-            } else if (proposal.proposalType == ProposalType.NewMember) {
+            } else if (proposal.proposalType == ProposalType.AssignBank) {
+                processAssignBankProposal(proposalIndex);
+            } else if (proposal.proposalType == ProposalType.AssignCurator) {
+                processAssignCuratorProposal(proposalIndex);
             }
         } else {
             // PROPOSAL FAILED
@@ -195,13 +197,20 @@ contract DAO {
         }
     }
 
-    function processAssignRoleProposal(uint256 proposalIndex) internal {
+    function processAssignBankProposal(uint256 proposalIndex) internal {
         Proposal storage proposal = proposalQueue[proposalIndex];
 
-        require(proposal.proposalType == ProposalType.AssignRole, "only new members proposal");
+        require(proposal.proposalType == ProposalType.AssignBank, "only assign bank proposal");
         
-        // assign role
+        members[proposal.applicant].role = Role.Bank;
+    }
 
+    function processAssignCuratorProposal(uint256 proposalIndex) internal {
+        Proposal storage proposal = proposalQueue[proposalIndex];
+
+        require(proposal.proposalType == ProposalType.AssignCurator, "only assign curator proposal");
+        
+        members[proposal.applicant].role = Role.Curator;
     }
 
     modifier canProcess(uint256 proposalIndex) {
@@ -220,6 +229,10 @@ contract DAO {
 
     function hasVotingPeriodExpired(uint256 startingPeriod) public view returns (bool) {
         return getCurrentPeriod() >= startingPeriod.add(votingPeriodLength);
+    }
+
+    function getProposalQueueLength() public view returns(uint256) {
+        return proposalQueue.length;
     }
 
 }

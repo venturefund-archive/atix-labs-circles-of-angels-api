@@ -11,10 +11,9 @@ contract SuperDAO is DAO {
 
     COA coa;
 
-    constructor(string memory _name, address _coaAddress) DAO(_name) public {
+    constructor(string memory _name, address _creator, address _coaAddress) DAO(_name, _creator) public {
         coa = COA(_coaAddress);
     }
-
 
     // overrides DAO's processProposal
     function processProposal(uint256 proposalIndex) public canProcess(proposalIndex) {
@@ -31,9 +30,11 @@ contract SuperDAO is DAO {
             // PROPOSAL PASSED
             proposal.didPass = true;
             if (proposal.proposalType == ProposalType.NewMember) {
-                super.processNewMemberProposal(proposalIndex);
-            } else if (proposal.proposalType == ProposalType.AssignRole) {
-                super.processAssignRoleProposal(proposalIndex);
+                processNewMemberProposal(proposalIndex);
+            } else if (proposal.proposalType == ProposalType.AssignBank) {
+                processAssignBankProposal(proposalIndex);
+            } else if (proposal.proposalType == ProposalType.AssignCurator) {
+                processAssignCuratorProposal(proposalIndex);
             } else if (proposal.proposalType == ProposalType.NewDAO) {
                 processNewDAOProposal(proposalIndex);
             }
@@ -54,7 +55,7 @@ contract SuperDAO is DAO {
         Proposal storage proposal = proposalQueue[proposalIndex];
         require(proposal.proposalType == ProposalType.NewDAO, "only new dao proposals");
 
-        coa.createDAO("A DAO");
+        coa.createDAO("A DAO", proposal.applicant);
     }
 
 }
