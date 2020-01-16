@@ -169,13 +169,16 @@ async function saveDeployedContract(name, instance) {
 }
 
 async function deploy(contractName, params, signer) {
-  const factory = await getContractFactory(contractName, signer);
-  // factory.connect(await this.getSigner(signer));
+  const factory = await getContractFactory(
+    contractName,
+    await getSigner(signer)
+  );
+  // factory.connect(await getSigner(signer));
 
   const contract = await factory.deploy(...params);
   await contract.deployed();
 
-  console.log('Deployed', contractName, 'at', contract.address);
+  // console.log('Deployed', contractName, 'at', contract.address);
   // await this.saveDeployedContract(contractName, contract);
   const receipt = await ethers.provider.getTransactionReceipt(
     contract.deployTransaction.hash
@@ -213,6 +216,7 @@ async function getContractInstance(name, address, signer) {
 
 async function getContractFactory(name, signer) {
   signer = await getSigner(signer);
+  // console.log('Deployer', await signer.getAddress());
   const { abi, bytecode } = await readArtifact(config.paths.artifacts, name);
   return new ContractFactory(abi, bytecode, signer);
 }
