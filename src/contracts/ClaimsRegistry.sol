@@ -16,6 +16,7 @@ contract ClaimsRegistry {
     // Claim[] can be used to amend previous verifications 
     mapping(address => mapping(address => mapping(bytes32 => Claim))) public registry;
 
+    // project => validators[]
     mapping(address => address[]) public projectValidators;
 
     event ClaimApproved(
@@ -42,7 +43,6 @@ contract ClaimsRegistry {
             proof: _proof
         });
 
-        // too much args?
         emit ClaimApproved(_project, validator, _claim, _approved, _proof, now);
     }
 
