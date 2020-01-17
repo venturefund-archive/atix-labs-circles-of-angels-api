@@ -53,6 +53,21 @@ module.exports = {
       collection: 'milestone',
       via: 'project'
     },
+    funders: {
+      collection: 'user',
+      via: 'project',
+      through: 'project_funder'
+    },
+    oracles: {
+      collection: 'user',
+      via: 'project',
+      through: 'project_oracle'
+    },
+    followers: {
+      collection: 'user',
+      via: 'project',
+      through: 'project_follower'
+    },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
 };

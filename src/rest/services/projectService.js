@@ -598,11 +598,9 @@ module.exports = {
       method: 'getProjectUsers',
       params: { projectId }
     });
-    // TODO: this should also return all followers, funders, and oracles
-    //       once the relation is implemented
-    const projectWithUsers = await this.projectDao.findOneByProps(
-      { id: projectId },
-      { owner: true }
+
+    const projectWithUsers = await this.projectDao.findProjectWithUsersById(
+      projectId
     );
 
     if (!projectWithUsers) {

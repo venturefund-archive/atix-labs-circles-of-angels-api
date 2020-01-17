@@ -23,6 +23,13 @@ module.exports = {
     return this.model.findOne(filters, populate);
   },
 
+  async findProjectWithUsersById(id) {
+    return this.model.findOne(
+      { id },
+      { owner: true, followers: true, funders: true, oracles: true }
+    );
+  },
+
   async getProjecListWithStatusFrom({ status }) {
     const projects = await this.model.find({
       where: { status: { '>=': status } },
