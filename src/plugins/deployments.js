@@ -60,19 +60,46 @@ class DeploymentSetup {
   }
 
   async deployContract(contractConfig) {
-    const { name, params, signer, context, artifact, after } = contractConfig;
+    const {
+      name,
+      params,
+      signer,
+      context,
+      artifact,
+      after,
+      address
+    } = contractConfig;
 
     // build local context
-    const ctx = { ...this.context, ...context };
-    const values = typeof params === 'function' ? params(ctx) : params;
+    // let ctx = {};
+    if (address === undefined) {
+      const ctx = { ...this.context, ...context };
+      const values = typeof params === 'function' ? params(ctx) : params;
 
-    const [contract, receipt] = await deploy(
-      artifact === undefined ? name : artifact,
-      values === undefined ? [] : values,
-      signer
-    );
+      const [contract, receipt] = await deploy(
+        artifact === undefined ? name : artifact,
+        values === undefined ? [] : values,
+        signer
+      );
 
-    // TODO : store events in context
+      this.context[name] = {
+        address: contract.address,
+        contract,
+        receipt
+      };
+    } else {
+      const contract = getContractInstance(
+        artifact === undefined ? name : artifact,
+        address,
+        signer
+      );
+      this.context[name] = {
+        address: contract.address,
+        contract
+      };
+    }
+
+    // TODO : store events in context?
     this.context[name] = {
       address: contract.address,
       contract,
