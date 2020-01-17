@@ -88,9 +88,9 @@ module.exports = fastify => {
       fileServer: fastify.configs.fileServer,
       projectDao,
       milestoneService,
-      userDao,
+      userDao, // TODO: remove this dao and create needed methods in userService
       activityService,
-      milestoneDao
+      transferService
     };
 
     injectDependencies(service, dependencies);

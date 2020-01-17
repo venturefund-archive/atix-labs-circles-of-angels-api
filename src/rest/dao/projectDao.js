@@ -19,6 +19,10 @@ module.exports = {
     return this.model.find(filters, populate);
   },
 
+  async findOneByProps(filters, populate) {
+    return this.model.findOne(filters, populate);
+  },
+
   async getProjecListWithStatusFrom({ status }) {
     const projects = await this.model.find({
       where: { status: { '>=': status } },

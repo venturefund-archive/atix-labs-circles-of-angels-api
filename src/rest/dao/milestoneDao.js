@@ -18,7 +18,7 @@ module.exports = {
 
     return milestone;
   },
-  async getMilestoneByProjectId(project) {
+  async getMilestonesByProjectId(project) {
     return this.model.find({ project }).populate('tasks');
   },
   async saveMilestone({ milestone, projectId }) {
