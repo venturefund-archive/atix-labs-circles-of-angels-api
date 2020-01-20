@@ -515,12 +515,12 @@ module.exports = {
       { id: projectId },
       { owner: true }
     );
-
     if (!project) {
       throw new COAError(
         errors.common.CantFindModelWithId('project', projectId)
       );
     }
+
     const milestonesWithTasks = await this.milestoneService.getAllMilestonesByProject(
       projectId
     );
@@ -584,5 +584,41 @@ module.exports = {
 
     const agreementJson = JSON.stringify(agreement, undefined, 2);
     return agreementJson;
+  },
+
+  /**
+   * Returns an object with all users related to the project
+   * (Owner, followers, funders, oracles)
+   * @param {number} projectId
+   * @returns {{owner: User, followers: User[], funders: User[], oracles: User[]}}
+   */
+  async getProjectUsers(projectId) {
+    logger.info('[ProjectService] :: Entering getProjectUsers method');
+    validateRequiredParams({
+      method: 'getProjectUsers',
+      params: { projectId }
+    });
+    // TODO: this should also return all followers, funders, and oracles
+    //       once the relation is implemented
+    const projectWithUsers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { owner: true }
+    );
+
+    if (!projectWithUsers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    return {
+      owner: projectWithUsers.owner,
+      followers: projectWithUsers.followers || [],
+      funders: projectWithUsers.funders || [],
+      oracles: projectWithUsers.oracles || []
+    };
   }
 };
