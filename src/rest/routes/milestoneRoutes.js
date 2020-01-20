@@ -27,6 +27,7 @@ const idParam = (description, param) => ({
 
 const projectIdParam = idParam('Project identification', 'projectId');
 const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
+const taskIdParam = idParam('Task identification', 'taskId');
 
 const projectResponse = {
   type: 'object',
@@ -90,6 +91,14 @@ const successWithMilestoneIdResponse = {
     milestoneId: { type: 'integer' }
   },
   description: 'Returns the id of the milestone'
+};
+
+const successWithTaskIdResponse = {
+  type: 'object',
+  properties: {
+    taskId: { type: 'integer' }
+  },
+  description: 'Returns the id of the task'
 };
 
 const milestoneRoutes = {
@@ -161,6 +170,51 @@ const milestoneRoutes = {
       }
     },
     handler: handlers.deleteMilestone
+  },
+  addApprovedClaim: {
+    method: 'post',
+    path: '/task/:taskId/claim/approve',
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
+        description:
+          'Add an approved claim of a milestone for an existing project',
+        summary: 'Add an approved claim',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        raw: { files: { type: 'object' } },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.createMilestone
+  },
+
+  addDisapprovedClaim: {
+    method: 'post',
+    path: '/task/:taskId/claim/rejected',
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
+        description:
+          'Add an disapproved claim of a milestone for an existing project',
+        summary: 'Add an disapproved claim',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        raw: { files: { type: 'object' } },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.createMilestone
   }
 };
 

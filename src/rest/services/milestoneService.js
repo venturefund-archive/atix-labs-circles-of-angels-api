@@ -6,6 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { coa } = require('@nomiclabs/buidler');
+const { utils } = require('ethers');
 const { isEmpty, remove } = require('lodash');
 const {
   activityStatus,
@@ -22,6 +24,9 @@ const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
 
 const logger = require('../logger');
+
+// TODO: replace with actual function
+const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 
 module.exports = {
   /**
@@ -46,6 +51,33 @@ module.exports = {
     const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
     return project;
   },
+
+  /**
+   * Returns the milestone that the task belongs to or `undefined`
+   *
+   * Throws an error if the task does not exist
+   *
+   * @param {number} id
+   * @returns milestone | `undefined`
+   */
+  async getMilestoneAndTaskFromId(id) {
+    logger.info('[MilestoneService] :: Entering getMilestoneFromTask method');
+    const task = await checkExistence(this.taskDao, 'task');
+    logger.info(
+      `[MilestoneService] :: Found task ${task.id} of milestone ${
+        task.milestone
+      }`
+    );
+
+    const { milestone } = await this.taskDao.getMilestoneFromTask(id);
+    if (!milestone) {
+      logger.info(`[MilestoneService] :: No milestone found for task ${id}`);
+      throw new COAError(errors.task.MilestoneNotFound(id));
+    }
+
+    return { milestone, task };
+  },
+
   /**
    * Creates a Milestone for an existing Project.
    * Returns an object with the id of the new milestone
@@ -110,6 +142,7 @@ module.exports = {
 
     return { milestoneId: createdMilestone.id };
   },
+
   /**
    * Updates an existing milestone.
    * Returns an object with the id of the updated milestone
@@ -165,6 +198,7 @@ module.exports = {
     );
     return { milestoneId: updatedMilestone.id };
   },
+
   /**
    * Permanently remove an existing milestone and all its tasks
    * Returns an object with the id of the deleted milestone
@@ -235,6 +269,7 @@ module.exports = {
     delete newMilestone.blockchainStatus;
     return newMilestone;
   },
+
   deleteFieldsFromActivities(activities) {
     // TODO: check this
     return activities.map(activity => {
@@ -246,6 +281,7 @@ module.exports = {
       return activity;
     });
   },
+
   /**
    * Receives an excel file, saves it and creates the Milestones
    * associated to the Project passed by parameter.
@@ -510,6 +546,7 @@ module.exports = {
 
     return valid;
   },
+
   /**
    * Returns an array of the projects' id that an oracle
    * has any of its activities assigned
@@ -828,5 +865,32 @@ module.exports = {
     } catch (error) {
       return { error };
     }
+  },
+
+  async addClaim({ taskId, userId, file, approved }) {
+    logger.info('[MilestoneService] :: Entering addClaim method');
+    validateRequiredParams({
+      method: 'addClaim',
+      params: { userId, taskId, file, approved }
+    });
+
+    const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
+    const { projectId } = milestone;
+    const { oracle } = task;
+
+    if (oracle !== userId) {
+      logger.info(
+        `[MilestoneService] :: User ${userId} is not the oracle assigned for task ${taskId}`
+      );
+      throw new COAError(errors.task.MilestoneNotFound({ userId, taskId }));
+    }
+
+    // TODO replace both fields with the correct information
+    const claim = sha3(projectId, oracle, taskId);
+    const proof = utils.id(file.name);
+
+    await coa.addClaim(projectId, claim, proof, approved);
+
+    return taskId;
   }
 };

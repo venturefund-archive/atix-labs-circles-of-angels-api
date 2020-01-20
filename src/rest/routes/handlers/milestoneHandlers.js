@@ -45,6 +45,36 @@ module.exports = {
     reply.status(200).send(response);
   },
 
+  addApprovedClaim: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const { file } = request.raw.files || {};
+
+    const response = await milestoneService.addClaim({
+      taskId,
+      userId,
+      file,
+      approved: true
+    });
+
+    reply.status(200).send(response);
+  },
+
+  addDisapprovedClaim: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const { file } = request.raw.files || {};
+
+    const response = await milestoneService.addClaim({
+      taskId,
+      userId,
+      file,
+      approved: false
+    });
+
+    reply.status(200).send(response);
+  },
+
   getBudgetStatus: fastify => async (req, reply) => {
     fastify.log.info(
       `[Milestone Routes] :: GET request at ${basePath}/budgetStatus`

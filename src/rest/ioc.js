@@ -29,6 +29,7 @@ const activityDao = require('./dao/activityDao');
 const userProjectDao = require('./dao/userProjectDao');
 const transferDao = require('./dao/transferDao');
 const milestoneDao = require('./dao/milestoneDao');
+const taskDao = require('./dao/taskDao');
 const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
 const passRecoveryDao = require('./dao/passRecoveryDao');
@@ -145,6 +146,7 @@ module.exports = fastify => {
   function configureMilestoneService(service) {
     const dependencies = {
       milestoneDao,
+      taskDao,
       activityService,
       milestoneBudgetStatusDao,
       projectService,
@@ -168,6 +170,7 @@ module.exports = fastify => {
     injectModel(photoDao, models.photo);
     injectModel(fileDao, models.file);
     injectModel(milestoneDao, models.milestone);
+    injectModel(taskDao, models.task);
     injectModel(projectDao, models.project);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
     injectModel(passRecoveryDao, models.passRecovery);
