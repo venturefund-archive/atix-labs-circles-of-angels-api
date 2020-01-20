@@ -8,6 +8,7 @@
 
 const { coa } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
+const { Wallet } = require('ethers');
 
 const { userRoles } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -99,22 +100,8 @@ module.exports = {
     const hashedPwd = await bcrypt.hash(password, 10);
 
     // FIXME unmock this when blockchain methods are finished
-    const account = {
-      address: '0x2131321',
-      privateKey: '0x12313'
-    };
-
-    /*
-      await fastify.eth.createAccount();
-      if (!account.address || !account.privateKey) {
-        fastify.log.error(
-          '[User Service] :: Error creating account on blockchain'
-        );
-        return {
-          status: 409,
-          error: 'Error creating account on blockchain'
-        };
-      } */
+    const wallet = Wallet.createRandom();
+    const { address, privateKey } = wallet;
 
     const existingUser = await this.userDao.getUserByEmail(email);
 
@@ -131,8 +118,8 @@ module.exports = {
       email: email.toLowerCase(),
       password: hashedPwd,
       role,
-      address: account.address,
-      privKey: account.privateKey
+      address,
+      privKey: privateKey
     };
 
     const savedUser = await this.userDao.createUser(user);
