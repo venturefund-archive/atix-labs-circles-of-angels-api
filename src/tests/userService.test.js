@@ -155,6 +155,18 @@ describe('Testing userService createUser', () => {
     bcrypt.hash = jest.fn();
   });
 
+  it('should create a random private key', async () => {
+    bcrypt.hash.mockReturnValueOnce(mockUser.pwd);
+    const response = await userService.createUser(
+      mockUser.username,
+      mockUser.email,
+      mockUser.pwd,
+      mockUser.role
+    );
+    expect(response.privKey).toHaveLength(66);
+    expect(response.address).toHaveLength(42);
+  });
+
   // TODO : depends on refactor of eth service, skip it for now
   it.skip("should return an object with the new user's information", async () => {
     bcrypt.hash.mockReturnValueOnce(mockUser.pwd);
