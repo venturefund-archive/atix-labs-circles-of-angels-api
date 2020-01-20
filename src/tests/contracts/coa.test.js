@@ -178,7 +178,7 @@ contract(
       });
     });
 
-    describe.only('DAO', () => {
+    describe('DAO', () => {
       before(async () => {
         // await run('deploy');
         [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
