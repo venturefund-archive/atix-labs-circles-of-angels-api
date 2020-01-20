@@ -229,5 +229,11 @@ module.exports = {
     const project = await projectService.getProjectFull(projectId);
 
     reply.status(200).send(project);
+  },
+
+  getProjectUsers: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const users = await projectService.getProjectUsers(projectId);
+    reply.status(200).send(users);
   }
 };
