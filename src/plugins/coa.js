@@ -111,8 +111,64 @@ module.exports = class COA {
   }
 
   async getContractAt(name, address, signer) {
-    const factory = this.getContract(name, signer);
+    const factory = await this.getContract(name, signer);
     return factory.attach(address);
+  }
+
+  async getDaoContract(address, signer) {
+    const dao = await this.getContractAt('DAO', address, signer);
+    return dao;
+  }
+
+  async submitProposalVote(daoId, proposalId, vote, signer) {
+    const coa = await this.getCOA();
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    await dao.submitVote(proposalId, vote);
+  }
+
+  async submitProposal(daoId, type, description, applicantAddress, signer) {
+    const coa = await this.getCOA();
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    await dao.submitProposal(applicantAddress, type, description);
+  }
+
+  async processProposal(daoId, proposalId, signer) {
+    const coa = await this.getCOA();
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    await dao.processProposal(proposalId);
+  }
+
+  async getAllProposalsByDaoId(daoId, signer) {
+    const coa = await this.getCOA();
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    const proposalsLength = await dao.getProposalQueueLength();
+    const proposals = [];
+    for (let i = 0; i < proposalsLength; i++) {
+      proposals.push(dao.proposalQueue(i));
+    }
+    return Promise.all(proposals);
+  }
+
+  async getDaoMember(daoId, memberAddress, signer) {
+    const coa = await this.getCOA();
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    const member = await dao.members(memberAddress);
+    return member;
+  }
+
+  async getDaos() {
+    const coa = await this.getCOA();
+    const daosLength = await coa.getDaosLength();
+    const daos = [];
+    for (let i = 0; i < daosLength; i++) {
+      daos.push(coa.daos(i));
+    }
+    return Promise.all(daos);
   }
 
   async getCOA() {
@@ -120,7 +176,6 @@ module.exports = class COA {
       const contract = await this.env.deployments.getLastDeployedContract(
         'COA'
       );
-      console.log('coa address', contract.address, 'setting events for coa');
       this.contracts.coa = contract;
     }
 

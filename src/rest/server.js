@@ -8,9 +8,10 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { coa, ethers, ethereum } = require('@nomiclabs/buidler');
+const { ethers, network, run } = require('@nomiclabs/buidler');
 const COAError = require('./errors/COAError');
 const { ethInit } = require('../rest/services/eth/ethInit');
+const userService = require('./services/userService');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -74,6 +75,15 @@ module.exports.start = async ({ db, logger, configs }) => {
 
     await fastify.listen(configs.server);
     // start service initialization, load and inject dependencies
+    if (network.name === 'buidlerevm') {
+      try {
+        logger.info('Deploying contracts');
+        await run('deploy');
+        logger.info('Contracts deployed');
+      } catch (error) {
+        logger.error('Error deploying contracts', error);
+      }
+    }
     require('./ioc')(fastify);
     ethInit();
     // await helperBuilder(fastify);
@@ -140,12 +150,16 @@ const initJWT = fastify => {
     // TODO : this should be somewhere else.
     const validateUser = async (token, reply, roleId) => {
       const user = await fastify.jwt.verify(token);
-      const userService = require('./services/userService');
       const validUser = await userService.validUser(user, roleId);
       if (!validUser) {
         fastify.log.error('[Server] :: Unathorized access for user:', user);
         reply.status(401).send({ error: 'Unauthorized access' });
       }
+    };
+
+    const getUserWallet = async userId => {
+      const wallet = await userService.getUserWallet(userId);
+      return wallet;
     };
 
     fastify.decorate('generalAuth', async (request, reply) => {
@@ -175,6 +189,7 @@ const initJWT = fastify => {
       try {
         const token = getToken(request, reply);
         if (token) request.user = await fastify.jwt.verify(token);
+        request.user.wallet = await getUserWallet(request.user.id);
       } catch (error) {
         fastify.log.error(
           '[Server] :: There was an error authenticating',

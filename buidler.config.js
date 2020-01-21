@@ -2,13 +2,13 @@ usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('solidity-coverage');
 
-const COA = require('./src/plugins/coa');
 // const deployments = ;
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
-
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
+const buidlerTasks = require('./src/rest/services/helpers/buidlerTasks');
+const COA = require('./src/plugins/coa');
 
 const INFURA_API_KEY = '';
 const ROPSTEN_PRIVATE_KEY = '';
@@ -45,6 +45,43 @@ task('deploy', 'Deploys COA contracts')
     // console.log('COA attached to', coa.address);
   });
 
+task('create-member', 'Create COA member')
+  .addOptionalParam('profile', 'New member profile')
+  .setAction(async ({ profile }, env) =>
+    buidlerTasks.createMember({ profile }, env)
+  );
+
+task('create-dao', 'Create DAO')
+  .addOptionalParam('account', 'DAO creator address')
+  .setAction(async ({ account }, env) =>
+    buidlerTasks.createDao({ account }, env)
+  );
+
+task('propose-member-to-dao', 'Creates proposal to add member to existing DAO')
+  .addParam('daoaddress', 'DAO address')
+  .addParam('applicant', 'Applicant address')
+  .addOptionalParam('proposer', 'Proposer address')
+  .setAction(async ({ daoaddress, applicant, proposer }, env) =>
+    buidlerTasks.proposeMemberToDao({ daoaddress, applicant, proposer }, env)
+  );
+
+task('vote-proposal', 'Votes a proposal')
+  .addParam('daoaddress', 'DAO address')
+  .addParam('proposal', 'Proposal index')
+  .addOptionalParam('vote', 'Vote (true or false)')
+  .addOptionalParam('voter', 'Voter address')
+  .setAction(async ({ daoaddress, proposal, vote, voter }, env) =>
+    buidlerTasks.voteProposal({ daoaddress, proposal, vote, voter }, env)
+  );
+
+task('process-proposal', 'Process a proposal')
+  .addParam('daoaddress', 'DAO address')
+  .addParam('proposal', 'Proposal index')
+  .addOptionalParam('signer', 'Tx signer address')
+  .setAction(async ({ daoaddress, proposal, signer }, env) =>
+    buidlerTasks.processProposal({ daoaddress, proposal, signer }, env)
+  );
+
 const coaDeploySetup = {
   contracts: [
     {
@@ -74,7 +111,7 @@ module.exports = {
     tests: './src/tests/contracts',
     sources: './src/contracts'
   },
-  // defaultNetwork: 'develop',
+  defaultNetwork: 'develop',
   networks: {
     develop: {
       url: 'http://localhost:8545'
