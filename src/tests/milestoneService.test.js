@@ -9,6 +9,7 @@
  */
 
 const testHelper = require('./testHelper');
+const files = require('../rest/util/files');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const {
   activityStatus,
@@ -31,8 +32,13 @@ const fastify = {
 
 describe('Testing milestoneService', () => {
   let dbMilestone = [];
+  let dbTask = [];
   let dbProject = [];
   let dbUser = [];
+
+  beforeAll(() => {
+    files.saveFile = jest.fn(() => '/dir/path');
+  });
 
   const resetDb = () => {
     dbMilestone = [];
@@ -42,7 +48,8 @@ describe('Testing milestoneService', () => {
 
   const newMilestoneParams = {
     description: 'NewDescription',
-    category: 'NewCategory'
+    category: 'NewCategory',
+    projectId: 1
   };
 
   const userEntrepreneur = {
@@ -111,6 +118,19 @@ describe('Testing milestoneService', () => {
       return found;
     }
   };
+
+  const taskDao = {
+    findById: id => dbTask.find(task => task.id === id),
+    getTaskByIdWithMilestone: taskId => {
+      const found = dbTask.find(task => task.id === taskId);
+      if (!found) return;
+      return {
+        ...found,
+        milestone: newMilestoneParams
+      };
+    }
+  };
+
   const projectService = {
     getProject: id => dbProject.find(project => project.id === id)
   };
@@ -191,6 +211,7 @@ describe('Testing milestoneService', () => {
       );
     });
   });
+
   describe('Testing updateMilestone', () => {
     beforeAll(() => {
       injectMocks(milestoneService, {
@@ -264,6 +285,7 @@ describe('Testing milestoneService', () => {
       );
     });
   });
+
   describe('Testing deleteMilestone', () => {
     beforeAll(() => {
       injectMocks(milestoneService, {
@@ -318,6 +340,65 @@ describe('Testing milestoneService', () => {
         errors.milestone.DeleteWithInvalidProjectStatus(
           projectStatuses.EXECUTING
         )
+      );
+    });
+  });
+
+  describe('Testing addClaim', () => {
+    beforeAll(() => {
+      injectMocks(milestoneService, { taskDao });
+    });
+
+    beforeEach(() => {
+      dbTask = [];
+      dbUser = [];
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should add an approved claim and return the task id', async () => {
+      const file = { name: 'evidence.jpg', size: 20000 };
+      const newTask = {
+        id: 1,
+        description: 'NewDescription',
+        category: 'NewCategory',
+        oracle: userEntrepreneur.id
+      };
+
+      dbTask.push(newTask);
+
+      const response = await milestoneService.addClaim({
+        taskId: newTask.id,
+        userId: userEntrepreneur.id,
+        file,
+        approved: true
+      });
+
+      expect(response).toEqual({ taskId: newTask.id });
+    });
+
+    it('should throw an error if the user is not the oracle assigned', async () => {
+      const file = { name: 'evidence.jpg', size: 20000, md5: 'aaa' };
+      const newTask = {
+        id: 1,
+        description: 'NewDescription',
+        category: 'NewCategory',
+        oracle: userEntrepreneur.id + 1
+      };
+
+      dbTask.push(newTask);
+
+      await expect(
+        milestoneService.addClaim({
+          taskId: newTask.id,
+          userId: userEntrepreneur.id,
+          file,
+          approved: true
+        })
+      ).rejects.toThrow(
+        errors.task.OracleNotAssigned({
+          userId: userEntrepreneur.id,
+          taskId: newTask.id
+        })
       );
     });
   });

@@ -370,7 +370,7 @@ describe('Testing transferService', () => {
       dbTransfer.push(pendingTransfer);
     });
 
-    it('should add an approved transfer claim and return the task id', async () => {
+    it('should add an approved transfer claim and return the transfer id', async () => {
       const file = { name: 'evidence.jpg', size: 20000 };
       const response = await transferService.addTransferClaim({
         transferId: pendingTransfer.id,

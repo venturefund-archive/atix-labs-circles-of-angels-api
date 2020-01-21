@@ -9,7 +9,7 @@
 const { coa } = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
 const { isEmpty, remove } = require('lodash');
-const { saveFile } = require('../util/files');
+const files = require('../util/files');
 const {
   activityStatus,
   milestoneBudgetStatus,
@@ -31,7 +31,7 @@ const logger = require('../logger');
 // TODO: replace with actual function
 const sha3 = (a, b, c) => utils.id(`${a}-${b}-${c}`);
 
-const evidenceType = 'evidencePhoto';
+const claimType = 'claims';
 
 module.exports = {
   /**
@@ -67,14 +67,14 @@ module.exports = {
    */
   async getMilestoneAndTaskFromId(id) {
     logger.info('[MilestoneService] :: Entering getMilestoneFromTask method');
-    const task = await checkExistence(this.taskDao, 'task');
+    const task = await checkExistence(this.taskDao, id, 'task');
     logger.info(
       `[MilestoneService] :: Found task ${task.id} of milestone ${
         task.milestone
       }`
     );
 
-    const { milestone } = await this.taskDao.getMilestoneFromTask(id);
+    const { milestone } = await this.taskDao.getTaskByIdWithMilestone(id);
     if (!milestone) {
       logger.info(`[MilestoneService] :: No milestone found for task ${id}`);
       throw new COAError(errors.task.MilestoneNotFound(id));
@@ -893,19 +893,17 @@ module.exports = {
     const { oracle } = task;
 
     if (oracle !== userId) {
-      logger.info(
+      logger.error(
         `[MilestoneService] :: User ${userId} is not the oracle assigned for task ${taskId}`
       );
-      throw new COAError(errors.task.MilestoneNotFound({ userId, taskId }));
+      throw new COAError(errors.task.OracleNotAssigned({ userId, taskId }));
     }
 
-    // TODO only images?
-    validateMtype(evidenceType, file);
+    validateMtype(claimType, file);
     validatePhotoSize(file);
 
-    // TODO Must we store this path? Where?
-    logger.info(`[MilestoneService] :: Saving file of type '${evidenceType}'`);
-    const filePath = await saveFile(evidenceType, file);
+    logger.info(`[MilestoneService] :: Saving file of type '${claimType}'`);
+    const filePath = await files.saveFile(claimType, file);
     logger.info(`[MilestoneService] :: File saved to: ${filePath}`);
 
     // TODO replace both fields with the correct information

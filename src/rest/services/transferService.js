@@ -24,7 +24,7 @@ const errors = require('../errors/exporter/ErrorExporter');
 const COAError = require('../errors/COAError');
 const logger = require('../logger');
 
-const transferEvidenceType = 'transferEvidencePhoto';
+const transferClaimType = 'transferClaims';
 
 // TODO: replace with actual function
 const sha3 = (a, b) => utils.id(`${a}-${b}`);
@@ -308,14 +308,14 @@ module.exports = {
       throw new COAError(errors.common.UserNotAuthorized(userId));
     }
 
-    validateMtype(transferEvidenceType, file);
+    validateMtype(transferClaimType, file);
     validatePhotoSize(file);
 
     // TODO adapt to many files. Change this to rif storage
     logger.info(
-      `[TransferService] :: Saving file of type '${transferEvidenceType}'`
+      `[TransferService] :: Saving file of type '${transferClaimType}'`
     );
-    const filePath = await files.saveFile(transferEvidenceType, file);
+    const filePath = await files.saveFile(transferClaimType, file);
     logger.info(`[TransferService] :: File saved to: ${filePath}`);
 
     const transfer = await checkExistence(
