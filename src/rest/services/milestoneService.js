@@ -9,6 +9,7 @@
 const { coa } = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
 const { isEmpty, remove } = require('lodash');
+const { saveFile } = require('../util/files');
 const {
   activityStatus,
   milestoneBudgetStatus,
@@ -19,6 +20,8 @@ const {
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
+const validateMtype = require('./helpers/validateMtype');
+const validatePhotoSize = require('./helpers/validatePhotoSize');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
@@ -26,7 +29,9 @@ const { readExcelData } = require('../util/excelParser');
 const logger = require('../logger');
 
 // TODO: replace with actual function
-const sha3 = (a, b, c) => `${a}-${b}-${c}`;
+const sha3 = (a, b, c) => utils.id(`${a}-${b}-${c}`);
+
+const evidenceType = 'evidencePhoto';
 
 module.exports = {
   /**
@@ -884,6 +889,15 @@ module.exports = {
       );
       throw new COAError(errors.task.MilestoneNotFound({ userId, taskId }));
     }
+
+    // TODO only images?
+    validateMtype(evidenceType, file);
+    validatePhotoSize(file);
+
+    // TODO Must we store this path? Where?
+    logger.info(`[ProjectService] :: Saving file of type '${evidenceType}'`);
+    const filePath = await saveFile(evidenceType, file);
+    logger.info(`[ProjectService] :: File saved to: ${filePath}`);
 
     // TODO replace both fields with the correct information
     const claim = sha3(projectId, oracle, taskId);
