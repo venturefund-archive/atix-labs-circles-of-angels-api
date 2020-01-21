@@ -914,6 +914,6 @@ module.exports = {
 
     await coa.addClaim(projectId, claim, proof, approved);
 
-    return taskId;
+    return { taskId };
   }
 };

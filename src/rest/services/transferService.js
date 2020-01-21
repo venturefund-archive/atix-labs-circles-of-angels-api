@@ -302,11 +302,21 @@ module.exports = {
     const user = await checkExistence(this.userDao, userId, 'user');
 
     if (user.role !== userRoles.BANK_OPERATOR) {
-      logger.info(
+      logger.error(
         `[TransferService] :: User ${userId} not authorized for this action`
       );
       throw new COAError(errors.common.UserNotAuthorized(userId));
     }
+
+    validateMtype(transferEvidenceType, file);
+    validatePhotoSize(file);
+
+    // TODO adapt to many files. Change this to rif storage
+    logger.info(
+      `[TransferService] :: Saving file of type '${transferEvidenceType}'`
+    );
+    const filePath = await files.saveFile(transferEvidenceType, file);
+    logger.info(`[TransferService] :: File saved to: ${filePath}`);
 
     const transfer = await checkExistence(
       this.transferDao,
@@ -314,25 +324,18 @@ module.exports = {
       'fund_transfer'
     );
 
-    const { projectId } = transfer;
-
-    // TODO only images?
-    validateMtype(transferEvidenceType, file);
-    validatePhotoSize(file);
-
-    // TODO Must we store this path? Where?
-    logger.info(
-      `[TransferService] :: Saving file of type '${transferEvidenceType}'`
-    );
-    const filePath = await files.saveFile(transferEvidenceType, file);
-    logger.info(`[TransferService] :: File saved to: ${filePath}`);
-
     // TODO replace both fields with the correct information
+    const { projectId } = transfer;
     const claim = sha3(projectId, transferId);
     const proof = utils.id(file.name);
-
     await coa.addClaim(projectId, claim, proof, approved);
 
-    return transferId;
+    const status = approved
+      ? txFunderStatus.VERIFIED
+      : txFunderStatus.CANCELLED;
+    const updated = await this.transferDao.update({ id: transferId, status });
+
+    logger.info('[TransferService] :: Claim added and status transfer updated');
+    return { transferId: updated.id };
   }
 };

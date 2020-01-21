@@ -43,6 +43,11 @@ describe('Testing transferService', () => {
     role: userRoles.ENTREPRENEUR
   };
 
+  const bankOperatorUser = {
+    id: 3,
+    role: userRoles.BANK_OPERATOR
+  };
+
   const newTransfer = {
     transferId: '1AA22SD444',
     amount: 200,
@@ -56,13 +61,15 @@ describe('Testing transferService', () => {
   const verifiedTransfer = {
     id: 2,
     transferId: 'existing123',
-    status: txFunderStatus.VERIFIED
+    status: txFunderStatus.VERIFIED,
+    projectId: 1
   };
 
   const pendingTransfer = {
     id: 3,
     transferId: 'pendingABC',
-    status: txFunderStatus.PENDING
+    status: txFunderStatus.PENDING,
+    projectId: 1
   };
 
   beforeAll(() => {
@@ -346,5 +353,50 @@ describe('Testing transferService', () => {
       expect(transferService.getTotalFundedByProject()).rejects.toEqual(
         Error('Error getting transfers')
       ));
+  });
+
+  describe('Testing transferService addTransferClaim', () => {
+    beforeAll(() => {
+      injectMocks(transferService, {
+        userDao,
+        transferDao
+      });
+    });
+
+    beforeEach(() => {
+      dbUser = [];
+      dbTransfer = [];
+      dbUser.push(bankOperatorUser, userFunder);
+      dbTransfer.push(pendingTransfer);
+    });
+
+    it('should add an approved transfer claim and return the task id', async () => {
+      const file = { name: 'evidence.jpg', size: 20000 };
+      const response = await transferService.addTransferClaim({
+        transferId: pendingTransfer.id,
+        userId: bankOperatorUser.id,
+        file,
+        approved: true
+      });
+
+      const updatedTransfer = dbTransfer.find(
+        transfer => transfer.id === response.transferId
+      );
+
+      expect(updatedTransfer.status).toEqual(txFunderStatus.VERIFIED);
+      expect(response).toEqual({ transferId: pendingTransfer.id });
+    });
+
+    it('should throw an error if the user is not bank operator', async () => {
+      const file = { name: 'evidence.jpg', size: 20000 };
+      await expect(
+        transferService.addTransferClaim({
+          transferId: pendingTransfer.id,
+          userId: userFunder.id,
+          file,
+          approved: true
+        })
+      ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));
+    });
   });
 });
