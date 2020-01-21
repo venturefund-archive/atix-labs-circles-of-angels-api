@@ -121,7 +121,6 @@ module.exports = class COA {
         'COA'
       );
       console.log('coa address', contract.address, 'setting events for coa');
-      contract.on('DAOCreated', args => console.log('DAOCreated', args));
       this.contracts.coa = contract;
     }
 
