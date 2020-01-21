@@ -618,5 +618,28 @@ module.exports = {
       funders: projectWithUsers.funders || [],
       oracles: projectWithUsers.oracles || []
     };
+  },
+
+  /**
+   * Following of a project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns projectId || error
+   */
+  async followProject({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering followProject method');
+    validateRequiredParams({
+      method: 'followProject',
+      params: { projectId, userId }
+    });
+
+    await validateExistence(this.projectDao, projectId, 'project');
+    const followerCreated = await this.followerDao.followProject({
+      projectId,
+      userId
+    });
+
+    return { projectId: followerCreated.projectId };
   }
 };

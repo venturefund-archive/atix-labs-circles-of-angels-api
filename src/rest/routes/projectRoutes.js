@@ -514,6 +514,7 @@ const commonProjectRoutes = {
     },
     handler: handlers.getProjects
   },
+
   getProject: {
     method: 'get',
     path: `${basePath}/:projectId`,
@@ -522,6 +523,7 @@ const commonProjectRoutes = {
       beforeHandler: []
     }
   },
+
   getProjectFull: {
     method: 'get',
     path: `${basePath}/:projectId/full`,
@@ -530,6 +532,7 @@ const commonProjectRoutes = {
       beforeHandler: []
     }
   },
+
   getPublicProjects: {
     method: 'get',
     path: `${basePath}/public`,
@@ -548,6 +551,7 @@ const commonProjectRoutes = {
     },
     handler: handlers.getPublicProjects
   },
+
   updateProjectStatus: {
     method: 'put',
     path: `${basePath}/:projectId/status`,
@@ -580,6 +584,7 @@ const commonProjectRoutes = {
     },
     handler: handlers.updateProjectStatus
   },
+
   getProjectUsers: {
     method: 'get',
     path: `${basePath}/:projectId/users`,
@@ -598,6 +603,26 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.getProjectUsers
+  },
+
+  followProject: {
+    method: 'post',
+    path: `${basePath}/:projectId/follow`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Follow project',
+        summary: 'Follow project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.followProject
   }
 };
 
