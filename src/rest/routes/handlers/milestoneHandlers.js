@@ -15,6 +15,7 @@ module.exports = {
     const milestones = await milestoneService.getAllMilestones();
     reply.status(200).send(milestones);
   },
+
   createMilestone: () => async (request, reply) => {
     const { projectId } = request.params;
     const milestoneParams = request.body;
@@ -25,6 +26,7 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+
   updateMilestone: () => async (request, reply) => {
     const { milestoneId } = request.params;
     const milestoneParams = request.body;
@@ -35,6 +37,7 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+
   deleteMilestone: () => async (request, reply) => {
     const { milestoneId } = request.params;
     const userId = request.user.id;

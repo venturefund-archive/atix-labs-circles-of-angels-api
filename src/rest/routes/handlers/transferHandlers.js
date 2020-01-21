@@ -61,5 +61,35 @@ module.exports = {
     } else {
       reply.code(400).send({ error: 'No transfer receipt found' });
     }
+  },
+
+  addApprovedTransferClaim: () => async (request, reply) => {
+    const { transferId } = request.params;
+    const userId = request.user.id;
+    const { file } = request.raw.files || {};
+
+    const response = await transferService.addTransferClaim({
+      transferId,
+      userId,
+      file,
+      approved: true
+    });
+
+    reply.status(200).send(response);
+  },
+
+  addDisapprovedTransferClaim: () => async (request, reply) => {
+    const { transferId } = request.params;
+    const userId = request.user.id;
+    const { file } = request.raw.files || {};
+
+    const response = await transferService.addTransferClaim({
+      transferId,
+      userId,
+      file,
+      approved: false
+    });
+
+    reply.status(200).send(response);
   }
 };

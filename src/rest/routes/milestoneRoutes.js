@@ -127,6 +127,7 @@ const milestoneRoutes = {
     },
     handler: handlers.createMilestone
   },
+
   updateMilestone: {
     method: 'put',
     path: `${basePath}/:milestoneId`,
@@ -151,6 +152,7 @@ const milestoneRoutes = {
     },
     handler: handlers.updateMilestone
   },
+
   deleteMilestone: {
     method: 'delete',
     path: `${basePath}/:milestoneId`,
@@ -171,15 +173,15 @@ const milestoneRoutes = {
     },
     handler: handlers.deleteMilestone
   },
+
   addApprovedClaim: {
     method: 'post',
     path: '/task/:taskId/claim/approve',
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
-        description:
-          'Add an approved claim of a milestone for an existing project',
+        tags: [routeTags.TASK.name, routeTags.POST.name],
+        description: 'Add an approved claim of a task for an existing project',
         summary: 'Add an approved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
@@ -191,18 +193,18 @@ const milestoneRoutes = {
         }
       }
     },
-    handler: handlers.createMilestone
+    handler: handlers.addApprovedClaim
   },
 
   addDisapprovedClaim: {
     method: 'post',
-    path: '/task/:taskId/claim/rejected',
+    path: '/task/:taskId/claim/disapproved',
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
+        tags: [routeTags.TASK.name, routeTags.POST.name],
         description:
-          'Add an disapproved claim of a milestone for an existing project',
+          'Add an disapproved claim of a task for an existing project',
         summary: 'Add an disapproved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
@@ -214,7 +216,7 @@ const milestoneRoutes = {
         }
       }
     },
-    handler: handlers.createMilestone
+    handler: handlers.addDisapprovedClaim
   }
 };
 

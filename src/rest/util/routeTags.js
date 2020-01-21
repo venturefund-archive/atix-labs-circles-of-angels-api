@@ -8,6 +8,10 @@ module.exports = {
     name: 'MILESTONE: ',
     description: 'Milestone related end-points'
   },
+  TASK: {
+    name: 'TASK: ',
+    description: 'Task related end-points'
+  },
   PROJECT: { name: 'PROJECT: ', description: 'Project related end-points' },
   QUESTIONNAIRE: {
     name: 'QUESTIONNAIRE: ',

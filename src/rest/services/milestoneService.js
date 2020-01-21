@@ -872,6 +872,15 @@ module.exports = {
     }
   },
 
+  /**
+   * Add a claim for an existing project
+   *
+   * @param {number} taskId
+   * @param {number} userId
+   * @param {object} file
+   * @param {boolean} approved
+   * @returns transferId || error
+   */
   async addClaim({ taskId, userId, file, approved }) {
     logger.info('[MilestoneService] :: Entering addClaim method');
     validateRequiredParams({
@@ -895,9 +904,9 @@ module.exports = {
     validatePhotoSize(file);
 
     // TODO Must we store this path? Where?
-    logger.info(`[ProjectService] :: Saving file of type '${evidenceType}'`);
+    logger.info(`[MilestoneService] :: Saving file of type '${evidenceType}'`);
     const filePath = await saveFile(evidenceType, file);
-    logger.info(`[ProjectService] :: File saved to: ${filePath}`);
+    logger.info(`[MilestoneService] :: File saved to: ${filePath}`);
 
     // TODO replace both fields with the correct information
     const claim = sha3(projectId, oracle, taskId);

@@ -16,31 +16,28 @@ const {
 } = require('../util/responses');
 const { projectStatuses } = require('../util/constants');
 
-const ownerIdProperty = {
-  ownerId: { type: 'integer' }
-};
 const projectThumbnailProperties = {
   projectName: { type: 'string' },
   location: { type: 'string' },
   timeframe: { type: 'string' },
   goalAmount: { type: 'number' }
 };
+
 const imgPathProperty = {
   imgPath: { type: 'string' }
 };
+
 const projectDetailProperties = {
   mission: { type: 'string' },
   problemAddressed: { type: 'string' }
 };
+
 const projectProposalProperties = {
   proposal: { type: 'string' }
 };
+
 const experienceProperties = {
   comment: { type: 'string' }
-};
-const taskProperties = {
-  // TODO
-  milestoneId: { type: 'integer' }
 };
 
 const milestonesResponse = {
@@ -82,7 +79,6 @@ const idParam = (description, param) => ({
 });
 
 const projectIdParam = idParam('Project identification', 'projectId');
-const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
 const successWithProjectIdResponse = {
   type: 'object',
@@ -147,14 +143,6 @@ const projectsResponse = {
     }
   },
   description: 'Returns all projects'
-};
-
-const experienceResponse = {
-  type: 'object',
-  properties: {
-    comment: { type: 'string' },
-    photos: { type: 'array', items: { type: 'object' } }
-  }
 };
 
 const projectThumbnailRoutes = {
@@ -513,6 +501,7 @@ const commonProjectRoutes = {
     },
     handler: handlers.getProjects
   },
+
   getProject: {
     method: 'get',
     path: `${basePath}/:projectId`,
@@ -521,6 +510,7 @@ const commonProjectRoutes = {
       beforeHandler: []
     }
   },
+
   getProjectFull: {
     method: 'get',
     path: `${basePath}/:projectId/full`,
@@ -529,6 +519,7 @@ const commonProjectRoutes = {
       beforeHandler: []
     }
   },
+
   getPublicProjects: {
     method: 'get',
     path: `${basePath}/public`,
@@ -547,6 +538,7 @@ const commonProjectRoutes = {
     },
     handler: handlers.getPublicProjects
   },
+
   updateProjectStatus: {
     method: 'put',
     path: `${basePath}/:projectId/status`,

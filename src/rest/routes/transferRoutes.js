@@ -9,34 +9,11 @@
 const basePath = '/transfers';
 const handlers = require('./handlers/transferHandlers');
 const routeTags = require('../util/routeTags');
-
-const clientErrorResponse = () => ({
-  '4xx': {
-    type: 'object',
-    properties: {
-      status: { type: 'integer' },
-      error: { type: 'string' }
-    },
-    description: 'Returns a message describing the error'
-  }
-});
-
-const serverErrorResponse = () => ({
-  500: {
-    type: 'object',
-    properties: {
-      status: { type: 'integer' },
-      error: { type: 'string' }
-    },
-    description: 'Returns a message describing the error'
-  }
-});
-
-const successResponse = response => ({
-  200: {
-    ...response
-  }
-});
+const {
+  successResponse,
+  clientErrorResponse,
+  serverErrorResponse
+} = require('../util/responses');
 
 const idParam = description => ({
   type: 'object',
@@ -170,6 +147,50 @@ const transferRoutes = {
       }
     },
     handler: handlers.getTransfers
+  },
+
+  addApprovedTransferClaim: {
+    method: 'post',
+    path: `${basePath}/:transferId/claim/approved`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        description: 'Add an approved transfer claim of an existing project',
+        summary: 'Add an approved transfer claim',
+        params: { transferIdParam },
+        type: 'multipart/form-data',
+        raw: { files: { type: 'object' } },
+        response: {
+          ...successResponse(successWithTransferIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.addApprovedTransferClaim
+  },
+
+  addDisapprovedTransferClaim: {
+    method: 'post',
+    path: `${basePath}/:transferId/claim/disapproved`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        description: 'Add an disapproved transfer claim of an existing project',
+        summary: 'Add an disapproved transfer claim',
+        params: { transferIdParam },
+        type: 'multipart/form-data',
+        raw: { files: { type: 'object' } },
+        response: {
+          ...successResponse(successWithTransferIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.addDisapprovedTransferClaim
   }
 };
 
