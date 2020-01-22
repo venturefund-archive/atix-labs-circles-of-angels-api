@@ -634,11 +634,37 @@ module.exports = {
       params: { projectId, userId }
     });
 
-    await validateExistence(this.projectDao, projectId, 'project');
-    const followerCreated = await this.followerDao.followProject({
-      projectId,
-      userId
+    const projectWithFollowers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { followers: true }
+    );
+
+    if (!projectWithFollowers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const { followers } = projectWithFollowers;
+
+    const alreadyFollowing = followers.some(follower => follower.id === userId);
+
+    if (alreadyFollowing) {
+      logger.error('[ProjectService] :: User already  follow this project');
+      throw new COAError(errors.project.AlreadyProjectFollower());
+    }
+
+    const followerCreated = await this.followerDao.saveFollower({
+      project: projectId,
+      user: userId
     });
+
+    logger.info(
+      `[ProjectService] :: User ${userId} following project ${projectId}`
+    );
 
     return { projectId: followerCreated.projectId };
   }

@@ -40,5 +40,9 @@ module.exports = {
   ProjectCantBeUpdated: status => ({
     message: `Project with status ${status} can't be updated`,
     statusCode: 403
+  }),
+  AlreadyProjectFollower: () => ({
+    message: 'User already follow this project',
+    statusCode: 400
   })
 };
