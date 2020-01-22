@@ -242,5 +242,12 @@ module.exports = {
     const userId = request.user.id;
     const response = await projectService.followProject({ projectId, userId });
     reply.status(200).send(response);
+  },
+
+  isFollower: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.isFollower({ projectId, userId });
+    reply.status(200).send(response);
   }
 };

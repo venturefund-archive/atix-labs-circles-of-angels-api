@@ -667,5 +667,40 @@ module.exports = {
     );
 
     return { projectId: followerCreated.projectId };
+  },
+
+  /**
+   * Check if user is following the specific project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns boolean || error
+   */
+  async isFollower({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering isFollower method');
+    validateRequiredParams({
+      method: 'isFollower',
+      params: { projectId, userId }
+    });
+
+    const projectWithFollowers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { followers: true }
+    );
+
+    if (!projectWithFollowers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const { followers } = projectWithFollowers;
+
+    const isFollowing = followers.some(follower => follower.id === userId);
+
+    return isFollowing;
   }
 };

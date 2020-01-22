@@ -83,6 +83,11 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
+const successWithBoleanResponse = {
+  type: 'boolean',
+  description: 'Returns the boolean result'
+};
+
 // FIXME: I don't think this is the best way to do this but ¯\_(ツ)_/¯
 const responseWithMilestoneErrors = {
   type: 'object',
@@ -623,6 +628,26 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.followProject
+  },
+
+  isFollower: {
+    method: 'get',
+    path: `${basePath}/:projectId/follower`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Analize if user is following the project',
+        summary: 'Check project following',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithBoleanResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.isFollower
   }
 };
 
