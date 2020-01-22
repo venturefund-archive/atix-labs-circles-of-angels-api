@@ -244,6 +244,18 @@ module.exports = {
     reply.status(200).send(response);
   },
 
+  unfollowProject: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+
+    const response = await projectService.unfollowProject({
+      projectId,
+      userId
+    });
+
+    reply.status(200).send(response);
+  },
+
   isFollower: () => async (request, reply) => {
     const { projectId } = request.params;
     const userId = request.user.id;

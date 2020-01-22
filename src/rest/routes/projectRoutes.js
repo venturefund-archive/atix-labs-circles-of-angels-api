@@ -630,6 +630,26 @@ const commonProjectRoutes = {
     handler: handlers.followProject
   },
 
+  unfollowProject: {
+    method: 'post',
+    path: `${basePath}/:projectId/unfollow`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Unfollow project',
+        summary: 'Unfollow project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.unfollowProject
+  },
+
   isFollower: {
     method: 'get',
     path: `${basePath}/:projectId/follower`,

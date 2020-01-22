@@ -10,5 +10,10 @@ module.exports = {
   async saveFollower({ project, user }) {
     const followerCreated = await this.model.create({ project, user });
     return followerCreated;
+  },
+
+  async deleteFollower({ project, user }) {
+    const deletedProject = this.model.destroy({ project, user }).fetch();
+    return deletedProject;
   }
 };
