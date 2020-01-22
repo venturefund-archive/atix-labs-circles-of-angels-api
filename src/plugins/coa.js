@@ -211,4 +211,8 @@ module.exports = class COA {
       state[chainId][name].length > 0
     );
   }
+
+  clearContracts() {
+    this.contracts = {};
+  }
 };

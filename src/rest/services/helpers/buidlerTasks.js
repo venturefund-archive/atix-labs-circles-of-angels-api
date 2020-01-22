@@ -25,8 +25,9 @@ const getDAOContract = async (env, address, signer) => {
   return factory.attach(address);
 };
 
-module.exports = {
-  async createMember({ profile }, env) {
+task('create-member', 'Create COA member')
+  .addOptionalParam('profile', 'New member profile')
+  .setAction(async ({ profile }, env) => {
     const coa = await getCOAContract(env);
     if (coa === undefined) {
       console.error('COA contract not deployed');
@@ -37,8 +38,12 @@ module.exports = {
     const memberProfile = profile || 'Member created by buidler';
     await coa.createMember(memberProfile);
     console.log('New member address:', address);
-  },
-  async createDao({ account }, env) {
+    return address;
+  });
+
+task('create-dao', 'Create DAO')
+  .addOptionalParam('account', 'DAO creator address')
+  .setAction(async ({ account }, env) => {
     const coa = await getCOAContract(env);
     if (coa === undefined) {
       console.error('COA contract not deployed');
@@ -49,8 +54,13 @@ module.exports = {
     const daoIndex = (await coa.getDaosLength()) - 1;
     const daoAddress = await coa.daos(daoIndex);
     console.log(`New DAO Address: ${daoAddress} index: ${daoIndex}`);
-  },
-  async proposeMemberToDao({ daoaddress, applicant, proposer }, env) {
+  });
+
+task('propose-member-to-dao', 'Creates proposal to add member to existing DAO')
+  .addParam('daoaddress', 'DAO address')
+  .addParam('applicant', 'Applicant address')
+  .addOptionalParam('proposer', 'Proposer address')
+  .setAction(async ({ daoaddress, applicant, proposer }, env) => {
     const signer = await getSigner(env, proposer);
     const dao = await getDAOContract(env, daoaddress, signer);
 
@@ -61,18 +71,28 @@ module.exports = {
     );
     const proposalIndex = (await dao.getProposalQueueLength()) - 1;
     console.log('New Proposal Index: ', proposalIndex);
-  },
-  async voteProposal({ daoaddress, proposal, vote, voter }, env) {
+    return proposalIndex;
+  });
+
+task('vote-proposal', 'Votes a proposal')
+  .addParam('daoaddress', 'DAO address')
+  .addParam('proposal', 'Proposal index')
+  .addParam('vote', 'Vote (true or false)', false, types.boolean)
+  .addOptionalParam('voter', 'Voter address')
+  .setAction(async ({ daoaddress, proposal, vote, voter }, env) => {
     const signer = await getSigner(env, voter);
     const dao = await getDAOContract(env, daoaddress, signer);
-    let voted = voteEnum.NULL;
+    let voted = voteEnum.NO;
     if (vote) voted = voteEnum.YES;
-    if (vote === false) voted = voteEnum.NO;
     await dao.submitVote(proposal, voted);
-  },
-  async processProposal({ daoaddress, proposal, signer }, env) {
+  });
+
+task('process-proposal', 'Process a proposal')
+  .addParam('daoaddress', 'DAO address')
+  .addParam('proposal', 'Proposal index')
+  .addOptionalParam('signer', 'Tx signer address')
+  .setAction(async ({ daoaddress, proposal, signer }, env) => {
     const member = await getSigner(env, signer);
     const dao = await getDAOContract(env, daoaddress, member);
     await dao.processProposal(proposal);
-  }
-};
+  });

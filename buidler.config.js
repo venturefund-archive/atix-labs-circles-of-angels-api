@@ -17,12 +17,13 @@ const MAINNET_PRIVATE_KEY = '';
 // const Deployments = require("./scripts/deployments");
 
 task('deploy', 'Deploys COA contracts')
-  .addOptionalParam('reset', 'force deploy')
+  .addOptionalParam('reset', 'force deploy', false, types.boolean)
   .setAction(async ({ reset }, env) => {
     // Make sure everything is compiled
     // await run('compile');
 
-    reset = reset === 'true';
+    // TODO: check if reset condition is needed
+    if (reset) env.coa.clearContracts();
 
     let [registry] = await env.deployments.getDeployedContracts(
       'ClaimsRegistry'
@@ -44,43 +45,6 @@ task('deploy', 'Deploys COA contracts')
     // console.log('Registry attached to', registry.address);
     // console.log('COA attached to', coa.address);
   });
-
-task('create-member', 'Create COA member')
-  .addOptionalParam('profile', 'New member profile')
-  .setAction(async ({ profile }, env) =>
-    buidlerTasks.createMember({ profile }, env)
-  );
-
-task('create-dao', 'Create DAO')
-  .addOptionalParam('account', 'DAO creator address')
-  .setAction(async ({ account }, env) =>
-    buidlerTasks.createDao({ account }, env)
-  );
-
-task('propose-member-to-dao', 'Creates proposal to add member to existing DAO')
-  .addParam('daoaddress', 'DAO address')
-  .addParam('applicant', 'Applicant address')
-  .addOptionalParam('proposer', 'Proposer address')
-  .setAction(async ({ daoaddress, applicant, proposer }, env) =>
-    buidlerTasks.proposeMemberToDao({ daoaddress, applicant, proposer }, env)
-  );
-
-task('vote-proposal', 'Votes a proposal')
-  .addParam('daoaddress', 'DAO address')
-  .addParam('proposal', 'Proposal index')
-  .addOptionalParam('vote', 'Vote (true or false)')
-  .addOptionalParam('voter', 'Voter address')
-  .setAction(async ({ daoaddress, proposal, vote, voter }, env) =>
-    buidlerTasks.voteProposal({ daoaddress, proposal, vote, voter }, env)
-  );
-
-task('process-proposal', 'Process a proposal')
-  .addParam('daoaddress', 'DAO address')
-  .addParam('proposal', 'Proposal index')
-  .addOptionalParam('signer', 'Tx signer address')
-  .setAction(async ({ daoaddress, proposal, signer }, env) =>
-    buidlerTasks.processProposal({ daoaddress, proposal, signer }, env)
-  );
 
 const coaDeploySetup = {
   contracts: [
@@ -111,7 +75,7 @@ module.exports = {
     tests: './src/tests/contracts',
     sources: './src/contracts'
   },
-  defaultNetwork: 'develop',
+  defaultNetwork: process.env.NODE_ENV === 'test' ? 'buidlerevm' : 'develop',
   networks: {
     develop: {
       url: 'http://localhost:8545'

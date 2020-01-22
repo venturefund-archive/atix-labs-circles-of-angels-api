@@ -1,15 +1,25 @@
 const { coa } = require('@nomiclabs/buidler');
 const COAError = require('../errors/COAError');
+const validateRequiredParams = require('./helpers/validateRequiredParams');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
-const { voteEnum, daoMemberRoleEnum } = require('../util/constants');
+const {
+  voteEnum,
+  daoMemberRoleNames,
+  proposalTypeEnum
+} = require('../util/constants');
 
 module.exports = {
   async voteProposal({ daoId, proposalId, vote, user }) {
     logger.info('[DAOService] :: Entering voteProposal method');
+    validateRequiredParams({
+      method: 'voteProposal',
+      params: { daoId, proposalId, user, vote }
+    });
+
     // TODO: check if user is allowed to vote?
     let userVote = voteEnum.NULL;
-    if (vote !== undefined) {
+    if (vote !== null && vote !== undefined) {
       userVote = vote ? voteEnum.YES : voteEnum.NO;
     }
 
@@ -29,6 +39,15 @@ module.exports = {
   },
   async submitProposal({ daoId, type, description, applicant, user }) {
     logger.info('[DAOService] :: Entering submitProposal method');
+    validateRequiredParams({
+      method: 'submitProposal',
+      params: { daoId, type, description, applicant, user }
+    });
+    if (!Object.values(proposalTypeEnum).includes(type)) {
+      logger.error(`[DAOService] :: Proposal type of value ${type} is not valid`);
+      throw new COAError(errors.dao.InvalidProposalType);
+    }
+
     // TODO: check if user is allowed to submit?
     logger.info('[DAOService] :: Submitting proposal', {
       daoId,
@@ -53,6 +72,10 @@ module.exports = {
   },
   async processProposal({ daoId, proposalId, user }) {
     logger.info('[DAOService] :: Entering processProposal method');
+    validateRequiredParams({
+      method: 'processProposal',
+      params: { daoId, proposalId, user }
+    });
     // TODO: check if user is allowed to process?
     logger.info('[DAOService] :: Processing proposal', {
       daoId,
@@ -69,6 +92,10 @@ module.exports = {
   },
   async getProposalsByDaoId({ daoId, user }) {
     logger.info('[DAOService] :: Entering getAllProposalsByDaoId method');
+    validateRequiredParams({
+      method: 'getProposalsByDaoId',
+      params: { daoId, user }
+    });
     logger.info('[DAOService] :: Getting all proposals', {
       daoId,
       userId: user.id
@@ -97,6 +124,10 @@ module.exports = {
   },
   async getMember({ daoId, memberAddress, user }) {
     logger.info('[DAOService] :: Entering getMember method');
+    validateRequiredParams({
+      method: 'getMember',
+      params: { daoId, memberAddress, user }
+    });
     logger.info('[DAOService] :: Getting member', {
       daoId,
       memberAddress,
@@ -111,7 +142,7 @@ module.exports = {
         throw new COAError(errors.dao.MemberNotFound(memberAddress, daoId));
       }
       return {
-        role: daoMemberRoleEnum[member.role],
+        role: daoMemberRoleNames[member.role],
         exists: member.exists,
         shares: Number(member.shares)
       };

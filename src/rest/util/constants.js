@@ -136,7 +136,6 @@ const transactionTypes = {
   updateEvidence: 'updateEvidence'
 };
 
-// TODO: what is the best way to define this enums?
 const voteEnum = {
   NULL: 0,
   YES: 1,
@@ -148,7 +147,12 @@ const proposalTypeEnum = {
   ASSIGN_BANK: 2,
   ASSIGN_CURATOR: 3
 };
-const daoMemberRoleEnum = ['Normal', 'Bank Operator', 'Project Curator'];
+const daoMemberRoleEnum = {
+  NORMAL: 0,
+  BANK: 1,
+  CURATOR: 2
+};
+const daoMemberRoleNames = ['Normal', 'Bank Operator', 'Project Curator'];
 
 module.exports = {
   evidenceFileTypes,
@@ -168,5 +172,6 @@ module.exports = {
   transactionTypes,
   voteEnum,
   proposalTypeEnum,
+  daoMemberRoleNames,
   daoMemberRoleEnum
 };
