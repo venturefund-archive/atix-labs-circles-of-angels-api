@@ -11,7 +11,7 @@ const { coa } = require('@nomiclabs/buidler');
 const projectService = require('../../services/projectService');
 const projectServiceExperience = require('../../services/projectExperienceService');
 
-const { projectStatuses } = require('../../util/constants');
+const { projectStatuses, supporterRoles } = require('../../util/constants');
 
 module.exports = {
   createProjectThumbnail: () => async (request, reply) => {
@@ -260,6 +260,18 @@ module.exports = {
     const { projectId } = request.params;
     const userId = request.user.id;
     const response = await projectService.isFollower({ projectId, userId });
+    reply.status(200).send(response);
+  },
+
+  applyAsOracle: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.applyToProject({
+      projectId,
+      userId,
+      collection: supporterRoles.ORACLES
+    });
+
     reply.status(200).send(response);
   }
 };

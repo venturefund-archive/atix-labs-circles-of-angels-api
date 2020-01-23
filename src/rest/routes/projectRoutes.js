@@ -668,6 +668,26 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.isFollower
+  },
+
+  applyAsOracle: {
+    method: 'post',
+    path: `${basePath}/:projectId/oracle`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Apply as a possible oracle for a project',
+        summary: 'Apply as oracle',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.applyAsOracle
   }
 };
 

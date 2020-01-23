@@ -11,6 +11,7 @@ const { uniqWith } = require('lodash');
 const {
   projectStatuses,
   userRoles,
+  supporterRoles,
   publicProjectStatuses,
   txFunderStatus
 } = require('../util/constants');
@@ -751,5 +752,66 @@ module.exports = {
     const isFollowing = followers.some(follower => follower.id === userId);
 
     return isFollowing;
+  },
+
+  /**
+   * Apply to a project as FUNDER or ORACLE
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @param {string} role
+   * @returns projectId || error
+   */
+  async applyToProject({ projectId, userId, collection }) {
+    logger.info('[ProjectService] :: Entering applyToProject method');
+    validateRequiredParams({
+      method: 'applyToProject',
+      params: { projectId, userId, collection }
+    });
+
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { [collection]: true }
+    );
+
+    // TODO check project status when the specific statuses are defined
+    if (!project) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const user = await checkExistence(this.userDao, userId, 'user');
+
+    if (user.role !== userRoles.PROJECT_SUPPORTER) {
+      logger.error(`[ProjectService] :: User ${userId} is not supporter`);
+      throw new COAError(errors.user.UnauthorizedUserRole(user.role));
+    }
+
+    const alreadyApply = project[collection].some(
+      participant => participant.id === userId
+    );
+
+    if (alreadyApply) {
+      logger.error('[ProjectService] :: User already apply to this project');
+      throw new COAError(errors.project.AlreadyProjectFollower());
+    }
+
+    const dao =
+      collection === supporterRoles.ORACLES ? this.oracleDao : this.funderDao;
+
+    const candidateAdded = await dao.addCandidate({
+      project: projectId,
+      user: userId
+    });
+
+    logger.info(
+      `[ProjectService] :: User ${userId} apply to ${collection} into project ${projectId}`
+    );
+
+    return { candidateId: candidateAdded.id };
   }
 };
