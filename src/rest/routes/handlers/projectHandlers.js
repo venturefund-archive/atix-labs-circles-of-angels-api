@@ -273,5 +273,17 @@ module.exports = {
     });
 
     reply.status(200).send(response);
+  },
+
+  applyAsFunder: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.applyToProject({
+      projectId,
+      userId,
+      collection: supporterRoles.FUNDERS
+    });
+
+    reply.status(200).send(response);
   }
 };

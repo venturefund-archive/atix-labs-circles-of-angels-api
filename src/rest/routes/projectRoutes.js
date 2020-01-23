@@ -83,7 +83,15 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
-const successWithBoleanResponse = {
+const successWithCandidateIdResponse = {
+  type: 'object',
+  properties: {
+    candidateId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project'
+};
+
+const successWithBooleanResponse = {
   type: 'boolean',
   description: 'Returns the boolean result'
 };
@@ -661,7 +669,7 @@ const commonProjectRoutes = {
         summary: 'Check project following',
         params: projectIdParam,
         response: {
-          ...successResponse(successWithBoleanResponse),
+          ...successResponse(successWithBooleanResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
@@ -681,13 +689,33 @@ const commonProjectRoutes = {
         summary: 'Apply as oracle',
         params: projectIdParam,
         response: {
-          ...successResponse(successWithProjectIdResponse),
+          ...successResponse(successWithCandidateIdResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
       }
     },
     handler: handlers.applyAsOracle
+  },
+
+  applyAsFunder: {
+    method: 'post',
+    path: `${basePath}/:projectId/funder`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Apply as a possible funder for a project',
+        summary: 'Apply as funder',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithCandidateIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.applyAsFunder
   }
 };
 
