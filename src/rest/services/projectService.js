@@ -797,7 +797,7 @@ module.exports = {
 
     if (alreadyApply) {
       logger.error('[ProjectService] :: User already apply to this project');
-      throw new COAError(errors.project.AlreadyProjectFollower());
+      throw new COAError(errors.project.AlreadyApplyToProject());
     }
 
     const dao =
