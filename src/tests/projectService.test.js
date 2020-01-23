@@ -66,6 +66,15 @@ const entrepreneurUser = {
   address: '0x02222222'
 };
 
+const anotherSupporterUser = {
+  id: 3,
+  firstName: 'Project',
+  lastName: 'Supporter',
+  role: userRoles.PROJECT_SUPPORTER,
+  email: 'suppuser@email.com',
+  address: '0x03333333'
+};
+
 const pendingProject = {
   id: 3,
   projectName,
@@ -227,6 +236,19 @@ const projectDao = {
       }
       return { ...consensusProject };
     }
+    return undefined;
+  },
+  findProjectWithUsersById: projectId => {
+    if (projectId === 4) {
+      return {
+        ...consensusProject,
+        owner: entrepreneurUser,
+        followers: [supporterUser],
+        funders: [supporterUser],
+        oracles: [supporterUser, supporterUser]
+      };
+    }
+    return undefined;
   }
 };
 
@@ -980,9 +1002,9 @@ describe('Project Service Test', () => {
           consensusProject.id
         );
         expect(response.owner).toEqual(entrepreneurUser);
-        expect(response.funders).toHaveLength(0);
-        expect(response.oracles).toHaveLength(0);
-        expect(response.followers).toHaveLength(0);
+        expect(response.followers).toHaveLength(1);
+        expect(response.funders).toHaveLength(1);
+        expect(response.oracles).toHaveLength(2);
       }
     );
 

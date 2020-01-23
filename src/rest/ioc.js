@@ -22,6 +22,7 @@ const milestoneService = require('./services/milestoneService');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
+const followerDao = require('./dao/followerDao');
 const photoDao = require('./dao/photoDao');
 const fileDao = require('./dao/fileDao');
 const projectExperienceDao = require('./dao/projectExperienceDao');
@@ -87,6 +88,7 @@ module.exports = fastify => {
     const dependencies = {
       fileServer: fastify.configs.fileServer,
       projectDao,
+      followerDao,
       milestoneService,
       userDao, // TODO: remove this dao and create needed methods in userService
       activityService,
@@ -169,6 +171,7 @@ module.exports = fastify => {
     injectModel(fileDao, models.file);
     injectModel(milestoneDao, models.milestone);
     injectModel(projectDao, models.project);
+    injectModel(followerDao, models.project_follower);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
     injectModel(passRecoveryDao, models.passRecovery);
     injectModel(activityDao, models.task);

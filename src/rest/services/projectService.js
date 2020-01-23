@@ -598,11 +598,9 @@ module.exports = {
       method: 'getProjectUsers',
       params: { projectId }
     });
-    // TODO: this should also return all followers, funders, and oracles
-    //       once the relation is implemented
-    const projectWithUsers = await this.projectDao.findOneByProps(
-      { id: projectId },
-      { owner: true }
+
+    const projectWithUsers = await this.projectDao.findProjectWithUsersById(
+      projectId
     );
 
     if (!projectWithUsers) {
@@ -620,5 +618,138 @@ module.exports = {
       funders: projectWithUsers.funders || [],
       oracles: projectWithUsers.oracles || []
     };
+  },
+
+  /**
+   * Following of a project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns projectId || error
+   */
+  async followProject({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering followProject method');
+    validateRequiredParams({
+      method: 'followProject',
+      params: { projectId, userId }
+    });
+
+    const projectWithFollowers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { followers: true }
+    );
+
+    if (!projectWithFollowers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const { followers } = projectWithFollowers;
+
+    const alreadyFollowing = followers.some(follower => follower.id === userId);
+
+    if (alreadyFollowing) {
+      logger.error('[ProjectService] :: User already  follow this project');
+      throw new COAError(errors.project.AlreadyProjectFollower());
+    }
+
+    const followerCreated = await this.followerDao.saveFollower({
+      project: projectId,
+      user: userId
+    });
+
+    logger.info(
+      `[ProjectService] :: User ${userId} following project ${projectId}`
+    );
+
+    return { projectId: followerCreated.projectId };
+  },
+
+  /**
+   * Unfollowing of a project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns projectId || error
+   */
+  async unfollowProject({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering unfollowProject method');
+    validateRequiredParams({
+      method: 'unfollowProject',
+      params: { projectId, userId }
+    });
+
+    const projectWithFollowers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { followers: true }
+    );
+
+    if (!projectWithFollowers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const { followers } = projectWithFollowers;
+
+    const isFollowing = followers.some(follower => follower.id === userId);
+
+    if (!isFollowing) {
+      logger.error('[ProjectService] :: User is not following this project');
+      throw new COAError(errors.project.IsNotFollower());
+    }
+
+    const followerDeleted = await this.followerDao.deleteFollower({
+      project: projectId,
+      user: userId
+    });
+
+    logger.info(
+      `[ProjectService] :: User ${userId} unfollowed project ${projectId}`
+    );
+
+    return { projectId: followerDeleted.projectId };
+  },
+
+  /**
+   * Check if user is following the specific project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns boolean || error
+   */
+  async isFollower({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering isFollower method');
+    validateRequiredParams({
+      method: 'isFollower',
+      params: { projectId, userId }
+    });
+
+    const projectWithFollowers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { followers: true }
+    );
+
+    if (!projectWithFollowers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const { followers } = projectWithFollowers;
+
+    const isFollowing = followers.some(follower => follower.id === userId);
+
+    return isFollowing;
   }
 };
