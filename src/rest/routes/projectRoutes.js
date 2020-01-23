@@ -83,7 +83,15 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
-const successWithBoleanResponse = {
+const successWithCandidateIdResponse = {
+  type: 'object',
+  properties: {
+    candidateId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project'
+};
+
+const successWithBooleanResponse = {
   type: 'boolean',
   description: 'Returns the boolean result'
 };
@@ -661,13 +669,73 @@ const commonProjectRoutes = {
         summary: 'Check project following',
         params: projectIdParam,
         response: {
-          ...successResponse(successWithBoleanResponse),
+          ...successResponse(successWithBooleanResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
       }
     },
     handler: handlers.isFollower
+  },
+
+  applyAsOracle: {
+    method: 'post',
+    path: `${basePath}/:projectId/oracle`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Apply as a possible oracle for a project',
+        summary: 'Apply as oracle',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithCandidateIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.applyAsOracle
+  },
+
+  applyAsFunder: {
+    method: 'post',
+    path: `${basePath}/:projectId/funder`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Apply as a possible funder for a project',
+        summary: 'Apply as funder',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithCandidateIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.applyAsFunder
+  },
+
+  isCandidate: {
+    method: 'get',
+    path: `${basePath}/:projectId/candidate`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Analize if user already applied to the project',
+        summary: 'Check project applying',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithBooleanResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.isCandidate
   }
 };
 
