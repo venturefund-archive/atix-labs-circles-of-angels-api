@@ -17,6 +17,7 @@
  * @attribute `roles`: role / roles that the user has in the tool
  *            (this can be for example Funder and Oracle at the same time)
  */
+const { omit } = require('lodash');
 const { userRoles } = require('../../src/rest/util/constants');
 
 module.exports = {
@@ -40,7 +41,25 @@ module.exports = {
     projects: {
       collection: 'project',
       via: 'owner'
+    },
+    funding: {
+      collection: 'project',
+      via: 'user',
+      through: 'project_funder'
+    },
+    following: {
+      collection: 'project',
+      via: 'user',
+      through: 'project_follower'
+    },
+    monitoring: {
+      collection: 'project',
+      via: 'user',
+      through: 'project_oracle'
     }
+  },
+  customToJSON: function toJson() {
+    return omit(this, ['password', 'privKey']);
   },
   async findById(id) {
     return this.findOne(id);
