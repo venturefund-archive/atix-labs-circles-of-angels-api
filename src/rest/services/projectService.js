@@ -762,16 +762,16 @@ module.exports = {
    * @param {string} role
    * @returns projectId || error
    */
-  async applyToProject({ projectId, userId, collection }) {
+  async applyToProject({ projectId, userId, role }) {
     logger.info('[ProjectService] :: Entering applyToProject method');
     validateRequiredParams({
       method: 'applyToProject',
-      params: { projectId, userId, collection }
+      params: { projectId, userId, role }
     });
 
     const project = await this.projectDao.findOneByProps(
       { id: projectId },
-      { [collection]: true }
+      { oracles: true, funders: true }
     );
 
     // TODO check project status when the specific statuses are defined
@@ -791,8 +791,8 @@ module.exports = {
       throw new COAError(errors.user.UnauthorizedUserRole(user.role));
     }
 
-    const alreadyApply = project[collection].some(
-      participant => participant.id === userId
+    const alreadyApply = Object.values(supporterRoles).some(collection =>
+      project[collection].some(participant => participant.id === userId)
     );
 
     if (alreadyApply) {
@@ -801,7 +801,7 @@ module.exports = {
     }
 
     const dao =
-      collection === supporterRoles.ORACLES ? this.oracleDao : this.funderDao;
+      role === supporterRoles.ORACLES ? this.oracleDao : this.funderDao;
 
     const candidateAdded = await dao.addCandidate({
       project: projectId,
@@ -809,7 +809,7 @@ module.exports = {
     });
 
     logger.info(
-      `[ProjectService] :: User ${userId} apply to ${collection} into project ${projectId}`
+      `[ProjectService] :: User ${userId} apply to ${role} into project ${projectId}`
     );
 
     return { candidateId: candidateAdded.id };

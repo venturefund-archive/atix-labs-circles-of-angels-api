@@ -269,7 +269,7 @@ module.exports = {
     const response = await projectService.applyToProject({
       projectId,
       userId,
-      collection: supporterRoles.ORACLES
+      role: supporterRoles.ORACLES
     });
 
     reply.status(200).send(response);
@@ -281,7 +281,7 @@ module.exports = {
     const response = await projectService.applyToProject({
       projectId,
       userId,
-      collection: supporterRoles.FUNDERS
+      role: supporterRoles.FUNDERS
     });
 
     reply.status(200).send(response);
