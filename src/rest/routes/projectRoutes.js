@@ -716,6 +716,26 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.applyAsFunder
+  },
+
+  isCandidate: {
+    method: 'get',
+    path: `${basePath}/:projectId/candidate`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Analize if user already applied to the project',
+        summary: 'Check project applying',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithBooleanResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.isCandidate
   }
 };
 

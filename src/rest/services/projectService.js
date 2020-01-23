@@ -813,5 +813,40 @@ module.exports = {
     );
 
     return { candidateId: candidateAdded.id };
+  },
+
+  /**
+   * Check if user already applied to the specific project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns boolean || error
+   */
+  async isCandidate({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering isCandidate method');
+    validateRequiredParams({
+      method: 'isCandidate',
+      params: { projectId, userId }
+    });
+
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { oracles: true, funders: true }
+    );
+
+    if (!project) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const alreadyApply = Object.values(supporterRoles).some(collection =>
+      project[collection].some(participant => participant.id === userId)
+    );
+
+    return alreadyApply;
   }
 };

@@ -285,5 +285,12 @@ module.exports = {
     });
 
     reply.status(200).send(response);
+  },
+
+  isCandidate: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.isCandidate({ projectId, userId });
+    reply.status(200).send(response);
   }
 };
