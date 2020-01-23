@@ -11,6 +11,7 @@ const { uniqWith } = require('lodash');
 const {
   projectStatuses,
   userRoles,
+  supporterRoles,
   publicProjectStatuses,
   txFunderStatus
 } = require('../util/constants');
@@ -751,5 +752,101 @@ module.exports = {
     const isFollowing = followers.some(follower => follower.id === userId);
 
     return isFollowing;
+  },
+
+  /**
+   * Apply to a project as FUNDER or ORACLE
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @param {string} role
+   * @returns projectId || error
+   */
+  async applyToProject({ projectId, userId, role }) {
+    logger.info('[ProjectService] :: Entering applyToProject method');
+    validateRequiredParams({
+      method: 'applyToProject',
+      params: { projectId, userId, role }
+    });
+
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { oracles: true, funders: true }
+    );
+
+    // TODO check project status when the specific statuses are defined
+    if (!project) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const user = await checkExistence(this.userDao, userId, 'user');
+
+    if (user.role !== userRoles.PROJECT_SUPPORTER) {
+      logger.error(`[ProjectService] :: User ${userId} is not supporter`);
+      throw new COAError(errors.user.UnauthorizedUserRole(user.role));
+    }
+
+    const alreadyApply = Object.values(supporterRoles).some(collection =>
+      project[collection].some(participant => participant.id === userId)
+    );
+
+    if (alreadyApply) {
+      logger.error('[ProjectService] :: User already apply to this project');
+      throw new COAError(errors.project.AlreadyApplyToProject());
+    }
+
+    const dao =
+      role === supporterRoles.ORACLES ? this.oracleDao : this.funderDao;
+
+    const candidateAdded = await dao.addCandidate({
+      project: projectId,
+      user: userId
+    });
+
+    logger.info(
+      `[ProjectService] :: User ${userId} apply to ${role} into project ${projectId}`
+    );
+
+    return { candidateId: candidateAdded.id };
+  },
+
+  /**
+   * Check if user already applied to the specific project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns boolean || error
+   */
+  async isCandidate({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering isCandidate method');
+    validateRequiredParams({
+      method: 'isCandidate',
+      params: { projectId, userId }
+    });
+
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { oracles: true, funders: true }
+    );
+
+    if (!project) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const alreadyApply = Object.values(supporterRoles).some(collection =>
+      project[collection].some(participant => participant.id === userId)
+    );
+
+    return alreadyApply;
   }
 };
