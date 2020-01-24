@@ -30,9 +30,6 @@ module.exports = {
       userId: user.id
     });
 
-    // TODO: should we check if proposal and dao exist? 
-    //       would this cost extra gas?
-
     try {
       await coa.submitProposalVote(daoId, proposalId, userVote, user.wallet);
     } catch (error) {
