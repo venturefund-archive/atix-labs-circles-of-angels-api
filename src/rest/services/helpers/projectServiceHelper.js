@@ -1,7 +1,12 @@
 const mime = require('mime');
 const errors = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
-const { projectStatuses, userRoles } = require('../../util/constants');
+const {
+  publicProjectStatuses,
+  privateProjectStatuses,
+  inactiveProjectStatuses,
+  userRoles
+} = require('../../util/constants');
 const validateOwnership = require('./validateOwnership');
 
 const logger = require('../../logger');
@@ -9,20 +14,16 @@ const logger = require('../../logger');
 const MAX_PHOTO_SIZE = 500000;
 
 const {
-  NEW,
-  TO_REVIEW,
-  REJECTED,
-  DELETED,
   PUBLISHED,
   CONSENSUS,
   FUNDING,
   EXECUTING,
   CHANGING_SCOPE,
   FINISHED,
-  ABORTED,
-  ARCHIVED,
-  CANCELLED
-} = projectStatuses;
+  ABORTED
+} = publicProjectStatuses;
+const { NEW, TO_REVIEW, REJECTED } = privateProjectStatuses;
+const { DELETED, ARCHIVED, CANCELLED } = inactiveProjectStatuses;
 
 const validateExistence = async (dao, id, model) => {
   logger.info('[ProjectServiceHelper] :: Entering validaExistence method');
