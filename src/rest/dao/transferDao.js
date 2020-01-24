@@ -13,6 +13,10 @@ module.exports = {
     return this.model.findOne({ id });
   },
 
+  async findAllByProps(filters, populate) {
+    return this.model.find(filters, populate);
+  },
+
   async create({
     transferId,
     senderId,

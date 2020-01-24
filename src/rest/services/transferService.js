@@ -10,7 +10,8 @@ const {
   txFunderStatus,
   projectStatuses,
   userRoles,
-  transferStatus
+  transferStatus,
+  publicProjectStatuses
 } = require('../util/constants');
 const files = require('../util/files');
 const checkExistence = require('./helpers/checkExistence');
@@ -177,10 +178,7 @@ module.exports = {
     const project = await checkExistence(this.projectDao, projectId, 'project');
 
     // TODO: define in which project phase/s this list would make sense
-    if (
-      project.status !== projectStatuses.CONSENSUS &&
-      project.status !== projectStatuses.EXECUTING
-    ) {
+    if (!Object.values(publicProjectStatuses).includes(project.status)) {
       logger.error(
         '[TransferService] :: Project has not been approved yet',
         project
@@ -201,6 +199,26 @@ module.exports = {
     logger.info(
       `[TransferService] :: Found ${transfers.length} for project ${projectId}`
     );
+    return transfers;
+  },
+
+  /**
+   * Returns an array with all transfers that match the criteria passed as parameter
+   * @param {{ filters: object, populate: object }} props
+   * @returns {Promise<transfer[]>}
+   */
+  async getAllTransfersByProps(props) {
+    logger.info('[TransferService] :: Entering getAllTransfersByProps method');
+
+    const filters = props ? props.filters : {};
+    const populate = props ? props.populate : {};
+
+    logger.info('[TransferService] :: Getting all transfers with options', {
+      filters,
+      populate
+    });
+    const transfers = await this.transferDao.findAllByProps(filters, populate);
+    logger.info(`[TransferService] :: Found ${transfers.length} transfers`);
     return transfers;
   },
 

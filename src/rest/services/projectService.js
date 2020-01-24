@@ -7,10 +7,13 @@
  */
 
 const path = require('path');
+const { uniqWith } = require('lodash');
 const {
   projectStatuses,
   userRoles,
-  publicProjectStatuses
+  supporterRoles,
+  publicProjectStatuses,
+  txFunderStatus
 } = require('../util/constants');
 const files = require('../util/files');
 const {
@@ -30,6 +33,9 @@ const logger = require('../logger');
 const thumbnailType = 'thumbnail';
 const coverPhotoType = 'coverPhoto';
 const milestonesType = 'milestones';
+
+// TODO: replace with actual function
+const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 
 module.exports = {
   async updateProject(projectId, fields) {
@@ -364,7 +370,7 @@ module.exports = {
       params: { projectId }
     });
     await checkExistence(this.projectDao, projectId, 'project');
-    return this.milestoneDao.getMilestoneByProjectId(projectId);
+    return this.milestoneService.getAllMilestonesByProject(projectId);
   },
 
   async getProjectMilestonesPath(projectId) {
@@ -494,5 +500,353 @@ module.exports = {
     // TODO: implement pagination
     logger.info('[ProjectService] :: Entering getProjectsByOwner method');
     return this.projectDao.findAllByProps({ owner: ownerId });
+  },
+
+  /**
+   * Returns a JSON object containing the description and
+   * information of milestones, tasks and funders of a project
+   *
+   * @param {number} projectId
+   * @returns {Promise<string>} agreement in JSON format
+   */
+  async generateProjectAgreement(projectId) {
+    logger.info('[ProjectService] :: Entering generateProjectAgreement method');
+    logger.info(`[ProjectService] :: Looking up project of id ${projectId}`);
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { owner: true }
+    );
+    if (!project) {
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const milestonesWithTasks = await this.milestoneService.getAllMilestonesByProject(
+      projectId
+    );
+
+    const milestones = milestonesWithTasks.map(milestone => {
+      const { description } = milestone;
+      const goal = milestone.tasks.reduce(
+        (total, task) => total + Number(task.budget),
+        0
+      );
+      const tasks = milestone.tasks.map(task => ({
+        // TODO: define task fields
+        id: sha3(projectId, task.oracle, task.id),
+        oracle: task.oracle,
+        description: task.description,
+        reviewCriteria: task.reviewCriteria,
+        category: task.category,
+        keyPersonnel: task.keyPersonnel
+      }));
+
+      return {
+        description,
+        goal,
+        tasks
+      };
+    });
+
+    const transfersWithSender = await this.transferService.getAllTransfersByProps(
+      {
+        filters: { project: projectId, status: txFunderStatus.VERIFIED },
+        populate: { sender: true }
+      }
+    );
+    const funders = uniqWith(
+      transfersWithSender.map(transfer => transfer.sender),
+      (a, b) => a.id === b.id
+    ).map(funder => ({
+      // TODO: define funder fields
+      firstName: funder.firstName,
+      lastName: funder.lastName,
+      email: funder.email,
+      address: funder.address
+    }));
+
+    const projectOwner = {
+      firstName: project.owner.firstName,
+      lastName: project.owner.lastName,
+      email: project.owner.email,
+      address: project.owner.address
+    };
+
+    // TODO: define project fields
+    const agreement = {
+      name: project.projectName,
+      mission: project.mission,
+      problem: project.problemAddressed,
+      owner: projectOwner,
+      milestones,
+      funders
+    };
+
+    const agreementJson = JSON.stringify(agreement, undefined, 2);
+    return agreementJson;
+  },
+
+  /**
+   * Returns an object with all users related to the project
+   * (Owner, followers, funders, oracles)
+   * @param {number} projectId
+   * @returns {{owner: User, followers: User[], funders: User[], oracles: User[]}}
+   */
+  async getProjectUsers(projectId) {
+    logger.info('[ProjectService] :: Entering getProjectUsers method');
+    validateRequiredParams({
+      method: 'getProjectUsers',
+      params: { projectId }
+    });
+
+    const projectWithUsers = await this.projectDao.findProjectWithUsersById(
+      projectId
+    );
+
+    if (!projectWithUsers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    return {
+      owner: projectWithUsers.owner,
+      followers: projectWithUsers.followers || [],
+      funders: projectWithUsers.funders || [],
+      oracles: projectWithUsers.oracles || []
+    };
+  },
+
+  /**
+   * Following of a project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns projectId || error
+   */
+  async followProject({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering followProject method');
+    validateRequiredParams({
+      method: 'followProject',
+      params: { projectId, userId }
+    });
+
+    const projectWithFollowers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { followers: true }
+    );
+
+    if (!projectWithFollowers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const { followers } = projectWithFollowers;
+
+    const alreadyFollowing = followers.some(follower => follower.id === userId);
+
+    if (alreadyFollowing) {
+      logger.error('[ProjectService] :: User already  follow this project');
+      throw new COAError(errors.project.AlreadyProjectFollower());
+    }
+
+    const followerCreated = await this.followerDao.saveFollower({
+      project: projectId,
+      user: userId
+    });
+
+    logger.info(
+      `[ProjectService] :: User ${userId} following project ${projectId}`
+    );
+
+    return { projectId: followerCreated.projectId };
+  },
+
+  /**
+   * Unfollowing of a project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns projectId || error
+   */
+  async unfollowProject({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering unfollowProject method');
+    validateRequiredParams({
+      method: 'unfollowProject',
+      params: { projectId, userId }
+    });
+
+    const projectWithFollowers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { followers: true }
+    );
+
+    if (!projectWithFollowers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const { followers } = projectWithFollowers;
+
+    const isFollowing = followers.some(follower => follower.id === userId);
+
+    if (!isFollowing) {
+      logger.error('[ProjectService] :: User is not following this project');
+      throw new COAError(errors.project.IsNotFollower());
+    }
+
+    const followerDeleted = await this.followerDao.deleteFollower({
+      project: projectId,
+      user: userId
+    });
+
+    logger.info(
+      `[ProjectService] :: User ${userId} unfollowed project ${projectId}`
+    );
+
+    return { projectId: followerDeleted.projectId };
+  },
+
+  /**
+   * Check if user is following the specific project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns boolean || error
+   */
+  async isFollower({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering isFollower method');
+    validateRequiredParams({
+      method: 'isFollower',
+      params: { projectId, userId }
+    });
+
+    const projectWithFollowers = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { followers: true }
+    );
+
+    if (!projectWithFollowers) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const { followers } = projectWithFollowers;
+
+    const isFollowing = followers.some(follower => follower.id === userId);
+
+    return isFollowing;
+  },
+
+  /**
+   * Apply to a project as FUNDER or ORACLE
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @param {string} role
+   * @returns projectId || error
+   */
+  async applyToProject({ projectId, userId, role }) {
+    logger.info('[ProjectService] :: Entering applyToProject method');
+    validateRequiredParams({
+      method: 'applyToProject',
+      params: { projectId, userId, role }
+    });
+
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { oracles: true, funders: true }
+    );
+
+    // TODO check project status when the specific statuses are defined
+    if (!project) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const user = await checkExistence(this.userDao, userId, 'user');
+
+    if (user.role !== userRoles.PROJECT_SUPPORTER) {
+      logger.error(`[ProjectService] :: User ${userId} is not supporter`);
+      throw new COAError(errors.user.UnauthorizedUserRole(user.role));
+    }
+
+    const alreadyApply = Object.values(supporterRoles).some(collection =>
+      project[collection].some(participant => participant.id === userId)
+    );
+
+    if (alreadyApply) {
+      logger.error('[ProjectService] :: User already apply to this project');
+      throw new COAError(errors.project.AlreadyApplyToProject());
+    }
+
+    const dao =
+      role === supporterRoles.ORACLES ? this.oracleDao : this.funderDao;
+
+    const candidateAdded = await dao.addCandidate({
+      project: projectId,
+      user: userId
+    });
+
+    logger.info(
+      `[ProjectService] :: User ${userId} apply to ${role} into project ${projectId}`
+    );
+
+    return { candidateId: candidateAdded.id };
+  },
+
+  /**
+   * Check if user already applied to the specific project
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns boolean || error
+   */
+  async isCandidate({ projectId, userId }) {
+    logger.info('[ProjectService] :: Entering isCandidate method');
+    validateRequiredParams({
+      method: 'isCandidate',
+      params: { projectId, userId }
+    });
+
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { oracles: true, funders: true }
+    );
+
+    if (!project) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+
+    const alreadyApply = Object.values(supporterRoles).some(collection =>
+      project[collection].some(participant => participant.id === userId)
+    );
+
+    return alreadyApply;
   }
 };
