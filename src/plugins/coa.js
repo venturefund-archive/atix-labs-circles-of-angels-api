@@ -122,13 +122,18 @@ module.exports = class COA {
 
   async submitProposalVote(daoId, proposalId, vote, signer) {
     const coa = await this.getCOA();
+    // TODO: check if this is necessary
+    await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
+    await this.checkProposalExistence(proposalId, dao);
     await dao.submitVote(proposalId, vote);
   }
 
   async submitProposal(daoId, type, description, applicantAddress, signer) {
     const coa = await this.getCOA();
+    // TODO: check if this is necessary
+    await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
     await dao.submitProposal(applicantAddress, type, description);
@@ -136,13 +141,18 @@ module.exports = class COA {
 
   async processProposal(daoId, proposalId, signer) {
     const coa = await this.getCOA();
+    // TODO: check if this is necessary
+    await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
+    await this.checkProposalExistence(proposalId, dao);
     await dao.processProposal(proposalId);
   }
 
   async getAllProposalsByDaoId(daoId, signer) {
     const coa = await this.getCOA();
+    // TODO: check if this is necessary
+    await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
     const proposalsLength = await dao.getProposalQueueLength();
@@ -155,6 +165,8 @@ module.exports = class COA {
 
   async getDaoMember(daoId, memberAddress, signer) {
     const coa = await this.getCOA();
+    // TODO: check if this is necessary
+    await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
     const member = await dao.members(memberAddress);
@@ -176,11 +188,18 @@ module.exports = class COA {
     return coa.getDaosLength();
   }
 
-  async getProposalQueueLength(daoId, signer) {
-    const coa = await this.getCOA();
-    const daoAddress = await coa.daos(daoId);
-    const dao = await this.getDaoContract(daoAddress, signer);
+  async getProposalQueueLength(dao) {
     return dao.getProposalQueueLength();
+  }
+
+  async checkDaoExistence(daoId) {
+    if (daoId >= (await this.getDaosLength()))
+      throw new Error('DAO does not exist');
+  }
+
+  async checkProposalExistence(proposalId, dao) {
+    if (proposalId >= (await this.getProposalQueueLength(dao)))
+      throw new Error('Proposal does not exist');
   }
 
   async getCOA() {
