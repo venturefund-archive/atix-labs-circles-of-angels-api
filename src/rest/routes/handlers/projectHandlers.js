@@ -6,10 +6,12 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { coa } = require('@nomiclabs/buidler');
+
 const projectService = require('../../services/projectService');
 const projectServiceExperience = require('../../services/projectExperienceService');
 
-const { projectStatuses } = require('../../util/constants');
+const { projectStatuses, supporterRoles } = require('../../util/constants');
 
 module.exports = {
   createProjectThumbnail: () => async (request, reply) => {
@@ -227,5 +229,68 @@ module.exports = {
     const project = await projectService.getProjectFull(projectId);
 
     reply.status(200).send(project);
+  },
+
+  getProjectUsers: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const users = await projectService.getProjectUsers(projectId);
+    reply.status(200).send(users);
+  },
+
+  followProject: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.followProject({ projectId, userId });
+    reply.status(200).send(response);
+  },
+
+  unfollowProject: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+
+    const response = await projectService.unfollowProject({
+      projectId,
+      userId
+    });
+
+    reply.status(200).send(response);
+  },
+
+  isFollower: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.isFollower({ projectId, userId });
+    reply.status(200).send(response);
+  },
+
+  applyAsOracle: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.applyToProject({
+      projectId,
+      userId,
+      role: supporterRoles.ORACLES
+    });
+
+    reply.status(200).send(response);
+  },
+
+  applyAsFunder: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.applyToProject({
+      projectId,
+      userId,
+      role: supporterRoles.FUNDERS
+    });
+
+    reply.status(200).send(response);
+  },
+
+  isCandidate: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const userId = request.user.id;
+    const response = await projectService.isCandidate({ projectId, userId });
+    reply.status(200).send(response);
   }
 };

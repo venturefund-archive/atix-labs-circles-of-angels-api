@@ -15,6 +15,7 @@ const {
   clientErrorResponse
 } = require('../util/responses');
 const { projectStatuses } = require('../util/constants');
+const { idParam } = require('../util/params');
 
 const ownerIdProperty = {
   ownerId: { type: 'integer' }
@@ -71,16 +72,6 @@ const milestonesResponse = {
   description: 'Returns all milestones of a project'
 };
 
-const idParam = (description, param) => ({
-  type: 'object',
-  properties: {
-    [param]: {
-      type: 'integer',
-      description
-    }
-  }
-});
-
 const projectIdParam = idParam('Project identification', 'projectId');
 const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
@@ -90,6 +81,19 @@ const successWithProjectIdResponse = {
     projectId: { type: 'integer' }
   },
   description: 'Returns the id of the project'
+};
+
+const successWithCandidateIdResponse = {
+  type: 'object',
+  properties: {
+    candidateId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project'
+};
+
+const successWithBooleanResponse = {
+  type: 'boolean',
+  description: 'Returns the boolean result'
 };
 
 // FIXME: I don't think this is the best way to do this but ¯\_(ツ)_/¯
@@ -122,6 +126,16 @@ const userResponse = {
     role: { type: 'string' }
   },
   description: 'Returns and object with the user information'
+};
+
+const usersResponse = {
+  type: 'object',
+  properties: {
+    owner: userResponse,
+    followers: { type: 'array', items: userResponse },
+    funders: { type: 'array', items: userResponse },
+    oracles: { type: 'array', items: userResponse }
+  }
 };
 
 const projectsResponse = {
@@ -513,6 +527,7 @@ const commonProjectRoutes = {
     },
     handler: handlers.getProjects
   },
+
   getProject: {
     method: 'get',
     path: `${basePath}/:projectId`,
@@ -521,6 +536,7 @@ const commonProjectRoutes = {
       beforeHandler: []
     }
   },
+
   getProjectFull: {
     method: 'get',
     path: `${basePath}/:projectId/full`,
@@ -529,6 +545,7 @@ const commonProjectRoutes = {
       beforeHandler: []
     }
   },
+
   getPublicProjects: {
     method: 'get',
     path: `${basePath}/public`,
@@ -547,6 +564,7 @@ const commonProjectRoutes = {
     },
     handler: handlers.getPublicProjects
   },
+
   updateProjectStatus: {
     method: 'put',
     path: `${basePath}/:projectId/status`,
@@ -578,6 +596,146 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.updateProjectStatus
+  },
+
+  getProjectUsers: {
+    method: 'get',
+    path: `${basePath}/:projectId/users`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Returns the users related to an existing project',
+        summary: 'Gets users of a project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(usersResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getProjectUsers
+  },
+
+  followProject: {
+    method: 'post',
+    path: `${basePath}/:projectId/follow`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Follow project',
+        summary: 'Follow project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.followProject
+  },
+
+  unfollowProject: {
+    method: 'post',
+    path: `${basePath}/:projectId/unfollow`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Unfollow project',
+        summary: 'Unfollow project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.unfollowProject
+  },
+
+  isFollower: {
+    method: 'get',
+    path: `${basePath}/:projectId/follower`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Analize if user is following the project',
+        summary: 'Check project following',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithBooleanResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.isFollower
+  },
+
+  applyAsOracle: {
+    method: 'post',
+    path: `${basePath}/:projectId/oracle`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Apply as a possible oracle for a project',
+        summary: 'Apply as oracle',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithCandidateIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.applyAsOracle
+  },
+
+  applyAsFunder: {
+    method: 'post',
+    path: `${basePath}/:projectId/funder`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Apply as a possible funder for a project',
+        summary: 'Apply as funder',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithCandidateIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.applyAsFunder
+  },
+
+  isCandidate: {
+    method: 'get',
+    path: `${basePath}/:projectId/candidate`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Analize if user already applied to the project',
+        summary: 'Check project applying',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithBooleanResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.isCandidate
   }
 };
 

@@ -79,6 +79,11 @@ const userRoles = {
   BANK_OPERATOR: 'bankoperator'
 };
 
+const supporterRoles = {
+  ORACLES: 'oracles',
+  FUNDERS: 'funders'
+};
+
 const milestoneBudgetStatus = {
   CLAIMABLE: 1,
   CLAIMED: 2,
@@ -142,6 +147,7 @@ module.exports = {
   inactiveProjectStatuses,
   activityStatus,
   userRoles,
+  supporterRoles,
   milestoneBudgetStatus,
   blockchainStatus,
   xlsxConfigs,
