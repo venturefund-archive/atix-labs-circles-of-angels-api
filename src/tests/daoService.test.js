@@ -91,6 +91,18 @@ describe('Testing daoService', () => {
         })
       ).rejects.toThrow(errors.dao.ErrorSubmittingProposal(0));
     });
+    it('should throw an error if the DAO does not exist', async () => {
+      const memberAddress = await run('create-member');
+      await expect(
+        daoService.submitProposal({
+          daoId: 1,
+          type: proposalTypeEnum.NEW_MEMBER,
+          description: 'Test proposal',
+          applicant: memberAddress,
+          user: defaultUser
+        })
+      ).rejects.toThrow(errors.dao.ErrorSubmittingProposal(1));
+    });
   });
   describe('Testing voteProposal method', () => {
     it.each`
@@ -140,6 +152,26 @@ describe('Testing daoService', () => {
           user: { ...defaultUser, wallet: { address: '0xx123' } }
         })
       ).rejects.toThrow(errors.dao.ErrorVotingProposal(0, 0));
+    });
+    it('should throw an error if the DAO does not exist', async () => {
+      await expect(
+        daoService.voteProposal({
+          daoId: 1,
+          proposalId: 0,
+          vote: voteEnum.YES,
+          user: defaultUser
+        })
+      ).rejects.toThrow(errors.dao.ErrorVotingProposal(0, 1));
+    });
+    it('should throw an error if the proposal does not exist', async () => {
+      await expect(
+        daoService.voteProposal({
+          daoId: 0,
+          proposalId: 1,
+          vote: voteEnum.YES,
+          user: defaultUser
+        })
+      ).rejects.toThrow(errors.dao.ErrorVotingProposal(1, 0));
     });
   });
   describe('Testing processProposal method', () => {
@@ -196,6 +228,24 @@ describe('Testing daoService', () => {
         })
       ).rejects.toThrow(errors.dao.ErrorProcessingProposal(0, 0));
     });
+    it('should throw an error if the DAO does not exist', async () => {
+      await expect(
+        daoService.processProposal({
+          daoId: 1,
+          proposalId: 0,
+          user: defaultUser
+        })
+      ).rejects.toThrow(errors.dao.ErrorProcessingProposal(0, 1));
+    });
+    it('should throw an error if the proposal does not exist', async () => {
+      await expect(
+        daoService.processProposal({
+          daoId: 0,
+          proposalId: 1,
+          user: defaultUser
+        })
+      ).rejects.toThrow(errors.dao.ErrorProcessingProposal(1, 0));
+    });
   });
   describe('Testing getMember method', () => {
     it('should return the information of the existing member in the DAO', async () => {
@@ -234,6 +284,15 @@ describe('Testing daoService', () => {
           user: defaultUser
         })
       ).rejects.toThrow(errors.dao.ErrorGettingMember('0x123456', 0));
+    });
+    it('should throw an error if the DAO does not exist', async () => {
+      await expect(
+        daoService.getMember({
+          daoId: 1,
+          memberAddress: superUserAddress,
+          user: defaultUser
+        })
+      ).rejects.toThrow(errors.dao.ErrorGettingMember(superUserAddress, 1));
     });
   });
   describe('Testing getProposalsByDaoId method', () => {
@@ -282,6 +341,14 @@ describe('Testing daoService', () => {
           user: { ...defaultUser, wallet: { address: '0x123' } }
         })
       ).rejects.toThrow(errors.dao.ErrorGettingProposals(0));
+    });
+    it('should throw an error if the DAO does not exist', async () => {
+      await expect(
+        daoService.getProposalsByDaoId({
+          daoId: 1,
+          user: defaultUser
+        })
+      ).rejects.toThrow(errors.dao.ErrorGettingProposals(1));
     });
   });
 });
