@@ -46,6 +46,7 @@ module.exports = {
     const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
     return project;
   },
+
   /**
    * Creates a Milestone for an existing Project.
    * Returns an object with the id of the new milestone
@@ -110,6 +111,7 @@ module.exports = {
 
     return { milestoneId: createdMilestone.id };
   },
+
   /**
    * Updates an existing milestone.
    * Returns an object with the id of the updated milestone
@@ -165,6 +167,7 @@ module.exports = {
     );
     return { milestoneId: updatedMilestone.id };
   },
+
   /**
    * Permanently remove an existing milestone and all its tasks
    * Returns an object with the id of the deleted milestone
@@ -235,6 +238,7 @@ module.exports = {
     delete newMilestone.blockchainStatus;
     return newMilestone;
   },
+
   deleteFieldsFromActivities(activities) {
     // TODO: check this
     return activities.map(activity => {
@@ -246,6 +250,7 @@ module.exports = {
       return activity;
     });
   },
+
   /**
    * Receives an excel file, saves it and creates the Milestones
    * associated to the Project passed by parameter.
@@ -510,6 +515,7 @@ module.exports = {
 
     return valid;
   },
+
   /**
    * Returns an array of the projects' id that an oracle
    * has any of its activities assigned

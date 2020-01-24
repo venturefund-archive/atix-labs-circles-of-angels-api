@@ -9,6 +9,7 @@
  */
 
 const sha256 = require('sha256');
+const files = require('../rest/util/files');
 const testHelper = require('./testHelper');
 const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
 const {
@@ -36,11 +37,21 @@ describe('Testing activityService', () => {
   let dbProject = [];
   let dbUser = [];
 
+  beforeAll(() => {
+    files.saveFile = jest.fn(() => '/dir/path');
+  });
+
   const resetDb = () => {
     dbTask = [];
     dbMilestone = [];
     dbProject = [];
     dbUser = [];
+  };
+
+  const newMilestoneParams = {
+    description: 'NewDescription',
+    category: 'NewCategory',
+    projectId: 1
   };
 
   const newTaskParams = {
@@ -118,8 +129,17 @@ describe('Testing activityService', () => {
       };
       dbTask.push(newTask);
       return newTask;
+    },
+    getTaskByIdWithMilestone: taskId => {
+      const found = dbTask.find(task => task.id === taskId);
+      if (!found) return;
+      return {
+        ...found,
+        milestone: newMilestoneParams
+      };
     }
   };
+
   const milestoneService = {
     getProjectFromMilestone: id => {
       const found = dbMilestone.find(milestone => milestone.id === id);
@@ -330,6 +350,65 @@ describe('Testing activityService', () => {
         })
       ).rejects.toThrow(
         errors.task.CreateWithInvalidProjectStatus(projectStatuses.EXECUTING)
+      );
+    });
+  });
+
+  describe('Testing addClaim', () => {
+    beforeAll(() => {
+      injectMocks(activityService, { activityDao });
+    });
+
+    beforeEach(() => {
+      dbTask = [];
+      dbUser = [];
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should add an approved claim and return the task id', async () => {
+      const file = { name: 'evidence.jpg', size: 20000 };
+      const newTask = {
+        id: 1,
+        description: 'NewDescription',
+        category: 'NewCategory',
+        oracle: userEntrepreneur.id
+      };
+
+      dbTask.push(newTask);
+
+      const response = await activityService.addClaim({
+        taskId: newTask.id,
+        userId: userEntrepreneur.id,
+        file,
+        approved: true
+      });
+
+      expect(response).toEqual({ taskId: newTask.id });
+    });
+
+    it('should throw an error if the user is not the oracle assigned', async () => {
+      const file = { name: 'evidence.jpg', size: 20000, md5: 'aaa' };
+      const newTask = {
+        id: 1,
+        description: 'NewDescription',
+        category: 'NewCategory',
+        oracle: userEntrepreneur.id + 1
+      };
+
+      dbTask.push(newTask);
+
+      await expect(
+        activityService.addClaim({
+          taskId: newTask.id,
+          userId: userEntrepreneur.id,
+          file,
+          approved: true
+        })
+      ).rejects.toThrow(
+        errors.task.OracleNotAssigned({
+          userId: userEntrepreneur.id,
+          taskId: newTask.id
+        })
       );
     });
   });

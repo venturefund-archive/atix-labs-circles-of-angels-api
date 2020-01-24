@@ -6,6 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { coa } = require('@nomiclabs/buidler');
+const { utils } = require('ethers');
 const {
   txFunderStatus,
   projectStatuses,
@@ -21,6 +23,11 @@ const validatePhotoSize = require('./helpers/validatePhotoSize');
 const errors = require('../errors/exporter/ErrorExporter');
 const COAError = require('../errors/COAError');
 const logger = require('../logger');
+
+const transferClaimType = 'transferClaims';
+
+// TODO: replace with actual function
+const sha3 = (a, b) => utils.id(`${a}-${b}`);
 
 module.exports = {
   /**
@@ -274,5 +281,61 @@ module.exports = {
       logger.error('[Transfer Service] :: Error getting transfers:', error);
       throw Error('Error getting transfers');
     }
+  },
+
+  /**
+   * Add a transfer claim for an existing project
+   *
+   * @param {number} transferId
+   * @param {number} userId
+   * @param {object} file
+   * @param {boolean} approved
+   * @returns transferId || error
+   */
+  async addTransferClaim({ transferId, userId, file, approved }) {
+    logger.info('[TransferService] :: Entering addTransferClaim method');
+    validateRequiredParams({
+      method: 'addTransferClaim',
+      params: { transferId, userId, file, approved }
+    });
+
+    const user = await checkExistence(this.userDao, userId, 'user');
+
+    if (user.role !== userRoles.BANK_OPERATOR) {
+      logger.error(
+        `[TransferService] :: User ${userId} not authorized for this action`
+      );
+      throw new COAError(errors.common.UserNotAuthorized(userId));
+    }
+
+    validateMtype(transferClaimType, file);
+    validatePhotoSize(file);
+
+    // TODO adapt to many files. Change this to rif storage
+    logger.info(
+      `[TransferService] :: Saving file of type '${transferClaimType}'`
+    );
+    const filePath = await files.saveFile(transferClaimType, file);
+    logger.info(`[TransferService] :: File saved to: ${filePath}`);
+
+    const transfer = await checkExistence(
+      this.transferDao,
+      transferId,
+      'fund_transfer'
+    );
+
+    // TODO replace both fields with the correct information
+    const { projectId } = transfer;
+    const claim = sha3(projectId, transferId);
+    const proof = utils.id(file.name);
+    await coa.addClaim(projectId, claim, proof, approved);
+
+    const status = approved
+      ? txFunderStatus.VERIFIED
+      : txFunderStatus.CANCELLED;
+    const updated = await this.transferDao.update({ id: transferId, status });
+
+    logger.info('[TransferService] :: Claim added and status transfer updated');
+    return { transferId: updated.id };
   }
 };
