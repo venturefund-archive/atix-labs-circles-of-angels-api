@@ -20,6 +20,7 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+
   updateTask: () => async (request, reply) => {
     const { taskId } = request.params;
     const taskParams = request.body;
@@ -30,6 +31,7 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+
   deleteTask: () => async (request, reply) => {
     const { taskId } = request.params;
     const userId = request.user.id;
@@ -250,5 +252,35 @@ module.exports = {
       );
       reply.status(500).send({ error: 'Error completing activity' });
     }
+  },
+
+  addApprovedClaim: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const { file } = request.raw.files || {};
+
+    const response = await activityService.addClaim({
+      taskId,
+      userId,
+      file,
+      approved: true
+    });
+
+    reply.status(200).send(response);
+  },
+
+  addDisapprovedClaim: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const { file } = request.raw.files || {};
+
+    const response = await activityService.addClaim({
+      taskId,
+      userId,
+      file,
+      approved: false
+    });
+
+    reply.status(200).send(response);
   }
 };

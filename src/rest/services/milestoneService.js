@@ -6,10 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { coa } = require('@nomiclabs/buidler');
-const { utils } = require('ethers');
 const { isEmpty, remove } = require('lodash');
-const files = require('../util/files');
 const {
   activityStatus,
   milestoneBudgetStatus,
@@ -20,18 +17,11 @@ const {
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
-const validateMtype = require('./helpers/validateMtype');
-const validatePhotoSize = require('./helpers/validatePhotoSize');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
 
 const logger = require('../logger');
-
-// TODO: replace with actual function
-const sha3 = (a, b, c) => utils.id(`${a}-${b}-${c}`);
-
-const claimType = 'claims';
 
 module.exports = {
   /**
@@ -55,32 +45,6 @@ module.exports = {
     );
     const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
     return project;
-  },
-
-  /**
-   * Returns the milestone that the task belongs to or `undefined`
-   *
-   * Throws an error if the task does not exist
-   *
-   * @param {number} id
-   * @returns milestone | `undefined`
-   */
-  async getMilestoneAndTaskFromId(id) {
-    logger.info('[MilestoneService] :: Entering getMilestoneFromTask method');
-    const task = await checkExistence(this.taskDao, id, 'task');
-    logger.info(
-      `[MilestoneService] :: Found task ${task.id} of milestone ${
-        task.milestone
-      }`
-    );
-
-    const { milestone } = await this.taskDao.getTaskByIdWithMilestone(id);
-    if (!milestone) {
-      logger.info(`[MilestoneService] :: No milestone found for task ${id}`);
-      throw new COAError(errors.task.MilestoneNotFound(id));
-    }
-
-    return { milestone, task };
   },
 
   /**
@@ -870,48 +834,5 @@ module.exports = {
     } catch (error) {
       return { error };
     }
-  },
-
-  /**
-   * Add a claim for an existing project
-   *
-   * @param {number} taskId
-   * @param {number} userId
-   * @param {object} file
-   * @param {boolean} approved
-   * @returns transferId || error
-   */
-  async addClaim({ taskId, userId, file, approved }) {
-    logger.info('[MilestoneService] :: Entering addClaim method');
-    validateRequiredParams({
-      method: 'addClaim',
-      params: { userId, taskId, file, approved }
-    });
-
-    const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
-    const { projectId } = milestone;
-    const { oracle } = task;
-
-    if (oracle !== userId) {
-      logger.error(
-        `[MilestoneService] :: User ${userId} is not the oracle assigned for task ${taskId}`
-      );
-      throw new COAError(errors.task.OracleNotAssigned({ userId, taskId }));
-    }
-
-    validateMtype(claimType, file);
-    validatePhotoSize(file);
-
-    logger.info(`[MilestoneService] :: Saving file of type '${claimType}'`);
-    const filePath = await files.saveFile(claimType, file);
-    logger.info(`[MilestoneService] :: File saved to: ${filePath}`);
-
-    // TODO replace both fields with the correct information
-    const claim = sha3(projectId, oracle, taskId);
-    const proof = utils.id(file.name);
-
-    await coa.addClaim(projectId, claim, proof, approved);
-
-    return { taskId };
   }
 };
