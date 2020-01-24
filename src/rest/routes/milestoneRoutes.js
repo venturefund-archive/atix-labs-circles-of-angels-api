@@ -118,6 +118,7 @@ const milestoneRoutes = {
     },
     handler: handlers.createMilestone
   },
+
   updateMilestone: {
     method: 'put',
     path: `${basePath}/:milestoneId`,
@@ -142,6 +143,7 @@ const milestoneRoutes = {
     },
     handler: handlers.updateMilestone
   },
+
   deleteMilestone: {
     method: 'delete',
     path: `${basePath}/:milestoneId`,

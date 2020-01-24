@@ -69,6 +69,7 @@ const taskRoutes = {
     },
     handler: handlers.updateTask
   },
+
   deleteTask: {
     method: 'delete',
     path: `${basePath}/:taskId`,
@@ -88,6 +89,7 @@ const taskRoutes = {
     },
     handler: handlers.deleteTask
   },
+
   createTask: {
     method: 'post',
     path: `/milestones/:milestoneId${basePath}`,
@@ -546,6 +548,51 @@ const routes = {
       }
     },
     handler: handlers.downloadEvidence
+  },
+
+  addApprovedClaim: {
+    method: 'post',
+    path: '/task/:taskId/claim/approve',
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
+        description: 'Add an approved claim of a task for an existing project',
+        summary: 'Add an approved claim',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        raw: { files: { type: 'object' } },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.addApprovedClaim
+  },
+
+  addDisapprovedClaim: {
+    method: 'post',
+    path: '/task/:taskId/claim/disapproved',
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
+        description:
+          'Add an disapproved claim of a task for an existing project',
+        summary: 'Add an disapproved claim',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        raw: { files: { type: 'object' } },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.addDisapprovedClaim
   }
 };
 

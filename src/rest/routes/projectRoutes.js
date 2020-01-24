@@ -17,31 +17,28 @@ const {
 const { projectStatuses } = require('../util/constants');
 const { idParam } = require('../util/params');
 
-const ownerIdProperty = {
-  ownerId: { type: 'integer' }
-};
 const projectThumbnailProperties = {
   projectName: { type: 'string' },
   location: { type: 'string' },
   timeframe: { type: 'string' },
   goalAmount: { type: 'number' }
 };
+
 const imgPathProperty = {
   imgPath: { type: 'string' }
 };
+
 const projectDetailProperties = {
   mission: { type: 'string' },
   problemAddressed: { type: 'string' }
 };
+
 const projectProposalProperties = {
   proposal: { type: 'string' }
 };
+
 const experienceProperties = {
   comment: { type: 'string' }
-};
-const taskProperties = {
-  // TODO
-  milestoneId: { type: 'integer' }
 };
 
 const milestonesResponse = {
@@ -73,7 +70,6 @@ const milestonesResponse = {
 };
 
 const projectIdParam = idParam('Project identification', 'projectId');
-const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
 const successWithProjectIdResponse = {
   type: 'object',
@@ -161,14 +157,6 @@ const projectsResponse = {
     }
   },
   description: 'Returns all projects'
-};
-
-const experienceResponse = {
-  type: 'object',
-  properties: {
-    comment: { type: 'string' },
-    photos: { type: 'array', items: { type: 'object' } }
-  }
 };
 
 const projectThumbnailRoutes = {

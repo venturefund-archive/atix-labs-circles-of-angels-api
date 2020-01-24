@@ -6,6 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { coa } = require('@nomiclabs/buidler');
+const { utils } = require('ethers');
 const { values, isEmpty } = require('lodash');
 const mkdirp = require('mkdirp-promise');
 const mime = require('mime-types');
@@ -13,21 +15,30 @@ const fs = require('fs');
 const path = require('path');
 const sha256 = require('sha256');
 const { promisify } = require('util');
+const files = require('../util/files');
 const { forEachPromise } = require('../util/promises');
-const { evidenceFileTypes, userRoles } = require('../util/constants');
 const {
   activityStatus,
   blockchainStatus,
-  projectStatuses
+  projectStatuses,
+  evidenceFileTypes,
+  userRoles
 } = require('../util/constants');
 
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
+const validateMtype = require('./helpers/validateMtype');
+const validatePhotoSize = require('./helpers/validatePhotoSize');
 const apiHelper = require('./helper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
+
+// TODO: replace with actual function
+const sha3 = (a, b, c) => utils.id(`${a}-${b}-${c}`);
+
+const claimType = 'claims';
 
 module.exports = {
   readFile: promisify(fs.readFile),
@@ -1218,5 +1229,74 @@ module.exports = {
       return { error: 'Invalid Blockchain status' };
     }
     return this.activityDao.updateBlockchainStatus(activityId, status);
+  },
+
+  /**
+   * Returns the milestone that the task belongs to or `undefined`
+   *
+   * Throws an error if the task does not exist
+   *
+   * @param {number} id
+   * @returns milestone | `undefined`
+   */
+  async getMilestoneAndTaskFromId(id) {
+    logger.info('[ActivityService] :: Entering getMilestoneFromTask method');
+    const task = await checkExistence(this.activityDao, id, 'task');
+    logger.info(
+      `[ActivityService] :: Found task ${task.id} of milestone ${
+        task.milestone
+      }`
+    );
+
+    const { milestone } = await this.activityDao.getTaskByIdWithMilestone(id);
+    if (!milestone) {
+      logger.info(`[ActivityService] :: No milestone found for task ${id}`);
+      throw new COAError(errors.task.MilestoneNotFound(id));
+    }
+
+    return { milestone, task };
+  },
+
+  /**
+   * Add a claim for an existing project
+   *
+   * @param {number} taskId
+   * @param {number} userId
+   * @param {object} file
+   * @param {boolean} approved
+   * @returns transferId || error
+   */
+  async addClaim({ taskId, userId, file, approved }) {
+    logger.info('[ActivityService] :: Entering addClaim method');
+    validateRequiredParams({
+      method: 'addClaim',
+      params: { userId, taskId, file, approved }
+    });
+
+    const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
+    const { projectId } = milestone;
+    const { oracle } = task;
+
+    if (oracle !== userId) {
+      logger.error(
+        `[ActivityService] :: User ${userId} is not the oracle assigned for task ${taskId}`
+      );
+      throw new COAError(errors.task.OracleNotAssigned({ userId, taskId }));
+    }
+
+    validateMtype(claimType, file);
+    validatePhotoSize(file);
+
+    logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
+    const filePath = await files.saveFile(claimType, file);
+    logger.info(`[ActivityService] :: File saved to: ${filePath}`);
+
+    // TODO replace both fields with the correct information
+    // const claim = sha3(projectId, oracle, taskId);
+    // const proof = utils.id(file.name);
+
+    // await coa.addClaim(projectId, claim, proof, approved);
+
+    return { taskId };
   }
 };

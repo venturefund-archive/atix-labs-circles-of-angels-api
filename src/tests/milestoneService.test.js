@@ -40,11 +40,6 @@ describe('Testing milestoneService', () => {
     dbUser = [];
   };
 
-  const newMilestoneParams = {
-    description: 'NewDescription',
-    category: 'NewCategory'
-  };
-
   const userEntrepreneur = {
     id: 1,
     role: userRoles.ENTREPRENEUR
@@ -111,6 +106,7 @@ describe('Testing milestoneService', () => {
       return found;
     }
   };
+
   const projectService = {
     getProject: id => dbProject.find(project => project.id === id)
   };
@@ -191,6 +187,7 @@ describe('Testing milestoneService', () => {
       );
     });
   });
+
   describe('Testing updateMilestone', () => {
     beforeAll(() => {
       injectMocks(milestoneService, {
@@ -264,6 +261,7 @@ describe('Testing milestoneService', () => {
       );
     });
   });
+
   describe('Testing deleteMilestone', () => {
     beforeAll(() => {
       injectMocks(milestoneService, {
