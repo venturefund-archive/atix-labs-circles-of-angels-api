@@ -9,7 +9,7 @@ const {
   proposalTypeEnum
 } = require('../util/constants');
 
-module.exports = {
+module.exports = {   
   async voteProposal({ daoId, proposalId, vote, user }) {
     logger.info('[DAOService] :: Entering voteProposal method');
     validateRequiredParams({
@@ -29,6 +29,10 @@ module.exports = {
       vote: userVote,
       userId: user.id
     });
+
+    // TODO: should we check if proposal and dao exist? 
+    //       would this cost extra gas?
+
     try {
       await coa.submitProposalVote(daoId, proposalId, userVote, user.wallet);
     } catch (error) {

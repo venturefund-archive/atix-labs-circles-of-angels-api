@@ -171,6 +171,18 @@ module.exports = class COA {
     return Promise.all(daos);
   }
 
+  async getDaosLength() {
+    const coa = await this.getCOA();
+    return coa.getDaosLength();
+  }
+
+  async getProposalQueueLength(daoId, signer) {
+    const coa = await this.getCOA();
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    return dao.getProposalQueueLength();
+  }
+
   async getCOA() {
     if (this.contracts.coa === undefined) {
       const contract = await this.env.deployments.getLastDeployedContract(
