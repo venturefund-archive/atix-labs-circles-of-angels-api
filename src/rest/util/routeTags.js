@@ -18,6 +18,7 @@ module.exports = {
     description: 'UserProject related end-points'
   },
   TRANSFER: { name: 'TRANSFER: ', description: 'Transfer related end-points' },
+  DAO: { name: 'DAO: ', description: 'DAO related end-points' },
   GET: { name: 'GET: ', description: 'GET end-points' },
   POST: { name: 'POST: ', description: 'POST end-points' },
   DELETE: { name: 'DELETE: ', description: 'DELETE end-points' },

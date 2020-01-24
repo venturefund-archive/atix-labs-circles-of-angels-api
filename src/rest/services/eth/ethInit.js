@@ -1,25 +1,20 @@
 const { coa } = require('@nomiclabs/buidler');
-const handlers = require('./eventListeners/handlers');
+const { registerEvents } = require('../../util/events');
 const logger = require('../../logger');
 
-exports.ethInit = async () => {
+const ethInit = async () => {
   logger.info('ethInit :: initializing eth');
   const contract = await coa.getCOA();
+  const registry = await coa.getRegistry();
+  const daos = await coa.getDaos();
+  daos.forEach(async daoAddress => {
+    const dao = await coa.getDao(daoAddress);
+    registerEvents(dao, 'DAO');
+  });
   registerEvents(contract, 'COA');
+  registerEvents(registry, 'ClaimsRegistry');
 };
 
-const registerEvents = (contract, contractName) => {
-  logger.info(
-    'registerEvents :: registering event listeners for contract',
-    contractName
-  );
-  const eventMapping = {};
-  const events = contract.interface.abi.filter(entry => entry.type === 'event');
-  const eventNames = events.map(event => event.name);
-  eventNames.forEach(event => {
-    if (handlers[contractName][event]) {
-      eventMapping[event] = handlers[contractName][event];
-    }
-  });
-  Object.keys(eventMapping).forEach(key => contract.on(key, eventMapping[key]));
+module.exports = {
+  ethInit
 };
