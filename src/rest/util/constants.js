@@ -136,6 +136,24 @@ const transactionTypes = {
   updateEvidence: 'updateEvidence'
 };
 
+const voteEnum = {
+  NULL: 0,
+  YES: 1,
+  NO: 2
+};
+const proposalTypeEnum = {
+  NEW_MEMBER: 0,
+  NEW_DAO: 1,
+  ASSIGN_BANK: 2,
+  ASSIGN_CURATOR: 3
+};
+const daoMemberRoleEnum = {
+  NORMAL: 0,
+  BANK: 1,
+  CURATOR: 2
+};
+const daoMemberRoleNames = ['Normal', 'Bank Operator', 'Project Curator'];
+
 module.exports = {
   evidenceFileTypes,
   txFunderStatus,
@@ -151,5 +169,9 @@ module.exports = {
   milestoneBudgetStatus,
   blockchainStatus,
   xlsxConfigs,
-  transactionTypes
+  transactionTypes,
+  voteEnum,
+  proposalTypeEnum,
+  daoMemberRoleNames,
+  daoMemberRoleEnum
 };

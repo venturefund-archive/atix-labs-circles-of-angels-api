@@ -60,4 +60,8 @@ contract COA is Ownable {
         emit DAOCreated(address(dao));
 
     }
+
+    function getDaosLength() public view returns(uint256) {
+        return daos.length;
+    }
 }

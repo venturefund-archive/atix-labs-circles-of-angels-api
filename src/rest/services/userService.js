@@ -6,9 +6,9 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { coa } = require('@nomiclabs/buidler');
+const { coa, ethers } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
-const { Wallet } = require('ethers');
+const { Wallet, utils } = require('ethers');
 
 const { userRoles } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -20,7 +20,10 @@ const errors = require('../errors/exporter/ErrorExporter');
 
 module.exports = {
   async getUserById(id) {
-    return this.userDao.getUserById(id);
+    logger.info('[UserService] :: Entering getUserById method');
+    const user = await checkExistence(this.userDao, id, 'user');
+    logger.info(`[UserService] :: User id ${user.id} found`);
+    return user;
   },
 
   /**
@@ -146,6 +149,14 @@ module.exports = {
 
     const profile = firstName + ' ' + lastName;
     await coa.createMember(profile);
+
+    // TODO: this should be replaced by a gas relayer
+    const accounts = await ethers.signers();
+    const tx = {
+      to: address,
+      value: utils.parseEther('1.0')
+    };
+    await accounts[9].sendTransaction(tx);
 
     return savedUser;
   },
@@ -291,5 +302,13 @@ module.exports = {
     const existentUser = await this.userDao.getUserById(user.id);
     const role = roleId ? existentUser.role === roleId : true;
     return existentUser && !existentUser.blocked && role;
+  },
+
+  async getUserWallet(userId) {
+    logger.info('[UserService] :: Entering getUserWallet method');
+    const user = await this.getUserById(userId);
+    const { privKey } = user;
+    const wallet = new Wallet(privKey, ethers.provider);
+    return wallet;
   }
 };

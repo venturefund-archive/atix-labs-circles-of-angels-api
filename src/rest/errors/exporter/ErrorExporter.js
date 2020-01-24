@@ -5,6 +5,7 @@ const milestone = require('./MilestoneErrors');
 const project = require('./ProjectErrors');
 const transfer = require('./TransferErrors');
 const user = require('./UserErrors');
+const dao = require('./DaoErrors');
 
 module.exports = {
   common,
@@ -13,5 +14,6 @@ module.exports = {
   milestone,
   project,
   transfer,
-  user
+  user,
+  dao
 };
