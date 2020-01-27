@@ -6,6 +6,7 @@ const project = require('./ProjectErrors');
 const transfer = require('./TransferErrors');
 const user = require('./UserErrors');
 const dao = require('./DaoErrors');
+const server = require('./ServerErrors');
 
 module.exports = {
   common,
@@ -15,5 +16,6 @@ module.exports = {
   project,
   transfer,
   user,
-  dao
+  dao,
+  server
 };
