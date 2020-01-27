@@ -7,8 +7,7 @@
  */
 
 module.exports = {
-  async addCandidate({ project, user }) {
-    const followerCreated = await this.model.create({ project, user });
-    return followerCreated;
+  async findAllByProps(filters) {
+    return this.model.find(filters);
   }
 };

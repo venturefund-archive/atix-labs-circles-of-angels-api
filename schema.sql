@@ -140,6 +140,12 @@ CREATE TABLE public.transaction (
     PRIMARY KEY (id)
 );
 
+CREATE TABLE public.country (
+    id SERIAL NOT NULL,
+    "name" varchar(42) NOT NULL,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE public.project_experience (
     id SERIAL NOT NULL,
     "projectId" int,
