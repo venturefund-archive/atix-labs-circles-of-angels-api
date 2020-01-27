@@ -161,6 +161,20 @@ module.exports = {
     }
   },
 
+  sendToReview: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const { user } = request;
+    const response = await projectService.updateProjectStatus(
+      user,
+      projectId,
+      projectStatuses.TO_REVIEW
+    );
+    reply.send(response);
+  },
+
+  // TODO: separate this into different handlers per status
+  //       or make it receive the status from the route.
+  //       either way, I don't think the status should come in the body
   updateProjectStatus: () => async (request, reply) => {
     const { projectId } = request.params;
     const { user } = request;

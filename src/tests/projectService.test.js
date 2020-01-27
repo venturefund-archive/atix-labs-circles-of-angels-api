@@ -6,6 +6,7 @@ const {
   txFunderStatus
 } = require('../rest/util/constants');
 const errors = require('../rest/errors/exporter/ErrorExporter');
+const validators = require('../rest/services/helpers/projectStatusValidators/validators');
 
 const { injectMocks } = require('../rest/util/injection');
 
@@ -287,6 +288,10 @@ const transferService = {
 describe('Project Service Test', () => {
   beforeAll(() => {
     files.saveFile = jest.fn();
+    // mock all validators
+    Object.keys(validators).forEach(validator => {
+      validators[validator] = jest.fn();
+    });
   });
 
   describe('Update project', () => {
@@ -1012,6 +1017,64 @@ describe('Project Service Test', () => {
       await expect(projectService.getProjectUsers(0)).rejects.toThrow(
         errors.common.CantFindModelWithId('project', 0)
       );
+    });
+  });
+
+  describe('Update project status', () => {
+    beforeAll(() => {
+      injectMocks(projectService, {
+        projectDao
+      });
+    });
+    it('should update a project if the status transition is valid', async () => {
+      const response = await projectService.updateProjectStatus(
+        entrepreneurUser,
+        draftProject.id,
+        projectStatuses.TO_REVIEW
+      );
+      expect(response).toEqual({ projectId: draftProject.id });
+    });
+    it('should throw an error if required params are missing', async () => {
+      await expect(
+        projectService.updateProjectStatus(
+          undefined,
+          draftProject.id,
+          projectStatuses.TO_REVIEW
+        )
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('updateProjectStatus')
+      );
+    });
+    it('should throw an error if the project does not exist', async () => {
+      await expect(
+        projectService.updateProjectStatus(
+          entrepreneurUser,
+          0,
+          projectStatuses.TO_REVIEW
+        )
+      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 0));
+    });
+    it('should throw an error if the status transition does not exist', async () => {
+      await expect(
+        projectService.updateProjectStatus(
+          entrepreneurUser,
+          pendingProject.id,
+          projectStatuses.TO_REVIEW
+        )
+      ).rejects.toThrow(errors.project.InvalidProjectTransition);
+    });
+    it('should throw an error if the transition validator fails', async () => {
+      validators.fromNew.mockImplementation(() => {
+        throw new COAError(errors.project.IsNotCompleted);
+      });
+
+      await expect(
+        projectService.updateProjectStatus(
+          entrepreneurUser,
+          draftProject.id,
+          projectStatuses.TO_REVIEW
+        )
+      ).rejects.toThrow(errors.project.IsNotCompleted);
     });
   });
 });

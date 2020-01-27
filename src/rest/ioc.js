@@ -22,6 +22,8 @@ const transferService = require('./services/transferService');
 const milestoneService = require('./services/milestoneService');
 const daoService = require('./services/daoService');
 
+const projectStatusValidators = require('./services/helpers/projectStatusValidators/validators');
+
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
 const followerDao = require('./dao/followerDao');
@@ -187,6 +189,13 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureProjectStatusValidators(service) {
+    const dependencies = {
+      projectService
+    };
+    injectDependencies(service, dependencies);
+  }
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(photoDao, models.photo);
@@ -219,6 +228,7 @@ module.exports = fastify => {
     configurePasssRecoveryService(passRecoveryService);
     configureProjectExperienceService(projectExperienceService);
     configureDaoService(daoService);
+    configureProjectStatusValidators(projectStatusValidators);
   }
 
   function init({ models }) {
