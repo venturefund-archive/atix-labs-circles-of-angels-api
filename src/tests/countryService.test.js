@@ -11,7 +11,7 @@
 const { injectMocks } = require('../rest/util/injection');
 const countryService = require('../rest/services/countryService');
 
-describe('Testing transferService', () => {
+describe('Testing countryService', () => {
   let dbCountry = [];
 
   const countryDao = {
