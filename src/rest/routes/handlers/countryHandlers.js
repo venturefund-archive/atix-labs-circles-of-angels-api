@@ -6,9 +6,11 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const countryService = require('../../services/countryService');
+
 module.exports = {
-  async addCandidate({ project, user }) {
-    const followerCreated = await this.model.create({ project, user });
-    return followerCreated;
+  getCountries: () => async (request, reply) => {
+    const response = await countryService.getAll();
+    reply.status(200).send(response);
   }
 };

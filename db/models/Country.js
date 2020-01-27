@@ -7,8 +7,10 @@
  */
 
 module.exports = {
-  async addCandidate({ project, user }) {
-    const followerCreated = await this.model.create({ project, user });
-    return followerCreated;
+  identity: 'country',
+  primaryKey: 'id',
+  attributes: {
+    name: { type: 'string', required: true },
+    id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
 };

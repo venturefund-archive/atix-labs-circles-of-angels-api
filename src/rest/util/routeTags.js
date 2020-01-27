@@ -1,5 +1,6 @@
 module.exports = {
   USER: { name: 'USER: ', description: 'User related end-points' },
+  COUNTRY: { name: 'COUNTRY: ', description: 'Country related end-points' },
   ACTIVITY: { name: 'ACTIVITY: ', description: 'Activity related end-points' },
   FILE: { name: 'FILE: ', description: 'File related end-points' },
   PHOTO: { name: 'PHOTO: ', description: 'Photo related end-points' },

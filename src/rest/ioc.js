@@ -12,6 +12,7 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const countryService = require('./services/countryService');
 const photoService = require('./services/photoService');
 const fileService = require('./services/fileService');
 const activityService = require('./services/activityService');
@@ -26,6 +27,7 @@ const projectDao = require('./dao/projectDao');
 const followerDao = require('./dao/followerDao');
 const oracleDao = require('./dao/oracleDao');
 const funderDao = require('./dao/funderDao');
+const countryDao = require('./dao/countryDao');
 const photoDao = require('./dao/photoDao');
 const fileDao = require('./dao/fileDao');
 const projectExperienceDao = require('./dao/projectExperienceDao');
@@ -82,6 +84,14 @@ module.exports = fastify => {
       userFunderDao: undefined,
       userSocialEntrepreneurDao: undefined,
       questionnaireService: undefined
+    };
+
+    injectDependencies(service, dependencies);
+  }
+
+  function configureCountryService(service) {
+    const dependencies = {
+      countryDao
     };
 
     injectDependencies(service, dependencies);
@@ -186,6 +196,7 @@ module.exports = fastify => {
     injectModel(followerDao, models.project_follower);
     injectModel(oracleDao, models.project_oracle);
     injectModel(funderDao, models.project_funder);
+    injectModel(countryDao, models.country);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
     injectModel(passRecoveryDao, models.passRecovery);
     injectModel(activityDao, models.task);
@@ -197,6 +208,7 @@ module.exports = fastify => {
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
+    configureCountryService(countryService);
     configureMilestoneService(milestoneService);
     configureProjectService(projectService);
     configurePhotoService(photoService);
