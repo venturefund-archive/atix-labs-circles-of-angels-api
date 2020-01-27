@@ -35,7 +35,6 @@ task('deploy', 'Deploys COA contracts')
     }
 
     let [coa] = await env.deployments.getDeployedContracts('COA');
-    // console.log(coa, registry.address)
     if (coa === undefined || reset === true) {
       [coa] = await env.deployments.deploy('COA', [registry.address]);
       await env.deployments.saveDeployedContract('COA', coa);

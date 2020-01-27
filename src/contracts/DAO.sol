@@ -148,7 +148,7 @@ contract DAO {
 
         // FIXME : uncomment this
         // require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
-        // require(proposal.votesByMember[memberAddress] == Vote.Null, "member has already voted on this proposal");
+        require(proposal.votesByMember[memberAddress] == Vote.Null, "member has already voted on this proposal");
         require(vote == Vote.Yes || vote == Vote.No, "vote must be either Yes or No");
 
         // store vote
