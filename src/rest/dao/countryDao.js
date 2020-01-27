@@ -7,7 +7,7 @@
  */
 
 module.exports = {
-  async findAllByProps(filters, populate) {
-    return this.model.find(filters, populate);
+  async findAllByProps(filters) {
+    return this.model.find(filters);
   }
 };
