@@ -25,9 +25,6 @@ contract COA is Ownable {
 
     event DAOCreated(address addr);
 
-    * @dev Adds a new member in COA.
-    * @param _profile - string of the member's profile.
-    */
     constructor(address _registryAddress) Ownable() public {
         registry = ClaimsRegistry(_registryAddress);
         createSuperDAO();
