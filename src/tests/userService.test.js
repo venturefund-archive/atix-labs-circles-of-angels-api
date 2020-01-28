@@ -13,6 +13,7 @@ const testHelper = require('./testHelper');
 const { injectMocks } = require('../rest/util/injection');
 const { userRoles, projectStatuses } = require('../rest/util/constants');
 const userService = require('../rest/services/userService');
+const errors = require('../rest/errors/exporter/ErrorExporter');
 
 const mailService = {
   sendMail: async () => {
@@ -58,7 +59,12 @@ describe('Testing userService', () => {
   };
 
   const userDao = {
-    findById: id => dbUser.find(user => user.id === id)
+    findById: id => dbUser.find(user => user.id === id),
+    getFollowedProjects: id => {
+      const userFound = dbUser.find(user => user.id === id);
+      userFound.following = [newProject, executingProject];
+      return userFound;
+    }
   };
 
   const projectService = {
@@ -94,6 +100,31 @@ describe('Testing userService', () => {
     it('should return an empty array if the user is not a supporter or entrepreneur', async () => {
       const response = await userService.getProjectsOfUser(userAdmin.id);
       expect(response).toHaveLength(0);
+    });
+  });
+
+  describe('Get followed projects of user', () => {
+    beforeAll(() => {
+      injectMocks(userService, { userDao });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbUser.push(userSupporter);
+    });
+
+    it('should return the array of followed projects belonging to the user', async () => {
+      const response = await userService.getFollowedProjects({
+        userId: userSupporter.id
+      });
+
+      expect(response).toHaveLength(2);
+    });
+
+    it("should fail if user doesn't exist", async () => {
+      expect(userService.getFollowedProjects({ userId: 10 })).rejects.toThrow(
+        errors.user.UserNotFound
+      );
     });
   });
 });
