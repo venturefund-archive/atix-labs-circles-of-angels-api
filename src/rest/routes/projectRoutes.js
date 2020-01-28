@@ -28,6 +28,27 @@ const imgPathProperty = {
   imgPath: { type: 'string' }
 };
 
+const cardPhotoPathProperty = {
+  cardPhotoPath: { type: 'string' }
+};
+
+const featuredProjectsResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: Object.assign(
+      {},
+      {
+        id: { type: 'integer' }
+      },
+      projectThumbnailProperties,
+      cardPhotoPathProperty
+    ),
+    description: 'Returns the project description'
+  },
+  description: 'List of all featured projects'
+};
+
 const projectDetailProperties = {
   mission: { type: 'string' },
   problemAddressed: { type: 'string' }
@@ -551,8 +572,8 @@ const projectStatusRoutes = {
       }
     },
     handler: handlers.updateProjectStatus
-  },
-}
+  }
+};
 
 const commonProjectRoutes = {
   getProjects: {
@@ -797,6 +818,26 @@ const projectExperienceRoutes = {
   }
 };
 
+const featuredProjectsRoutes = {
+  getFeaturedProjects: {
+    method: 'get',
+    path: `${basePath}/featured`,
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets all featured projects.',
+        summary: 'Gets all featured projects.',
+        response: {
+          ...successResponse(featuredProjectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getFeaturedProjects
+  }
+};
+
 const routes = {
   ...projectThumbnailRoutes,
   ...projectDetailRoutes,
@@ -805,7 +846,8 @@ const routes = {
   ...createProjectRoute,
   ...commonProjectRoutes,
   ...projectExperienceRoutes,
-  ...projectStatusRoutes
+  ...projectStatusRoutes,
+  ...featuredProjectsRoutes
 };
 
 module.exports = routes;
