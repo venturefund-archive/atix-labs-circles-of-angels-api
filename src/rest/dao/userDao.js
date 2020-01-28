@@ -32,6 +32,10 @@ module.exports = {
     return this.model.find({ role: userRoles.PROJECT_SUPPORTER });
   },
 
+  async getFollowedProjects(id) {
+    return this.model.findOne({ id }).populate('following');
+  },
+
   async updateUser(id, user) {
     const updatedUser = await this.model.updateOne({ id }).set({ ...user });
     return updatedUser;
