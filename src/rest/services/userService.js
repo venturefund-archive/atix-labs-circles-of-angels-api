@@ -298,6 +298,30 @@ module.exports = {
     return [];
   },
 
+  /**
+   * Returns an array of followed projects for an specific user.
+   *
+   * @param {number} userId
+   * @returns {Promise<Project[]>} array of found projects
+   */
+  async getFollowedProjects({ userId }) {
+    logger.info('[UserService] :: Entering getFollowedProjects method');
+    validateRequiredParams({
+      method: 'getFollowedProjects',
+      params: { userId }
+    });
+
+    const user = await this.userDao.getFollowedProjects(userId);
+
+    if (!user) {
+      logger.error(`[User Service] :: User ID ${userId} does not exist`);
+      throw new COAError(errors.user.UserNotFound);
+    }
+
+    const { following } = user;
+    return following || [];
+  },
+
   async validUser(user, roleId) {
     const existentUser = await this.userDao.getUserById(user.id);
     const role = roleId ? existentUser.role === roleId : true;

@@ -537,6 +537,25 @@ const routes = {
       }
     },
     handler: handlers.getMyProjects
+  },
+
+  getFollowedProjects: {
+    method: 'get',
+    path: `${basePath}/followed-projects`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns all projects followed to an existing user',
+        summary: 'Get all followed projects by user',
+        response: {
+          ...successResponse(successWithProjectsResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getFollowedProjects
   }
 };
 

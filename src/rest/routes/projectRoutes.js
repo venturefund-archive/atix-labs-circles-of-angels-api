@@ -552,7 +552,7 @@ const projectStatusRoutes = {
     },
     handler: handlers.updateProjectStatus
   },
-}
+};
 
 const commonProjectRoutes = {
   getProjects: {
