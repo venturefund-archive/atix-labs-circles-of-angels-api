@@ -474,6 +474,7 @@ const projectMilestonesRoute = {
   }
 };
 
+// TODO: check if this is being used. If not, remove
 const createProjectRoute = {
   createProject: {
     method: 'put',
@@ -496,6 +497,62 @@ const createProjectRoute = {
     handler: handlers.publishProject
   }
 };
+
+const projectStatusRoutes = {
+  sendToReview: {
+    method: 'put',
+    path: `${basePath}/:projectId/to-review`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Send a project to be reviewed',
+        summary: 'Send a project to be reviewed',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendToReview
+  },
+
+  // TODO: make one endpoint for each possible status change
+  updateProjectStatus: {
+    method: 'put',
+    path: `${basePath}/:projectId/status`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Update project status',
+        summary: 'Update project status',
+        body: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: Object.values(projectStatuses)
+            }
+          },
+          required: ['status'],
+          description: 'New project status'
+        },
+        type: 'object',
+        params: projectIdParam,
+        response: {
+          // TODO send project updated to update on front too
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateProjectStatus
+  },
+}
 
 const commonProjectRoutes = {
   getProjects: {
@@ -551,39 +608,6 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.getPublicProjects
-  },
-
-  updateProjectStatus: {
-    method: 'put',
-    path: `${basePath}/:projectId/status`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
-        description: 'Update project status',
-        summary: 'Update project status',
-        body: {
-          type: 'object',
-          properties: {
-            status: {
-              type: 'string',
-              enum: Object.values(projectStatuses)
-            }
-          },
-          required: ['status'],
-          description: 'New project status'
-        },
-        type: 'object',
-        params: projectIdParam,
-        response: {
-          // TODO send project updated to update on front too
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.updateProjectStatus
   },
 
   getProjectUsers: {
@@ -780,7 +804,8 @@ const routes = {
   ...projectMilestonesRoute,
   ...createProjectRoute,
   ...commonProjectRoutes,
-  ...projectExperienceRoutes
+  ...projectExperienceRoutes,
+  ...projectStatusRoutes
 };
 
 module.exports = routes;

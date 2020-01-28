@@ -52,5 +52,13 @@ module.exports = {
   IsNotFollower: () => ({
     message: 'User is not following this project',
     statusCode: 400
-  })
+  }),
+  IsNotCompleted: {
+    message: 'Project is not completed',
+    statusCode: 400
+  },
+  ChangingStatus: {
+    message: 'An error occurred while changing the project status',
+    statusCode: 400
+  }
 };

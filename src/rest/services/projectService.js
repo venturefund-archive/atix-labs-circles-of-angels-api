@@ -18,14 +18,14 @@ const {
 const files = require('../util/files');
 const {
   validateExistence,
-  validateParams,
-  validateStatusChange
+  validateParams
 } = require('./helpers/projectServiceHelper');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
 const validateOwnership = require('./helpers/validateOwnership');
+const validateProjectStatusChange = require('./helpers/validateProjectStatusChange');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -431,38 +431,38 @@ module.exports = {
     };
   },
 
+  /**
+   * Updates the status of a project to the specified status
+   * if the transition is valid.
+   * Returns the id of the updated project
+   *
+   * @param {*} user user requesting the change
+   * @param {number} projectId project to update
+   * @param {string} newStatus new project status
+   */
   async updateProjectStatus(user, projectId, newStatus) {
-    validateParams(projectId, user);
-
-    const project = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
-
-    const { status: currentStatus, owner } = project;
-
+    logger.info('[ProjectService] :: Entering updateProjectStatus method');
+    validateRequiredParams({
+      method: 'updateProjectStatus',
+      params: { projectId, user, newStatus }
+    });
+    const project = await checkExistence(this.projectDao, projectId, 'project');
     logger.info(
-      `[Project Service] :: Updating project ${projectId} from ${currentStatus} to ${newStatus}`
+      `[Project Service] :: Updating project ${projectId} from ${
+        project.status
+      } to ${newStatus}`
     );
 
-    if (
-      !validateStatusChange({
-        user,
-        currentStatus,
-        newStatus,
-        projectOwner: owner
-      })
-    ) {
-      logger.error(
-        '[Project Service] :: Project status transition is not valid'
-      );
-      throw new COAError(errors.project.InvalidProjectTransition);
-    }
+    await validateProjectStatusChange({
+      user,
+      newStatus,
+      project
+    });
 
-    return {
-      projectId: await this.updateProject(projectId, { status: newStatus })
-    };
+    const updatedProjectId = await this.updateProject(projectId, {
+      status: newStatus
+    });
+    return { projectId: updatedProjectId };
   },
 
   async getProject(id) {
@@ -470,6 +470,7 @@ module.exports = {
     return project;
   },
 
+  // TODO: check if this is being used. If not, remove.
   async getProjectFull(id) {
     const project = await this.getProject(id);
     project.milestones = await this.milestoneService.getMilestonesByProject(id);

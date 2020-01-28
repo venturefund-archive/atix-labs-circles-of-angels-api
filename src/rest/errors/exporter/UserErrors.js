@@ -29,5 +29,9 @@ module.exports = {
   UnauthorizedUserRole: role => ({
     message: `User of role ${role} is not allowed to execute this operation`,
     statusCode: 403
-  })
+  }),
+  IsNotProjectCurator: {
+    message: 'The user is not a Project Curator',
+    statusCode: 403
+  }
 };
