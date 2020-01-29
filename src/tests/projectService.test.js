@@ -171,15 +171,15 @@ const consensusProject = {
   status: projectStatuses.CONSENSUS
 };
 
-const userDao = {
-  findById: id => {
+const userService = {
+  getUserById: id => {
     if (id === 2 || id === 3) {
       return {
         id,
         role: userRoles.ENTREPRENEUR
       };
     }
-    return undefined;
+    throw new COAError(errors.common.CantFindModelWithId('user', id));
   }
 };
 
@@ -343,7 +343,7 @@ describe('Project Service Test', () => {
 
   describe('Project thumbnail', () => {
     beforeAll(() => {
-      injectMocks(projectService, { projectDao, userDao });
+      injectMocks(projectService, { projectDao, userService });
     });
 
     describe('Create project thumbnail', () => {
@@ -508,7 +508,7 @@ describe('Project Service Test', () => {
 
   describe('Project detail', () => {
     beforeAll(() => {
-      injectMocks(projectService, { projectDao, userDao });
+      injectMocks(projectService, { projectDao, userService });
     });
     describe('Create project detail', () => {
       it('Should create project detail when there is an existent project created and all the needed fields are present', async () => {
@@ -779,7 +779,7 @@ describe('Project Service Test', () => {
 
   describe('Project milestone', () => {
     beforeAll(() => {
-      injectMocks(projectService, { milestoneDao, projectDao, userDao });
+      injectMocks(projectService, { milestoneDao, projectDao, userService });
     });
 
     describe('Process milestone file', () => {
@@ -841,7 +841,11 @@ describe('Project Service Test', () => {
 
     describe('Get project milestones', () => {
       beforeAll(() => {
-        injectMocks(projectService, { milestoneService, projectDao, userDao });
+        injectMocks(projectService, {
+          milestoneService,
+          projectDao,
+          userService
+        });
       });
 
       it('Should return project milestones of an existent project', async () => {
@@ -1075,6 +1079,36 @@ describe('Project Service Test', () => {
           projectStatuses.TO_REVIEW
         )
       ).rejects.toThrow(errors.project.IsNotCompleted);
+    });
+  });
+
+  describe('Get featured projects', () => {
+    beforeAll(() => {
+      injectMocks(projectService, {
+        featuredProjectDao: Object.assign(
+          {},
+          {
+            findAllByProps: () => {
+              const projects = [
+                { id: 1, project: pendingProject },
+                { id: 2, project: executingProject },
+                { id: 3, project: consensusProject }
+              ];
+              return projects;
+            }
+          }
+        )
+      });
+    });
+
+    it('should return a list of all featured projects', async () => {
+      const response = await projectService.getFeaturedProjects();
+      expect(response).toHaveLength(3);
+      expect(response).toEqual([
+        { ...pendingProject },
+        { ...executingProject },
+        { ...consensusProject }
+      ]);
     });
   });
 });

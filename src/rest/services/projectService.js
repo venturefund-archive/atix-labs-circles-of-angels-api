@@ -73,7 +73,7 @@ module.exports = {
       method: 'createProjectThumbnail',
       params: { projectName, location, timeframe, goalAmount, ownerId, file }
     });
-    const user = await checkExistence(this.userDao, ownerId, 'user');
+    const user = await this.userService.getUserById(ownerId);
 
     if (user.role !== userRoles.ENTREPRENEUR) {
       logger.error(
@@ -117,7 +117,7 @@ module.exports = {
       method: 'createProjectThumbnail',
       params: { ownerId }
     });
-    await checkExistence(this.userDao, ownerId, 'user');
+    await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
@@ -184,7 +184,7 @@ module.exports = {
       params: { mission, problemAddressed, file, ownerId, projectId }
     });
 
-    await checkExistence(this.userDao, ownerId, 'user');
+    await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
@@ -225,7 +225,7 @@ module.exports = {
       params: { ownerId }
     });
 
-    await checkExistence(this.userDao, ownerId, 'user');
+    await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
@@ -288,7 +288,7 @@ module.exports = {
       params: { projectId, proposal, ownerId }
     });
 
-    await checkExistence(this.userDao, ownerId, 'user');
+    await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
@@ -785,7 +785,7 @@ module.exports = {
       );
     }
 
-    const user = await checkExistence(this.userDao, userId, 'user');
+    const user = await this.userService.getUserById(userId);
 
     if (user.role !== userRoles.PROJECT_SUPPORTER) {
       logger.error(`[ProjectService] :: User ${userId} is not supporter`);
@@ -849,5 +849,19 @@ module.exports = {
     );
 
     return alreadyApply;
+  },
+
+  /**
+   * Returns a list of all projects marked as featured
+   * @returns {Promise<[]>} featured projects
+   */
+  async getFeaturedProjects() {
+    logger.info('[ProjectService] :: Entering getFeaturedProjects method');
+    // TODO: this should be changed to get all projects in project table marked as featured
+    const featuredProjects = await this.featuredProjectDao.findAllByProps(
+      undefined,
+      { project: true }
+    );
+    return featuredProjects.map(project => project.project);
   }
 };
