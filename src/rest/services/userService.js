@@ -141,7 +141,7 @@ module.exports = {
       from: '"Circles of Angels Support" <coa@support.com>',
       to: email,
       subject: 'Circles of Angels - Welcome',
-      text: 'Welcome to Circle of Angels!',
+      text: 'Welcome to Circles of Angels!',
       html: `<p>Your Circles Of Angels account was created successfully! </br></p>
       <p>We are reviewing your account details. You will be notified once we are done. </br></p>
       <p>Thank you for your support. </br></p>`
