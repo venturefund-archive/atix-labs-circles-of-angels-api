@@ -8,8 +8,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const errors = require('../rest/errors/exporter/ErrorExporter');
-const COAError = require('../rest/errors/COAError');
+const errors = require('../../../rest/errors/exporter/ErrorExporter');
+const COAError = require('../../../rest/errors/COAError');
 const {
   validateExistence,
   validateParams,
@@ -17,7 +17,7 @@ const {
   validatePhotoSize,
   xslValidator,
   imgValidator
-} = require('../rest/services/helpers/projectServiceHelper');
+} = require('../../../rest/services/helpers/projectServiceHelper');
 
 describe('Project service helper', () => {
   // here are the variables of dependencies to inject

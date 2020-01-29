@@ -8,8 +8,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { injectMocks } = require('../rest/util/injection');
-const countryService = require('../rest/services/countryService');
+const { injectMocks } = require('../../rest/util/injection');
+const countryService = require('../../rest/services/countryService');
 
 describe('Testing countryService', () => {
   let dbCountry = [];

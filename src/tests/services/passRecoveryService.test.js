@@ -6,9 +6,9 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 const bcrypt = require('bcrypt');
-const { buildGenericUserWithEmail } = require('./testHelper');
-const { passRecovery, passRecoveryWithExpiredToken } = require('./mockModels');
-const { injectMocks } = require('../rest/util/injection');
+const { buildGenericUserWithEmail } = require('../testHelper');
+const { passRecovery, passRecoveryWithExpiredToken } = require('../mockModels');
+const { injectMocks } = require('../../rest/util/injection');
 
 describe('Testing PassRecoveryService startPassRecoveryProcess', () => {
   let passRecoveryService;
@@ -30,7 +30,7 @@ describe('Testing PassRecoveryService startPassRecoveryProcess', () => {
     mailService = {
       sendMail: () => ({ accepted: ['dummy@email.com'] })
     };
-    passRecoveryService = require('../rest/services/passRecoveryService');
+    passRecoveryService = require('../../rest/services/passRecoveryService');
     injectMocks(passRecoveryService, { passRecoveryDao, userDao, mailService });
     bcrypt.compare = jest.fn();
   });
@@ -72,7 +72,7 @@ describe('Testing PassRecoveryService updatePassword', () => {
       deleteRecoverByToken: () => {}
     };
     userDao = { updatePasswordByMail: true };
-    passRecoveryService = require('../rest/services/passRecoveryService');
+    passRecoveryService = require('../../rest/services/passRecoveryService');
     injectMocks(passRecoveryService, { passRecoveryDao, userDao });
     bcrypt.compare = jest.fn();
   });

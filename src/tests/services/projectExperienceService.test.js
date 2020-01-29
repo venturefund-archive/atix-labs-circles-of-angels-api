@@ -1,8 +1,8 @@
-const { injectMocks } = require('../rest/util/injection');
-const projectExperienceService = require('../rest/services/projectExperienceService');
+const { injectMocks } = require('../../rest/util/injection');
+const projectExperienceService = require('../../rest/services/projectExperienceService');
 
-const COAError = require('../rest/errors/COAError');
-const errors = require('../rest/errors/exporter/ErrorExporter');
+const COAError = require('../../rest/errors/COAError');
+const errors = require('../../rest/errors/exporter/ErrorExporter');
 
 const validPhoto = { name: 'photo.jpeg', size: 12312 };
 const invalidMtypePhoto = { name: 'invalid.json', size: 1233 };

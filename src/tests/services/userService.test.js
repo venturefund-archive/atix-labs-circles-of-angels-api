@@ -9,11 +9,11 @@
  */
 
 const bcrypt = require('bcrypt');
-const testHelper = require('./testHelper');
-const { injectMocks } = require('../rest/util/injection');
-const { userRoles, projectStatuses } = require('../rest/util/constants');
-const userService = require('../rest/services/userService');
-const errors = require('../rest/errors/exporter/ErrorExporter');
+const testHelper = require('../testHelper');
+const { injectMocks } = require('../../rest/util/injection');
+const { userRoles, projectStatuses } = require('../../rest/util/constants');
+const userService = require('../../rest/services/userService');
+const errors = require('../../rest/errors/exporter/ErrorExporter');
 
 const mailService = {
   sendMail: async () => {
@@ -149,7 +149,7 @@ describe.skip('Testing userService login', () => {
       }
     };
 
-    userService = require('../rest/services/userService');
+    userService = require('../../rest/services/userService');
     injectMocks(userService, { userDao });
 
     bcrypt.compare = jest.fn();
@@ -254,7 +254,7 @@ describe.skip('Testing userService createUser', () => {
       saveQuestionnaireOfUser: () => true
     };
 
-    userService = require('../rest/services/userService');
+    userService = require('../../rest/services/userService');
     injectMocks(userService, {
       userDao,
       roleDao,
@@ -373,7 +373,7 @@ describe.skip('Testing userService getUserRole', () => {
       }
     };
 
-    userService = require('../rest/services/userService');
+    userService = require('../../rest/services/userService');
     injectMocks(userService, {
       userDao
     });
@@ -434,7 +434,7 @@ describe.skip('Testing userService updateUser', () => {
       }
     };
 
-    userService = require('../rest/services/userService');
+    userService = require('../../rest/services/userService');
     injectMocks(userService, {
       userDao
     });
@@ -565,7 +565,7 @@ describe.skip('Testing userService getUsers', () => {
       }
     };
 
-    userService = require('../rest/services/userService');
+    userService = require('../../rest/services/userService');
     injectMocks(userService, {
       userDao,
       userSocialEntrepreneurDao,

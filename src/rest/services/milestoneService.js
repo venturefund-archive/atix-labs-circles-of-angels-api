@@ -260,9 +260,9 @@ module.exports = {
    * @param {number} projectId
    */
   async createMilestones(file, projectId) {
+    if (!file.data)
+      throw new COAError(errors.milestone.CantProcessMilestonesFile);
     try {
-      if (!file.data)
-        throw new COAError(errors.milestone.CantProcessMilestonesFile);
       const response = await this.processMilestones(file.data);
 
       if (response.errors.length > 0) {
@@ -314,26 +314,6 @@ module.exports = {
       logger.error('[Milestone Service] :: Error creating Milestones:', err);
       throw new COAError(errors.milestone.ErrorCreatingMilestonesFromFile);
     }
-  },
-
-  async milestoneHasActivities(milestoneId) {
-    const milestoneActivities = await this.milestoneDao.getMilestoneActivities(
-      milestoneId
-    );
-    return !isEmpty(milestoneActivities.activities);
-  },
-
-  /**
-   * Receives a Milestone and populates them with its Activities
-   *
-   * @param {object} milestone
-   * @returns milestone with activities
-   */
-  async getMilestoneActivities(milestone) {
-    const milestoneTasks = await this.milestoneDao.getMilestoneActivities(
-      milestone.id
-    );
-    return milestoneTasks;
   },
 
   /**
@@ -461,17 +441,6 @@ module.exports = {
     return true;
   },
 
-  canMilestoneUpdate(milestone) {
-    if (
-      milestone.quarter === '' ||
-      milestone.tasks === '' ||
-      milestone.impact === ''
-    ) {
-      return false;
-    }
-    return true;
-  },
-
   verifyMilestone(milestone, pushError) {
     let valid = true;
     const toVerify = ['tasks', 'category'];
@@ -517,41 +486,6 @@ module.exports = {
   },
 
   /**
-   * Returns an array of the projects' id that an oracle
-   * has any of its activities assigned
-   *
-   * @param {number} oracleId
-   * @returns array of project ids | error
-   */
-  async getProjectsAsOracle(oracleId) {
-    logger.info(
-      '[Milestone Service] :: Getting Milestones for Oracle ID',
-      oracleId
-    );
-    try {
-      const milestones = await this.activityService.getMilestonesAsOracle(
-        oracleId
-      );
-
-      if (milestones.error) {
-        return milestones;
-      }
-
-      const projects = await Promise.all(
-        milestones.map(async milestoneId => {
-          const milestone = await this.milestoneDao.findById(milestoneId);
-          return milestone.project;
-        })
-      );
-
-      return projects;
-    } catch (error) {
-      logger.error('[Milestone Service] :: Error getting Milestones:', error);
-      throw Error('Error getting Milestones');
-    }
-  },
-
-  /**
    * Returns an array with all milestones and its tasks of an specified project
    *
    * @param {number} projectId
@@ -562,84 +496,6 @@ module.exports = {
       '[MilestoneService] :: Entering getAllMilestonesByProject method'
     );
     return this.milestoneDao.getMilestonesByProjectId(projectId);
-  },
-
-  // TODO: check if this method does anything different than getAllMilestonesByProject,
-  //       delete if no
-  async getMilestonesByProject(projectId) {
-    logger.info(
-      '[Milestone Service] :: Getting milestones for Project',
-      projectId
-    );
-    try {
-      const milestones = await this.milestoneDao.getMilestonesByProject(
-        projectId
-      );
-
-      if (!milestones || milestones == null) {
-        return milestones;
-      }
-
-      const milestonesWithActivities = await Promise.all(
-        milestones.map(async milestone => {
-          const milestoneWithActivity = await this.getMilestoneActivities(
-            milestone
-          );
-          return milestoneWithActivity;
-        })
-      );
-
-      return milestonesWithActivities;
-    } catch (error) {
-      logger.error('[Milestone Service] :: Error getting Milestones:', error);
-      throw Error('Error getting Milestones');
-    }
-  },
-
-  async tryCompleteMilestone(milestoneId) {
-    try {
-      logger.info(
-        '[Milestone Service] :: Check if milestone is complete with id: ',
-        milestoneId
-      );
-      const { activities } = await this.milestoneDao.getMilestoneActivities(
-        milestoneId
-      );
-      let isCompleted = true;
-      await activities.forEach(async activity => {
-        const transactionConfirmed = activity.transactionHash
-          ? await fastify.eth.isTransactionConfirmed(activity.transactionHash)
-          : false;
-
-        if (
-          !transactionConfirmed ||
-          activity.status !== activityStatus.COMPLETED
-        ) {
-          isCompleted = false;
-        }
-      });
-
-      if (!isCompleted) {
-        logger.info(
-          '[Milestone Service] :: Milestone not completed. ID: ',
-          milestoneId
-        );
-        return false;
-      }
-
-      logger.info('[Milestone Service] :: milestone complete: ', milestoneId);
-      return this.milestoneDao.updateMilestoneStatus(
-        milestoneId,
-        activityStatus.COMPLETED
-      );
-    } catch (error) {
-      logger.error('Error trying complete milestone', error);
-    }
-  },
-
-  async startMilestonesOfProject(project) {
-    const milestones = await this.getMilestonesByProject(project.id);
-    fastify.eth.createMilestones({ milestones });
   },
 
   async getMilestoneById(milestoneId) {
@@ -659,180 +515,6 @@ module.exports = {
     } catch (error) {
       logger.error('[Milestone Service] :: Error getting Milestones:', error);
       throw Error('Error getting Milestones');
-    }
-  },
-
-  /**
-   * Updates the budget transfer status of a milestone
-   * @param {number} milestoneId
-   * @param {number} budgetStatusId
-   * @returns updated milestone | error
-   */
-  async updateBudgetStatus(milestoneId, budgetStatusId, user) {
-    logger.info(
-      `[Milestone Service] :: Updating Milestone ID ${milestoneId} budget status. 
-      New status ID: ${budgetStatusId}`
-    );
-    try {
-      if (!Object.values(milestoneBudgetStatus).includes(budgetStatusId)) {
-        logger.error(
-          `[Milestone Service] :: Budget status ID ${budgetStatusId} does not exist`
-        );
-        return {
-          status: 404,
-          error: 'Budget transfer status is not valid'
-        };
-      }
-
-      const milestone = await this.milestoneDao.getMilestoneByIdWithProject(
-        milestoneId
-      );
-
-      if (!milestone || milestone == null) {
-        logger.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} does not exist`
-        );
-        return {
-          status: 404,
-          error: 'Milestone does not exist'
-        };
-      }
-
-      const { project } = milestone;
-      if (project.status !== projectStatuses.EXECUTING) {
-        logger.error(
-          `[Milestone Service] :: Project ${project.id} is not EXECUTING`
-        );
-        return {
-          error:
-            'Milestone budget status cannot be updated. Project is not started.',
-          status: 409
-        };
-      }
-
-      const milestones = await this.getMilestonesByProject(project.id);
-      const milestoneIndex = milestones.findIndex(m => m.id === milestone.id);
-      const previousMilestone = milestoneIndex > 0 ? milestoneIndex - 1 : false;
-
-      if (
-        budgetStatusId === milestoneBudgetStatus.CLAIMABLE &&
-        (milestone.budgetStatus !== milestoneBudgetStatus.BLOCKED ||
-          (previousMilestone !== false &&
-            milestones[previousMilestone].budgetStatus.id !==
-              milestoneBudgetStatus.FUNDED))
-      ) {
-        logger.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} is not blocked 
-          or previous milestones are not funded`
-        );
-        return {
-          status: 409,
-          error:
-            'All previous milestones need to be funded before making this milestone claimable.'
-        };
-      }
-
-      if (
-        budgetStatusId === milestoneBudgetStatus.CLAIMED &&
-        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMABLE
-      ) {
-        logger.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} is not claimable.`
-        );
-        return {
-          status: 409,
-          error: 'Only claimable milestones can be claimed'
-        };
-      }
-
-      if (
-        budgetStatusId === milestoneBudgetStatus.FUNDED &&
-        milestone.budgetStatus !== milestoneBudgetStatus.CLAIMED
-      ) {
-        logger.error(
-          `[Milestone Service] :: Milestone ID ${milestoneId} needs to be claimed 
-          in order to set the budget status to Funded`
-        );
-        return {
-          status: 409,
-          error:
-            'The milestone needs to be Claimed in order to set the budget status to Funded'
-        };
-      }
-
-      if (budgetStatusId === milestoneBudgetStatus.CLAIMED) {
-        logger.info(
-          `[Milestone Service] :: set claimed Milestone ID ${milestoneId} on Blockchain`
-        );
-        await fastify.eth.claimMilestone({
-          sender: user.address,
-          privKey: user.privKey,
-          milestoneId,
-          projectId: milestone.project.id
-        });
-      }
-
-      if (budgetStatusId === milestoneBudgetStatus.FUNDED) {
-        logger.info(
-          `[Milestone Service] :: set funded Milestone ID ${milestoneId} on Blockchain`
-        );
-        await fastify.eth.setMilestoneFunded({
-          milestoneId,
-          projectId: milestone.project.id
-        });
-      }
-
-      return milestone;
-    } catch (error) {
-      logger.error(
-        '[Milestone Service] :: Error updating Milestone budget status:',
-        error
-      );
-      throw Error('Error updating Milestone budget transfer status');
-    }
-  },
-
-  async getAllBudgetStatus() {
-    logger.info('[Milestone Service] :: Getting all available budget status');
-
-    try {
-      const budgetStatus = this.milestoneBudgetStatusDao.findAll();
-
-      if (budgetStatus.length === 0) {
-        logger.info('[Milestone Service] :: No budget status loaded');
-      }
-
-      return budgetStatus;
-    } catch (error) {
-      logger.error(
-        '[Milestone Service] :: Error getting all available budget status:',
-        error
-      );
-      throw Error('Error getting all available budget transfer status');
-    }
-  },
-
-  async updateBlockchainStatus(milestoneId, status) {
-    if (!Object.values(blockchainStatus).includes(status)) {
-      return { error: 'Invalid Blockchain status' };
-    }
-    return this.milestoneDao.updateBlockchainStatus(milestoneId, status);
-  },
-
-  async getMilestonePreviewInfoOfProject(project) {
-    try {
-      let completedMilestones = 0;
-      const milestones = await this.getMilestonesByProject(project.id);
-      completedMilestones = milestones.filter(
-        milestone => milestone.status.status === activityStatus.COMPLETED
-      ).length;
-      const hasOpenMilestones = completedMilestones < milestones.length;
-      return {
-        milestoneProgress: (completedMilestones * 100) / milestones.length,
-        hasOpenMilestones
-      };
-    } catch (error) {
-      return { error };
     }
   }
 };

@@ -46,23 +46,5 @@ module.exports = {
       userId
     );
     reply.status(200).send(response);
-  },
-
-  getBudgetStatus: fastify => async (req, reply) => {
-    fastify.log.info(
-      `[Milestone Routes] :: GET request at ${basePath}/budgetStatus`
-    );
-    try {
-      const budgetStatus = await milestoneService.getAllBudgetStatus();
-      reply.status(200).send({ budgetStatus });
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error getting all available budget transfer status: ',
-        error
-      );
-      reply.status(500).send({
-        error: 'Error getting all available budget transfer status'
-      });
-    }
   }
 };
