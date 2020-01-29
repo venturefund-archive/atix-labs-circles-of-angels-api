@@ -41,6 +41,7 @@ const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
 const passRecoveryDao = require('./dao/passRecoveryDao');
 const projectExperiencePhotoDao = require('./dao/projectExperiencePhotoDao');
+const featuredProjectDao = require('./dao/featuredProjectDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -106,8 +107,9 @@ module.exports = fastify => {
       followerDao,
       oracleDao,
       funderDao,
+      featuredProjectDao, // TODO: remove this once deleted
       milestoneService,
-      userDao, // TODO: remove this dao and create needed methods in userService
+      userService,
       activityService,
       transferService
     };
@@ -212,6 +214,8 @@ module.exports = fastify => {
     injectModel(projectExperienceDao, models.project_experience);
     injectModel(projectExperiencePhotoDao, models.project_experience_photo);
     injectModel(transferDao, models.fund_transfer);
+    // TODO: delete this when dao and model deleted
+    injectModel(featuredProjectDao, models.featured_project);
   }
 
   function configureServices() {

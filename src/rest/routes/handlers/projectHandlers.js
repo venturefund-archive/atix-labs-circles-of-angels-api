@@ -199,6 +199,11 @@ module.exports = {
     reply.status(200).send(projects);
   },
 
+  getFeaturedProjects: () => async (request, reply) => {
+    const projects = await projectService.getFeaturedProjects();
+    reply.status(200).send(projects);
+  },
+
   // FIXME --> thumbnail?
   getProjectsPreview: fastify => async (request, reply) => {},
   addExperienceToProject: fastify => async (request, reply) => {
