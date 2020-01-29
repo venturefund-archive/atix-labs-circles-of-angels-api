@@ -147,16 +147,18 @@ module.exports = {
       <p>Thank you for your support. </br></p>`
     });
 
-    const profile = firstName + ' ' + lastName;
-    await coa.createMember(profile);
+    // TODO: uncomment this when sc are deployed
+    //      and move it before saving to db so the signup fails if this fails
 
+    // const profile = firstName + ' ' + lastName; // TODO: what should be saved?
+    // await coa.createMember(profile);
     // TODO: this should be replaced by a gas relayer
-    const accounts = await ethers.signers();
-    const tx = {
-      to: address,
-      value: utils.parseEther('1.0')
-    };
-    await accounts[9].sendTransaction(tx);
+    // const accounts = await ethers.signers();
+    // const tx = {
+    //   to: address,
+    //   value: utils.parseEther('1.0')
+    // };
+    // await accounts[9].sendTransaction(tx);
 
     return savedUser;
   },
@@ -296,6 +298,30 @@ module.exports = {
     }
 
     return [];
+  },
+
+  /**
+   * Returns an array of followed projects for an specific user.
+   *
+   * @param {number} userId
+   * @returns {Promise<Project[]>} array of found projects
+   */
+  async getFollowedProjects({ userId }) {
+    logger.info('[UserService] :: Entering getFollowedProjects method');
+    validateRequiredParams({
+      method: 'getFollowedProjects',
+      params: { userId }
+    });
+
+    const user = await this.userDao.getFollowedProjects(userId);
+
+    if (!user) {
+      logger.error(`[User Service] :: User ID ${userId} does not exist`);
+      throw new COAError(errors.user.UserNotFound);
+    }
+
+    const { following } = user;
+    return following || [];
   },
 
   async validUser(user, roleId) {
