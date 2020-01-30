@@ -7,14 +7,14 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
-const { injectMocks } = require('../rest/util/injection');
+const { injectMocks } = require('../../rest/util/injection');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
   configs: require('config')
 };
 
-const testHelper = require('./testHelper');
+const testHelper = require('../testHelper');
 
 describe('Testing userProjectService signAgreement', () => {
   let userProjectDao;
@@ -70,7 +70,7 @@ describe('Testing userProjectService signAgreement', () => {
       }
     };
 
-    userProjectService = require('../rest/services/userProjectService');
+    userProjectService = require('../../rest/services/userProjectService');
     injectMocks(userProjectService, {
       userProjectDao
     });
@@ -149,7 +149,7 @@ describe('Testing userProjectService getUsers', () => {
       }
     };
 
-    userProjectService = require('../rest/services/userProjectService');
+    userProjectService = require('../../rest/services/userProjectService');
     injectMocks(userProjectService, {
       userProjectDao
     });
@@ -225,7 +225,7 @@ describe('Testing userProjectService createUserProject', () => {
       }
     };
 
-    userProjectService = require('../rest/services/userProjectService');
+    userProjectService = require('../../rest/services/userProjectService');
     injectMocks(userProjectService, {
       userProjectDao
     });

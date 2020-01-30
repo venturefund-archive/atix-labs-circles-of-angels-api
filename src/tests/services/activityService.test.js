@@ -9,27 +9,18 @@
  */
 
 const sha256 = require('sha256');
-const files = require('../rest/util/files');
-const testHelper = require('./testHelper');
-const ethServicesMock = require('../rest/services/eth/ethServicesMock')();
+const files = require('../../rest/util/files');
+const testHelper = require('../testHelper');
 const {
   projectStatus,
   projectStatuses,
   activityStatus,
   userRoles
-} = require('../rest/util/constants');
-const { injectMocks } = require('../rest/util/injection');
-const COAError = require('../rest/errors/COAError');
-const errors = require('../rest/errors/exporter/ErrorExporter');
-const activityService = require('../rest/services/activityService');
-
-const fastify = {
-  log: { info: jest.fn(), error: jest.fn() },
-  configs: require('config'),
-  eth: {
-    uploadHashEvidenceToActivity: ethServicesMock.uploadHashEvidenceToActivity
-  }
-};
+} = require('../../rest/util/constants');
+const { injectMocks } = require('../../rest/util/injection');
+const COAError = require('../../rest/errors/COAError');
+const errors = require('../../rest/errors/exporter/ErrorExporter');
+const activityService = require('../../rest/services/activityService');
 
 describe('Testing activityService', () => {
   let dbTask = [];
@@ -429,7 +420,7 @@ describe.skip('Testing activityService createActivities', () => {
         return toSave;
       }
     };
-    activityService = require('../rest/services/activityService');
+    activityService = require('../../rest/services/activityService');
     injectMocks(activityService, {
       activityDao
     });
@@ -511,7 +502,7 @@ describe.skip('Testing activityService updateStatus', () => {
         return { ...mockActivity, status };
       }
     };
-    activityService = require('../rest/services/activityService');
+    activityService = require('../../rest/services/activityService');
     injectMocks(activityService, {
       activityDao
     });
@@ -601,7 +592,7 @@ describe.skip('Testing ActivityService addEvidenceFiles', () => {
       }
     };
 
-    activityService = require('../rest/services/activityService');
+    activityService = require('../../rest/services/activityService');
     injectMocks(activityService, {
       //FIXME
       activityDao
@@ -697,7 +688,7 @@ describe.skip('Testing ActivityService addEvidence', () => {
     //   }
     // });
 
-    activityService = require('../rest/services/activityService');
+    activityService = require('../../rest/services/activityService');
     injectMocks(activityService, {
       //FIXME
       activityDao
@@ -762,7 +753,7 @@ describe.skip('Testing ActivityService assignOracleToActivity', () => {
     //   }
     // });
 
-    activityService = require('../rest/services/activityService');
+    activityService = require('../../rest/services/activityService');
     injectMocks(activityService, {
       //FIXME
       activityDao

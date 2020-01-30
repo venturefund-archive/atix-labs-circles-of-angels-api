@@ -64,7 +64,6 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
 
-    // fastify.eth = await ethInitializer({ logger });
     fastify.setErrorHandler((error, request, reply) => {
       if (error instanceof COAError) {
         reply.status(error.statusCode).send(error.message);

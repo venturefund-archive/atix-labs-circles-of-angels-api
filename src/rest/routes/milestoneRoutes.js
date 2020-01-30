@@ -185,44 +185,6 @@ const routes = {
       }
     },
     handler: handlers.getMilestones
-  },
-
-  getBudgetStatus: {
-    method: 'get',
-    path: `${basePath}/budgetStatus`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.GET.name],
-        description: 'Returns all valid budget status',
-        summary: 'Get valid budget status',
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              budgetStatus: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' }
-                  }
-                }
-              }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.getBudgetStatus
   }
 };
 

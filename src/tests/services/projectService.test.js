@@ -1,16 +1,16 @@
-const COAError = require('../rest/errors/COAError');
-const files = require('../rest/util/files');
+const COAError = require('../../rest/errors/COAError');
+const files = require('../../rest/util/files');
 const {
   userRoles,
   projectStatuses,
   txFunderStatus
-} = require('../rest/util/constants');
-const errors = require('../rest/errors/exporter/ErrorExporter');
-const validators = require('../rest/services/helpers/projectStatusValidators/validators');
+} = require('../../rest/util/constants');
+const errors = require('../../rest/errors/exporter/ErrorExporter');
+const validators = require('../../rest/services/helpers/projectStatusValidators/validators');
 
-const { injectMocks } = require('../rest/util/injection');
+const { injectMocks } = require('../../rest/util/injection');
 
-const projectService = require('../rest/services/projectService');
+const projectService = require('../../rest/services/projectService');
 
 const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 const projectName = 'validProjectName';

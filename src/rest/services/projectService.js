@@ -473,7 +473,9 @@ module.exports = {
   // TODO: check if this is being used. If not, remove.
   async getProjectFull(id) {
     const project = await this.getProject(id);
-    project.milestones = await this.milestoneService.getMilestonesByProject(id);
+    project.milestones = await this.milestoneService.getAllMilestonesByProject(
+      id
+    );
     return project;
   },
 

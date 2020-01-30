@@ -19,7 +19,8 @@ module.exports = {
     return milestone;
   },
   async getMilestonesByProjectId(project) {
-    return this.model.find({ project }).populate('tasks');
+    const milestones = await this.model.find({ project }).populate('tasks');
+    return milestones || [];
   },
   async saveMilestone({ milestone, projectId }) {
     const toSave = {
@@ -51,13 +52,6 @@ module.exports = {
 
     return milestone || [];
   },
-  async getMilestonesByProject(projectId) {
-    const milestones = await this.model
-      .find({ project: projectId })
-      .sort('id ASC');
-    return milestones;
-  },
-
   async updateMilestoneStatus(milestoneId, status) {
     this.model.update(milestoneId).set({ status });
   },
@@ -69,17 +63,6 @@ module.exports = {
       .sort('createdAt DESC');
 
     return milestones || [];
-  },
-  async updateBudgetStatus(milestoneId, budgetStatusId) {
-    const milestone = await this.model
-      .updateOne({ id: milestoneId })
-      .set({ budgetStatus: budgetStatusId });
-
-    return milestone;
-  },
-
-  async updateBlockchainStatus(milestoneId, blockchainStatus) {
-    this.model.updateOne({ id: milestoneId }).set({ blockchainStatus });
   },
   async updateCreationTransactionHash(milestoneId, transactionHash) {
     this.model.updateOne({ id: milestoneId }).set({ transactionHash });

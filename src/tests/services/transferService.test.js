@@ -12,11 +12,11 @@ const {
   projectStatuses,
   userRoles,
   txFunderStatus
-} = require('../rest/util/constants');
-const { injectMocks } = require('../rest/util/injection');
-const files = require('../rest/util/files');
-const errors = require('../rest/errors/exporter/ErrorExporter');
-const transferService = require('../rest/services/transferService');
+} = require('../../rest/util/constants');
+const { injectMocks } = require('../../rest/util/injection');
+const files = require('../../rest/util/files');
+const errors = require('../../rest/errors/exporter/ErrorExporter');
+const transferService = require('../../rest/services/transferService');
 
 describe('Testing transferService', () => {
   let dbProject = [];
