@@ -12,12 +12,7 @@ const { promisify } = require('util');
 
 const unlinkPromise = promisify(unlink);
 
-// TODO : replace with a logger;
-const logger = {
-  log: () => {},
-  error: () => {},
-  info: () => {}
-};
+const logger = require('../logger');
 
 module.exports = {
   /**
@@ -76,7 +71,7 @@ module.exports = {
    * @param {number} fileId file to delete
    * @returns deleted file
    */
-  async deleteFile(fileId) {
+  async deleteFile(fileId, rmFile = unlinkPromise) {
     logger.info(`[File Service] :: Deleting file ID ${fileId}`);
 
     try {
@@ -92,7 +87,7 @@ module.exports = {
         };
       }
 
-      await unlinkPromise(deletedFile.path);
+      await rmFile(deletedFile.path);
 
       logger.info('[File Service] :: File deleted:', deletedFile);
       return deletedFile;

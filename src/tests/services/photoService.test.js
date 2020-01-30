@@ -8,15 +8,15 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const testHelper = require('./testHelper');
-const { injectMocks } = require('../rest/util/injection');
+const testHelper = require('../testHelper');
+const { injectMocks } = require('../../rest/util/injection');
 
 const fastify = {
   log: { info: jest.fn(), error: jest.fn() },
   configs: require('config')
 };
 
-const { getBase64htmlFromPath } = require('../rest/util/images');
+const { getBase64htmlFromPath } = require('../../rest/util/images');
 
 describe('Testing photoService getBase64Photo', () => {
   let photoDao;
@@ -42,7 +42,7 @@ describe('Testing photoService getBase64Photo', () => {
         return { id, path: filepath };
       }
     };
-    photoService = require('../rest/services/photoService');
+    photoService = require('../../rest/services/photoService');
     injectMocks(photoService, { photoDao });
   });
 
@@ -97,7 +97,7 @@ describe('Testing photoService savePhoto', () => {
       }
     };
 
-    photoService = require('../rest/services/photoService');
+    photoService = require('../../rest/services/photoService');
     injectMocks(photoService, { photoDao });
   });
 
@@ -142,7 +142,7 @@ describe('Testing photoService updatePhoto', () => {
       }
     };
 
-    photoService = require('../rest/services/photoService');
+    photoService = require('../../rest/services/photoService');
     injectMocks(photoService, { photoDao });
   });
 

@@ -1,12 +1,12 @@
 const { run, coa, ethereum } = require('@nomiclabs/buidler');
-const errors = require('../rest/errors/exporter/ErrorExporter');
-const daoService = require('../rest/services/daoService');
+const errors = require('../../rest/errors/exporter/ErrorExporter');
+const daoService = require('../../rest/services/daoService');
 const {
   proposalTypeEnum,
   voteEnum,
   daoMemberRoleEnum,
   daoMemberRoleNames
-} = require('../rest/util/constants');
+} = require('../../rest/util/constants');
 
 const TEST_TIMEOUT_MS = 10000;
 const PERIOD_DURATION_SEC = 17280;
