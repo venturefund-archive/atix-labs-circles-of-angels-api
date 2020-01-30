@@ -92,6 +92,7 @@ const pendingProject = {
   milestones: [milestone],
   milestonePath: 'milestonePath'
 };
+
 const draftProjectWithMilestone = {
   id: 10,
   projectName,
@@ -108,6 +109,7 @@ const draftProjectWithMilestone = {
   milestones: [milestone],
   milestonePath: 'milestonePath'
 };
+
 const draftProject = {
   id: 1,
   projectName,
@@ -122,6 +124,7 @@ const draftProject = {
   mission,
   status: projectStatuses.NEW
 };
+
 const executingProject = {
   id: 15,
   projectName,
@@ -425,6 +428,21 @@ describe('Project Service Test', () => {
         expect(projectId).toEqual(1);
       });
 
+      it('Should not update the project whenever the fields are valid but the project is in executing status', async () => {
+        await expect(
+          projectService.updateProjectThumbnail(15, {
+            projectName,
+            location,
+            timeframe,
+            goalAmount,
+            ownerId,
+            file
+          })
+        ).rejects.toThrow(
+          errors.project.ProjectCantBeUpdated(projectStatuses.EXECUTING)
+        );
+      });
+
       it('Should not update the project whenever the fields are valid but the project does not exist and throw an error', async () => {
         await expect(
           projectService.updateProjectThumbnail(2, {
@@ -438,7 +456,7 @@ describe('Project Service Test', () => {
         ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
 
-      it('Should not update the project whenever the fields are valid and the project does exist but user is not owner of the project, and throw an error', async () => {
+      it('Should not update the project whenever the fields are valid and the project exists but user is not owner of the project, and throw an error', async () => {
         await expect(
           projectService.updateProjectThumbnail(1, {
             projectName,
@@ -510,6 +528,7 @@ describe('Project Service Test', () => {
     beforeAll(() => {
       injectMocks(projectService, { projectDao, userService });
     });
+
     describe('Create project detail', () => {
       it('Should create project detail when there is an existent project created and all the needed fields are present', async () => {
         const { projectId } = await projectService.createProjectDetail(1, {
@@ -520,6 +539,7 @@ describe('Project Service Test', () => {
         });
         expect(projectId).toEqual(1);
       });
+
       it('Should not create project detail when there are not all the needed fields, and throw an error', async () => {
         await expect(
           projectService.createProjectDetail(1, { mission })
@@ -527,6 +547,7 @@ describe('Project Service Test', () => {
           errors.common.RequiredParamsMissing('createProjectDetail')
         );
       });
+
       it('Should not create project detail when the owner does not exist, and throw an error', async () => {
         await expect(
           projectService.createProjectDetail(1, {
@@ -537,6 +558,7 @@ describe('Project Service Test', () => {
           })
         ).rejects.toThrow(errors.common.CantFindModelWithId('user', 34));
       });
+
       it('Should not create project detail when the user is not the owner of the project, and throw an error', async () => {
         await expect(
           projectService.createProjectDetail(1, {
@@ -547,6 +569,7 @@ describe('Project Service Test', () => {
           })
         ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
       });
+
       it('Should not create project detail when there is not an existent project created, and throw an error', async () => {
         await expect(
           projectService.createProjectDetail(2, {
@@ -557,6 +580,7 @@ describe('Project Service Test', () => {
           })
         ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
+
       it('Should not create project detail when the file type is not a valid, and throw an error', async () => {
         await expect(
           projectService.createProjectDetail(1, {
@@ -567,6 +591,7 @@ describe('Project Service Test', () => {
           })
         ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
       });
+
       it('Should not create project detail when the file size is bigger than allowed, and throw an error', async () => {
         await expect(
           projectService.createProjectDetail(1, {
@@ -589,6 +614,20 @@ describe('Project Service Test', () => {
         });
         expect(projectId).toEqual(1);
       });
+
+      it('Should not update the project whenever the fields are valid but the project is in executing status', async () => {
+        await expect(
+          projectService.updateProjectDetail(15, {
+            mission,
+            problemAddressed,
+            file,
+            ownerId: 2
+          })
+        ).rejects.toThrow(
+          errors.project.ProjectCantBeUpdated(projectStatuses.EXECUTING)
+        );
+      });
+
       it('Should update the project if it exists and have all the fields valids and file field is missing ', async () => {
         const { projectId } = await projectService.updateProjectDetail(1, {
           mission,
@@ -597,6 +636,7 @@ describe('Project Service Test', () => {
         });
         expect(projectId).toEqual(1);
       });
+
       it('Should not update the project if it does not exists, and throw an error', async () => {
         await expect(
           projectService.updateProjectDetail(2, {
@@ -683,6 +723,18 @@ describe('Project Service Test', () => {
         });
         expect(projectId).toEqual(1);
       });
+
+      it('Should not update the project whenever the fields are valid but the project is in executing status', async () => {
+        await expect(
+          projectService.updateProjectProposal(15, {
+            proposal,
+            ownerId: 2
+          })
+        ).rejects.toThrow(
+          errors.project.ProjectCantBeUpdated(projectStatuses.EXECUTING)
+        );
+      });
+
       it('Should not update the project when it does not exist and throw an error', async () => {
         await expect(
           projectService.updateProjectProposal(2, {
@@ -691,11 +743,13 @@ describe('Project Service Test', () => {
           })
         ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
+
       it('Should not update the project when the project exists but proposal is missing and throw an error', async () => {
         await expect(
           projectService.updateProjectProposal(1, { ownerId: 2 })
         ).rejects.toThrow(COAError);
       });
+
       it('Should not update the project when the project exists, all fields are valid but owner does not exist and throw an error', async () => {
         await expect(
           projectService.updateProjectProposal(1, {
@@ -704,6 +758,7 @@ describe('Project Service Test', () => {
           })
         ).rejects.toThrow(errors.common.CantFindModelWithId('user', 34));
       });
+
       it('Should not update the project when user is not owner, and throw an error', async () => {
         await expect(
           projectService.updateProjectProposal(1, {
@@ -719,6 +774,7 @@ describe('Project Service Test', () => {
         const response = await projectService.getProjectProposal(1);
         expect(response.proposal).toEqual('proposal');
       });
+
       it('Should throw an error when the project does not exist, and throw an error', async () => {
         await expect(projectService.getProjectProposal(2)).rejects.toThrow(
           errors.common.CantFindModelWithId('project', 2)
@@ -734,6 +790,7 @@ describe('Project Service Test', () => {
       });
       expect(projectId).toEqual(1);
     });
+
     it('Should not publish project if it does not exist, and throw an error', () => {
       expect(
         projectService.publishProject(2, {
@@ -741,6 +798,7 @@ describe('Project Service Test', () => {
         })
       ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
     });
+
     it('Should not publish project if it exist but is already published, and throw an error', () => {
       expect(
         projectService.publishProject(3, {
@@ -748,6 +806,7 @@ describe('Project Service Test', () => {
         })
       ).rejects.toThrow(errors.project.ProjectIsNotPublishable);
     });
+
     it('Should not publish project if it exist but user is not the owner of it, and throw an error', () => {
       expect(
         projectService.publishProject(3, {
@@ -805,13 +864,17 @@ describe('Project Service Test', () => {
           })
         ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
       });
-      it('Should not create milestones and activities to an existent project with status different than new', async () => {
+      it('Should not create milestones and activities to an existent project with status different than new or rejected', async () => {
         await expect(
           projectService.processMilestoneFile(3, {
             file: milestoneFile,
             ownerId: 2
           })
-        ).rejects.toThrow(errors.project.InvalidStatusForMilestoneFileProcess);
+        ).rejects.toThrow(
+          errors.project.InvalidStatusForMilestoneFileProcess(
+            projectStatuses.TO_REVIEW
+          )
+        );
       });
       it('Should not create milestones and activities to an existent project whenever user is not the owner of it', async () => {
         await expect(
