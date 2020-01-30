@@ -121,13 +121,12 @@ module.exports = {
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
-    if (project.status !== projectStatuses.NEW) {
+    const { status } = project;
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
       logger.error(
-        `[ProjectService] :: Status of project with id ${projectId} is not ${
-          projectStatuses.NEW
-        }`
+        `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
       );
-      throw new COAError(errors.project.ProjectCantBeUpdated(project.status));
+      throw new COAError(errors.project.ProjectCantBeUpdated(status));
     }
 
     let { cardPhotoPath } = project;
@@ -234,13 +233,12 @@ module.exports = {
       validatePhotoSize(file);
     }
 
-    if (project.status !== projectStatuses.NEW) {
+    const { status } = project;
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
       logger.error(
-        `[ProjectService] :: Status of project with id ${projectId} is not ${
-          projectStatuses.NEW
-        }`
+        `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
       );
-      throw new COAError(errors.project.ProjectCantBeUpdated(project.status));
+      throw new COAError(errors.project.ProjectCantBeUpdated(status));
     }
 
     let { coverPhotoPath } = project;
@@ -290,7 +288,15 @@ module.exports = {
 
     await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
-    validateOwnership(project.owner, ownerId);
+    const { owner, status } = project;
+    validateOwnership(owner, ownerId);
+
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
+      logger.error(
+        `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
+      );
+      throw new COAError(errors.project.ProjectCantBeUpdated(status));
+    }
 
     logger.info(
       `[ProjectService] :: Saving proposal for project id ${projectId}`
@@ -328,8 +334,15 @@ module.exports = {
     // should we validate file size?
     validateMtype(milestonesType, file);
 
-    if (project.status !== projectStatuses.NEW)
-      throw new COAError(errors.project.InvalidStatusForMilestoneFileProcess);
+    const { status } = project;
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
+      logger.error(
+        `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
+      );
+      throw new COAError(
+        errors.project.InvalidStatusForMilestoneFileProcess(status)
+      );
+    }
 
     // TODO?: in this case it should probably overwrite all milestones and file
     if (project.milestonePath)
@@ -420,10 +433,13 @@ module.exports = {
       projectId,
       'project'
     );
-    validateOwnership(project.owner, ownerId);
-    if (project.status !== projectStatuses.NEW) {
+
+    const { owner, status } = project;
+    validateOwnership(owner, ownerId);
+
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED)
       throw new COAError(errors.project.ProjectIsNotPublishable);
-    }
+
     return {
       projectId: await this.updateProject(projectId, {
         status: projectStatuses.TO_REVIEW

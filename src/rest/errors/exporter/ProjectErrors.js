@@ -17,10 +17,10 @@ module.exports = {
     message: 'Milestone file has been already uploaded',
     statusCode: 400
   },
-  InvalidStatusForMilestoneFileProcess: {
-    message: 'Cant process milestone file when project has been published',
+  InvalidStatusForMilestoneFileProcess: status => ({
+    message: `Cant process milestone file when project is in ${status} status`,
     statusCode: 400
-  },
+  }),
   ProjectNotApproved: {
     message: 'Project has not been approved yet',
     statusCode: 403
