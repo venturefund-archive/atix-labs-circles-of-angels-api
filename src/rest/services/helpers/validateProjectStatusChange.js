@@ -33,7 +33,8 @@ const allowedTransitions = {
   [TO_REVIEW]: [
     {
       validator: args => validators.fromToReview(args),
-      nextSteps: [PUBLISHED, REJECTED]
+      // TODO: consensus may need to be removed eventually
+      nextSteps: [PUBLISHED, CONSENSUS, REJECTED]
     }
   ],
   [REJECTED]: [

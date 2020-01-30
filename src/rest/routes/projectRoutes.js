@@ -515,7 +515,7 @@ const createProjectRoute = {
         }
       }
     },
-    handler: handlers.publishProject
+    handler: handlers.createProject
   }
 };
 
@@ -538,6 +538,26 @@ const projectStatusRoutes = {
       }
     },
     handler: handlers.sendToReview
+  },
+
+  publishProject: {
+    method: 'put',
+    path: `${basePath}/:projectId/publish`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Publish a project',
+        summary: 'Publish a project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.publishProject
   },
 
   // TODO: make one endpoint for each possible status change
