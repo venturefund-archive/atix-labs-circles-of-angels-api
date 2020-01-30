@@ -13,6 +13,14 @@ module.exports = {
   CantUpdateProject: projectId => ({
     message: `Cant update project with id ${projectId}`
   }),
+  CantApplyToProject: status => ({
+    message: `It doesn't allow apply when the project is in ${status} status`,
+    statusCode: 404
+  }),
+  CantFollowProject: projectId => ({
+    message: `Project ${projectId} has't been published yet`,
+    statusCode: 404
+  }),
   MilestoneFileHasBeenAlreadyUploaded: {
     message: 'Milestone file has been already uploaded',
     statusCode: 400

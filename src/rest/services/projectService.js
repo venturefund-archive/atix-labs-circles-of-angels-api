@@ -13,6 +13,7 @@ const {
   userRoles,
   supporterRoles,
   publicProjectStatuses,
+  privateProjectStatuses,
   txFunderStatus
 } = require('../util/constants');
 const files = require('../util/files');
@@ -652,7 +653,18 @@ module.exports = {
       );
     }
 
-    const { followers } = projectWithFollowers;
+    const { status, followers } = projectWithFollowers;
+
+    const allowFollow = Object.values(privateProjectStatuses).every(
+      privateStatus => privateStatus !== status
+    );
+
+    if (!allowFollow) {
+      logger.error(
+        `[ProjectService] :: Project ${projectId} has't been published yet`
+      );
+      throw new COAError(errors.project.CantFollowProject(projectId));
+    }
 
     const alreadyFollowing = followers.some(follower => follower.id === userId);
 
@@ -777,7 +789,6 @@ module.exports = {
       { oracles: true, funders: true }
     );
 
-    // TODO check project status when the specific statuses are defined
     if (!project) {
       logger.error(
         `[ProjectService] :: Project with id ${projectId} not found`
@@ -785,6 +796,15 @@ module.exports = {
       throw new COAError(
         errors.common.CantFindModelWithId('project', projectId)
       );
+    }
+
+    const { status } = project;
+    const { PUBLISHED, CONSENSUS } = projectStatuses;
+    if (status !== PUBLISHED && status !== CONSENSUS) {
+      logger.error(
+        `[ProjectService] :: It doesn't allow apply when the project is in ${status} status`
+      );
+      throw new COAError(errors.project.CantApplyToProject(status));
     }
 
     const user = await this.userService.getUserById(userId);
