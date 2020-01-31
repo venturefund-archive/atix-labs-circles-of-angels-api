@@ -6,13 +6,15 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const path = require('path');
 const mime = require('mime');
-const { unlink } = require('fs');
-const { promisify } = require('util');
+const fs = require('fs');
+const util = require('util');
 
-const unlinkPromise = promisify(unlink);
-
+const unlinkPromise = util.promisify(fs.unlink);
 const logger = require('../logger');
+const COAError = require('../errors/COAError');
+const errors = require('../errors/exporter/ErrorExporter');
 
 module.exports = {
   /**
@@ -108,5 +110,39 @@ module.exports = {
     ];
 
     return validTypes.includes(fileType);
+  },
+
+  /**
+   * Returns milestone template file
+   *
+   * @returns template file
+   */
+  async getMilestonesTemplateFile() {
+    logger.info('[FileService] :: Entering getMilestonesTemplateFile method');
+
+    const filepath = path.join(
+      __dirname,
+      '../../../assets/templates/milestones.xlsx'
+    );
+
+    if (!fs.existsSync(filepath)) {
+      logger.error("[FileService] :: Milestone template doesn't exist");
+      throw new COAError(errors.file.MilestoneTemplateNotExists());
+    }
+
+    const filestream = fs.createReadStream(filepath);
+
+    filestream.on('error', () => {
+      logger.error('[FileService] :: Error reading milestones template file');
+      throw new COAError(errors.file.ErrorReadingMilestoneTemplate());
+    });
+
+    const response = {
+      filename: path.basename(filepath),
+      filestream
+    };
+
+    logger.info('[FileService] :: Milestones template file got successfully');
+    return response;
   }
 };
