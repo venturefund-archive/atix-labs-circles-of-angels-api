@@ -178,8 +178,8 @@ module.exports = fastify => {
     const dependencies = {
       projectExperienceDao,
       projectExperiencePhotoDao,
-      projectDao,
-      userDao
+      projectService,
+      userService
     };
     injectDependencies(service, dependencies);
   }
