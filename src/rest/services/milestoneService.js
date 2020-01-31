@@ -7,13 +7,7 @@
  */
 
 const { isEmpty, remove } = require('lodash');
-const {
-  activityStatus,
-  milestoneBudgetStatus,
-  blockchainStatus,
-  xlsxConfigs,
-  projectStatuses
-} = require('../util/constants');
+const { xlsxConfigs, projectStatuses } = require('../util/constants');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
@@ -242,7 +236,7 @@ module.exports = {
   deleteFieldsFromActivities(activities) {
     // TODO: check this
     return activities.map(activity => {
-      activity.reviewCriteria = 'review criteria';
+      activity.reviewCriteria = activity.impactCriterion;
       activity.description = activity.tasks;
       // delete activity.tasks;
       // delete activity.signsOfSuccess;
