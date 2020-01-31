@@ -783,39 +783,6 @@ describe('Project Service Test', () => {
     });
   });
 
-  describe('Publish project', () => {
-    it('Should publish project if it exists and its state is draft', async () => {
-      const { projectId } = await projectService.publishProject(1, {
-        ownerId: 2
-      });
-      expect(projectId).toEqual(1);
-    });
-
-    it('Should not publish project if it does not exist, and throw an error', () => {
-      expect(
-        projectService.publishProject(2, {
-          ownerId: 2
-        })
-      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 2));
-    });
-
-    it('Should not publish project if it exist but is already published, and throw an error', () => {
-      expect(
-        projectService.publishProject(3, {
-          ownerId: 2
-        })
-      ).rejects.toThrow(errors.project.ProjectIsNotPublishable);
-    });
-
-    it('Should not publish project if it exist but user is not the owner of it, and throw an error', () => {
-      expect(
-        projectService.publishProject(3, {
-          ownerId: 15
-        })
-      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
-    });
-  });
-
   describe('Get projects', () => {
     beforeAll(() => {});
     it('Should return an empty list if no projects are published', () => {

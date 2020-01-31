@@ -148,19 +148,6 @@ module.exports = {
     reply.status(200).send(response);
   },
 
-  // TODO analize if this method will be useful
-  publishProject: () => async (request, reply) => {
-    const { projectId } = request.params;
-    const ownerId = request.user.id;
-
-    try {
-      const response = await projectService.publishProject(projectId, ownerId);
-      reply.send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
-  },
-
   sendToReview: () => async (request, reply) => {
     const { projectId } = request.params;
     const { user } = request;
@@ -168,6 +155,19 @@ module.exports = {
       user,
       projectId,
       projectStatuses.TO_REVIEW
+    );
+    reply.send(response);
+  },
+
+  publishProject: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const { user } = request;
+    const response = await projectService.updateProjectStatus(
+      user,
+      projectId,
+      // TODO: for now is CONSENSUS, but should be PUBLISHED
+      //       once the optional thing is defined/coded
+      projectStatuses.CONSENSUS
     );
     reply.send(response);
   },

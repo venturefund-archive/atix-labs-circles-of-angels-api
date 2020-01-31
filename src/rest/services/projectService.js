@@ -425,28 +425,6 @@ module.exports = {
     return response;
   },
 
-  // TODO analize if this method will be useful
-  async publishProject(projectId, { ownerId }) {
-    validateParams(projectId, ownerId);
-    const project = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
-
-    const { owner, status } = project;
-    validateOwnership(owner, ownerId);
-
-    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED)
-      throw new COAError(errors.project.ProjectIsNotPublishable);
-
-    return {
-      projectId: await this.updateProject(projectId, {
-        status: projectStatuses.TO_REVIEW
-      })
-    };
-  },
-
   /**
    * Updates the status of a project to the specified status
    * if the transition is valid.
