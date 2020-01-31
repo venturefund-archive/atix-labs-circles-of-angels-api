@@ -21,7 +21,7 @@ module.exports = {
       model: 'milestone'
     },
     oracle: {
-      columnName: 'oracleAddress',
+      columnName: 'oracleId',
       model: 'user'
     },
     createdAt: { type: 'string', autoCreatedAt: true },

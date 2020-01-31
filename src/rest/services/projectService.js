@@ -870,6 +870,36 @@ module.exports = {
   },
 
   /**
+   * Check if user applied to the specific project as oracle
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns boolean || error
+   */
+  async isOracleCandidate({ projectId, userId }) {
+    // TODO: maybe somehow fuse this method with isCandidate?
+    logger.info('[ProjectService] :: Entering isOracleCandidate method');
+    validateRequiredParams({
+      method: 'isOracleCandidate',
+      params: { projectId, userId }
+    });
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { oracles: true }
+    );
+    if (!project) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+    const isOracle = !!project.oracles.find(oracle => oracle.id === userId);
+    return isOracle;
+  },
+
+  /**
    * Returns a list of all projects marked as featured
    * @returns {Promise<[]>} featured projects
    */
