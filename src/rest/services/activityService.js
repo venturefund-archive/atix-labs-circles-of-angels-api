@@ -243,6 +243,74 @@ module.exports = {
     return { taskId: createdTask.id };
   },
   /**
+   * Assigns an existing oracle candidate to a task.
+   *
+   * @param {number} taskId task id
+   * @param {number} oracleId oracle id to assign
+   * @param {number} userId user making the request
+   */
+  async assignOracle(taskId, oracleId, userId) {
+    logger.info('[ActivityService] :: Entering assignOracle method');
+    validateRequiredParams({
+      method: 'assignOracle',
+      params: { taskId, oracleId, userId }
+    });
+    const task = await checkExistence(this.activityDao, taskId, 'task');
+    logger.info(
+      `[ActivityService] :: Found task ${task.id} of milestone ${
+        task.milestone
+      }`
+    );
+    const project = await this.milestoneService.getProjectFromMilestone(
+      task.milestone
+    );
+    validateOwnership(project.owner, userId);
+    const oracle = await this.userService.getUserById(oracleId);
+
+    if (oracle.role !== userRoles.PROJECT_SUPPORTER) {
+      logger.error(
+        `[ActivityService] :: User ${oracleId} is not a project supporter`
+      );
+      throw new COAError(errors.user.IsNotSupporter);
+    }
+
+    if (project.status !== projectStatuses.CONSENSUS) {
+      logger.error(
+        `[ActivityService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.CONSENSUS
+        }`
+      );
+      throw new COAError(
+        errors.task.AssignOracleWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    const isOracleCandidate = await this.projectService.isOracleCandidate({
+      projectId: project.id,
+      userId: oracleId
+    });
+
+    if (!isOracleCandidate) {
+      logger.error(
+        `[ActivityService] :: User of id ${oracleId} is not an oracle candidate for project ${
+          project.id
+        }`
+      );
+      throw new COAError(errors.task.NotOracleCandidate);
+    }
+
+    logger.info(
+      `[ActivityService] :: Assigning oracle of id ${oracleId} to task ${taskId}`
+    );
+    const updatedTask = await this.activityDao.updateActivity(
+      { oracle: oracleId },
+      taskId
+    );
+    logger.info(`[ActivityService] :: Task of id ${updatedTask.id} updated`);
+    return { taskId: updatedTask.id };
+  },
+
+  /**
    * Creates new Activities and associates them to the Milestone passed by parameter.
    *
    * Returns an array with all the Activities created.

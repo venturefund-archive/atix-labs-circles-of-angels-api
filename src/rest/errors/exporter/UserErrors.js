@@ -33,5 +33,9 @@ module.exports = {
   IsNotProjectCurator: {
     message: 'The user is not a Project Curator',
     statusCode: 403
+  },
+  IsNotSupporter: {
+    message: 'The user is not a Supporter',
+    statusCode: 403
   }
 };
