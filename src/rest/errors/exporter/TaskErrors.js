@@ -22,5 +22,13 @@ module.exports = {
   CreateWithInvalidProjectStatus: status => ({
     message: `Can't create new task in project with status ${status}`,
     statusCode: 403
-  })
+  }),
+  AssignOracleWithInvalidProjectStatus: status => ({
+    message: `Can't assign an oracle to a task in a project with status ${status}`,
+    statusCode: 403
+  }),
+  NotOracleCandidate: {
+    message: 'The user has not applied as an oracle for the project',
+    statusCode: 403
+  }
 };

@@ -122,7 +122,7 @@ CREATE TABLE public.task (
     "milestoneId" int,
     "createdAt" date DEFAULT NOW(),
     "taskHash" varchar(80) DEFAULT NULL,
-    "oracleAddress" varchar(42) DEFAULT NULL,
+    "oracleId" int4 DEFAULT NULL,
     description text, -- TODO : should be NOT NULL
     "reviewCriteria" text,
     category text,
@@ -130,7 +130,7 @@ CREATE TABLE public.task (
     budget text,
     PRIMARY KEY (id),
     FOREIGN KEY ("milestoneId") REFERENCES public.milestone (id) ON DELETE CASCADE,
-    FOREIGN KEY ("oracleAddress") REFERENCES public.user (address)
+    CONSTRAINT "task_oracleId_fkey" FOREIGN KEY ("oracleId") REFERENCES public."user"(id)
 );
 
 CREATE TABLE public.transaction (

@@ -28,10 +28,6 @@ describe('Testing activityService', () => {
   let dbProject = [];
   let dbUser = [];
 
-  beforeAll(() => {
-    files.saveFile = jest.fn(() => '/dir/path');
-  });
-
   const resetDb = () => {
     dbTask = [];
     dbMilestone = [];
@@ -56,6 +52,11 @@ describe('Testing activityService', () => {
   const userEntrepreneur = {
     id: 1,
     role: userRoles.ENTREPRENEUR
+  };
+
+  const userSupporter = {
+    id: 2,
+    role: userRoles.PROJECT_SUPPORTER
   };
 
   const newProject = {
@@ -140,6 +141,25 @@ describe('Testing activityService', () => {
     }
   };
 
+  const userService = {
+    getUserById: id => {
+      const found = dbUser.find(user => user.id === id);
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('user', id));
+      return found;
+    }
+  };
+
+  const projectService = {
+    isOracleCandidate: jest.fn()
+  };
+
+  beforeAll(() => {
+    files.saveFile = jest.fn(() => '/dir/path');
+  });
+
+  beforeEach(() => resetDb());
+
   describe('Testing updateTask', () => {
     beforeAll(() => {
       injectMocks(activityService, {
@@ -149,7 +169,6 @@ describe('Testing activityService', () => {
     });
 
     beforeEach(() => {
-      resetDb();
       dbProject.push(newProject, executingProject);
       dbTask.push(updatableTask, nonUpdatableTask);
       dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
@@ -218,7 +237,6 @@ describe('Testing activityService', () => {
     });
 
     beforeEach(() => {
-      resetDb();
       dbProject.push(newProject, executingProject);
       dbTask.push(updatableTask, nonUpdatableTask);
       dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
@@ -271,7 +289,6 @@ describe('Testing activityService', () => {
     });
 
     beforeEach(() => {
-      resetDb();
       dbProject.push(newProject, executingProject);
       dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
       dbUser.push(userEntrepreneur);
@@ -351,8 +368,6 @@ describe('Testing activityService', () => {
     });
 
     beforeEach(() => {
-      dbTask = [];
-      dbUser = [];
       dbUser.push(userEntrepreneur);
     });
 
@@ -401,6 +416,93 @@ describe('Testing activityService', () => {
           taskId: newTask.id
         })
       );
+    });
+  });
+
+  describe('Testing assignOracle', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        userService,
+        projectService
+      });
+    });
+
+    beforeEach(() => {
+      dbUser.push(userEntrepreneur, userSupporter);
+      dbProject.push({ ...newProject, status: projectStatuses.CONSENSUS });
+      dbMilestone.push(updatableMilestone);
+      dbTask.push(updatableTask);
+    });
+
+    it(
+      'should assign an oracle to an existing activity if the oracle ' +
+        'applied as candidate for the project',
+      async () => {
+        projectService.isOracleCandidate.mockReturnValueOnce(true);
+        const response = await activityService.assignOracle(
+          updatableTask.id,
+          userSupporter.id,
+          userEntrepreneur.id
+        );
+        const updated = dbTask.find(task => task.id === updatableTask.id);
+        expect(response).toEqual({ taskId: updatableTask.id });
+        expect(updated.oracle).toEqual(userSupporter.id);
+      }
+    );
+    it('should throw an error if any of the required params is missing', async () => {
+      await expect(
+        activityService.assignOracle(updatableTask.id, userSupporter.id)
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('assignOracle'));
+    });
+    it('should throw an error if the task does not exist', async () => {
+      await expect(
+        activityService.assignOracle(0, userSupporter.id, userEntrepreneur.id)
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
+    });
+    it("should throw an error if the user is not the task's project owner", async () => {
+      await expect(
+        activityService.assignOracle(
+          updatableTask.id,
+          userSupporter.id,
+          userSupporter.id
+        )
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+    it('should throw an error if the oracle id does not belong to a supporter', async () => {
+      await expect(
+        activityService.assignOracle(
+          updatableTask.id,
+          userEntrepreneur.id,
+          userEntrepreneur.id
+        )
+      ).rejects.toThrow(errors.user.IsNotSupporter);
+    });
+    it("should throw an error if the task's project is not in consensus phase", async () => {
+      dbProject.push(executingProject);
+      dbMilestone.push(nonUpdatableMilestone);
+      dbTask.push(nonUpdatableTask);
+      await expect(
+        activityService.assignOracle(
+          nonUpdatableTask.id,
+          userSupporter.id,
+          userEntrepreneur.id
+        )
+      ).rejects.toThrow(
+        errors.task.AssignOracleWithInvalidProjectStatus(
+          projectStatuses.EXECUTING
+        )
+      );
+    });
+    it('should throw an error if the supporter has not applied as an oracle', async () => {
+      projectService.isOracleCandidate.mockReturnValueOnce(false);
+      await expect(
+        activityService.assignOracle(
+          updatableTask.id,
+          userSupporter.id,
+          userEntrepreneur.id
+        )
+      ).rejects.toThrow(errors.task.NotOracleCandidate);
     });
   });
 });
