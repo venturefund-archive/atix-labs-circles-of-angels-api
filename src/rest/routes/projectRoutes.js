@@ -495,30 +495,6 @@ const projectMilestonesRoute = {
   }
 };
 
-// TODO: check if this is being used. If not, remove
-const createProjectRoute = {
-  createProject: {
-    method: 'put',
-    path: `${basePath}/:projectId`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates new project and adds project proposal to it.',
-        summary: 'Create new project and project proposal',
-        type: 'multipart/form-data',
-        params: projectIdParam,
-        response: {
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.createProject
-  }
-};
-
 const projectStatusRoutes = {
   sendToReview: {
     method: 'put',
@@ -863,7 +839,6 @@ const routes = {
   ...projectDetailRoutes,
   ...projectProposalRoutes,
   ...projectMilestonesRoute,
-  ...createProjectRoute,
   ...commonProjectRoutes,
   ...projectExperienceRoutes,
   ...projectStatusRoutes,

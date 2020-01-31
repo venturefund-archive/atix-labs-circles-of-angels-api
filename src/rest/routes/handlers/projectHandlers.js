@@ -148,19 +148,6 @@ module.exports = {
     reply.status(200).send(response);
   },
 
-  // TODO analize if this method will be useful
-  createProject: () => async (request, reply) => {
-    const { projectId } = request.params;
-    const ownerId = request.user.id;
-
-    try {
-      const response = await projectService.publishProject(projectId, ownerId);
-      reply.send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
-  },
-
   sendToReview: () => async (request, reply) => {
     const { projectId } = request.params;
     const { user } = request;
