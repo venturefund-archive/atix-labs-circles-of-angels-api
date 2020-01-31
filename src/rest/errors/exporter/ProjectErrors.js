@@ -68,5 +68,9 @@ module.exports = {
   ChangingStatus: {
     message: 'An error occurred while changing the project status',
     statusCode: 400
-  }
+  },
+  InvalidStatusForExperienceUpload: status => ({
+    message: `Can't upload experiences when project is in ${status} status`,
+    statusCode: 400
+  })
 };

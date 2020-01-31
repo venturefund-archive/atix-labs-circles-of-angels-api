@@ -203,39 +203,29 @@ module.exports = {
     const projects = await projectService.getFeaturedProjects();
     reply.status(200).send(projects);
   },
+  getExperiencesOfProject: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectServiceExperience.getProjectExperiences({
+      projectId
+    });
+    reply.status(200).send(response);
+  },
+  addExperienceToProject: () => async (request, reply) => {
+    const userId = request.user.id;
+    const { comment } = request.raw.body || {};
+    const { files } = request.raw.files || {};
+    const { projectId } = request.params;
+    const response = await projectServiceExperience.addExperience({
+      comment,
+      projectId,
+      userId,
+      photos: files && !files.length ? [files] : files
+    });
+    reply.status(200).send(response);
+  },
 
   // FIXME --> thumbnail?
   getProjectsPreview: fastify => async (request, reply) => {},
-  addExperienceToProject: fastify => async (request, reply) => {
-    try {
-      const userId = request.user.id;
-      const { comment } = request.raw.body;
-      const { files } = request.raw.files;
-      const { projectId } = request.params;
-
-      const response = await projectServiceExperience.addExperience({
-        comment,
-        projectId,
-        userId,
-        photos: files
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      reply.status(error.statusCode).send(error.message);
-    }
-  },
-  getExperiencesOfProject: fastify => async (request, reply) => {
-    try {
-      const { projectId } = request.params;
-      const response = await projectServiceExperience.getExperiencesOnProject({
-        projectId
-      });
-      reply.status(200).send(response);
-    } catch (error) {
-      console.log('error', error);
-      reply.status(error.statusCode).send(error.message);
-    }
-  },
 
   getProject: fastify => async (request, reply) => {
     const { projectId } = request.params;
