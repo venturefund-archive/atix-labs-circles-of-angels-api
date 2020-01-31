@@ -13,7 +13,6 @@ const {
   userRoles,
   supporterRoles,
   publicProjectStatuses,
-  privateProjectStatuses,
   txFunderStatus
 } = require('../util/constants');
 const files = require('../util/files');
@@ -655,9 +654,7 @@ module.exports = {
 
     const { status, followers } = projectWithFollowers;
 
-    const allowFollow = Object.values(privateProjectStatuses).every(
-      privateStatus => privateStatus !== status
-    );
+    const allowFollow = Object.values(publicProjectStatuses).includes(status);
 
     if (!allowFollow) {
       logger.error(
@@ -713,7 +710,16 @@ module.exports = {
       );
     }
 
-    const { followers } = projectWithFollowers;
+    const { status, followers } = projectWithFollowers;
+
+    const allowUnfollow = Object.values(publicProjectStatuses).includes(status);
+
+    if (!allowUnfollow) {
+      logger.error(
+        `[ProjectService] :: Project ${projectId} has't been published yet`
+      );
+      throw new COAError(errors.project.CantFollowProject(projectId));
+    }
 
     const isFollowing = followers.some(follower => follower.id === userId);
 
