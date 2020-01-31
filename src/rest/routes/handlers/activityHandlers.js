@@ -39,6 +39,14 @@ module.exports = {
     reply.status(200).send(response);
   },
 
+  assignOracle: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const { oracleId } = request.body || {};
+    const response = await activityService.assignOracle(taskId, oracleId, userId);
+    reply.status(200).send(response);
+  },
+
   updateStatus: fastify => async (req, reply) => {
     fastify.log.info(
       `[Activity Routes] :: PUT request at /activities/${
@@ -147,32 +155,6 @@ module.exports = {
     } catch (error) {
       fastify.log.error('[Activity Routes] :: Error getting activity:', error);
       reply.status(500).send({ error: 'Error getting activity' });
-    }
-  },
-
-  assignOracle: fastify => async (request, reply) => {
-    const { activityId, userId } = request.params;
-    fastify.log.info(
-      `[Activity Routes] :: POST request at /activities/${activityId}/oracle/${userId}`
-    );
-
-    try {
-      const assign = await activityService.assignOracleToActivity(
-        userId,
-        activityId
-      );
-
-      if (assign.error) {
-        reply.status(assign.status).send(assign);
-      } else {
-        reply.status(200).send({ success: 'Oracle assigned successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Activity Routes] :: Error assigning user to activity:',
-        error
-      );
-      reply.status(500).send({ error: 'Error assigning user to activity' });
     }
   },
 
