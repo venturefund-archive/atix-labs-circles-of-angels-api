@@ -14,6 +14,15 @@ const resetDB = () => {
   dbProjects = [];
 };
 
+const curatorUser = {
+  id: 1,
+  firstName: 'Project',
+  lastName: 'Curator',
+  role: userRoles.PROJECT_CURATOR,
+  email: 'curator@email.com',
+  address: '0x01111111'
+};
+
 const entrepreneurUser = {
   id: 2,
   firstName: 'Social',
@@ -36,6 +45,21 @@ const newProject = {
   proposal: 'Proposal',
   mission: 'Mission',
   status: projectStatuses.NEW
+};
+
+const toReviewProject = {
+  id: 1,
+  projectName: 'New Project',
+  location: 'Location',
+  timeframe: '12 months',
+  goalAmount: 5000,
+  owner: entrepreneurUser.id,
+  cardPhotoPath: 'cardPhotoPath.jpg',
+  coverPhotoPath: 'coverPhotoPath.jpg',
+  problemAddressed: 'Problem',
+  proposal: 'Proposal',
+  mission: 'Mission',
+  status: projectStatuses.TO_REVIEW
 };
 
 const newProjectMilestones = [
@@ -111,5 +135,33 @@ describe('Testing project status validators', () => {
     });
   });
 
+  describe('From TO REVIEW status', () => {
+    beforeAll(() => {
+      injectMocks(validators, {
+        projectService
+      });
+    });
+    describe('to PUBLISHED or CONSENSUS status', () => {
+      beforeEach(() => {
+        resetDB();
+        dbProjects.push(toReviewProject);
+        dbUsers.push(curatorUser, entrepreneurUser);
+      });
+      it('should resolve and return true if the user is a curator', async () => {
+        await expect(
+          validators.fromToReview({
+            user: curatorUser
+          })
+        ).resolves.toBe(true);
+      });
+      it('should resolve and return true if the user is not a curator', async () => {
+        await expect(
+          validators.fromToReview({
+            user: entrepreneurUser
+          })
+        ).rejects.toThrow(errors.user.IsNotProjectCurator);
+      });
+    });
+  });
   test.todo('Test rest of status transitions when coded');
 });
