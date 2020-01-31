@@ -19,7 +19,10 @@ module.exports = {
     return milestone;
   },
   async getMilestonesByProjectId(project) {
-    const milestones = await this.model.find({ project }).populate('tasks');
+    const milestones = await this.model
+      .find({ project })
+      .populate('tasks', { sort: 'id ASC' })
+      .sort('id ASC');
     return milestones || [];
   },
   async saveMilestone({ milestone, projectId }) {
