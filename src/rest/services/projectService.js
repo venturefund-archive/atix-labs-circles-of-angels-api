@@ -38,6 +38,13 @@ const milestonesType = 'milestones';
 const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 
 module.exports = {
+  async getProjectById(id) {
+    logger.info('[ProjectService] :: Entering getProjectById method');
+    const project = await checkExistence(this.projectDao, id, 'project');
+    logger.info(`[ProjectService] :: Project id ${project.id} found`);
+    return project;
+  },
+
   async updateProject(projectId, fields) {
     // TODO updateProject = updateMilestone, is should abstract this like validateExistence, also change tests
     const updatedProject = await this.projectDao.updateProject(

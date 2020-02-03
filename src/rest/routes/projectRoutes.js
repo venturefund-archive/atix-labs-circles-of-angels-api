@@ -58,10 +58,6 @@ const projectProposalProperties = {
   proposal: { type: 'string' }
 };
 
-const experienceProperties = {
-  comment: { type: 'string' }
-};
-
 const milestonesResponse = {
   type: 'array',
   items: {
@@ -100,17 +96,57 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
+const successWithProjectExperienceIdResponse = {
+  type: 'object',
+  properties: {
+    projectExperienceId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project experience'
+};
+
 const successWithCandidateIdResponse = {
   type: 'object',
   properties: {
     candidateId: { type: 'integer' }
   },
-  description: 'Returns the id of the project'
+  description: 'Returns the id of the candidate'
 };
 
 const successWithBooleanResponse = {
   type: 'boolean',
   description: 'Returns the boolean result'
+};
+
+const userProperties = {
+  id: { type: 'integer' },
+  firstName: { type: 'string' },
+  lastName: { type: 'string' },
+  role: { type: 'string' },
+  email: { type: 'string' }
+};
+
+const experiencePhotoProperties = {
+  id: { type: 'integer' },
+  path: { type: 'string' }
+};
+
+const experienceProperties = {
+  id: { type: 'integer' },
+  project: { type: 'integer' },
+  comment: { type: 'string' },
+  user: { type: 'object', properties: userProperties },
+  photos: {
+    type: 'array',
+    items: { type: 'object', properties: experiencePhotoProperties }
+  }
+};
+
+const successWithExperiencesResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: experienceProperties
+  }
 };
 
 // FIXME: I don't think this is the best way to do this but ¯\_(ツ)_/¯
@@ -135,13 +171,7 @@ const responseWithMilestoneErrors = {
 
 const userResponse = {
   type: 'object',
-  properties: {
-    firstName: { type: 'string' },
-    lastName: { type: 'string' },
-    email: { type: 'string' },
-    id: { type: 'integer' },
-    role: { type: 'string' }
-  },
+  properties: userProperties,
   description: 'Returns and object with the user information'
 };
 
@@ -776,8 +806,8 @@ const projectExperienceRoutes = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates new project and adds project proposal to it.',
-        summary: 'Create new project and project proposal',
+        description: 'Adds a new experience to an existing project',
+        summary: 'Adds a new experience to project',
         params: projectIdParam,
         raw: {
           body: {
@@ -787,7 +817,7 @@ const projectExperienceRoutes = {
           files: { type: 'array', items: { type: 'object' } }
         },
         response: {
-          ...successResponse(successWithProjectIdResponse), // TODO
+          ...successResponse(successWithProjectExperienceIdResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
@@ -799,12 +829,14 @@ const projectExperienceRoutes = {
     method: 'get',
     path: `${basePath}/:projectId/experiences`,
     options: {
+      beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Gets all experiences of project.',
-        summary: 'Gets all experiences of project.',
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets all experiences of an existing project.',
+        summary: 'Gets all experiences of a project.',
         params: projectIdParam,
         response: {
+          ...successResponse(successWithExperiencesResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
