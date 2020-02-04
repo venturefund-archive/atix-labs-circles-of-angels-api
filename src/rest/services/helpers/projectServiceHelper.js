@@ -1,28 +1,13 @@
 const mime = require('mime');
 const errors = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
-const { projectStatuses, userRoles } = require('../../util/constants');
 const validateOwnership = require('./validateOwnership');
 
 const logger = require('../../logger');
 
 const MAX_PHOTO_SIZE = 500000;
 
-const {
-  NEW,
-  TO_REVIEW,
-  REJECTED,
-  DELETED,
-  PUBLISHED,
-  CONSENSUS,
-  FUNDING,
-  EXECUTING,
-  CHANGING_SCOPE,
-  FINISHED,
-  ABORTED,
-  ARCHIVED,
-  CANCELLED
-} = projectStatuses;
+// TODO: this file should eventually be deleted
 
 const validateExistence = async (dao, id, model) => {
   logger.info('[ProjectServiceHelper] :: Entering validaExistence method');
@@ -101,122 +86,12 @@ const validatePhotoSize = file => {
   }
 };
 
-const validateStatusChange = ({
-  user,
-  currentStatus,
-  newStatus,
-  projectOwner
-}) => {
-  const { role, id } = user;
-
-  const allowedTransitions = {
-    [NEW]: [
-      {
-        validator: () =>
-          role === userRoles.ENTREPRENEUR &&
-          validateOwnership(projectOwner, id),
-        nextSteps: [TO_REVIEW, DELETED]
-      }
-    ],
-    [TO_REVIEW]: [
-      {
-        validator: () => role === userRoles.PROJECT_CURATOR,
-        nextSteps: [PUBLISHED, REJECTED]
-      }
-    ],
-    [REJECTED]: [
-      {
-        validator: () =>
-          role === userRoles.ENTREPRENEUR &&
-          validateOwnership(projectOwner, id),
-        nextSteps: [TO_REVIEW, DELETED]
-      }
-    ],
-    [DELETED]: [
-      {
-        nextSteps: []
-      }
-    ],
-    [PUBLISHED]: [
-      {
-        // TODO add validation to check that time set already happen
-        nextSteps: [CONSENSUS]
-      }
-    ],
-    [CONSENSUS]: [
-      {
-        // TODO add validations for funding case
-        // - At least one oracle and one supporter assigned to each milestone/activity
-        // - Time of consensus has finished
-        nextSteps: [FUNDING]
-      },
-      {
-        // TODO add validations for rejected case
-        // - Project doesn't reach specifications and the time has finished
-        nextSteps: [REJECTED]
-      }
-    ],
-    [FUNDING]: [
-      {
-        // TODO add validation to check that time set already happen
-        nextSteps: [EXECUTING]
-      }
-    ],
-    [EXECUTING]: [
-      {
-        validator: () =>
-          role === userRoles.ENTREPRENEUR &&
-          validateOwnership(projectOwner, id),
-        nextSteps: [ABORTED, CHANGING_SCOPE]
-      },
-      {
-        // TODO check that project has each milestone in done
-        nextSteps: [FINISHED]
-      }
-    ],
-    [CHANGING_SCOPE]: [
-      {
-        validator: () =>
-          role === userRoles.ENTREPRENEUR &&
-          validateOwnership(projectOwner, id),
-        nextSteps: [EXECUTING, ABORTED]
-      }
-    ],
-    [ABORTED]: [
-      {
-        // TODO add validation to check that time set already happen
-        nextSteps: [ARCHIVED]
-      }
-    ],
-    [FINISHED]: [
-      {
-        // TODO add validation to check that time set already happen
-        nextSteps: [ARCHIVED]
-      }
-    ],
-    [CANCELLED]: [
-      {
-        nextSteps: []
-      }
-    ]
-  };
-
-  const [transition] = allowedTransitions[currentStatus].filter(
-    ({ nextSteps }) => nextSteps.includes(newStatus)
-  );
-
-  if (!transition) return false;
-  const { validator } = transition;
-  return !validator || validator();
-};
-
 module.exports = {
   validateExistence,
   validateParams,
   validateMtype,
   validatePhotoSize,
   validateOwnership,
-  validateStatusChange,
   xslValidator,
   imgValidator
 };

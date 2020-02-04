@@ -10,5 +10,13 @@ module.exports = {
   ImgSizeBiggerThanAllowed: {
     message: 'The image size is bigger than allowed',
     statusCode: 400
+  },
+  MilestoneTemplateNotExist: {
+    message: "Milestone template doesn't exist",
+    statusCode: 500
+  },
+  ErrorReadingMilestoneTemplate: {
+    message: 'Error reading milestones template file',
+    statusCode: 500
   }
 };

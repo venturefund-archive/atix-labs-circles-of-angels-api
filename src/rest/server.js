@@ -8,9 +8,11 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { coa, ethers, ethereum } = require('@nomiclabs/buidler');
+const { ethers, network, run } = require('@nomiclabs/buidler');
 const COAError = require('./errors/COAError');
+const errors = require('./errors/exporter/ErrorExporter');
 const { ethInit } = require('../rest/services/eth/ethInit');
+const userService = require('./services/userService');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -62,7 +64,6 @@ module.exports.start = async ({ db, logger, configs }) => {
     fastify.register(require('fastify-swagger'), swaggerConfigs);
     fastify.register(require('fastify-static'), { root: '/' });
 
-    // fastify.eth = await ethInitializer({ logger });
     fastify.setErrorHandler((error, request, reply) => {
       if (error instanceof COAError) {
         reply.status(error.statusCode).send(error.message);
@@ -74,6 +75,15 @@ module.exports.start = async ({ db, logger, configs }) => {
 
     await fastify.listen(configs.server);
     // start service initialization, load and inject dependencies
+    if (network.name === 'buidlerevm') {
+      try {
+        logger.info('Deploying contracts');
+        await run('deploy');
+        logger.info('Contracts deployed');
+      } catch (error) {
+        logger.error('Error deploying contracts', error);
+      }
+    }
     require('./ioc')(fastify);
     ethInit();
     // await helperBuilder(fastify);
@@ -126,13 +136,11 @@ const initJWT = fastify => {
       secret: fastify.configs.jwt.secret
     });
 
-    const getToken = (request, reply) => {
+    const getToken = request => {
       const token = request.cookies.userAuth;
       if (!token) {
         fastify.log.error('[Server] :: No token received for authentication');
-        reply
-          .status(401)
-          .send({ error: 'Only registered users, please login' });
+        throw new COAError(errors.server.NotRegisteredUser);
       }
       return token;
     };
@@ -140,12 +148,16 @@ const initJWT = fastify => {
     // TODO : this should be somewhere else.
     const validateUser = async (token, reply, roleId) => {
       const user = await fastify.jwt.verify(token);
-      const userService = require('./services/userService');
       const validUser = await userService.validUser(user, roleId);
       if (!validUser) {
         fastify.log.error('[Server] :: Unathorized access for user:', user);
-        reply.status(401).send({ error: 'Unauthorized access' });
+        throw new COAError(errors.server.UnauthorizedUser);
       }
+    };
+
+    const getUserWallet = async userId => {
+      const wallet = await userService.getUserWallet(userId);
+      return wallet;
     };
 
     fastify.decorate('generalAuth', async (request, reply) => {
@@ -155,7 +167,7 @@ const initJWT = fastify => {
         if (token) await validateUser(token, reply);
       } catch (err) {
         fastify.log.error('[Server] :: There was an error authenticating', err);
-        reply.status(500).send({ error: 'There was an error authenticating' });
+        throw new COAError(errors.server.AuthenticationFailed);
       }
     });
     fastify.decorate('adminAuth', async (request, reply) => {
@@ -168,19 +180,20 @@ const initJWT = fastify => {
           '[Server] :: There was an error authenticating',
           error
         );
-        reply.status(500).send({ error: 'There was an error authenticating' });
+        throw new COAError(errors.server.AuthenticationFailed);
       }
     });
-    fastify.decorate('withUser', async (request, reply) => {
+    fastify.decorate('withUser', async request => {
       try {
-        const token = getToken(request, reply);
+        const token = getToken(request);
         if (token) request.user = await fastify.jwt.verify(token);
+        request.user.wallet = await getUserWallet(request.user.id);
       } catch (error) {
         fastify.log.error(
           '[Server] :: There was an error authenticating',
           error
         );
-        reply.status(500).send({ error: 'There was an error authenticating' });
+        throw new COAError(errors.server.AuthenticationFailed);
       }
     });
   });

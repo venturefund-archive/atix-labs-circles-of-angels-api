@@ -34,5 +34,13 @@ module.exports = {
       );
       reply.status(500).send({ error: 'Error deleting file' });
     }
+  },
+
+  getMilestonesTemplateFile: () => async (_request, reply) => {
+    const response = await fileService.getMilestonesTemplateFile();
+
+    reply.header('file', response.filename);
+    reply.header('Access-Control-Expose-Headers', 'file');
+    reply.status(200).send(response.filestream);
   }
 };

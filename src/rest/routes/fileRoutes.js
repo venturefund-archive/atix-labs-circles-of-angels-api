@@ -9,6 +9,26 @@
 const basePath = '/files';
 const handlers = require('./handlers/fileHandlers');
 const routeTags = require('../util/routeTags');
+const {
+  successResponse,
+  serverErrorResponse,
+  clientErrorResponse
+} = require('../util/responses');
+
+const fileResponse = {
+  type: 'object',
+  properties: {
+    id: { type: 'number' },
+    createdAt: { type: 'string' },
+    updatedAt: { type: 'string' }
+  },
+  description: 'Returns the file object'
+};
+
+const fileStreamResponse = {
+  type: 'string',
+  description: 'Template file stream'
+};
 
 const routes = {
   deleteFile: {
@@ -27,34 +47,32 @@ const routes = {
           }
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              id: { type: 'number' },
-              createdAt: { type: 'string' },
-              updatedAt: { type: 'string' }
-            },
-            description: 'Returns the deleted file object'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(fileResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
     handler: handlers.deleteFile
+  },
+
+  getMilestonesTemplateFile: {
+    method: 'get',
+    path: `${basePath}/milestones/template`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.FILE.name, routeTags.GET.name],
+        description: 'Returns milestones template file',
+        summary: 'Returns milestones template file',
+        response: {
+          ...successResponse(fileStreamResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getMilestonesTemplateFile
   }
 };
 

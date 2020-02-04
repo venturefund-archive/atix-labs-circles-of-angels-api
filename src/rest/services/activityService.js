@@ -6,6 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { coa } = require('@nomiclabs/buidler');
+const { utils } = require('ethers');
 const { values, isEmpty } = require('lodash');
 const mkdirp = require('mkdirp-promise');
 const mime = require('mime-types');
@@ -13,21 +15,30 @@ const fs = require('fs');
 const path = require('path');
 const sha256 = require('sha256');
 const { promisify } = require('util');
+const files = require('../util/files');
 const { forEachPromise } = require('../util/promises');
-const { evidenceFileTypes, userRoles } = require('../util/constants');
 const {
   activityStatus,
   blockchainStatus,
-  projectStatuses
+  projectStatuses,
+  evidenceFileTypes,
+  userRoles
 } = require('../util/constants');
 
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
+const validateMtype = require('./helpers/validateMtype');
+const validatePhotoSize = require('./helpers/validatePhotoSize');
 const apiHelper = require('./helper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
+
+// TODO: replace with actual function
+const sha3 = (a, b, c) => utils.id(`${a}-${b}-${c}`);
+
+const claimType = 'claims';
 
 module.exports = {
   readFile: promisify(fs.readFile),
@@ -231,6 +242,74 @@ module.exports = {
     );
     return { taskId: createdTask.id };
   },
+  /**
+   * Assigns an existing oracle candidate to a task.
+   *
+   * @param {number} taskId task id
+   * @param {number} oracleId oracle id to assign
+   * @param {number} userId user making the request
+   */
+  async assignOracle(taskId, oracleId, userId) {
+    logger.info('[ActivityService] :: Entering assignOracle method');
+    validateRequiredParams({
+      method: 'assignOracle',
+      params: { taskId, oracleId, userId }
+    });
+    const task = await checkExistence(this.activityDao, taskId, 'task');
+    logger.info(
+      `[ActivityService] :: Found task ${task.id} of milestone ${
+        task.milestone
+      }`
+    );
+    const project = await this.milestoneService.getProjectFromMilestone(
+      task.milestone
+    );
+    validateOwnership(project.owner, userId);
+    const oracle = await this.userService.getUserById(oracleId);
+
+    if (oracle.role !== userRoles.PROJECT_SUPPORTER) {
+      logger.error(
+        `[ActivityService] :: User ${oracleId} is not a project supporter`
+      );
+      throw new COAError(errors.user.IsNotSupporter);
+    }
+
+    if (project.status !== projectStatuses.CONSENSUS) {
+      logger.error(
+        `[ActivityService] :: Status of project with id ${project.id} is not ${
+          projectStatuses.CONSENSUS
+        }`
+      );
+      throw new COAError(
+        errors.task.AssignOracleWithInvalidProjectStatus(project.status)
+      );
+    }
+
+    const isOracleCandidate = await this.projectService.isOracleCandidate({
+      projectId: project.id,
+      userId: oracleId
+    });
+
+    if (!isOracleCandidate) {
+      logger.error(
+        `[ActivityService] :: User of id ${oracleId} is not an oracle candidate for project ${
+          project.id
+        }`
+      );
+      throw new COAError(errors.task.NotOracleCandidate);
+    }
+
+    logger.info(
+      `[ActivityService] :: Assigning oracle of id ${oracleId} to task ${taskId}`
+    );
+    const updatedTask = await this.activityDao.updateActivity(
+      { oracle: oracleId },
+      taskId
+    );
+    logger.info(`[ActivityService] :: Task of id ${updatedTask.id} updated`);
+    return { taskId: updatedTask.id };
+  },
+
   /**
    * Creates new Activities and associates them to the Milestone passed by parameter.
    *
@@ -1218,5 +1297,74 @@ module.exports = {
       return { error: 'Invalid Blockchain status' };
     }
     return this.activityDao.updateBlockchainStatus(activityId, status);
+  },
+
+  /**
+   * Returns the milestone that the task belongs to or `undefined`
+   *
+   * Throws an error if the task does not exist
+   *
+   * @param {number} id
+   * @returns milestone | `undefined`
+   */
+  async getMilestoneAndTaskFromId(id) {
+    logger.info('[ActivityService] :: Entering getMilestoneFromTask method');
+    const task = await checkExistence(this.activityDao, id, 'task');
+    logger.info(
+      `[ActivityService] :: Found task ${task.id} of milestone ${
+        task.milestone
+      }`
+    );
+
+    const { milestone } = await this.activityDao.getTaskByIdWithMilestone(id);
+    if (!milestone) {
+      logger.info(`[ActivityService] :: No milestone found for task ${id}`);
+      throw new COAError(errors.task.MilestoneNotFound(id));
+    }
+
+    return { milestone, task };
+  },
+
+  /**
+   * Add a claim for an existing project
+   *
+   * @param {number} taskId
+   * @param {number} userId
+   * @param {object} file
+   * @param {boolean} approved
+   * @returns transferId || error
+   */
+  async addClaim({ taskId, userId, file, approved }) {
+    logger.info('[ActivityService] :: Entering addClaim method');
+    validateRequiredParams({
+      method: 'addClaim',
+      params: { userId, taskId, file, approved }
+    });
+
+    const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
+    const { projectId } = milestone;
+    const { oracle } = task;
+
+    if (oracle !== userId) {
+      logger.error(
+        `[ActivityService] :: User ${userId} is not the oracle assigned for task ${taskId}`
+      );
+      throw new COAError(errors.task.OracleNotAssigned({ userId, taskId }));
+    }
+
+    validateMtype(claimType, file);
+    validatePhotoSize(file);
+
+    logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
+    const filePath = await files.saveFile(claimType, file);
+    logger.info(`[ActivityService] :: File saved to: ${filePath}`);
+
+    // TODO replace both fields with the correct information
+    // const claim = sha3(projectId, oracle, taskId);
+    // const proof = utils.id(file.name);
+
+    // await coa.addClaim(projectId, claim, proof, approved);
+
+    return { taskId };
   }
 };

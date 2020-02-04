@@ -28,8 +28,9 @@ contract DAO {
         Curator
     }
 
-    uint256 public periodDuration = 17280;
-    uint256 public votingPeriodLength = 35;
+    // TODO: actually define these numbers
+    uint256 public periodDuration = 17280; // seconds
+    uint256 public votingPeriodLength = 35; // periods
     uint256 public gracePeriodLength = 35;
     // TODO : use this to avoid proposal spamming
     uint256 public proposalDeposit;
@@ -101,6 +102,10 @@ contract DAO {
         members[memberAddress] = member;
     }
 
+    function max(uint256 x, uint256 y) internal pure returns (uint256) {
+        return x >= y ? x : y;
+    }
+
     function submitProposal(
         address _applicant,
         uint8 _proposalType,
@@ -108,6 +113,12 @@ contract DAO {
     ) public {
         // require msg.sender is a member.
         address memberAddress = msg.sender;
+        uint256 startingPeriod = max(
+            getCurrentPeriod(),
+            proposalQueue.length == 0
+                ? 0
+                : proposalQueue[proposalQueue.length.sub(1)].startingPeriod
+            ).add(1);
         require(_proposalType < 4, "invalid type");
         Proposal memory proposal = Proposal({
             proposer: memberAddress,
@@ -117,8 +128,8 @@ contract DAO {
             yesVotes: 0,
             noVotes: 0,
             didPass: false,
-            startingPeriod: 0,
-            processed: false 
+            startingPeriod: startingPeriod,
+            processed: false
         });
 
         proposalQueue.push(proposal);
@@ -127,7 +138,7 @@ contract DAO {
     function submitVote(uint _proposalIndex, uint8 _vote) public {
         address memberAddress = msg.sender;
         Member storage member = members[memberAddress];
-        // require(member.shares > 0, "no voting power");
+        require(member.shares > 0, "no voting power");
         require(_proposalIndex < proposalQueue.length, "Moloch::submitVote - proposal does not exist");
         Proposal storage proposal = proposalQueue[_proposalIndex];
 
@@ -137,7 +148,7 @@ contract DAO {
 
         // FIXME : uncomment this
         // require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
-        // require(proposal.votesByMember[memberAddress] == Vote.Null, "member has already voted on this proposal");
+        require(proposal.votesByMember[memberAddress] == Vote.Null, "member has already voted on this proposal");
         require(vote == Vote.Yes || vote == Vote.No, "vote must be either Yes or No");
 
         // store vote

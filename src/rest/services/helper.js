@@ -6,7 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const questionnaireServiceBuilder = require('../core/questionnaireService');
+// TODO: this file should be deleted
 
 const activityDaoBuilder = require('../dao/activityDao');
 const activityFileDaoBuilder = require('../dao/activityFileDao');
@@ -48,11 +48,6 @@ const helperBuilder = async fastify => {
   const answerQuestionDao = answerQuestionDaoBuilder(models.answer_question);
   const answerDao = answerDaoBuilder(models.answer);
   const questionDao = questionDaoBuilder(models.question);
-  const questionnaireService = questionnaireServiceBuilder({
-    answerQuestionDao,
-    answerDao,
-    questionDao
-  });
   const userFunderDao = userFunderDaoBuilder(models.user_funder);
   const userSocialEntrepreneurDao = userSocialEntrepreneurDaoBuilder(
     models.user_social_entrepreneur
@@ -72,21 +67,14 @@ const helperBuilder = async fastify => {
   const projectStatusDao = projectStatusDaoBuilder({
     projectStatusModel: models.project_status
   });
-  const projectService = projectServiceBuilder({
-    fastify,
-    projectDao,
-    projectStatusDao,
-    userDao,
-    projectExperienceDao
-  });
   const userProjectDao = userProjectDaoBuilder(models.user_project);
 
   const transactionDao = transactionDaoBuilder(fastify.models.transaction);
 
   exports.helper = {
     services: {
-      projectService,
-      questionnaireService
+      projectService: undefined,
+      questionnaireService: undefined
     },
     daos: {
       activityDao,

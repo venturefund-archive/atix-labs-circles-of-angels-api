@@ -59,6 +59,7 @@ const taskResponse = {
     keyPersonnel: { type: 'string' },
     budget: { type: 'string' },
     createdAt: { type: 'string' },
+    oracle: { type: ['integer', 'null'] },
     id: { type: 'number' }
   }
 };
@@ -118,6 +119,7 @@ const milestoneRoutes = {
     },
     handler: handlers.createMilestone
   },
+
   updateMilestone: {
     method: 'put',
     path: `${basePath}/:milestoneId`,
@@ -142,6 +144,7 @@ const milestoneRoutes = {
     },
     handler: handlers.updateMilestone
   },
+
   deleteMilestone: {
     method: 'delete',
     path: `${basePath}/:milestoneId`,
@@ -183,44 +186,6 @@ const routes = {
       }
     },
     handler: handlers.getMilestones
-  },
-
-  getBudgetStatus: {
-    method: 'get',
-    path: `${basePath}/budgetStatus`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.GET.name],
-        description: 'Returns all valid budget status',
-        summary: 'Get valid budget status',
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              budgetStatus: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' }
-                  }
-                }
-              }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.getBudgetStatus
   }
 };
 

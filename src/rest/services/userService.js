@@ -6,9 +6,9 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { coa } = require('@nomiclabs/buidler');
+const { coa, ethers } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
-const { Wallet } = require('ethers');
+const { Wallet, utils } = require('ethers');
 
 const { userRoles } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -20,7 +20,10 @@ const errors = require('../errors/exporter/ErrorExporter');
 
 module.exports = {
   async getUserById(id) {
-    return this.userDao.getUserById(id);
+    logger.info('[UserService] :: Entering getUserById method');
+    const user = await checkExistence(this.userDao, id, 'user');
+    logger.info(`[UserService] :: User id ${user.id} found`);
+    return user;
   },
 
   /**
@@ -138,14 +141,24 @@ module.exports = {
       from: '"Circles of Angels Support" <coa@support.com>',
       to: email,
       subject: 'Circles of Angels - Welcome',
-      text: 'Welcome to Circle of Angels!',
+      text: 'Welcome to Circles of Angels!',
       html: `<p>Your Circles Of Angels account was created successfully! </br></p>
       <p>We are reviewing your account details. You will be notified once we are done. </br></p>
       <p>Thank you for your support. </br></p>`
     });
 
-    const profile = firstName + ' ' + lastName;
-    await coa.createMember(profile);
+    // TODO: uncomment this when sc are deployed
+    //      and move it before saving to db so the signup fails if this fails
+
+    // const profile = firstName + ' ' + lastName; // TODO: what should be saved?
+    // await coa.createMember(profile);
+    // TODO: this should be replaced by a gas relayer
+    // const accounts = await ethers.signers();
+    // const tx = {
+    //   to: address,
+    //   value: utils.parseEther('1.0')
+    // };
+    // await accounts[9].sendTransaction(tx);
 
     return savedUser;
   },
@@ -287,9 +300,41 @@ module.exports = {
     return [];
   },
 
+  /**
+   * Returns an array of followed projects for an specific user.
+   *
+   * @param {number} userId
+   * @returns {Promise<Project[]>} array of found projects
+   */
+  async getFollowedProjects({ userId }) {
+    logger.info('[UserService] :: Entering getFollowedProjects method');
+    validateRequiredParams({
+      method: 'getFollowedProjects',
+      params: { userId }
+    });
+
+    const user = await this.userDao.getFollowedProjects(userId);
+
+    if (!user) {
+      logger.error(`[User Service] :: User ID ${userId} does not exist`);
+      throw new COAError(errors.user.UserNotFound);
+    }
+
+    const { following } = user;
+    return following || [];
+  },
+
   async validUser(user, roleId) {
     const existentUser = await this.userDao.getUserById(user.id);
     const role = roleId ? existentUser.role === roleId : true;
     return existentUser && !existentUser.blocked && role;
+  },
+
+  async getUserWallet(userId) {
+    logger.info('[UserService] :: Entering getUserWallet method');
+    const user = await this.getUserById(userId);
+    const { privKey } = user;
+    const wallet = new Wallet(privKey, ethers.provider);
+    return wallet;
   }
 };

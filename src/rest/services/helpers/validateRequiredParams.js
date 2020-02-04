@@ -14,15 +14,12 @@ module.exports = ({ method, params }) => {
   logger.info(
     '[ValidateRequiredParams] :: Entering validateRequiredParams method'
   );
-  logger.info('[ValidateRequiredParams] :: Validating params', params);
-  if (
-    !Object.values(params).reduce(
-      (prev, current) => prev && current !== undefined,
-      true
-    )
-  ) {
+  const undefinedParams = Object.keys(params).filter(
+    key => params[key] === undefined
+  );
+  if (undefinedParams.length > 0) {
     logger.error(
-      `[ValidateRequiredParams] :: There are one or more params that are undefined for ${method}. Request is not valid`
+      `[ValidateRequiredParams] :: There are one or more params that are undefined for ${method}: ${undefinedParams}`
     );
     throw new COAError(common.RequiredParamsMissing(method));
   }

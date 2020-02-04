@@ -62,5 +62,10 @@ module.exports = {
 
   async updateCreationTransactionHash(activityId, transactionHash) {
     return this.model.updateOne({ id: activityId }).set({ transactionHash });
+  },
+
+  async getTaskByIdWithMilestone(id) {
+    const task = await this.model.findOne({ id }).populate('milestone');
+    return task;
   }
 };
