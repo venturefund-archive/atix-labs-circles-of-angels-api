@@ -178,7 +178,7 @@ contract(
       });
     });
 
-    describe.only('DAO', () => {
+    describe('DAO', () => {
       before(async () => {
         // await run('deploy');
         [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
@@ -241,7 +241,7 @@ contract(
             'VM Exception while processing transaction: revert _vote must be less than 3'
           );
         });
-        it.skip('should revert when trying to revote', async () => {
+        it('should revert when trying to revote', async () => {
           const superDAOAddress = await coa.daos(0);
           const superDAO = await getSuperDAO(superDAOAddress);
           await superDAO.submitProposal(funder, 0, 'carlos');
@@ -312,6 +312,23 @@ contract(
           member = await superDAO.members(funder);
           assert.equal(member.exists, true);
           assert.equal(member.role, 1);
+        });
+
+        it('process assign role curator', async () => {
+          const superDAOAddress = await coa.daos(0);
+          const superDAO = await getSuperDAO(superDAOAddress);
+          await addMemberToDAO(funder, superDAO);
+          await superDAO.submitProposal(funder, 3, 'carlos');
+          const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
+          await superDAO.submitVote(proposalIndex, 1);
+          await moveForwardPeriods(35 + 35);
+          let member = await superDAO.members(funder);
+          assert.equal(member.exists, true);
+          assert.equal(member.role, 0);
+          await superDAO.processProposal(proposalIndex);
+          proposal = await superDAO.proposalQueue(proposalIndex);
+          member = await superDAO.members(funder);
+          assert.equal(member.role, 2);
         });
 
         it('process assign role curator', async () => {

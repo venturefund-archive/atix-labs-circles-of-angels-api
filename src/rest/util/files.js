@@ -10,6 +10,7 @@ const fs = require('fs');
 const configs = require('config');
 const sharp = require('sharp');
 const mkdirp = require('mkdirp-promise');
+const logger = require('../logger');
 
 exports.getFileFromPath = filepath => {
   const file = fs.createReadStream(filepath, 'utf8');
@@ -40,6 +41,12 @@ const getProjectExperiencePath = () =>
 
 const getTransferReceiptPath = () =>
   `${configs.fileServer.filePath}/projects/transfers/`;
+
+const getClaimsPath = () =>
+  `${configs.fileServer.filePath}/projects/milestones/tasks/claims/`;
+
+const getTransferClaimsPath = () =>
+  `${configs.fileServer.filePath}/projects/transfers/claims/`;
 
 const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
   new Promise((resolve, reject) => {
@@ -86,6 +93,16 @@ const fileSaver = {
   transferReceipt: {
     save: savePhotoJpgFormat,
     getBasePath: getTransferReceiptPath,
+    fileExtension: jpeg
+  },
+  claims: {
+    save: savePhotoJpgFormat,
+    getBasePath: getClaimsPath,
+    fileExtension: jpeg
+  },
+  transferClaims: {
+    save: savePhotoJpgFormat,
+    getBasePath: getTransferClaimsPath,
     fileExtension: jpeg
   }
 };

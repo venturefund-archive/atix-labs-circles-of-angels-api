@@ -174,5 +174,11 @@ module.exports = {
     const userId = request.user.id;
     const projects = await userService.getProjectsOfUser(userId);
     reply.status(200).send(projects);
+  },
+
+  getFollowedProjects: () => async (request, reply) => {
+    const userId = request.user.id;
+    const projects = await userService.getFollowedProjects({ userId });
+    reply.status(200).send(projects);
   }
 };

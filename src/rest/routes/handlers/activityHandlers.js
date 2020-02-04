@@ -20,6 +20,7 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+
   updateTask: () => async (request, reply) => {
     const { taskId } = request.params;
     const taskParams = request.body;
@@ -30,10 +31,19 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+
   deleteTask: () => async (request, reply) => {
     const { taskId } = request.params;
     const userId = request.user.id;
     const response = await activityService.deleteTask(taskId, userId);
+    reply.status(200).send(response);
+  },
+
+  assignOracle: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const { oracleId } = request.body || {};
+    const response = await activityService.assignOracle(taskId, oracleId, userId);
     reply.status(200).send(response);
   },
 
@@ -148,32 +158,6 @@ module.exports = {
     }
   },
 
-  assignOracle: fastify => async (request, reply) => {
-    const { activityId, userId } = request.params;
-    fastify.log.info(
-      `[Activity Routes] :: POST request at /activities/${activityId}/oracle/${userId}`
-    );
-
-    try {
-      const assign = await activityService.assignOracleToActivity(
-        userId,
-        activityId
-      );
-
-      if (assign.error) {
-        reply.status(assign.status).send(assign);
-      } else {
-        reply.status(200).send({ success: 'Oracle assigned successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Activity Routes] :: Error assigning user to activity:',
-        error
-      );
-      reply.status(500).send({ error: 'Error assigning user to activity' });
-    }
-  },
-
   unassignOracle: fastify => async (request, reply) => {
     const { activityId } = request.params;
     fastify.log.info(
@@ -250,5 +234,35 @@ module.exports = {
       );
       reply.status(500).send({ error: 'Error completing activity' });
     }
+  },
+
+  addApprovedClaim: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const { file } = request.raw.files || {};
+
+    const response = await activityService.addClaim({
+      taskId,
+      userId,
+      file,
+      approved: true
+    });
+
+    reply.status(200).send(response);
+  },
+
+  addDisapprovedClaim: () => async (request, reply) => {
+    const { taskId } = request.params;
+    const userId = request.user.id;
+    const { file } = request.raw.files || {};
+
+    const response = await activityService.addClaim({
+      taskId,
+      userId,
+      file,
+      approved: false
+    });
+
+    reply.status(200).send(response);
   }
 };

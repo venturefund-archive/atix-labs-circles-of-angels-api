@@ -13,14 +13,22 @@ module.exports = {
   CantUpdateProject: projectId => ({
     message: `Cant update project with id ${projectId}`
   }),
+  CantApplyToProject: status => ({
+    message: `It is not allowed to apply to a project when it is in ${status} status`,
+    statusCode: 404
+  }),
+  CantFollowProject: projectId => ({
+    message: `Project ${projectId} hasn't been published yet`,
+    statusCode: 404
+  }),
   MilestoneFileHasBeenAlreadyUploaded: {
     message: 'Milestone file has been already uploaded',
     statusCode: 400
   },
-  InvalidStatusForMilestoneFileProcess: {
-    message: 'Cant process milestone file when project has been published',
+  InvalidStatusForMilestoneFileProcess: status => ({
+    message: `Cant process milestone file when project is in ${status} status`,
     statusCode: 400
-  },
+  }),
   ProjectNotApproved: {
     message: 'Project has not been approved yet',
     statusCode: 403
@@ -51,6 +59,18 @@ module.exports = {
   }),
   IsNotFollower: () => ({
     message: 'User is not following this project',
+    statusCode: 400
+  }),
+  IsNotCompleted: {
+    message: 'Project is not completed',
+    statusCode: 400
+  },
+  ChangingStatus: {
+    message: 'An error occurred while changing the project status',
+    statusCode: 400
+  },
+  InvalidStatusForExperienceUpload: status => ({
+    message: `Can't upload experiences when project is in ${status} status`,
     statusCode: 400
   })
 };

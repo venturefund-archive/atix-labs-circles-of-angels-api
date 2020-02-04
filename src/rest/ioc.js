@@ -12,6 +12,7 @@ const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
+const countryService = require('./services/countryService');
 const photoService = require('./services/photoService');
 const fileService = require('./services/fileService');
 const activityService = require('./services/activityService');
@@ -19,12 +20,16 @@ const projectExperienceService = require('./services/projectExperienceService');
 const userProjectService = require('./services/userProjectService');
 const transferService = require('./services/transferService');
 const milestoneService = require('./services/milestoneService');
+const daoService = require('./services/daoService');
+
+const projectStatusValidators = require('./services/helpers/projectStatusValidators/validators');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
 const followerDao = require('./dao/followerDao');
 const oracleDao = require('./dao/oracleDao');
 const funderDao = require('./dao/funderDao');
+const countryDao = require('./dao/countryDao');
 const photoDao = require('./dao/photoDao');
 const fileDao = require('./dao/fileDao');
 const projectExperienceDao = require('./dao/projectExperienceDao');
@@ -36,6 +41,7 @@ const userDao = require('./dao/userDao');
 const passRecoveryService = require('./services/passRecoveryService');
 const passRecoveryDao = require('./dao/passRecoveryDao');
 const projectExperiencePhotoDao = require('./dao/projectExperiencePhotoDao');
+const featuredProjectDao = require('./dao/featuredProjectDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -86,6 +92,14 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureCountryService(service) {
+    const dependencies = {
+      countryDao
+    };
+
+    injectDependencies(service, dependencies);
+  }
+
   function configureProjectService(service) {
     const dependencies = {
       fileServer: fastify.configs.fileServer,
@@ -93,8 +107,9 @@ module.exports = fastify => {
       followerDao,
       oracleDao,
       funderDao,
+      featuredProjectDao, // TODO: remove this once deleted
       milestoneService,
-      userDao, // TODO: remove this dao and create needed methods in userService
+      userService,
       activityService,
       transferService
     };
@@ -111,7 +126,8 @@ module.exports = fastify => {
       activityPhotoDao: undefined,
       oracleActivityDao: undefined,
       userService,
-      milestoneService
+      milestoneService,
+      projectService
     };
     injectDependencies(service, dependencies);
   }
@@ -163,8 +179,22 @@ module.exports = fastify => {
     const dependencies = {
       projectExperienceDao,
       projectExperiencePhotoDao,
-      projectDao,
-      userDao
+      projectService,
+      userService
+    };
+    injectDependencies(service, dependencies);
+  }
+
+  function configureDaoService(service) {
+    const dependencies = {
+      userService
+    };
+    injectDependencies(service, dependencies);
+  }
+
+  function configureProjectStatusValidators(service) {
+    const dependencies = {
+      projectService
     };
     injectDependencies(service, dependencies);
   }
@@ -178,17 +208,21 @@ module.exports = fastify => {
     injectModel(followerDao, models.project_follower);
     injectModel(oracleDao, models.project_oracle);
     injectModel(funderDao, models.project_funder);
+    injectModel(countryDao, models.country);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
     injectModel(passRecoveryDao, models.passRecovery);
     injectModel(activityDao, models.task);
     injectModel(projectExperienceDao, models.project_experience);
     injectModel(projectExperiencePhotoDao, models.project_experience_photo);
     injectModel(transferDao, models.fund_transfer);
+    // TODO: delete this when dao and model deleted
+    injectModel(featuredProjectDao, models.featured_project);
   }
 
   function configureServices() {
     configureMailService(mailService);
     configureUserService(userService);
+    configureCountryService(countryService);
     configureMilestoneService(milestoneService);
     configureProjectService(projectService);
     configurePhotoService(photoService);
@@ -198,6 +232,8 @@ module.exports = fastify => {
     configureTransferService(transferService);
     configurePasssRecoveryService(passRecoveryService);
     configureProjectExperienceService(projectExperienceService);
+    configureDaoService(daoService);
+    configureProjectStatusValidators(projectStatusValidators);
   }
 
   function init({ models }) {

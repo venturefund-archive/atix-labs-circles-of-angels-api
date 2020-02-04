@@ -17,31 +17,45 @@ const {
 const { projectStatuses } = require('../util/constants');
 const { idParam } = require('../util/params');
 
-const ownerIdProperty = {
-  ownerId: { type: 'integer' }
-};
 const projectThumbnailProperties = {
   projectName: { type: 'string' },
   location: { type: 'string' },
   timeframe: { type: 'string' },
   goalAmount: { type: 'number' }
 };
+
 const imgPathProperty = {
   imgPath: { type: 'string' }
 };
+
+const cardPhotoPathProperty = {
+  cardPhotoPath: { type: 'string' }
+};
+
+const featuredProjectsResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: Object.assign(
+      {},
+      {
+        id: { type: 'integer' }
+      },
+      projectThumbnailProperties,
+      cardPhotoPathProperty
+    ),
+    description: 'Returns the project description'
+  },
+  description: 'List of all featured projects'
+};
+
 const projectDetailProperties = {
   mission: { type: 'string' },
   problemAddressed: { type: 'string' }
 };
+
 const projectProposalProperties = {
   proposal: { type: 'string' }
-};
-const experienceProperties = {
-  comment: { type: 'string' }
-};
-const taskProperties = {
-  // TODO
-  milestoneId: { type: 'integer' }
 };
 
 const milestonesResponse = {
@@ -63,6 +77,7 @@ const milestonesResponse = {
             reviewCriteria: { type: 'string' },
             category: { type: 'string' },
             keyPersonnel: { type: 'string' },
+            oracle: { type: ['integer', 'null'] },
             budget: { type: 'string' }
           }
         }
@@ -73,7 +88,6 @@ const milestonesResponse = {
 };
 
 const projectIdParam = idParam('Project identification', 'projectId');
-const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 
 const successWithProjectIdResponse = {
   type: 'object',
@@ -83,17 +97,57 @@ const successWithProjectIdResponse = {
   description: 'Returns the id of the project'
 };
 
+const successWithProjectExperienceIdResponse = {
+  type: 'object',
+  properties: {
+    projectExperienceId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project experience'
+};
+
 const successWithCandidateIdResponse = {
   type: 'object',
   properties: {
     candidateId: { type: 'integer' }
   },
-  description: 'Returns the id of the project'
+  description: 'Returns the id of the candidate'
 };
 
 const successWithBooleanResponse = {
   type: 'boolean',
   description: 'Returns the boolean result'
+};
+
+const userProperties = {
+  id: { type: 'integer' },
+  firstName: { type: 'string' },
+  lastName: { type: 'string' },
+  role: { type: 'string' },
+  email: { type: 'string' }
+};
+
+const experiencePhotoProperties = {
+  id: { type: 'integer' },
+  path: { type: 'string' }
+};
+
+const experienceProperties = {
+  id: { type: 'integer' },
+  project: { type: 'integer' },
+  comment: { type: 'string' },
+  user: { type: 'object', properties: userProperties },
+  photos: {
+    type: 'array',
+    items: { type: 'object', properties: experiencePhotoProperties }
+  }
+};
+
+const successWithExperiencesResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: experienceProperties
+  }
 };
 
 // FIXME: I don't think this is the best way to do this but ¯\_(ツ)_/¯
@@ -118,13 +172,7 @@ const responseWithMilestoneErrors = {
 
 const userResponse = {
   type: 'object',
-  properties: {
-    firstName: { type: 'string' },
-    lastName: { type: 'string' },
-    email: { type: 'string' },
-    id: { type: 'integer' },
-    role: { type: 'string' }
-  },
+  properties: userProperties,
   description: 'Returns and object with the user information'
 };
 
@@ -161,14 +209,6 @@ const projectsResponse = {
     }
   },
   description: 'Returns all projects'
-};
-
-const experienceResponse = {
-  type: 'object',
-  properties: {
-    comment: { type: 'string' },
-    photos: { type: 'array', items: { type: 'object' } }
-  }
 };
 
 const projectThumbnailRoutes = {
@@ -486,17 +526,36 @@ const projectMilestonesRoute = {
   }
 };
 
-const createProjectRoute = {
-  createProject: {
+const projectStatusRoutes = {
+  sendToReview: {
     method: 'put',
-    path: `${basePath}/:projectId`,
+    path: `${basePath}/:projectId/to-review`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates new project and adds project proposal to it.',
-        summary: 'Create new project and project proposal',
-        type: 'multipart/form-data',
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Send a project to be reviewed',
+        summary: 'Send a project to be reviewed',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendToReview
+  },
+
+  publishProject: {
+    method: 'put',
+    path: `${basePath}/:projectId/publish`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Publish a project',
+        summary: 'Publish a project',
         params: projectIdParam,
         response: {
           ...successResponse(successWithProjectIdResponse),
@@ -506,6 +565,40 @@ const createProjectRoute = {
       }
     },
     handler: handlers.publishProject
+  },
+
+  // TODO: make one endpoint for each possible status change
+  updateProjectStatus: {
+    method: 'put',
+    path: `${basePath}/:projectId/status`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Update project status',
+        summary: 'Update project status',
+        body: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: Object.values(projectStatuses)
+            }
+          },
+          required: ['status'],
+          description: 'New project status'
+        },
+        type: 'object',
+        params: projectIdParam,
+        response: {
+          // TODO send project updated to update on front too
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateProjectStatus
   }
 };
 
@@ -563,39 +656,6 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.getPublicProjects
-  },
-
-  updateProjectStatus: {
-    method: 'put',
-    path: `${basePath}/:projectId/status`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
-        description: 'Update project status',
-        summary: 'Update project status',
-        body: {
-          type: 'object',
-          properties: {
-            status: {
-              type: 'string',
-              enum: Object.values(projectStatuses)
-            }
-          },
-          required: ['status'],
-          description: 'New project status'
-        },
-        type: 'object',
-        params: projectIdParam,
-        response: {
-          // TODO send project updated to update on front too
-          ...successResponse(successWithProjectIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.updateProjectStatus
   },
 
   getProjectUsers: {
@@ -747,8 +807,8 @@ const projectExperienceRoutes = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates new project and adds project proposal to it.',
-        summary: 'Create new project and project proposal',
+        description: 'Adds a new experience to an existing project',
+        summary: 'Adds a new experience to project',
         params: projectIdParam,
         raw: {
           body: {
@@ -758,7 +818,7 @@ const projectExperienceRoutes = {
           files: { type: 'array', items: { type: 'object' } }
         },
         response: {
-          ...successResponse(successWithProjectIdResponse), // TODO
+          ...successResponse(successWithProjectExperienceIdResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
@@ -770,12 +830,14 @@ const projectExperienceRoutes = {
     method: 'get',
     path: `${basePath}/:projectId/experiences`,
     options: {
+      beforeHandler: ['generalAuth'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Gets all experiences of project.',
-        summary: 'Gets all experiences of project.',
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets all experiences of an existing project.',
+        summary: 'Gets all experiences of a project.',
         params: projectIdParam,
         response: {
+          ...successResponse(successWithExperiencesResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
@@ -785,14 +847,35 @@ const projectExperienceRoutes = {
   }
 };
 
+const featuredProjectsRoutes = {
+  getFeaturedProjects: {
+    method: 'get',
+    path: `${basePath}/featured`,
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets all featured projects.',
+        summary: 'Gets all featured projects.',
+        response: {
+          ...successResponse(featuredProjectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getFeaturedProjects
+  }
+};
+
 const routes = {
   ...projectThumbnailRoutes,
   ...projectDetailRoutes,
   ...projectProposalRoutes,
   ...projectMilestonesRoute,
-  ...createProjectRoute,
   ...commonProjectRoutes,
-  ...projectExperienceRoutes
+  ...projectExperienceRoutes,
+  ...projectStatusRoutes,
+  ...featuredProjectsRoutes
 };
 
 module.exports = routes;

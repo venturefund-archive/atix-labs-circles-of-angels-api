@@ -34,6 +34,8 @@ const mtypesValidator = {
   coverPhoto: imgValidator,
   thumbnail: imgValidator,
   milestones: xlsValidator,
+  claims: imgValidator,
+  transferClaims: imgValidator,
   experiencePhoto: imgValidator,
   transferReceipt: imgValidator
 };

@@ -10,5 +10,9 @@ module.exports = {
   ErrorGetting: model => ({
     message: `Error getting ${model}`,
     statusCode: 500
+  }),
+  UserNotAuthorized: userId => ({
+    message: `User ${userId} not authorized for this action`,
+    statusCode: 401
   })
 };

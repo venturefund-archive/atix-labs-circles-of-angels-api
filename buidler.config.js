@@ -2,13 +2,13 @@ usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('solidity-coverage');
 
-const COA = require('./src/plugins/coa');
 // const deployments = ;
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
-
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
+const buidlerTasks = require('./src/rest/services/helpers/buidlerTasks');
+const COA = require('./src/plugins/coa');
 
 const INFURA_API_KEY = '';
 const ROPSTEN_PRIVATE_KEY = '';
@@ -17,12 +17,13 @@ const MAINNET_PRIVATE_KEY = '';
 // const Deployments = require("./scripts/deployments");
 
 task('deploy', 'Deploys COA contracts')
-  .addOptionalParam('reset', 'force deploy')
+  .addOptionalParam('reset', 'force deploy', false, types.boolean)
   .setAction(async ({ reset }, env) => {
     // Make sure everything is compiled
     // await run('compile');
 
-    reset = reset === 'true';
+    // TODO: check if reset condition is needed
+    if (reset) env.coa.clearContracts();
 
     let [registry] = await env.deployments.getDeployedContracts(
       'ClaimsRegistry'
@@ -34,7 +35,6 @@ task('deploy', 'Deploys COA contracts')
     }
 
     let [coa] = await env.deployments.getDeployedContracts('COA');
-    // console.log(coa, registry.address)
     if (coa === undefined || reset === true) {
       [coa] = await env.deployments.deploy('COA', [registry.address]);
       await env.deployments.saveDeployedContract('COA', coa);
@@ -74,7 +74,7 @@ module.exports = {
     tests: './src/tests/contracts',
     sources: './src/contracts'
   },
-  // defaultNetwork: 'develop',
+  defaultNetwork: process.env.NODE_ENV === 'test' ? 'buidlerevm' : 'develop',
   networks: {
     develop: {
       url: 'http://localhost:8545'

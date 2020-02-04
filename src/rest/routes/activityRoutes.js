@@ -36,6 +36,10 @@ const taskProperties = {
   budget: { type: 'string' }
 };
 
+const oracleProperties = {
+  oracleId: { type: 'number' }
+};
+
 const successWithTaskIdResponse = {
   type: 'object',
   properties: {
@@ -69,6 +73,7 @@ const taskRoutes = {
     },
     handler: handlers.updateTask
   },
+
   deleteTask: {
     method: 'delete',
     path: `${basePath}/:taskId`,
@@ -88,6 +93,7 @@ const taskRoutes = {
     },
     handler: handlers.deleteTask
   },
+
   createTask: {
     method: 'post',
     path: `/milestones/:milestoneId${basePath}`,
@@ -121,8 +127,36 @@ const taskRoutes = {
   }
 };
 
+const oracleRoutes = {
+  assignOracle: {
+    method: 'put',
+    path: `${basePath}/:taskId/assign-oracle`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.PUT.name],
+        description: 'Assigns an existing oracle user to an existing activity',
+        summary: 'Assign oracle to activity',
+        params: { taskIdParam },
+        body: {
+          type: 'object',
+          properties: oracleProperties,
+          additionalProperties: false
+        },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.assignOracle
+  }
+};
+
 const routes = {
   ...taskRoutes,
+  ...oracleRoutes,
   updateStatus: {
     method: 'put',
     path: `${basePath}/:activityId/status`,
@@ -395,58 +429,6 @@ const routes = {
     handler: handlers.getActivity
   },
 
-  assignOracle: {
-    method: 'post',
-    path: `${basePath}/:activityId/oracle/:userId`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
-        description: 'Assigns an existing oracle user to an existing activity',
-        summary: 'Assign oracle to activity',
-        params: {
-          type: 'object',
-          properties: {
-            activityId: {
-              type: 'integer',
-              description: 'Activity to assign the oracle to'
-            },
-            userId: {
-              type: 'integer',
-              description: 'Oracle user to assign to the activity'
-            }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            description:
-              'Success message if the oracle was assigned to the activity',
-            properties: {
-              success: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.assignOracle
-  },
-
   unassignOracle: {
     method: 'delete',
     path: `${basePath}/:activityId/oracle`,
@@ -546,6 +528,51 @@ const routes = {
       }
     },
     handler: handlers.downloadEvidence
+  },
+
+  addApprovedClaim: {
+    method: 'post',
+    path: '/task/:taskId/claim/approve',
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
+        description: 'Add an approved claim of a task for an existing project',
+        summary: 'Add an approved claim',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        raw: { files: { type: 'object' } },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.addApprovedClaim
+  },
+
+  addDisapprovedClaim: {
+    method: 'post',
+    path: '/task/:taskId/claim/disapproved',
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
+        description:
+          'Add an disapproved claim of a task for an existing project',
+        summary: 'Add an disapproved claim',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        raw: { files: { type: 'object' } },
+        response: {
+          ...successResponse(successWithTaskIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.addDisapprovedClaim
   }
 };
 

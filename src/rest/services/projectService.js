@@ -18,14 +18,14 @@ const {
 const files = require('../util/files');
 const {
   validateExistence,
-  validateParams,
-  validateStatusChange
+  validateParams
 } = require('./helpers/projectServiceHelper');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
 const validateOwnership = require('./helpers/validateOwnership');
+const validateProjectStatusChange = require('./helpers/validateProjectStatusChange');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -38,6 +38,13 @@ const milestonesType = 'milestones';
 const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 
 module.exports = {
+  async getProjectById(id) {
+    logger.info('[ProjectService] :: Entering getProjectById method');
+    const project = await checkExistence(this.projectDao, id, 'project');
+    logger.info(`[ProjectService] :: Project id ${project.id} found`);
+    return project;
+  },
+
   async updateProject(projectId, fields) {
     // TODO updateProject = updateMilestone, is should abstract this like validateExistence, also change tests
     const updatedProject = await this.projectDao.updateProject(
@@ -73,7 +80,7 @@ module.exports = {
       method: 'createProjectThumbnail',
       params: { projectName, location, timeframe, goalAmount, ownerId, file }
     });
-    const user = await checkExistence(this.userDao, ownerId, 'user');
+    const user = await this.userService.getUserById(ownerId);
 
     if (user.role !== userRoles.ENTREPRENEUR) {
       logger.error(
@@ -117,17 +124,16 @@ module.exports = {
       method: 'createProjectThumbnail',
       params: { ownerId }
     });
-    await checkExistence(this.userDao, ownerId, 'user');
+    await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
-    if (project.status !== projectStatuses.NEW) {
+    const { status } = project;
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
       logger.error(
-        `[ProjectService] :: Status of project with id ${projectId} is not ${
-          projectStatuses.NEW
-        }`
+        `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
       );
-      throw new COAError(errors.project.ProjectCantBeUpdated(project.status));
+      throw new COAError(errors.project.ProjectCantBeUpdated(status));
     }
 
     let { cardPhotoPath } = project;
@@ -184,7 +190,7 @@ module.exports = {
       params: { mission, problemAddressed, file, ownerId, projectId }
     });
 
-    await checkExistence(this.userDao, ownerId, 'user');
+    await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
@@ -225,7 +231,7 @@ module.exports = {
       params: { ownerId }
     });
 
-    await checkExistence(this.userDao, ownerId, 'user');
+    await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
@@ -234,13 +240,12 @@ module.exports = {
       validatePhotoSize(file);
     }
 
-    if (project.status !== projectStatuses.NEW) {
+    const { status } = project;
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
       logger.error(
-        `[ProjectService] :: Status of project with id ${projectId} is not ${
-          projectStatuses.NEW
-        }`
+        `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
       );
-      throw new COAError(errors.project.ProjectCantBeUpdated(project.status));
+      throw new COAError(errors.project.ProjectCantBeUpdated(status));
     }
 
     let { coverPhotoPath } = project;
@@ -288,9 +293,17 @@ module.exports = {
       params: { projectId, proposal, ownerId }
     });
 
-    await checkExistence(this.userDao, ownerId, 'user');
+    await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
-    validateOwnership(project.owner, ownerId);
+    const { owner, status } = project;
+    validateOwnership(owner, ownerId);
+
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
+      logger.error(
+        `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
+      );
+      throw new COAError(errors.project.ProjectCantBeUpdated(status));
+    }
 
     logger.info(
       `[ProjectService] :: Saving proposal for project id ${projectId}`
@@ -328,8 +341,15 @@ module.exports = {
     // should we validate file size?
     validateMtype(milestonesType, file);
 
-    if (project.status !== projectStatuses.NEW)
-      throw new COAError(errors.project.InvalidStatusForMilestoneFileProcess);
+    const { status } = project;
+    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
+      logger.error(
+        `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
+      );
+      throw new COAError(
+        errors.project.InvalidStatusForMilestoneFileProcess(status)
+      );
+    }
 
     // TODO?: in this case it should probably overwrite all milestones and file
     if (project.milestonePath)
@@ -412,57 +432,38 @@ module.exports = {
     return response;
   },
 
-  // TODO analize if this method will be useful
-  async publishProject(projectId, { ownerId }) {
-    validateParams(projectId, ownerId);
-    const project = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
-    validateOwnership(project.owner, ownerId);
-    if (project.status !== projectStatuses.NEW) {
-      throw new COAError(errors.project.ProjectIsNotPublishable);
-    }
-    return {
-      projectId: await this.updateProject(projectId, {
-        status: projectStatuses.TO_REVIEW
-      })
-    };
-  },
-
+  /**
+   * Updates the status of a project to the specified status
+   * if the transition is valid.
+   * Returns the id of the updated project
+   *
+   * @param {*} user user requesting the change
+   * @param {number} projectId project to update
+   * @param {string} newStatus new project status
+   */
   async updateProjectStatus(user, projectId, newStatus) {
-    validateParams(projectId, user);
-
-    const project = await validateExistence(
-      this.projectDao,
-      projectId,
-      'project'
-    );
-
-    const { status: currentStatus, owner } = project;
-
+    logger.info('[ProjectService] :: Entering updateProjectStatus method');
+    validateRequiredParams({
+      method: 'updateProjectStatus',
+      params: { projectId, user, newStatus }
+    });
+    const project = await checkExistence(this.projectDao, projectId, 'project');
     logger.info(
-      `[Project Service] :: Updating project ${projectId} from ${currentStatus} to ${newStatus}`
+      `[Project Service] :: Updating project ${projectId} from ${
+        project.status
+      } to ${newStatus}`
     );
 
-    if (
-      !validateStatusChange({
-        user,
-        currentStatus,
-        newStatus,
-        projectOwner: owner
-      })
-    ) {
-      logger.error(
-        '[Project Service] :: Project status transition is not valid'
-      );
-      throw new COAError(errors.project.InvalidProjectTransition);
-    }
+    await validateProjectStatusChange({
+      user,
+      newStatus,
+      project
+    });
 
-    return {
-      projectId: await this.updateProject(projectId, { status: newStatus })
-    };
+    const updatedProjectId = await this.updateProject(projectId, {
+      status: newStatus
+    });
+    return { projectId: updatedProjectId };
   },
 
   async getProject(id) {
@@ -470,9 +471,12 @@ module.exports = {
     return project;
   },
 
+  // TODO: check if this is being used. If not, remove.
   async getProjectFull(id) {
     const project = await this.getProject(id);
-    project.milestones = await this.milestoneService.getMilestonesByProject(id);
+    project.milestones = await this.milestoneService.getAllMilestonesByProject(
+      id
+    );
     return project;
   },
 
@@ -649,7 +653,16 @@ module.exports = {
       );
     }
 
-    const { followers } = projectWithFollowers;
+    const { status, followers } = projectWithFollowers;
+
+    const allowFollow = Object.values(publicProjectStatuses).includes(status);
+
+    if (!allowFollow) {
+      logger.error(
+        `[ProjectService] :: Project ${projectId} has't been published yet`
+      );
+      throw new COAError(errors.project.CantFollowProject(projectId));
+    }
 
     const alreadyFollowing = followers.some(follower => follower.id === userId);
 
@@ -698,7 +711,16 @@ module.exports = {
       );
     }
 
-    const { followers } = projectWithFollowers;
+    const { status, followers } = projectWithFollowers;
+
+    const allowUnfollow = Object.values(publicProjectStatuses).includes(status);
+
+    if (!allowUnfollow) {
+      logger.error(
+        `[ProjectService] :: Project ${projectId} has't been published yet`
+      );
+      throw new COAError(errors.project.CantFollowProject(projectId));
+    }
 
     const isFollowing = followers.some(follower => follower.id === userId);
 
@@ -774,7 +796,6 @@ module.exports = {
       { oracles: true, funders: true }
     );
 
-    // TODO check project status when the specific statuses are defined
     if (!project) {
       logger.error(
         `[ProjectService] :: Project with id ${projectId} not found`
@@ -784,7 +805,16 @@ module.exports = {
       );
     }
 
-    const user = await checkExistence(this.userDao, userId, 'user');
+    const { status } = project;
+    const { PUBLISHED, CONSENSUS } = projectStatuses;
+    if (status !== PUBLISHED && status !== CONSENSUS) {
+      logger.error(
+        `[ProjectService] :: It doesn't allow apply when the project is in ${status} status`
+      );
+      throw new COAError(errors.project.CantApplyToProject(status));
+    }
+
+    const user = await this.userService.getUserById(userId);
 
     if (user.role !== userRoles.PROJECT_SUPPORTER) {
       logger.error(`[ProjectService] :: User ${userId} is not supporter`);
@@ -848,5 +878,49 @@ module.exports = {
     );
 
     return alreadyApply;
+  },
+
+  /**
+   * Check if user applied to the specific project as oracle
+   *
+   * @param {number} projectId
+   * @param {number} userId
+   * @returns boolean || error
+   */
+  async isOracleCandidate({ projectId, userId }) {
+    // TODO: maybe somehow fuse this method with isCandidate?
+    logger.info('[ProjectService] :: Entering isOracleCandidate method');
+    validateRequiredParams({
+      method: 'isOracleCandidate',
+      params: { projectId, userId }
+    });
+    const project = await this.projectDao.findOneByProps(
+      { id: projectId },
+      { oracles: true }
+    );
+    if (!project) {
+      logger.error(
+        `[ProjectService] :: Project with id ${projectId} not found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithId('project', projectId)
+      );
+    }
+    const isOracle = !!project.oracles.find(oracle => oracle.id === userId);
+    return isOracle;
+  },
+
+  /**
+   * Returns a list of all projects marked as featured
+   * @returns {Promise<[]>} featured projects
+   */
+  async getFeaturedProjects() {
+    logger.info('[ProjectService] :: Entering getFeaturedProjects method');
+    // TODO: this should be changed to get all projects in project table marked as featured
+    const featuredProjects = await this.featuredProjectDao.findAllByProps(
+      undefined,
+      { project: true }
+    );
+    return featuredProjects.map(project => project.project);
   }
 };

@@ -11,13 +11,28 @@ module.exports = {
     return savedProjectExperience;
   },
 
-  async getExperiencesByProject({ project }) {
+  async getExperiencesByProjectId(projectId) {
     const projectExperiences = await this.model
       .find({
-        project
+        project: projectId
       })
       .populate('user')
       .populate('photos');
-    return projectExperiences;
+    // useless ORM doesn't allow projection on populates
+    const processedExperiences = projectExperiences.map(experience => {
+      if (experience.user) {
+        const { user } = experience;
+        const userProjection = {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          email: user.email
+        };
+        return { ...experience, user: userProjection };
+      }
+      return experience;
+    });
+    return processedExperiences;
   }
 };
