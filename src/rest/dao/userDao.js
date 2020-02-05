@@ -27,11 +27,6 @@ module.exports = {
     return createdUser;
   },
 
-  async getOracles() {
-    // TODO redifine this, oracle role doesnt exist now
-    return this.model.find({ role: userRoles.PROJECT_SUPPORTER });
-  },
-
   async getFollowedProjects(id) {
     return this.model.findOne({ id }).populate('following');
   },
