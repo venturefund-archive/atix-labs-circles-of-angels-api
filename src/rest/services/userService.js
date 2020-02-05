@@ -38,8 +38,8 @@ module.exports = {
     const user = await this.userDao.getUserByEmail(email);
 
     if (!user) {
-      logger.error('[User Service] :: User is not found');
-      throw new COAError(errors.user.UserNotFound);
+      logger.error('[User Service] :: User was not found');
+      throw new COAError(errors.user.InvalidUserOrPassword);
     }
 
     logger.info(`[User Service] :: User email ${email} found`);
@@ -102,7 +102,6 @@ module.exports = {
 
     const hashedPwd = await bcrypt.hash(password, 10);
 
-    // FIXME unmock this when blockchain methods are finished
     const wallet = Wallet.createRandom();
     const { address, privateKey } = wallet;
 
@@ -126,15 +125,6 @@ module.exports = {
     };
 
     const savedUser = await this.userDao.createUser(user);
-
-    if (!savedUser || savedUser == null) {
-      logger.error(
-        '[User Service] :: There was an unexpected error creating the user:',
-        user
-      );
-      throw new COAError('There was an unexpected error creating the user');
-    }
-
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
 
     await this.mailService.sendMail({
@@ -164,65 +154,6 @@ module.exports = {
   },
 
   /**
-   * Receives a User's id and returns their role
-   *
-   * @param {number} userId
-   * @returns user's role | error message
-   */
-  async getUserRole(userId) {
-    const user = await this.userDao.getUserById(userId);
-
-    if (!user || user == null) {
-      logger.error(`[User Service] :: User ID ${userId} not found in database`);
-      throw new COAError(errors.user.UserNotFound);
-    }
-
-    return user.role;
-  },
-
-  /**
-   * Updates an existing user
-   * @param {number} userId
-   * @param {*} user
-   * @returns updated user | error
-   */
-  async updateUser(userId, user) {
-    logger.info('[User Service] :: Updating User:', user);
-
-    // check user existence
-    const existingUser = await this.userDao.getUserById(userId);
-
-    // TODO : duplicate logic, should we extract it?
-    if (!existingUser) {
-      logger.error(`[User Service] :: User ID ${userId} does not exist`);
-      throw new COAError(errors.user.UserNotFound);
-    }
-
-    const { pwd, email } = user;
-    const newUser = { ...user };
-
-    if (pwd) {
-      const hashedPwd = await bcrypt.hash(pwd, 10);
-      newUser.pwd = hashedPwd;
-    }
-
-    if (email) {
-      const anotherUser = await this.userDao.getUserByEmail(email);
-
-      if (anotherUser && anotherUser.id !== existingUser.id) {
-        logger.error(
-          `[User Service] :: User with email ${email} already exists.`
-        );
-        throw new COAError(errors.user.EmailAlreadyInUse);
-      }
-    }
-
-    let updatedUser = newUser;
-
-    return updatedUser;
-  },
-
-  /**
    * Gets all valid user roles
    * @returns role list
    */
@@ -232,20 +163,13 @@ module.exports = {
 
     try {
       const userRoleWithoutAdmin = Object.assign({}, userRoles);
-      delete userRoleWithoutAdmin.BO_ADMIN;
+      delete userRoleWithoutAdmin.COA_ADMIN;
 
       return Object.values(userRoleWithoutAdmin);
     } catch (error) {
       logger.error('[User Service] :: Error getting all User Roles:', error);
       throw new COAError(errors.common.ErrorGetting('user roles'));
     }
-  },
-
-  /**
-   * Returns a list of oracles users
-   */
-  async getOracles() {
-    return this.userDao.getOracles();
   },
 
   /**
@@ -278,21 +202,6 @@ module.exports = {
 
     if (user.role === userRoles.PROJECT_SUPPORTER) {
       // TODO: Do this when the relation between supporter and project exists
-      //   switch (user.role.id) {
-      //     case userRoles.IMPACT_FUNDER:
-      //       response = (await userProjectService.getProjectsOfUser(
-      //         userId
-      //       )).filter(
-      //         project =>
-      //           project.status === projectStatus.PUBLISHED ||
-      //           project.status === projectStatus.IN_PROGRESS
-      //       );
-      //       break;
-      //     case userRoles.ORACLE:
-      //       response = await projectService.getAllProjectsById(
-      //         (await projectService.getProjectsAsOracle(userId)).projects
-      //       );
-      //       break;
       const projects = [];
       return projects;
     }
@@ -325,7 +234,7 @@ module.exports = {
   },
 
   async validUser(user, roleId) {
-    const existentUser = await this.userDao.getUserById(user.id);
+    const existentUser = await this.getUserById(user.id);
     const role = roleId ? existentUser.role === roleId : true;
     return existentUser && !existentUser.blocked && role;
   },
