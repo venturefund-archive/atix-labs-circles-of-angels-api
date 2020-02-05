@@ -38,17 +38,8 @@ module.exports = {
     return deleted;
   },
 
-  async updateStatus(activityId, status) {
-    return this.model.updateOne({ id: activityId }).set({ status });
-  },
   async updateTransactionHash(activityId, transactionHash) {
     return this.model.updateOne({ id: activityId }).set({ transactionHash });
-  },
-
-  async updateBlockchainStatus(activityId, bcStatus) {
-    return this.model
-      .updateOne({ id: activityId })
-      .set({ blockchainStatus: bcStatus });
   },
 
   async whichUnconfirmedActivities(activitiesIds) {
