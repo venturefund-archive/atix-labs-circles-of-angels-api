@@ -491,7 +491,7 @@ module.exports = {
   async getProjects() {
     // TODO: implement pagination
     logger.info('Getting all the projects.');
-    return this.projectDao.findAllByProps(undefined, { owner: true });
+    return this.projectDao.findAllByProps({ sort: 'id DESC' }, { owner: true });
   },
 
   /**
