@@ -64,11 +64,11 @@ module.exports = {
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { file } = files;
+    const { coverPhotoPath } = files;
     const response = await projectService.createProjectDetail(projectId, {
       mission,
       problemAddressed,
-      file,
+      file: coverPhotoPath,
       ownerId
     });
     reply.status(200).send(response);
@@ -81,11 +81,11 @@ module.exports = {
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { file } = files;
+    const { coverPhotoPath } = files;
     const response = await projectService.updateProjectDetail(projectId, {
       mission,
       problemAddressed,
-      file,
+      file: coverPhotoPath,
       ownerId
     });
     reply.status(200).send(response);
@@ -133,10 +133,10 @@ module.exports = {
   processMilestonesFile: () => async (request, reply) => {
     const files = request.raw.files || {};
     const { projectId } = request.params;
-    const { file } = files;
+    const { milestoneFile } = files;
     const ownerId = request.user.id;
     const response = await projectService.processMilestoneFile(projectId, {
-      file,
+      file: milestoneFile,
       ownerId
     });
     reply.status(200).send(response);
