@@ -488,10 +488,16 @@ module.exports = {
     });
   },
 
-  async getProjects() {
+  async getProjects({ status } = {}) {
     // TODO: implement pagination
-    logger.info('Getting all the projects.');
-    return this.projectDao.findAllByProps({ sort: 'id DESC' }, { owner: true });
+    logger.info(
+      `Getting all the projects ${status ? `with status ${status}` : ''}`
+    );
+    // TODO: add user restriction?
+    return this.projectDao.findAllByProps(
+      { where: { status }, sort: 'id DESC' },
+      { owner: true }
+    );
   },
 
   /**

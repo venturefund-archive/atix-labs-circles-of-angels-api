@@ -189,8 +189,8 @@ module.exports = {
     reply.send(response);
   },
 
-  getProjects: () => async (request, reply) => {
-    const projects = await projectService.getProjects();
+  getProjects: props => async (request, reply) => {
+    const projects = await projectService.getProjects(props);
     reply.status(200).send(projects);
   },
 

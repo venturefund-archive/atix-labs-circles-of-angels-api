@@ -608,7 +608,7 @@ const commonProjectRoutes = {
     path: `${basePath}`,
     options: {
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
         description: 'Gets all projects.',
         summary: 'Gets all project',
         response: {
@@ -619,6 +619,24 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.getProjects
+  },
+
+  getFundingProjects: {
+    method: 'get',
+    path: `${basePath}/funding`,
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets all projects in funding phase.',
+        summary: 'Gets all projects in funding phase',
+        response: {
+          ...successResponse(projectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.getProjects({ status: projectStatuses.FUNDING })
   },
 
   getProject: {
