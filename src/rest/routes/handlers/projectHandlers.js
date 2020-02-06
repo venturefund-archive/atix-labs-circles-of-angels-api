@@ -20,13 +20,13 @@ module.exports = {
 
     const { projectName, location, timeframe, goalAmount } = body;
     const ownerId = request.user.id;
-    const { file } = files;
+    const { cardPhotoPath } = files;
     const response = await projectService.createProjectThumbnail({
       projectName,
       location,
       timeframe,
       goalAmount,
-      file,
+      file: cardPhotoPath,
       ownerId
     });
     reply.status(200).send(response);
@@ -39,13 +39,13 @@ module.exports = {
     const { projectId } = request.params;
     const { projectName, location, timeframe, goalAmount } = body;
     const ownerId = request.user.id;
-    const { file } = files;
+    const { cardPhotoPath } = files;
     const response = await projectService.updateProjectThumbnail(projectId, {
       projectName,
       location,
       timeframe,
       goalAmount,
-      file,
+      file: cardPhotoPath,
       ownerId
     });
     reply.status(200).send(response);
@@ -213,13 +213,13 @@ module.exports = {
   addExperienceToProject: () => async (request, reply) => {
     const userId = request.user.id;
     const { comment } = request.raw.body || {};
-    const { files } = request.raw.files || {};
+    const { photos } = request.raw.files || {};
     const { projectId } = request.params;
     const response = await projectServiceExperience.addExperience({
       comment,
       projectId,
       userId,
-      photos: files && !files.length ? [files] : files
+      photos: photos && !photos.length ? [photos] : photos
     });
     reply.status(200).send(response);
   },
