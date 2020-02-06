@@ -39,7 +39,7 @@ module.exports = {
 
     const token = fastify.jwt.sign(user);
     const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + 1);
+    expirationDate.setMonth(expirationDate.getMonth() + 3);
 
     reply
       .status(200)
