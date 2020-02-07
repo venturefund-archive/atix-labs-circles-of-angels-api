@@ -53,12 +53,12 @@ module.exports = {
   addApprovedClaim: () => async (request, reply) => {
     const { taskId } = request.params;
     const userId = request.user.id;
-    const { file } = request.raw.files || {};
+    const { claim } = request.raw.files || {};
 
     const response = await activityService.addClaim({
       taskId,
       userId,
-      file,
+      file: claim,
       approved: true
     });
 
@@ -68,12 +68,12 @@ module.exports = {
   addDisapprovedClaim: () => async (request, reply) => {
     const { taskId } = request.params;
     const userId = request.user.id;
-    const { file } = request.raw.files || {};
+    const { claim } = request.raw.files || {};
 
     const response = await activityService.addClaim({
       taskId,
       userId,
-      file,
+      file: claim,
       approved: false
     });
 
