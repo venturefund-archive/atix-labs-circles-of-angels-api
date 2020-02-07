@@ -785,7 +785,7 @@ describe('Project Service Test', () => {
 
   describe('Get projects', () => {
     beforeAll(() => {});
-    it('Should return an empty list if no projects are published', () => {
+    it('Should return an empty list if there are no existing projects', () => {
       injectMocks(projectService, {
         projectDao: Object.assign({}, projectDao, {
           findAllByProps: () => []
@@ -793,7 +793,7 @@ describe('Project Service Test', () => {
       });
       expect(projectService.getProjects()).resolves.toHaveLength(0);
     });
-    it('Should return an array of projects if there is any project published', () => {
+    it('Should return an array of projects if there is any project', () => {
       injectMocks(projectService, {
         projectDao: Object.assign({}, projectDao, {
           findAllByProps: () => [pendingProject]
