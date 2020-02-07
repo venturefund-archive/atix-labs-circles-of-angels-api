@@ -34,7 +34,6 @@ const transferProperties = {
   destinationAccount: { type: 'string' },
   amount: { type: 'number' },
   currency: { type: 'string' },
-  projectId: { type: 'integer' },
   receiptPath: { type: 'string' }
 };
 
@@ -86,11 +85,12 @@ const successWithTransfersArray = {
 const transferRoutes = {
   createTransfer: {
     method: 'post',
-    path: `${basePath}`,
+    path: `/projects/:projectId${basePath}`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        params: projectIdParam,
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
         raw: {
@@ -98,14 +98,7 @@ const transferRoutes = {
           body: {
             type: 'object',
             properties: transferProperties,
-            required: [
-              'amount',
-              'currency',
-              'projectId',
-              'destinationAccount',
-              'transferId',
-              'receiptPath'
-            ]
+            required: ['amount', 'currency', 'destinationAccount', 'transferId']
           }
         },
         response: {

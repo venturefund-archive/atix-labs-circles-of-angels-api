@@ -10,17 +10,12 @@ const transferService = require('../../services/transferService');
 
 module.exports = {
   createTransfer: () => async (request, reply) => {
+    const { projectId } = request.params;
     const body = request.raw.body || {};
     const files = request.raw.files || {};
 
-    const {
-      transferId,
-      destinationAccount,
-      amount,
-      currency,
-      projectId
-    } = body;
-    const { receiptFile } = files;
+    const { transferId, destinationAccount, amount, currency } = body;
+    const { receiptPath } = files;
     const senderId = request.user.id;
 
     const response = await transferService.createTransfer({
@@ -30,7 +25,7 @@ module.exports = {
       currency,
       projectId,
       senderId,
-      receiptFile
+      receiptFile: receiptPath
     });
     reply.status(200).send(response);
   },
