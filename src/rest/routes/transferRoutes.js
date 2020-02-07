@@ -50,6 +50,21 @@ const successWithTransferIdResponse = {
   description: 'Returns the id of the created transfer'
 };
 
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    email: { type: 'string' },
+    address: { type: 'string' },
+    createdAt: { type: 'string' },
+    id: { type: 'integer' },
+    role: { type: 'string' },
+    blocked: { type: 'boolean' }
+  },
+  description: "User's information"
+};
+
 const successWithTransfersArray = {
   type: 'array',
   items: {
@@ -62,7 +77,7 @@ const successWithTransfersArray = {
       status: { type: 'string' },
       createdAt: { type: 'string' },
       id: { type: 'integer' },
-      sender: { type: 'integer' },
+      sender: userResponse,
       project: { type: 'integer' }
     }
   }
