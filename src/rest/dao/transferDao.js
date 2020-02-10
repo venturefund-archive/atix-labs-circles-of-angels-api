@@ -48,7 +48,10 @@ module.exports = {
   },
 
   async getAllTransfersByProject(projectId) {
-    return this.model.find({ project: projectId });
+    return this.model
+      .find({ project: projectId })
+      .populate('sender')
+      .sort('createdAt DESC');
   },
 
   async getTransferStatusByUserAndProject({ senderId, projectId }) {

@@ -34,7 +34,6 @@ const transferProperties = {
   destinationAccount: { type: 'string' },
   amount: { type: 'number' },
   currency: { type: 'string' },
-  projectId: { type: 'integer' },
   receiptPath: { type: 'string' }
 };
 
@@ -50,6 +49,21 @@ const successWithTransferIdResponse = {
   description: 'Returns the id of the created transfer'
 };
 
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    email: { type: 'string' },
+    address: { type: 'string' },
+    createdAt: { type: 'string' },
+    id: { type: 'integer' },
+    role: { type: 'string' },
+    blocked: { type: 'boolean' }
+  },
+  description: "User's information"
+};
+
 const successWithTransfersArray = {
   type: 'array',
   items: {
@@ -62,7 +76,7 @@ const successWithTransfersArray = {
       status: { type: 'string' },
       createdAt: { type: 'string' },
       id: { type: 'integer' },
-      sender: { type: 'integer' },
+      sender: userResponse,
       project: { type: 'integer' }
     }
   }
@@ -71,11 +85,12 @@ const successWithTransfersArray = {
 const transferRoutes = {
   createTransfer: {
     method: 'post',
-    path: `${basePath}`,
+    path: `/projects/:projectId${basePath}`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        params: projectIdParam,
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
         raw: {
@@ -83,14 +98,7 @@ const transferRoutes = {
           body: {
             type: 'object',
             properties: transferProperties,
-            required: [
-              'amount',
-              'currency',
-              'projectId',
-              'destinationAccount',
-              'transferId',
-              'receiptPath'
-            ]
+            required: ['amount', 'currency', 'destinationAccount', 'transferId']
           }
         },
         response: {
