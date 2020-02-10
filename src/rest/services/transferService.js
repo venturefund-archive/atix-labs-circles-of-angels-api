@@ -72,8 +72,8 @@ module.exports = {
       throw new COAError(errors.user.UnauthorizedUserRole(user.role));
     }
 
-    // TODO: change allowed project status to FUNDING when implemented
-    if (project.status !== projectStatuses.CONSENSUS) {
+    // TODO check if another status will allow transfers
+    if (project.status !== projectStatuses.FUNDING) {
       logger.error(
         `[TransferService] :: Project ${project.id} is not on consensus phase`
       );
