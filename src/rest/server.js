@@ -13,6 +13,7 @@ const COAError = require('./errors/COAError');
 const errors = require('./errors/exporter/ErrorExporter');
 const { ethInit } = require('../rest/services/eth/ethInit');
 const userService = require('./services/userService');
+const cronJobService = require('./services/cronjob/cronjobService');
 
 /**
  * @method start asynchronous start server -> initialice fastify, with database, plugins and routes
@@ -86,6 +87,8 @@ module.exports.start = async ({ db, logger, configs }) => {
     }
     require('./ioc')(fastify);
     ethInit();
+    cronJobService.cronInit();
+
     // await helperBuilder(fastify);
     // await fastify.eth.initListener();
     // await fastify.eth.listener.startListen();

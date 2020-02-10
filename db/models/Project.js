@@ -27,6 +27,8 @@
 
 const { projectStatuses } = require('../../src/rest/util/constants');
 
+const SECONDS_IN_A_DAY = 86400;
+
 module.exports = {
   identity: 'project',
   primaryKey: 'id',
@@ -67,6 +69,15 @@ module.exports = {
       collection: 'user',
       via: 'project',
       through: 'project_follower'
+    },
+    consensusSeconds: {
+      type: 'number',
+      defaultsTo: 10 * SECONDS_IN_A_DAY // TODO: define this and move it to a .env
+    },
+    lastUpdatedStatusAt: {
+      type: 'string',
+      autoCreatedAt: true,
+      required: false
     },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }

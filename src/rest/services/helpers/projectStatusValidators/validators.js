@@ -33,8 +33,8 @@ module.exports = {
       const isCompleted =
         hasThumbnail && hasDetails && hasProposal && hasMilestones;
       if (!isCompleted) throw new COAError(errors.project.IsNotCompleted);
+      return true;
     }
-    return true;
   },
 
   async fromToReview({ user }) {
@@ -49,14 +49,36 @@ module.exports = {
     throw new COAError(errors.project.ChangingStatus);
   },
 
-  async fromConsensus() {
-    // TODO add validations for funding case
-    // - At least one oracle and one supporter assigned to each milestone/activity
-    // - Time of consensus has finished
+  async fromConsensus({ newStatus, project }) {
+    if (newStatus === projectStatuses.FUNDING) {
+      // The project has at least one defined Oracle for each milestone and activity
+      const projectMilestones = await this.projectService.getProjectMilestones(
+        project.id
+      );
+      if (!projectMilestones || !projectMilestones.length)
+        throw new COAError(errors.project.MilestonesNotFound(project.id));
 
-    // TODO add validations for rejected case
-    // - Project doesn't reach specifications and the time has finished
-    throw new COAError(errors.project.ChangingStatus);
+      const hasAllOraclesAssigned = projectMilestones
+        .map(milestone =>
+          milestone.tasks ? milestone.tasks.every(task => !!task.oracle) : false
+        )
+        .every(validation => !!validation);
+
+      if (!hasAllOraclesAssigned)
+        throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
+
+      // The project has at least one supporter interested in funding the project.
+      const projectUsers = await this.projectService.getProjectUsers(
+        project.id
+      );
+      if (
+        !projectUsers ||
+        !projectUsers.funders ||
+        !projectUsers.funders.length
+      )
+        throw new COAError(errors.project.NoFunderCandidates(project.id));
+      return true;
+    }
   },
 
   async fromFunding() {
