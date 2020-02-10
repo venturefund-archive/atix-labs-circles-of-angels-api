@@ -61,12 +61,10 @@ module.exports = {
   addApprovedTransferClaim: () => async (request, reply) => {
     const { transferId } = request.params;
     const userId = request.user.id;
-    const { file } = request.raw.files || {};
 
     const response = await transferService.addTransferClaim({
       transferId,
       userId,
-      file,
       approved: true
     });
 
@@ -76,13 +74,13 @@ module.exports = {
   addDisapprovedTransferClaim: () => async (request, reply) => {
     const { transferId } = request.params;
     const userId = request.user.id;
-    const { file } = request.raw.files || {};
+    const { rejectionReason } = request.body;
 
     const response = await transferService.addTransferClaim({
       transferId,
       userId,
-      file,
-      approved: false
+      approved: false,
+      rejectionReason
     });
 
     reply.status(200).send(response);

@@ -26,6 +26,7 @@ module.exports = {
     destinationAccount: { type: 'string', required: true },
     amount: { type: 'number', required: true },
     currency: { type: 'string', required: true },
+    rejectionReason: { type: 'string' },
 
     receiptPath: { type: 'string', required: true },
 

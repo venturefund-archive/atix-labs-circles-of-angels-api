@@ -69,7 +69,8 @@ describe('Testing transferService', () => {
     id: 3,
     transferId: 'pendingABC',
     status: txFunderStatus.PENDING,
-    projectId: 1
+    projectId: 1,
+    rejectionReason: null
   };
 
   beforeAll(() => {
@@ -89,9 +90,14 @@ describe('Testing transferService', () => {
     getTransferById: ({ transferId }) =>
       dbTransfer.find(transfer => transfer.transferId === transferId),
 
-    update: ({ id, status }) => {
+    update: ({ id, status, rejectionReason }) => {
       const existing = dbTransfer.find(transfer => transfer.id === id);
-      if (existing) existing.status = status;
+      if (existing) {
+        existing.status = status;
+
+        if (rejectionReason) existing.rejectionReason = rejectionReason;
+      }
+
       return existing;
     },
     findById: id => dbTransfer.find(transfer => transfer.id === id),
@@ -355,7 +361,7 @@ describe('Testing transferService', () => {
       ));
   });
 
-  describe('Testing transferService addTransferClaim', () => {
+  describe.only('Testing transferService addTransferClaim', () => {
     beforeAll(() => {
       injectMocks(transferService, {
         userDao,
@@ -371,11 +377,9 @@ describe('Testing transferService', () => {
     });
 
     it('should add an approved transfer claim and return the transfer id', async () => {
-      const file = { name: 'evidence.jpg', size: 20000 };
       const response = await transferService.addTransferClaim({
         transferId: pendingTransfer.id,
         userId: bankOperatorUser.id,
-        file,
         approved: true
       });
 
@@ -387,13 +391,29 @@ describe('Testing transferService', () => {
       expect(response).toEqual({ transferId: pendingTransfer.id });
     });
 
+    it('should add an dissaproved transfer claim and return the transfer id', async () => {
+      const rejectionReason = 'Transferencia invalida';
+      const response = await transferService.addTransferClaim({
+        transferId: pendingTransfer.id,
+        userId: bankOperatorUser.id,
+        approved: true,
+        rejectionReason
+      });
+
+      const updatedTransfer = dbTransfer.find(
+        transfer => transfer.id === response.transferId
+      );
+
+      expect(updatedTransfer.status).toEqual(txFunderStatus.VERIFIED);
+      expect(updatedTransfer.rejectionReason).toEqual(rejectionReason);
+      expect(response).toEqual({ transferId: pendingTransfer.id });
+    });
+
     it('should throw an error if the user is not bank operator', async () => {
-      const file = { name: 'evidence.jpg', size: 20000 };
       await expect(
         transferService.addTransferClaim({
           transferId: pendingTransfer.id,
           userId: userFunder.id,
-          file,
           approved: true
         })
       ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));

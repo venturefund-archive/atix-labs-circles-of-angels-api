@@ -292,11 +292,11 @@ module.exports = {
    * @param {boolean} approved
    * @returns transferId || error
    */
-  async addTransferClaim({ transferId, userId, file, approved }) {
+  async addTransferClaim({ transferId, userId, approved, rejectionReason }) {
     logger.info('[TransferService] :: Entering addTransferClaim method');
     validateRequiredParams({
       method: 'addTransferClaim',
-      params: { transferId, userId, file, approved }
+      params: { transferId, userId, approved }
     });
 
     const user = await checkExistence(this.userDao, userId, 'user');
@@ -308,34 +308,22 @@ module.exports = {
       throw new COAError(errors.common.UserNotAuthorized(userId));
     }
 
-    validateMtype(transferClaimType, file);
-    validatePhotoSize(file);
-
-    // TODO adapt to many files. Change this to rif storage
-    logger.info(
-      `[TransferService] :: Saving file of type '${transferClaimType}'`
-    );
-    const filePath = await files.saveFile(transferClaimType, file);
-    logger.info(`[TransferService] :: File saved to: ${filePath}`);
-
-    const transfer = await checkExistence(
-      this.transferDao,
-      transferId,
-      'fund_transfer'
-    );
+    await checkExistence(this.transferDao, transferId, 'fund_transfer');
 
     // TODO replace both fields with the correct information
-    const { projectId } = transfer;
-    const claim = sha3(projectId, transferId);
-    const proof = utils.id(file.name);
+    // const { projectId } = transfer;
+    // const claim = sha3(projectId, transferId);
+    // const proof = utils.id(file.name);
 
-    // TODO: uncomment this when contracts are deployed
-    // await coa.addClaim(projectId, claim, proof, approved);
+    // // TODO: uncomment this when contracts are deployed
+    // // await coa.addClaim(projectId, claim, proof, approved);
 
     const status = approved
       ? txFunderStatus.VERIFIED
       : txFunderStatus.CANCELLED;
-    const updated = await this.transferDao.update({ id: transferId, status });
+    const fields = { id: transferId, status };
+    if (rejectionReason) fields.rejectionReason = rejectionReason;
+    const updated = await this.transferDao.update(fields);
 
     logger.info('[TransferService] :: Claim added and status transfer updated');
     return { transferId: updated.id };
