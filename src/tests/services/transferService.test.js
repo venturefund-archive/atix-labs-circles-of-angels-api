@@ -361,7 +361,7 @@ describe('Testing transferService', () => {
       ));
   });
 
-  describe.only('Testing transferService addTransferClaim', () => {
+  describe('Testing transferService addTransferClaim', () => {
     beforeAll(() => {
       injectMocks(transferService, {
         userDao,
