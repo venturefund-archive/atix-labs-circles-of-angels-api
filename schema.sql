@@ -69,6 +69,8 @@ CREATE TABLE public.project (
     "milestonePath" varchar(200),
     proposal text,
     "agreementPath" varchar(200),
+    "consensusSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default
+    "lastUpdatedStatusAt" timestamp with time zone DEFAULT NOW(),
     PRIMARY KEY (id),
     FOREIGN KEY ("ownerId") REFERENCES public.user (id)
 );

@@ -23,6 +23,7 @@ const milestoneService = require('./services/milestoneService');
 const daoService = require('./services/daoService');
 
 const projectStatusValidators = require('./services/helpers/projectStatusValidators/validators');
+const cronjobService = require('./services/cronjob/cronjobService');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
@@ -111,7 +112,8 @@ module.exports = fastify => {
       milestoneService,
       userService,
       activityService,
-      transferService
+      transferService,
+      cronjobService
     };
 
     injectDependencies(service, dependencies);
@@ -199,6 +201,13 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureCronjobService(service) {
+    const dependencies = {
+      projectService
+    };
+    injectDependencies(service, dependencies);
+  }
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(photoDao, models.photo);
@@ -234,6 +243,7 @@ module.exports = fastify => {
     configureProjectExperienceService(projectExperienceService);
     configureDaoService(daoService);
     configureProjectStatusValidators(projectStatusValidators);
+    configureCronjobService(cronjobService);
   }
 
   function init({ models }) {

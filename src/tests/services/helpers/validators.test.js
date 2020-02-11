@@ -1,17 +1,29 @@
 const errors = require('../../../rest/errors/exporter/ErrorExporter');
-const validators = require('../../../rest/services/helpers/projectStatusValidators/validators');
+const originalValidators = require('../../../rest/services/helpers/projectStatusValidators/validators');
 
 const { projectStatuses, userRoles } = require('../../../rest/util/constants');
 const { injectMocks } = require('../../../rest/util/injection');
 
+let validators = Object.assign({}, originalValidators);
+const restoreValidators = () => {
+  validators = Object.assign({}, originalValidators);
+};
+
+const mockValidatorsDependencies = dependencies => {
+  restoreValidators();
+  injectMocks(validators, dependencies);
+};
+
 let dbUsers = [];
 let dbMilestones = [];
 let dbProjects = [];
+let dbProjectFunders = [];
 
 const resetDB = () => {
   dbUsers = [];
   dbMilestones = [];
   dbProjects = [];
+  dbProjectFunders = [];
 };
 
 const curatorUser = {
@@ -32,6 +44,15 @@ const entrepreneurUser = {
   address: '0x02222222'
 };
 
+const supporterUser = {
+  id: 3,
+  firstName: 'Project',
+  lastName: 'Supporter',
+  role: userRoles.PROJECT_SUPPORTER,
+  email: 'supp@email.com',
+  address: '0x03333333'
+};
+
 const newProject = {
   id: 1,
   projectName: 'New Project',
@@ -48,7 +69,7 @@ const newProject = {
 };
 
 const toReviewProject = {
-  id: 1,
+  id: 2,
   projectName: 'New Project',
   location: 'Location',
   timeframe: '12 months',
@@ -62,23 +83,59 @@ const toReviewProject = {
   status: projectStatuses.TO_REVIEW
 };
 
+const consensusProject = {
+  id: 3,
+  projectName: 'New Project',
+  location: 'Location',
+  timeframe: '12 months',
+  goalAmount: 5000,
+  owner: entrepreneurUser.id,
+  cardPhotoPath: 'cardPhotoPath.jpg',
+  coverPhotoPath: 'coverPhotoPath.jpg',
+  problemAddressed: 'Problem',
+  proposal: 'Proposal',
+  mission: 'Mission',
+  status: projectStatuses.CONSENSUS
+};
+
 const newProjectMilestones = [
   { id: 1, project: newProject.id },
   { id: 2, project: newProject.id }
 ];
 
+const taskWithOracle = {
+  id: 1,
+  oracle: 1
+};
+
+const consensusProjectMilestonesCompleted = [
+  { id: 1, project: consensusProject.id, tasks: [taskWithOracle] },
+  { id: 2, project: consensusProject.id, tasks: [taskWithOracle] }
+];
+
+const consensusProjectMilestonesIncomplete = [
+  { id: 1, project: consensusProject.id, tasks: [taskWithOracle] },
+  { id: 2, project: consensusProject.id, tasks: [{ id: 2, oracle: null }] }
+];
+
 const projectService = {
   getProjectMilestones: id =>
-    dbMilestones.filter(milestone => milestone.project === id)
+    dbMilestones.filter(milestone => milestone.project === id),
+  getProjectUsers: id => ({
+    funders: dbProjectFunders.filter(funder => funder.project === id),
+    owner: dbProjects.find(project => project.id === id).owner,
+    followers: [],
+    oracles: []
+  })
 };
 
 describe('Testing project status validators', () => {
   describe('From NEW status', () => {
-    beforeAll(() => {
-      injectMocks(validators, {
+    beforeAll(() =>
+      mockValidatorsDependencies({
         projectService
-      });
-    });
+      })
+    );
     describe('to TO REVIEW status', () => {
       beforeEach(() => {
         resetDB();
@@ -136,11 +193,11 @@ describe('Testing project status validators', () => {
   });
 
   describe('From TO REVIEW status', () => {
-    beforeAll(() => {
-      injectMocks(validators, {
+    beforeAll(() =>
+      mockValidatorsDependencies({
         projectService
-      });
-    });
+      })
+    );
     describe('to PUBLISHED or CONSENSUS status', () => {
       beforeEach(() => {
         resetDB();
@@ -163,5 +220,75 @@ describe('Testing project status validators', () => {
       });
     });
   });
+
+  describe('From CONSENSUS status', () => {
+    beforeAll(() =>
+      mockValidatorsDependencies({
+        projectService
+      })
+    );
+
+    describe('to FUNDING status', () => {
+      beforeEach(() => {
+        resetDB();
+        dbProjects.push(consensusProject);
+        dbUsers.push(entrepreneurUser);
+      });
+      it(
+        'should return true if the project has all oracles assigned ' +
+          'and at least one candidate funder',
+        async () => {
+          dbMilestones.push(...consensusProjectMilestonesCompleted);
+          dbProjectFunders.push({
+            id: 1,
+            user: supporterUser.id,
+            project: consensusProject.id
+          });
+          await expect(
+            validators.fromConsensus({
+              newStatus: projectStatuses.FUNDING,
+              project: consensusProject
+            })
+          ).resolves.toBe(true);
+        }
+      );
+
+      it('should throw an error if no milestones were found for the project', async () => {
+        await expect(
+          validators.fromConsensus({
+            newStatus: projectStatuses.FUNDING,
+            project: consensusProject
+          })
+        ).rejects.toThrow(
+          errors.project.MilestonesNotFound(consensusProject.id)
+        );
+      });
+
+      it('should throw an error if any task has no assigned oracle', async () => {
+        dbMilestones.push(...consensusProjectMilestonesIncomplete);
+        await expect(
+          validators.fromConsensus({
+            newStatus: projectStatuses.FUNDING,
+            project: consensusProject
+          })
+        ).rejects.toThrow(
+          errors.project.NotAllOraclesAssigned(consensusProject.id)
+        );
+      });
+
+      it('should throw an error if the project has no funder candidate', async () => {
+        dbMilestones.push(...consensusProjectMilestonesCompleted);
+        await expect(
+          validators.fromConsensus({
+            newStatus: projectStatuses.FUNDING,
+            project: consensusProject
+          })
+        ).rejects.toThrow(
+          errors.project.NoFunderCandidates(consensusProject.id)
+        );
+      });
+    });
+  });
+
   test.todo('Test rest of status transitions when coded');
 });

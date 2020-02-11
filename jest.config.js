@@ -4,6 +4,7 @@ module.exports = {
   collectCoverageFrom: ['<rootDir>/rest/services/**'],
   coveragePathIgnorePatterns: [
     '<rootDir>/rest/services/eth/',
+    '<rootDir>/rest/services/cronjob/',
     '<rootDir>/rest/services/helper.js', // not being used anymore
     '<rootDir>/rest/services/helpers/buidlerTasks.js'
   ]
