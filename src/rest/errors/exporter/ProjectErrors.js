@@ -15,11 +15,11 @@ module.exports = {
   }),
   CantApplyToProject: status => ({
     message: `It is not allowed to apply to a project when it is in ${status} status`,
-    statusCode: 404
+    statusCode: 400
   }),
   CantFollowProject: projectId => ({
     message: `Project ${projectId} hasn't been published yet`,
-    statusCode: 404
+    statusCode: 400
   }),
   MilestoneFileHasBeenAlreadyUploaded: {
     message: 'Milestone file has been already uploaded',
@@ -31,15 +31,15 @@ module.exports = {
   }),
   ProjectNotApproved: {
     message: 'Project has not been approved yet',
-    statusCode: 403
+    statusCode: 400
   },
   ProjectDoesntHaveMilestonesFile: projectId => ({
     message: `Project ${projectId} doesn't have milestones file`,
-    statusCode: 404
+    statusCode: 400
   }),
   MilestonesFileNotFound: (projectId, filepath) => ({
     message: `Milestones file wasn't found for project ${projectId} and path ${filepath}`,
-    statusCode: 404
+    statusCode: 400
   }),
   InvalidProjectTransition: {
     message: 'Project status transition is not valid',
@@ -47,7 +47,7 @@ module.exports = {
   },
   ProjectCantBeUpdated: status => ({
     message: `Project with status ${status} can't be updated`,
-    statusCode: 403
+    statusCode: 400
   }),
   AlreadyProjectFollower: () => ({
     message: 'User already follow this project',
@@ -71,6 +71,18 @@ module.exports = {
   },
   InvalidStatusForExperienceUpload: status => ({
     message: `Can't upload experiences when project is in ${status} status`,
+    statusCode: 400
+  }),
+  MilestonesNotFound: projectId => ({
+    message: `Milestones not found for project ${projectId}`,
+    statusCode: 400
+  }),
+  NotAllOraclesAssigned: projectId => ({
+    message: `Project ${projectId} doesn't have all tasks with an oracle assigned`,
+    statusCode: 400
+  }),
+  NoFunderCandidates: projectId => ({
+    message: `Project ${projectId} doesn't have funder candidates`,
     statusCode: 400
   })
 };
