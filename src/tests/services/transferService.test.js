@@ -91,14 +91,12 @@ describe('Testing transferService', () => {
       dbTransfer.find(transfer => transfer.transferId === transferId),
 
     update: ({ id, status, rejectionReason }) => {
-      const existing = dbTransfer.find(transfer => transfer.id === id);
-      if (existing) {
-        existing.status = status;
-
-        if (rejectionReason) existing.rejectionReason = rejectionReason;
-      }
-
-      return existing;
+      const found = dbTransfer.find(transfer => transfer.id === id);
+      if (!found) return;
+      const params = { status, rejectionReason };
+      const updated = { ...found, ...params };
+      dbTransfer[dbTransfer.indexOf(found)] = updated;
+      return updated;
     },
     findById: id => dbTransfer.find(transfer => transfer.id === id),
     getAllTransfersByProject: projectId =>
@@ -373,21 +371,7 @@ describe('Testing transferService', () => {
       dbUser = [];
       dbTransfer = [];
       dbUser.push(bankOperatorUser, userFunder);
-      dbTransfer.push(
-        {
-          id: 3,
-          transferId: 'pendingABC',
-          status: txFunderStatus.PENDING,
-          projectId: 1,
-          rejectionReason: null
-        },
-        {
-          id: 2,
-          transferId: 'existing123',
-          status: txFunderStatus.VERIFIED,
-          projectId: 1
-        }
-      );
+      dbTransfer.push(pendingTransfer, verifiedTransfer);
     });
 
     it('should add an approved transfer claim and return the transfer id', async () => {
