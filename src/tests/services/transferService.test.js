@@ -23,9 +23,9 @@ describe('Testing transferService', () => {
   let dbUser = [];
   let dbTransfer = [];
 
-  const consensusProject = {
+  const fundingProject = {
     id: 1,
-    status: projectStatuses.CONSENSUS
+    status: projectStatuses.FUNDING
   };
 
   const draftProject = {
@@ -52,7 +52,7 @@ describe('Testing transferService', () => {
     transferId: '1AA22SD444',
     amount: 200,
     senderId: userFunder.id,
-    projectId: consensusProject.id,
+    projectId: fundingProject.id,
     currency: 'USD',
     destinationAccount: '1235AASDD',
     receiptFile: { name: 'receipt.jpg', size: 20000 }
@@ -151,7 +151,7 @@ describe('Testing transferService', () => {
       dbProject = [];
       dbUser = [];
       dbTransfer = [];
-      dbProject.push(consensusProject);
+      dbProject.push(fundingProject);
       dbUser.push(userFunder);
     });
 
@@ -297,16 +297,16 @@ describe('Testing transferService', () => {
 
     beforeEach(() => {
       dbTransfer = [];
-      dbProject = [consensusProject];
+      dbProject = [fundingProject];
       dbTransfer.push(
-        { ...pendingTransfer, projectId: consensusProject.id },
-        { ...verifiedTransfer, projectId: consensusProject.id }
+        { ...pendingTransfer, projectId: fundingProject.id },
+        { ...verifiedTransfer, projectId: fundingProject.id }
       );
     });
 
     it('should return an object with the list of transfers', async () => {
       const response = await transferService.getAllTransfersByProject(
-        consensusProject.id
+        fundingProject.id
       );
 
       expect(response.length).toEqual(2);
