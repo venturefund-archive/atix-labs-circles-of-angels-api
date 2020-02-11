@@ -1,3 +1,4 @@
+const config = require('config');
 const { CronJob } = require('cron');
 const jobs = require('./cronjobs');
 
@@ -6,7 +7,7 @@ const logger = require('../../logger');
 module.exports = {
   crons: [],
   cronInit() {
-    logger.info('[cronInit] :: Initializing cronJobs');
+    logger.info('[cronInit] :: Scheduling cronJobs');
     this.crons = Object.entries(jobs).map(([jobName, job]) => {
       const {
         cronTime,
@@ -26,13 +27,15 @@ module.exports = {
         this,
         runOnInit
       );
-
+      if (!disabled && !config.crons.disableAll) {
+        logger.info('[cronInit] :: Starting job', jobName);
+        cron.start();
+      }
       return { disabled, jobName, cron };
     });
-    this.startAll();
   },
   startAll() {
-    // TODO: use config variable to enable/disable all jobs
+    if (config.crons.disabledAll) return;
     this.crons.forEach(({ disabled, jobName, cron }) => {
       if (!disabled) {
         logger.info('[cronInit] :: Starting job', jobName);
@@ -41,7 +44,7 @@ module.exports = {
     });
   },
   start(job) {
-    // TODO: use config variable to enable/disable all jobs
+    if (config.crons.disabledAll) return;
     const foundCron = this.crons.find(({ jobName }) => jobName === job);
     if (foundCron && !foundCron.disabled) {
       logger.info('[cronInit] :: Starting job', job);

@@ -25,9 +25,8 @@
  *@attribute `projectAgreement`: project consensus file
  */
 
+const config = require('config');
 const { projectStatuses } = require('../../src/rest/util/constants');
-
-const SECONDS_IN_A_DAY = 86400;
 
 module.exports = {
   identity: 'project',
@@ -72,7 +71,7 @@ module.exports = {
     },
     consensusSeconds: {
       type: 'number',
-      defaultsTo: 10 * SECONDS_IN_A_DAY // TODO: define this and move it to a .env
+      defaultsTo: config.defaultProjectTimes.consensusSeconds
     },
     lastUpdatedStatusAt: {
       type: 'string',
