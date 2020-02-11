@@ -9,6 +9,7 @@
     "test:coverage": "npm test -- --coverage",
     "start": "export NODE_ENV=development && node index",
     "prod": "export NODE_ENV=production && node index",
+    "staging": "export NODE_ENV=staging && node index",
     "testing": "npm run migrate && npm run prod",
     "get-flyway": "./get_flyway.sh",
     "migrate": "flyway -configFiles=flyway.conf -locations=filesystem:db/migrations migrate",
