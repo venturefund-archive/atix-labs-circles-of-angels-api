@@ -373,7 +373,21 @@ describe('Testing transferService', () => {
       dbUser = [];
       dbTransfer = [];
       dbUser.push(bankOperatorUser, userFunder);
-      dbTransfer.push(pendingTransfer);
+      dbTransfer.push(
+        {
+          id: 3,
+          transferId: 'pendingABC',
+          status: txFunderStatus.PENDING,
+          projectId: 1,
+          rejectionReason: null
+        },
+        {
+          id: 2,
+          transferId: 'existing123',
+          status: txFunderStatus.VERIFIED,
+          projectId: 1
+        }
+      );
     });
 
     it('should add an approved transfer claim and return the transfer id', async () => {
@@ -396,7 +410,7 @@ describe('Testing transferService', () => {
       const response = await transferService.addTransferClaim({
         transferId: pendingTransfer.id,
         userId: bankOperatorUser.id,
-        approved: true,
+        approved: false,
         rejectionReason
       });
 
@@ -404,7 +418,7 @@ describe('Testing transferService', () => {
         transfer => transfer.id === response.transferId
       );
 
-      expect(updatedTransfer.status).toEqual(txFunderStatus.VERIFIED);
+      expect(updatedTransfer.status).toEqual(txFunderStatus.CANCELLED);
       expect(updatedTransfer.rejectionReason).toEqual(rejectionReason);
       expect(response).toEqual({ transferId: pendingTransfer.id });
     });
@@ -417,6 +431,16 @@ describe('Testing transferService', () => {
           approved: true
         })
       ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));
+    });
+
+    it('should throw an error if transfer is already evaluated', async () => {
+      await expect(
+        transferService.addTransferClaim({
+          transferId: verifiedTransfer.id,
+          userId: bankOperatorUser.id,
+          approved: true
+        })
+      ).rejects.toThrow(errors.transfer.InvalidTransferTransition);
     });
   });
 });

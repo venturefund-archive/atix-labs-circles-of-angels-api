@@ -16,7 +16,7 @@ module.exports = {
     statusCode: 403
   }),
   InvalidTransferTransition: {
-    message: 'This transfer status transition is not valid',
+    message: 'Transfer status transition is not valid',
     statusCode: 400
   },
   CantCreateTransfer: {
