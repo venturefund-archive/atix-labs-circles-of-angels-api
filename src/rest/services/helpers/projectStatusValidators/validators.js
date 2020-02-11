@@ -41,6 +41,7 @@ module.exports = {
     return isCurator(user);
   },
   async fromRejected({ user, project }) {
+    // TODO: add validations for REJECTED -> DELETED transition if needed
     return isOwner(user, project.owner);
   },
 
