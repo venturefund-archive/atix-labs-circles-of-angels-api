@@ -77,7 +77,8 @@ const successWithTransfersArray = {
       createdAt: { type: 'string' },
       id: { type: 'integer' },
       sender: userResponse,
-      project: { type: 'integer' }
+      project: { type: 'integer' },
+      receiptPath: { type: 'string' }
     }
   }
 };
