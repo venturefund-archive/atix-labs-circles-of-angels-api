@@ -167,8 +167,6 @@ const transferRoutes = {
         description: 'Add an approved transfer claim of an existing project',
         summary: 'Add an approved transfer claim',
         params: { transferIdParam },
-        type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
         response: {
           ...successResponse(successWithTransferIdResponse),
           ...clientErrorResponse(),
@@ -189,8 +187,12 @@ const transferRoutes = {
         description: 'Add an disapproved transfer claim of an existing project',
         summary: 'Add an disapproved transfer claim',
         params: { transferIdParam },
-        type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
+        body: {
+          type: 'object',
+          properties: {
+            rejectionReason: { type: 'string' }
+          }
+        },
         response: {
           ...successResponse(successWithTransferIdResponse),
           ...clientErrorResponse(),
