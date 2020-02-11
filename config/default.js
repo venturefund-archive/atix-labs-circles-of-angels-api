@@ -77,7 +77,7 @@ module.exports = {
   },
 
   crons: {
-    disableAll: true,
+    disableAll: false,
     transitionProjectStatusJob: {
       cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT,
       disabled: false,
