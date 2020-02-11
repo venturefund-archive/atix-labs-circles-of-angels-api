@@ -1,9 +1,12 @@
-const cronExpressions = require('./cronExpressions');
+const config = require('config');
 const logger = require('../../logger');
+
+const { EVERY_DAY_AT_MIDNIGHT } = require('./cronExpressions');
 
 module.exports = {
   transitionProjectStatusJob: {
-    cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT, // TODO: use config variable
+    cronTime:
+      config.crons.transitionProjectStatusJob.cronTime || EVERY_DAY_AT_MIDNIGHT,
     async onTick() {
       logger.info('[CronJobService] :: Executing transitionProjectStatusJob');
       const updatedProjects = await this.projectService.transitionConsensusProjects();
@@ -12,8 +15,8 @@ module.exports = {
     onComplete() {
       logger.info('[CronJobService] :: transitionProjectStatusJob has stopped');
     },
-    timezone: undefined,
-    runOnInit: false,
-    disabled: false // TODO: use config variable
+    timezone: config.crons.transitionProjectStatusJob.timezone || undefined,
+    runOnInit: config.crons.transitionProjectStatusJob.runOnInit || false,
+    disabled: config.crons.transitionProjectStatusJob.disabled || false
   }
 };

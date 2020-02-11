@@ -7,6 +7,9 @@
  */
 
 const routeTags = require('../src/rest/util/routeTags');
+const cronExpressions = require('../src/rest/services/cronjob/cronExpressions');
+
+const SECONDS_IN_A_DAY = 86400;
 
 require('dotenv').config();
 
@@ -21,11 +24,7 @@ module.exports = {
       ]
     }
   },
-  eth: {
-
-  },
   frontendUrl: 'http://localhost:3000',
-
   support: {
     service: 'Gmail',
     email: 'circlesofangelshelp@gmail.com',
@@ -75,5 +74,19 @@ module.exports = {
       produces: ['application/json'],
       tags: Object.values(routeTags)
     }
+  },
+
+  crons: {
+    disableAll: true,
+    transitionProjectStatusJob: {
+      cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT,
+      disabled: false,
+      runOnInit: false,
+      timezone: undefined
+    }
+  },
+
+  defaultProjectTimes: {
+    consensusSeconds: 10 * SECONDS_IN_A_DAY // TODO: define this
   }
 };

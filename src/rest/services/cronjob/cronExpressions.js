@@ -8,5 +8,7 @@
  */
 
 module.exports = {
-  EVERYDAY_AT_MIDNIGHT: '0 0 0 * * *'
+  EVERYDAY_AT_MIDNIGHT: '0 0 0 * * *',
+  EVERY_FIVE_MINUTES: '0 */5 * * * *',
+  EVERY_TEN_MINUTES: '0 */10 * * * *'
 };
