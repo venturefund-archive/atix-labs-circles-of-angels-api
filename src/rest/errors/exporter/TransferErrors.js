@@ -15,6 +15,10 @@ module.exports = {
     message: `A transfer of status '${status}' can't be updated`,
     statusCode: 403
   }),
+  InvalidTransferTransition: {
+    message: 'This transfer status transition is not valid',
+    statusCode: 400
+  },
   CantCreateTransfer: {
     message: "Couldn't create transfer"
   }

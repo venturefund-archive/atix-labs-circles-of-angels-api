@@ -24,8 +24,6 @@ const errors = require('../errors/exporter/ErrorExporter');
 const COAError = require('../errors/COAError');
 const logger = require('../logger');
 
-const transferClaimType = 'transferClaims';
-
 // TODO: replace with actual function
 const sha3 = (a, b) => utils.id(`${a}-${b}`);
 
@@ -308,7 +306,21 @@ module.exports = {
       throw new COAError(errors.common.UserNotAuthorized(userId));
     }
 
-    await checkExistence(this.transferDao, transferId, 'fund_transfer');
+    const transfer = await checkExistence(
+      this.transferDao,
+      transferId,
+      'fund_transfer'
+    );
+
+    const { status: currentStatus } = transfer;
+    const { VERIFIED, CANCELLED } = txFunderStatus;
+
+    if ([VERIFIED, CANCELLED].includes(currentStatus)) {
+      logger.error(
+        '[Transfer Service] :: Transfer status transition is not valid'
+      );
+      throw new COAError(errors.transfer.InvalidTransferTransition);
+    }
 
     // TODO replace both fields with the correct information
     // const { projectId } = transfer;
@@ -318,13 +330,11 @@ module.exports = {
     // // TODO: uncomment this when contracts are deployed
     // // await coa.addClaim(projectId, claim, proof, approved);
 
-    const status = approved
-      ? txFunderStatus.VERIFIED
-      : txFunderStatus.CANCELLED;
+    const status = approved ? VERIFIED : CANCELLED;
     const fields = { id: transferId, status };
     if (rejectionReason) fields.rejectionReason = rejectionReason;
-    const updated = await this.transferDao.update(fields);
 
+    const updated = await this.transferDao.update(fields);
     logger.info('[TransferService] :: Claim added and status transfer updated');
     return { transferId: updated.id };
   }
