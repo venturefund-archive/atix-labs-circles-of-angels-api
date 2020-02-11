@@ -40,7 +40,10 @@ module.exports = {
   async fromToReview({ user }) {
     return isCurator(user);
   },
-  async fromRejected({ user, project }) {
+  async fromRejected({ user, project, newStatus }) {
+    // TODO: add validations for REJECTED -> DELETED transition when defined
+    if (newStatus === projectStatuses.DELETED)
+      throw new COAError(errors.project.ChangingStatus);
     return isOwner(user, project.owner);
   },
 
