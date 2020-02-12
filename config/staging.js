@@ -19,6 +19,7 @@ module.exports = {
     }
   },
   defaultProjectTimes: {
-    consensusSeconds: 300
+    consensusSeconds: 300,
+    fundingSeconds: 300
   }
 };

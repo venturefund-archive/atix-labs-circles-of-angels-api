@@ -84,5 +84,13 @@ module.exports = {
   NoFunderCandidates: projectId => ({
     message: `Project ${projectId} doesn't have funder candidates`,
     statusCode: 400
+  }),
+  TransfersNotFound: projectId => ({
+    message: `Project ${projectId} doesn't have any transfers done`,
+    statusCode: 400
+  }),
+  MinimumFundingNotReached: projectId => ({
+    message: `Minimum funding amount required for project ${projectId} has not been reached`,
+    statusCode: 400
   })
 };

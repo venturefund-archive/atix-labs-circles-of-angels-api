@@ -915,8 +915,8 @@ describe('Project Service Test', () => {
               { id: 2, owner: 2 },
               { id: 3, owner: 3 }
             ];
-            return projects.filter(project =>
-              Object.keys(filter).every(key => project[key] === filter[key])
+            return projects.filter(
+              project => project.owner === filter.where.owner
             );
           }
         })
