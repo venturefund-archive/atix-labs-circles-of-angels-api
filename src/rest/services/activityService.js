@@ -430,11 +430,11 @@ module.exports = {
    * @param {boolean} approved
    * @returns transferId || error
    */
-  async addClaim({ taskId, userId, file, approved }) {
+  async addClaim({ taskId, userId, file, description, approved }) {
     logger.info('[ActivityService] :: Entering addClaim method');
     validateRequiredParams({
       method: 'addClaim',
-      params: { userId, taskId, file, approved }
+      params: { userId, taskId, file, description, approved }
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
@@ -461,6 +461,18 @@ module.exports = {
 
     // await coa.addClaim(projectId, claim, proof, approved);
 
-    return { taskId };
+    const evidence = {
+      description,
+      proof: filePath,
+      task: taskId,
+      approved
+    };
+
+    const evidenceCreated = await this.taskEvidenceDao.addTaskEvidence(
+      evidence
+    );
+
+    logger.info('[ActivityService] :: Claim added succesfully');
+    return { taskId: evidenceCreated.task };
   }
 };
