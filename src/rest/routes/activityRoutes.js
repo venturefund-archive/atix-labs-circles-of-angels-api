@@ -164,7 +164,7 @@ const routes = {
 
   addApprovedClaim: {
     method: 'post',
-    path: '/task/:taskId/claim/approve',
+    path: `${basePath}/:taskId/claim/approve`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -192,7 +192,7 @@ const routes = {
 
   addDisapprovedClaim: {
     method: 'post',
-    path: '/task/:taskId/claim/disapproved',
+    path: `${basePath}/:taskId/claim/disapprove`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
