@@ -945,7 +945,7 @@ module.exports = {
   },
 
   /**
-   * Transition all projects in consensus status to `funding`
+   * Transition all projects in `consensus` status to `funding`
    * if it meets all conditions or to `rejected` if not.
    *
    * @returns {Promise<object[]>} list of updated projects
@@ -965,28 +965,70 @@ module.exports = {
           project.id
         );
         if (!this.hasTimePassed(project)) return;
-        let newStatus = projectStatuses.FUNDING;
-        try {
-          await validateProjectStatusChange({
-            user: project.owner,
-            newStatus,
-            project
-          });
-        } catch (error) {
-          logger.error(
-            `[Project Service] :: Validation to change project ${
-              project.id
-            } to ${projectStatuses.FUNDING} status failed `,
-            error
-          );
-          newStatus = projectStatuses.REJECTED;
-        }
+        const newStatus = await this.getNextValidStatus(
+          project,
+          projectStatuses.FUNDING,
+          projectStatuses.REJECTED
+        );
 
         logger.info(
           `[Project Service] :: Updating project ${project.id} from ${
             project.status
           } to ${newStatus}`
         );
+        const updatedProjectId = await this.updateProject(project.id, {
+          status: newStatus
+        });
+        return { projectId: updatedProjectId, newStatus };
+      })
+    );
+    return updatedProjects.filter(updated => !!updated);
+  },
+
+  /**
+   * Transition all projects in `funding` status to `executing`
+   * if it meets all conditions or to `consensus` if not.
+   *
+   * @returns {Promise<object[]>} list of updated projects
+   */
+  async transitionFundingProjects() {
+    logger.info(
+      '[ProjectService] :: Entering transitionFundingProjects method'
+    );
+    const projects = await this.projectDao.findAllByProps(
+      {
+        status: projectStatuses.FUNDING
+      },
+      { funders: true }
+    );
+
+    const updatedProjects = await Promise.all(
+      projects.map(async project => {
+        logger.info(
+          '[ProjectService] :: Checking if funding time has passed for project',
+          project.id
+        );
+        if (!this.hasTimePassed(project)) return;
+        const newStatus = await this.getNextValidStatus(
+          project,
+          projectStatuses.EXECUTING,
+          projectStatuses.CONSENSUS
+        );
+
+        logger.info(
+          `[ProjectService] :: Updating project ${project.id} from ${
+            project.status
+          } to ${newStatus}`
+        );
+        if (newStatus === projectStatuses.CONSENSUS) {
+          const removedFunders = await this.removeFundersWithNoTransfersFromProject(
+            project
+          );
+          logger.info(
+            '[ProjectService] :: Funders removed from project:',
+            removedFunders
+          );
+        }
 
         const updatedProjectId = await this.updateProject(project.id, {
           status: newStatus
@@ -1017,11 +1059,17 @@ module.exports = {
       const last = getStartOfDay(lastUpdatedStatusAt);
       const daysPassedSinceLastUpdate = getDaysPassed(last, now);
 
-      // TODO: check time for published -> consensus -> funding phases
+      // TODO: check time for published -> consensus phase
       if (status === projectStatuses.CONSENSUS) {
         const { consensusSeconds } = project;
         const consensusDays = secondsToDays(consensusSeconds);
         return daysPassedSinceLastUpdate >= consensusDays;
+      }
+
+      if (status === projectStatuses.FUNDING) {
+        const { fundingSeconds } = project;
+        const fundingDays = secondsToDays(fundingSeconds);
+        return daysPassedSinceLastUpdate >= fundingDays;
       }
     } catch (error) {
       logger.error(
@@ -1030,5 +1078,71 @@ module.exports = {
       );
     }
     return false;
+  },
+
+  /**
+   * Returns the next valid status of the project between two choices.
+   *
+   * One if the validation passes, the other if it fails.
+   * @param {*} project
+   * @param {string} successStatus status if validation passes
+   * @param {string} failStatus status if validation fails
+   * @returns {string} new status
+   */
+  async getNextValidStatus(project, successStatus, failStatus) {
+    let newStatus = projectStatuses.EXECUTING;
+    try {
+      await validateProjectStatusChange({
+        user: project.owner,
+        newStatus,
+        project
+      });
+    } catch (error) {
+      logger.error(
+        `[Project Service] :: Validation to change project ${
+          project.id
+        } to ${successStatus} status failed `,
+        error
+      );
+      newStatus = failStatus;
+    }
+    return newStatus;
+  },
+
+  /**
+   * Removes all candidate funders
+   * with no verified transfers from a project.a1
+   *
+   * Returns a list of the funders ids that were removed
+   *
+   * @param {{ id: number, funders: any[] }} project
+   * @returns {Promise<number[]>} removed funders id's
+   */
+  async removeFundersWithNoTransfersFromProject(project) {
+    logger.info(
+      '[ProjectService] :: Entering removeFundersWithNoTransfersFromProject method'
+    );
+    const verifiedTransfers = await this.transferService.getAllTransfersByProps(
+      {
+        filters: { project: project.id, status: txFunderStatus.VERIFIED }
+      }
+    );
+    const fundersWithTransfers = verifiedTransfers
+      ? verifiedTransfers.map(transfer => transfer.sender)
+      : [];
+    const fundersWithNoTransfers = project.funders
+      ? project.funders.filter(
+          funder => !fundersWithTransfers.includes(funder.id)
+        )
+      : [];
+    const removedFunders = await Promise.all(
+      fundersWithNoTransfers.map(funder =>
+        this.funderDao.deleteByProjectAndFunderId({
+          projectId: project.id,
+          userId: funder.id
+        })
+      )
+    );
+    return removedFunders ? removedFunders.map(funder => funder.user) : [];
   }
 };
