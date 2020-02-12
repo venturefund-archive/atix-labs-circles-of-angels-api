@@ -216,16 +216,6 @@ describe('Testing userService', () => {
     });
   });
 
-  describe('Testing getAllRoles', () => {
-    it('should return all roles but COA admin', () => {
-      const response = userService.getAllRoles();
-      expect(response).toEqual(
-        expect.not.arrayContaining([userRoles.COA_ADMIN])
-      );
-      expect(response).toHaveLength(Object.values(userRoles).length - 1);
-    });
-  });
-
   describe('Testing getUsers', () => {
     beforeAll(() => {
       injectMocks(userService, {
