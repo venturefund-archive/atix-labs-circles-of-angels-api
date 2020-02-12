@@ -26,14 +26,17 @@ module.exports = {
     });
   },
   canUpload(project, user) {
-    // TODO: do the rest when defined
-    if (project.status === projectStatuses.CONSENSUS) {
-      validateOwnership(project.owner, user.id);
+    const { status, owner } = project;
+    const allowedStatuses = [
+      projectStatuses.CONSENSUS,
+      projectStatuses.FUNDING
+    ];
+
+    if (allowedStatuses.includes(status)) {
+      validateOwnership(owner, user.id);
       return true;
     }
-    throw new COAError(
-      errors.project.InvalidStatusForExperienceUpload(project.status)
-    );
+    throw new COAError(errors.project.InvalidStatusForExperienceUpload(status));
   },
   async savePhotos(photos) {
     logger.info('[ProjectExperienceService] :: Entering savePhotos method');
