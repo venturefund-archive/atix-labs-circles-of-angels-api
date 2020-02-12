@@ -517,7 +517,13 @@ module.exports = {
   async getProjectsByOwner(ownerId) {
     // TODO: implement pagination
     logger.info('[ProjectService] :: Entering getProjectsByOwner method');
-    return this.projectDao.findAllByProps({ owner: ownerId });
+
+    const filters = {
+      where: { status: { '!=': projectStatuses.DELETED }, owner: ownerId },
+      sort: 'id DESC'
+    };
+
+    return this.projectDao.findAllByProps(filters);
   },
 
   /**
