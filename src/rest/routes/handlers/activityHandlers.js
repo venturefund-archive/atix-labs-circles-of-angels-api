@@ -54,11 +54,13 @@ module.exports = {
     const { taskId } = request.params;
     const userId = request.user.id;
     const { claim } = request.raw.files || {};
+    const { description } = request.raw.body || {};
 
     const response = await activityService.addClaim({
       taskId,
       userId,
       file: claim,
+      description,
       approved: true
     });
 
@@ -69,11 +71,13 @@ module.exports = {
     const { taskId } = request.params;
     const userId = request.user.id;
     const { claim } = request.raw.files || {};
+    const { description } = request.raw.body || {};
 
     const response = await activityService.addClaim({
       taskId,
       userId,
       file: claim,
+      description,
       approved: false
     });
 

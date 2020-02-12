@@ -36,6 +36,10 @@ const taskProperties = {
   budget: { type: 'string' }
 };
 
+const claimProperties = {
+  description: { type: 'string' }
+};
+
 const oracleProperties = {
   oracleId: { type: 'number' }
 };
@@ -169,7 +173,13 @@ const routes = {
         summary: 'Add an approved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: claimProperties
+          }
+        },
         response: {
           ...successResponse(successWithTaskIdResponse),
           ...clientErrorResponse(),
@@ -192,7 +202,13 @@ const routes = {
         summary: 'Add an disapproved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: claimProperties
+          }
+        },
         response: {
           ...successResponse(successWithTaskIdResponse),
           ...clientErrorResponse(),

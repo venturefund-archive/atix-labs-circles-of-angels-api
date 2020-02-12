@@ -18,18 +18,22 @@ const activityService = require('../../rest/services/activityService');
 
 describe('Testing activityService', () => {
   let dbTask = [];
+  let dbTaskEvidence = [];
   let dbMilestone = [];
   let dbProject = [];
   let dbUser = [];
 
   const resetDb = () => {
     dbTask = [];
+    dbTaskEvidence = [];
     dbMilestone = [];
     dbProject = [];
     dbUser = [];
   };
 
   const evidenceFile = { name: 'evidence.jpg', size: 20000 };
+
+  const description = 'Testing description';
 
   const newTaskParams = {
     description: 'NewDescription',
@@ -122,6 +126,26 @@ describe('Testing activityService', () => {
         ...found,
         milestone: populatedMilestone
       };
+    }
+  };
+
+  const taskEvidenceDao = {
+    addTaskEvidence: ({ description, proof, approved, task }) => {
+      const newTaskEvidenceId =
+        dbTaskEvidence.length > 0
+          ? dbTaskEvidence[dbTaskEvidence.length - 1].id + 1
+          : 1;
+
+      const newTaskEvidence = {
+        id: newTaskEvidenceId,
+        task,
+        description,
+        proof,
+        approved
+      };
+
+      dbTaskEvidence.push(newTaskEvidence);
+      return newTaskEvidence;
     }
   };
 
@@ -358,7 +382,7 @@ describe('Testing activityService', () => {
   describe('Testing addClaim', () => {
     beforeAll(() => {
       coa.addClaim = jest.fn();
-      injectMocks(activityService, { activityDao });
+      injectMocks(activityService, { activityDao, taskEvidenceDao });
     });
 
     beforeEach(() => {
@@ -370,11 +394,12 @@ describe('Testing activityService', () => {
       dbMilestone.push(updatableMilestone);
     });
 
-    it('should add an approved claim and return the task id', async () => {
+    it('should add an approved claim and return the claim id', async () => {
       const response = await activityService.addClaim({
         taskId: updatableTask.id,
         userId: userEntrepreneur.id,
         file: evidenceFile,
+        description,
         approved: true
       });
       expect(response).toEqual({ taskId: updatableTask.id });
@@ -386,6 +411,7 @@ describe('Testing activityService', () => {
           taskId: updatableTask.id,
           userId: 0,
           file: evidenceFile,
+          description,
           approved: true
         })
       ).rejects.toThrow(
@@ -412,6 +438,7 @@ describe('Testing activityService', () => {
           taskId: updatableTask.id,
           userId: userEntrepreneur.id,
           file: { name: 'invalidclaim.exe', size: 2000 },
+          description,
           approved: true
         })
       ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
@@ -423,6 +450,7 @@ describe('Testing activityService', () => {
           taskId: updatableTask.id,
           userId: userEntrepreneur.id,
           file: { name: 'imbig.jpg', size: 500001 },
+          description,
           approved: true
         })
       ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);

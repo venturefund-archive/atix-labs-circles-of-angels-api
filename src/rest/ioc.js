@@ -43,6 +43,7 @@ const passRecoveryService = require('./services/passRecoveryService');
 const passRecoveryDao = require('./dao/passRecoveryDao');
 const projectExperiencePhotoDao = require('./dao/projectExperiencePhotoDao');
 const featuredProjectDao = require('./dao/featuredProjectDao');
+const taskEvidenceDao = require('./dao/taskEvidenceDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -122,6 +123,7 @@ module.exports = fastify => {
   function configureActivityService(service) {
     const dependencies = {
       activityDao,
+      taskEvidenceDao,
       fileService: undefined,
       photoService: undefined,
       activityFileDao: undefined,
@@ -226,6 +228,7 @@ module.exports = fastify => {
     injectModel(transferDao, models.fund_transfer);
     // TODO: delete this when dao and model deleted
     injectModel(featuredProjectDao, models.featured_project);
+    injectModel(taskEvidenceDao, models.task_evidence);
   }
 
   function configureServices() {
