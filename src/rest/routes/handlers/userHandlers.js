@@ -6,7 +6,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/user';
 const apiHelper = require('../../services/helper');
 
 const userService = require('../../services/userService');
@@ -26,11 +25,6 @@ module.exports = {
   getUsers: () => async (request, reply) => {
     const users = await userService.getUsers();
     reply.status(200).send({ users });
-  },
-
-  getAllRoles: () => (request, reply) => {
-    const roles = userService.getAllRoles();
-    reply.status(200).send(roles);
   },
 
   loginUser: fastify => async (request, reply) => {

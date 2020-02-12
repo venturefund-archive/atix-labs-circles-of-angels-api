@@ -154,25 +154,6 @@ module.exports = {
   },
 
   /**
-   * Gets all valid user roles
-   * @returns role list
-   */
-  // TODO : i'd say this function does not make sense anymore.
-  getAllRoles() {
-    logger.info('[User Service] :: Getting all User Roles');
-
-    try {
-      const userRoleWithoutAdmin = Object.assign({}, userRoles);
-      delete userRoleWithoutAdmin.COA_ADMIN;
-
-      return Object.values(userRoleWithoutAdmin);
-    } catch (error) {
-      logger.error('[User Service] :: Error getting all User Roles:', error);
-      throw new COAError(errors.common.ErrorGetting('user roles'));
-    }
-  },
-
-  /**
    * Returns a list of all non-admin users with their details
    *
    * @returns user list

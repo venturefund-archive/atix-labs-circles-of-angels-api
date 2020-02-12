@@ -25,8 +25,6 @@ const idParam = (description, param) => ({
   }
 });
 
-const userIdParam = idParam('User identification', 'userId');
-
 const userResponse = {
   type: 'object',
   properties: {
@@ -42,6 +40,15 @@ const userResponse = {
   description: "User's information"
 };
 
+const successWithMessageResponse = {
+  type: 'object',
+  properties: {
+    success: { type: 'string' }
+  },
+  description:
+    'Returns a success message if the user was signed up correctly'
+};
+
 const successWithUserResponse = {
   type: 'object',
   properties: {
@@ -51,12 +58,6 @@ const successWithUserResponse = {
     }
   },
   description: 'Returns an array of objects with the users information'
-};
-
-const successWithRolesResponse = {
-  type: 'array',
-  items: { type: 'string' },
-  description: 'Returns an array of objects with each available user roles'
 };
 
 const projectResponse = {
@@ -159,25 +160,6 @@ const routes = {
     handler: handlers.getUsers
   },
 
-  getAllRoles: {
-    method: 'get',
-    path: `${basePath}/roles`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.USER.name, routeTags.GET.name],
-        description: 'Returns all available user roles in COA',
-        summary: 'Get all user roles',
-        response: {
-          ...successResponse(successWithRolesResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.getAllRoles
-  },
-
   loginUser: {
     method: 'post',
     path: `${basePath}/login`,
@@ -235,30 +217,9 @@ const routes = {
           description: 'User on-boarding information'
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'string' }
-            },
-            description:
-              'Returns a success message if the user was signed up correctly'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            response: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            response: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithMessageResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
