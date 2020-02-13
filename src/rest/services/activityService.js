@@ -438,8 +438,18 @@ module.exports = {
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
-    const { projectId } = milestone;
+    const { project } = milestone;
     const { oracle } = task;
+
+    const projectFound = await this.projectService.getProjectById(project);
+    const { status } = projectFound;
+
+    if (status !== projectStatuses.EXECUTING) {
+      logger.error(
+        `[ActivityService] :: Can't upload evidence when project is in ${status} status`
+      );
+      throw new COAError(errors.project.InvalidStatusForEvidenceUpload(status));
+    }
 
     if (oracle !== userId) {
       logger.error(
