@@ -14,5 +14,9 @@ module.exports = {
   async addTaskEvidence(data) {
     const evidenceCreated = await this.model.create(data);
     return evidenceCreated;
+  },
+
+  async getEvidencesByTaskId(taskId) {
+    this.model.find({ taskId });
   }
 };

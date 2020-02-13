@@ -428,7 +428,7 @@ module.exports = {
    * @param {number} userId
    * @param {object} file
    * @param {boolean} approved
-   * @returns transferId || error
+   * @returns taskId || error
    */
   async addClaim({ taskId, userId, file, description, approved }) {
     logger.info('[ActivityService] :: Entering addClaim method');
@@ -484,5 +484,26 @@ module.exports = {
 
     logger.info('[ActivityService] :: Claim added succesfully');
     return { taskId: evidenceCreated.task };
+  },
+
+  /**
+   * Get evidences by task
+   *
+   * @param {number} taskId
+   * @param {number} userId
+   * @returns transferId || error
+   */
+  async getTaskEvidences({ taskId, userId }) {
+    logger.info('[ActivityService] :: Entering getClaims method');
+    validateRequiredParams({
+      method: 'getClaims',
+      params: { taskId, userId }
+    });
+
+    await checkExistence(this.activityDao, taskId, 'task');
+
+    return this.taskEvidenceDao.getEvidencesByTaskId({
+      taskId
+    });
   }
 };
