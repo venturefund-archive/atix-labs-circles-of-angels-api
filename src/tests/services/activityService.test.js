@@ -33,7 +33,7 @@ describe('Testing activityService', () => {
 
   const evidenceFile = { name: 'evidence.jpg', size: 20000 };
 
-  const description = 'Testing description';
+  const mockedDescription = 'Testing description';
 
   const newTaskParams = {
     description: 'NewDescription',
@@ -88,6 +88,15 @@ describe('Testing activityService', () => {
   const nonUpdatableTask = {
     id: 2,
     milestone: nonUpdatableMilestone.id
+  };
+
+  const taskEvidence = {
+    id: 1,
+    createdAt: '2020-02-13',
+    description: mockedDescription,
+    proof: '/file/taskEvidence',
+    approved: true,
+    task: nonUpdatableTask.id
   };
 
   const activityDao = {
@@ -146,6 +155,13 @@ describe('Testing activityService', () => {
 
       dbTaskEvidence.push(newTaskEvidence);
       return newTaskEvidence;
+    },
+    getEvidencesByTaskId: ({ taskId }) => {
+      const evidences = dbTaskEvidence.filter(
+        evidence => evidence.task === taskId
+      );
+
+      return evidences;
     }
   };
 
@@ -410,7 +426,7 @@ describe('Testing activityService', () => {
         taskId: nonUpdatableTask.id,
         userId: userEntrepreneur.id,
         file: evidenceFile,
-        description,
+        description: mockedDescription,
         approved: true
       });
       expect(response).toEqual({ taskId: nonUpdatableTask.id });
@@ -422,7 +438,7 @@ describe('Testing activityService', () => {
           taskId: nonUpdatableTask.id,
           userId: 0,
           file: evidenceFile,
-          description,
+          description: mockedDescription,
           approved: true
         })
       ).rejects.toThrow(
@@ -443,7 +459,7 @@ describe('Testing activityService', () => {
           taskId: updatableTask.id,
           userId: userEntrepreneur.id,
           file: evidenceFile,
-          description,
+          description: mockedDescription,
           approved: true
         })
       ).rejects.toThrow(
@@ -467,7 +483,7 @@ describe('Testing activityService', () => {
           taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
           file: { name: 'invalidclaim.exe', size: 2000 },
-          description,
+          description: mockedDescription,
           approved: true
         })
       ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
@@ -479,10 +495,38 @@ describe('Testing activityService', () => {
           taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
           file: { name: 'imbig.jpg', size: 500001 },
-          description,
+          description: mockedDescription,
           approved: true
         })
       ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
+    });
+  });
+
+  describe('Testing getTaskEvidence', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        taskEvidenceDao
+      });
+    });
+
+    beforeEach(() => {
+      dbUser.push(userEntrepreneur);
+      dbTask.push({
+        ...nonUpdatableTask,
+        oracle: userEntrepreneur.id
+      });
+      dbTaskEvidence.push(taskEvidence);
+    });
+
+    it('should return a list of all featured projects', async () => {
+      const response = await activityService.getTaskEvidences({
+        taskId: nonUpdatableTask.id,
+        userId: userEntrepreneur.id
+      });
+
+      expect(response).toHaveLength(1);
+      expect(response).toEqual([{ ...taskEvidence }]);
     });
   });
 
