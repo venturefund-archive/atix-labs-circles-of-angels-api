@@ -36,6 +36,10 @@ const taskProperties = {
   budget: { type: 'string' }
 };
 
+const claimProperties = {
+  description: { type: 'string' }
+};
+
 const oracleProperties = {
   oracleId: { type: 'number' }
 };
@@ -160,7 +164,7 @@ const routes = {
 
   addApprovedClaim: {
     method: 'post',
-    path: '/task/:taskId/claim/approve',
+    path: `${basePath}/:taskId/claim/approve`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -169,7 +173,13 @@ const routes = {
         summary: 'Add an approved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: claimProperties
+          }
+        },
         response: {
           ...successResponse(successWithTaskIdResponse),
           ...clientErrorResponse(),
@@ -182,7 +192,7 @@ const routes = {
 
   addDisapprovedClaim: {
     method: 'post',
-    path: '/task/:taskId/claim/disapproved',
+    path: `${basePath}/:taskId/claim/disapprove`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -192,7 +202,13 @@ const routes = {
         summary: 'Add an disapproved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: claimProperties
+          }
+        },
         response: {
           ...successResponse(successWithTaskIdResponse),
           ...clientErrorResponse(),
