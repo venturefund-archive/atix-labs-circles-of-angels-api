@@ -73,6 +73,10 @@ module.exports = {
     message: `Can't upload experiences when project is in ${status} status`,
     statusCode: 400
   }),
+  InvalidStatusForEvidenceUpload: status => ({
+    message: `Can't upload evidence when project is in ${status} status`,
+    statusCode: 400
+  }),
   MilestonesNotFound: projectId => ({
     message: `Milestones not found for project ${projectId}`,
     statusCode: 400

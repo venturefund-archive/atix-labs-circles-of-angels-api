@@ -18,18 +18,22 @@ const activityService = require('../../rest/services/activityService');
 
 describe('Testing activityService', () => {
   let dbTask = [];
+  let dbTaskEvidence = [];
   let dbMilestone = [];
   let dbProject = [];
   let dbUser = [];
 
   const resetDb = () => {
     dbTask = [];
+    dbTaskEvidence = [];
     dbMilestone = [];
     dbProject = [];
     dbUser = [];
   };
 
   const evidenceFile = { name: 'evidence.jpg', size: 20000 };
+
+  const description = 'Testing description';
 
   const newTaskParams = {
     description: 'NewDescription',
@@ -125,6 +129,26 @@ describe('Testing activityService', () => {
     }
   };
 
+  const taskEvidenceDao = {
+    addTaskEvidence: ({ description, proof, approved, task }) => {
+      const newTaskEvidenceId =
+        dbTaskEvidence.length > 0
+          ? dbTaskEvidence[dbTaskEvidence.length - 1].id + 1
+          : 1;
+
+      const newTaskEvidence = {
+        id: newTaskEvidenceId,
+        task,
+        description,
+        proof,
+        approved
+      };
+
+      dbTaskEvidence.push(newTaskEvidence);
+      return newTaskEvidence;
+    }
+  };
+
   const milestoneService = {
     getProjectFromMilestone: id => {
       const found = dbMilestone.find(milestone => milestone.id === id);
@@ -144,7 +168,13 @@ describe('Testing activityService', () => {
   };
 
   const projectService = {
-    isOracleCandidate: jest.fn()
+    isOracleCandidate: jest.fn(),
+    getProjectById: id => {
+      const found = dbProject.find(project => project.id === id);
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('project', id));
+      return found;
+    }
   };
 
   beforeAll(() => {
@@ -358,48 +388,73 @@ describe('Testing activityService', () => {
   describe('Testing addClaim', () => {
     beforeAll(() => {
       coa.addClaim = jest.fn();
-      injectMocks(activityService, { activityDao });
+      injectMocks(activityService, {
+        activityDao,
+        taskEvidenceDao,
+        projectService
+      });
     });
 
     beforeEach(() => {
       dbUser.push(userEntrepreneur);
       dbTask.push({
-        ...updatableTask,
+        ...nonUpdatableTask,
         oracle: userEntrepreneur.id
       });
-      dbMilestone.push(updatableMilestone);
+      dbMilestone.push(nonUpdatableMilestone);
+      dbProject.push(executingProject);
     });
 
-    it('should add an approved claim and return the task id', async () => {
+    it('should add an approved claim and return the claim id', async () => {
       const response = await activityService.addClaim({
-        taskId: updatableTask.id,
+        taskId: nonUpdatableTask.id,
         userId: userEntrepreneur.id,
         file: evidenceFile,
+        description,
         approved: true
       });
-      expect(response).toEqual({ taskId: updatableTask.id });
+      expect(response).toEqual({ taskId: nonUpdatableTask.id });
     });
 
     it('should throw an error if the user is not the oracle assigned', async () => {
       await expect(
         activityService.addClaim({
-          taskId: updatableTask.id,
+          taskId: nonUpdatableTask.id,
           userId: 0,
           file: evidenceFile,
+          description,
           approved: true
         })
       ).rejects.toThrow(
         errors.task.OracleNotAssigned({
           userId: 0,
-          taskId: updatableTask.id
+          taskId: nonUpdatableTask.id
         })
+      );
+    });
+
+    it('should throw an error if the project is not in executing status', async () => {
+      dbTask.push(updatableTask);
+      dbMilestone.push(updatableMilestone);
+      dbProject.push(newProject);
+
+      await expect(
+        activityService.addClaim({
+          taskId: updatableTask.id,
+          userId: userEntrepreneur.id,
+          file: evidenceFile,
+          description,
+          approved: true
+        })
+      ).rejects.toThrow(
+        errors.project.InvalidStatusForEvidenceUpload(newProject.status)
       );
     });
 
     it('should throw an error if any required param is missing', async () => {
       await expect(
         activityService.addClaim({
-          taskId: updatableTask.id,
+          taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
           file: evidenceFile
         })
@@ -409,9 +464,10 @@ describe('Testing activityService', () => {
     it('should throw an error if the file mtype is invalid', async () => {
       await expect(
         activityService.addClaim({
-          taskId: updatableTask.id,
+          taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
           file: { name: 'invalidclaim.exe', size: 2000 },
+          description,
           approved: true
         })
       ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
@@ -420,9 +476,10 @@ describe('Testing activityService', () => {
     it('should throw an error if the file has an invalid size', async () => {
       await expect(
         activityService.addClaim({
-          taskId: updatableTask.id,
+          taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
           file: { name: 'imbig.jpg', size: 500001 },
+          description,
           approved: true
         })
       ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
