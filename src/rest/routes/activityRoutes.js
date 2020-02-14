@@ -52,6 +52,22 @@ const successWithTaskIdResponse = {
   description: 'Returns the id of the task'
 };
 
+const successWithTaskEvidences = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      id: { type: 'integer' },
+      createdAt: { type: 'string' },
+      description: { type: 'string' },
+      proof: { type: 'string' },
+      approved: { type: 'boolean' },
+      task: { type: 'integer' }
+    },
+    description: 'Returns an array with the task evidences'
+  }
+};
+
 const taskRoutes = {
   updateTask: {
     method: 'put',
@@ -217,6 +233,26 @@ const routes = {
       }
     },
     handler: handlers.addDisapprovedClaim
+  },
+
+  getTaskEvidences: {
+    method: 'get',
+    path: `${basePath}/:taskId/claims`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.GET.name],
+        description: 'Get all the evidences uploaded for a specific task',
+        summary: 'Get task evidences',
+        params: { taskIdParam },
+        response: {
+          ...successResponse(successWithTaskEvidences),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getTasksEvidences
   }
 };
 

@@ -82,5 +82,15 @@ module.exports = {
     });
 
     reply.status(200).send(response);
+  },
+
+  getTasksEvidences: () => async (request, reply) => {
+    const { taskId } = request.params;
+
+    const response = await activityService.getTaskEvidences({
+      taskId
+    });
+
+    reply.status(200).send(response);
   }
 };
