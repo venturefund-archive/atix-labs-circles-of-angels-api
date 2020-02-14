@@ -1058,19 +1058,19 @@ module.exports = {
       const now = getStartOfDay(new Date());
       const last = getStartOfDay(lastUpdatedStatusAt);
       const daysPassedSinceLastUpdate = getDaysPassed(last, now);
+      let phaseSeconds;
 
       // TODO: check time for published -> consensus phase
       if (status === projectStatuses.CONSENSUS) {
-        const { consensusSeconds } = project;
-        const consensusDays = secondsToDays(consensusSeconds);
-        return daysPassedSinceLastUpdate >= consensusDays;
+        phaseSeconds = project.consensusSeconds;
+      } else if (status === projectStatuses.FUNDING) {
+        phaseSeconds = project.fundingSeconds;
+      } else {
+        return false;
       }
 
-      if (status === projectStatuses.FUNDING) {
-        const { fundingSeconds } = project;
-        const fundingDays = secondsToDays(fundingSeconds);
-        return daysPassedSinceLastUpdate >= fundingDays;
-      }
+      const phaseDays = secondsToDays(phaseSeconds);
+      return daysPassedSinceLastUpdate >= phaseDays;
     } catch (error) {
       logger.error(
         '[ProjectService] :: An error occurred while checking if time has passed',
@@ -1087,10 +1087,11 @@ module.exports = {
    * @param {*} project
    * @param {string} successStatus status if validation passes
    * @param {string} failStatus status if validation fails
-   * @returns {string} new status
+   * @returns {Promise<string>} new status
    */
   async getNextValidStatus(project, successStatus, failStatus) {
-    let newStatus = projectStatuses.EXECUTING;
+    logger.info('[ProjectService] :: Entering getNextValidStatus method');
+    let newStatus = successStatus;
     try {
       await validateProjectStatusChange({
         user: project.owner,
@@ -1143,6 +1144,9 @@ module.exports = {
         })
       )
     );
-    return removedFunders ? removedFunders.map(funder => funder.user) : [];
+
+    return removedFunders
+      ? removedFunders.filter(funder => !!funder).map(funder => funder.user)
+      : [];
   }
 };

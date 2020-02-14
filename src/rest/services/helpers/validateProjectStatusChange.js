@@ -63,7 +63,7 @@ const allowedTransitions = {
   [FUNDING]: [
     {
       validator: args => validators.fromFunding(args),
-      nextSteps: [EXECUTING]
+      nextSteps: [EXECUTING, CONSENSUS]
     }
   ],
   [EXECUTING]: [
