@@ -86,11 +86,9 @@ module.exports = {
 
   getTasksEvidences: () => async (request, reply) => {
     const { taskId } = request.params;
-    const userId = request.user.id;
 
     const response = await activityService.getTaskEvidences({
-      taskId,
-      userId
+      taskId
     });
 
     reply.status(200).send(response);

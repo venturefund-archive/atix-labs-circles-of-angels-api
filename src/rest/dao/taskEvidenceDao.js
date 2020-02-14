@@ -17,6 +17,6 @@ module.exports = {
   },
 
   async getEvidencesByTaskId(taskId) {
-    this.model.find({ taskId });
+    return this.model.find({ task: taskId });
   }
 };
