@@ -1,7 +1,11 @@
 const errors = require('../../../rest/errors/exporter/ErrorExporter');
 const originalValidators = require('../../../rest/services/helpers/projectStatusValidators/validators');
 
-const { projectStatuses, userRoles } = require('../../../rest/util/constants');
+const {
+  projectStatuses,
+  userRoles,
+  txFunderStatus
+} = require('../../../rest/util/constants');
 const { injectMocks } = require('../../../rest/util/injection');
 
 let validators = Object.assign({}, originalValidators);
@@ -18,12 +22,14 @@ let dbUsers = [];
 let dbMilestones = [];
 let dbProjects = [];
 let dbProjectFunders = [];
+let dbTransfers = [];
 
 const resetDB = () => {
   dbUsers = [];
   dbMilestones = [];
   dbProjects = [];
   dbProjectFunders = [];
+  dbTransfers = [];
 };
 
 const curatorUser = {
@@ -98,6 +104,21 @@ const consensusProject = {
   status: projectStatuses.CONSENSUS
 };
 
+const fundingProject = {
+  id: 4,
+  projectName: 'Funding Project',
+  location: 'Location',
+  timeframe: '12 months',
+  goalAmount: 5000,
+  owner: entrepreneurUser.id,
+  cardPhotoPath: 'cardPhotoPath.jpg',
+  coverPhotoPath: 'coverPhotoPath.jpg',
+  problemAddressed: 'Problem',
+  proposal: 'Proposal',
+  mission: 'Mission',
+  status: projectStatuses.FUNDING
+};
+
 const newProjectMilestones = [
   { id: 1, project: newProject.id },
   { id: 2, project: newProject.id }
@@ -118,6 +139,36 @@ const consensusProjectMilestonesIncomplete = [
   { id: 2, project: consensusProject.id, tasks: [{ id: 2, oracle: null }] }
 ];
 
+const projectTransfersComplete = [
+  {
+    id: 1,
+    status: txFunderStatus.VERIFIED,
+    amount: 2000,
+    project: fundingProject.id
+  },
+  {
+    id: 2,
+    status: txFunderStatus.VERIFIED,
+    amount: 3000,
+    project: fundingProject.id
+  }
+];
+
+const projectTransfersIncomplete = [
+  {
+    id: 1,
+    status: txFunderStatus.VERIFIED,
+    amount: 2000,
+    project: fundingProject.id
+  },
+  {
+    id: 2,
+    status: txFunderStatus.CANCELLED,
+    amount: 3000,
+    project: fundingProject.id
+  }
+];
+
 const projectService = {
   getProjectMilestones: id =>
     dbMilestones.filter(milestone => milestone.project === id),
@@ -127,6 +178,11 @@ const projectService = {
     followers: [],
     oracles: []
   })
+};
+
+const transferService = {
+  getAllTransfersByProject: id =>
+    dbTransfers.filter(transfer => transfer.project === id)
 };
 
 describe('Testing project status validators', () => {
@@ -287,6 +343,57 @@ describe('Testing project status validators', () => {
           errors.project.NoFunderCandidates(consensusProject.id)
         );
       });
+    });
+  });
+
+  describe('From FUNDING status', () => {
+    beforeAll(() =>
+      mockValidatorsDependencies({
+        transferService
+      })
+    );
+
+    beforeEach(() => resetDB());
+
+    describe('to EXECUTING status', () => {
+      it(
+        'should return true if the added amount of the transfers ' +
+          'reaches the minimum amount needed for the project ',
+        async () => {
+          dbTransfers.push(...projectTransfersComplete);
+          await expect(
+            validators.fromFunding({
+              project: fundingProject,
+              newStatus: projectStatuses.EXECUTING
+            })
+          ).resolves.toBe(true);
+        }
+      );
+
+      it('should throw an error if the project does not have transfers ', async () => {
+        await expect(
+          validators.fromFunding({
+            project: fundingProject,
+            newStatus: projectStatuses.EXECUTING
+          })
+        ).rejects.toThrow(errors.project.TransfersNotFound(fundingProject.id));
+      });
+
+      it(
+        'should throw an error if the added amount of the transfers ' +
+          'does not reach the minimum amount needed for the project ',
+        async () => {
+          dbTransfers.push(...projectTransfersIncomplete);
+          await expect(
+            validators.fromFunding({
+              project: fundingProject,
+              newStatus: projectStatuses.EXECUTING
+            })
+          ).rejects.toThrow(
+            errors.project.MinimumFundingNotReached(fundingProject.id)
+          );
+        }
+      );
     });
   });
 
