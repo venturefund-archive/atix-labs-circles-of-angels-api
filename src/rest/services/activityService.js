@@ -490,20 +490,16 @@ module.exports = {
    * Get evidences by task
    *
    * @param {number} taskId
-   * @param {number} userId
    * @returns transferId || error
    */
-  async getTaskEvidences({ taskId, userId }) {
+  async getTaskEvidences({ taskId }) {
     logger.info('[ActivityService] :: Entering getClaims method');
     validateRequiredParams({
       method: 'getClaims',
-      params: { taskId, userId }
+      params: { taskId }
     });
 
     await checkExistence(this.activityDao, taskId, 'task');
-
-    return this.taskEvidenceDao.getEvidencesByTaskId({
-      taskId
-    });
+    return this.taskEvidenceDao.getEvidencesByTaskId(taskId);
   }
 };

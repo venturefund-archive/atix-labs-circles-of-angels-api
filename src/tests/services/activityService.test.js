@@ -156,7 +156,7 @@ describe('Testing activityService', () => {
       dbTaskEvidence.push(newTaskEvidence);
       return newTaskEvidence;
     },
-    getEvidencesByTaskId: ({ taskId }) => {
+    getEvidencesByTaskId: taskId => {
       const evidences = dbTaskEvidence.filter(
         evidence => evidence.task === taskId
       );
@@ -519,10 +519,9 @@ describe('Testing activityService', () => {
       dbTaskEvidence.push(taskEvidence);
     });
 
-    it('should return a list of all featured projects', async () => {
+    it('should return a list of all task evidences', async () => {
       const response = await activityService.getTaskEvidences({
-        taskId: nonUpdatableTask.id,
-        userId: userEntrepreneur.id
+        taskId: nonUpdatableTask.id
       });
 
       expect(response).toHaveLength(1);
@@ -548,7 +547,7 @@ describe('Testing activityService', () => {
 
     it(
       'should assign an oracle to an existing activity if the oracle ' +
-        'applied as candidate for the project',
+      'applied as candidate for the project',
       async () => {
         projectService.isOracleCandidate.mockReturnValueOnce(true);
         const response = await activityService.assignOracle(
