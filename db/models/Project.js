@@ -73,6 +73,10 @@ module.exports = {
       type: 'number',
       defaultsTo: config.defaultProjectTimes.consensusSeconds
     },
+    fundingSeconds: {
+      type: 'number',
+      defaultsTo: config.defaultProjectTimes.fundingSeconds
+    },
     lastUpdatedStatusAt: {
       type: 'string',
       autoCreatedAt: true,

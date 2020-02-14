@@ -198,7 +198,8 @@ module.exports = fastify => {
 
   function configureProjectStatusValidators(service) {
     const dependencies = {
-      projectService
+      projectService,
+      transferService
     };
     injectDependencies(service, dependencies);
   }

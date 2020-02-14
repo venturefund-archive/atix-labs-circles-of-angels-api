@@ -10,5 +10,13 @@ module.exports = {
   async addCandidate({ project, user }) {
     const followerCreated = await this.model.create({ project, user });
     return followerCreated;
+  },
+
+  async deleteByProjectAndFunderId({ projectId, userId }) {
+    const deleted = await this.model.destroyOne({
+      project: projectId,
+      user: userId
+    });
+    return deleted;
   }
 };

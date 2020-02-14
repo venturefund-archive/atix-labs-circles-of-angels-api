@@ -9,7 +9,12 @@ module.exports = {
       config.crons.transitionProjectStatusJob.cronTime || EVERY_DAY_AT_MIDNIGHT,
     async onTick() {
       logger.info('[CronJobService] :: Executing transitionProjectStatusJob');
-      const updatedProjects = await this.projectService.transitionConsensusProjects();
+      const updatedConsensusProjects = await this.projectService.transitionConsensusProjects();
+      const updatedFundingProjects = await this.projectService.transitionFundingProjects();
+      const updatedProjects = [
+        ...updatedConsensusProjects,
+        ...updatedFundingProjects
+      ];
       logger.info('[CronJobService] :: Updated projects:', updatedProjects);
     },
     onComplete() {
