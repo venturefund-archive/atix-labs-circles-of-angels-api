@@ -826,10 +826,15 @@ module.exports = {
     }
 
     const { status } = project;
-    const { PUBLISHED, CONSENSUS } = projectStatuses;
-    if (status !== PUBLISHED && status !== CONSENSUS) {
+    const { PUBLISHED, CONSENSUS, FUNDING } = projectStatuses;
+    const allowedStatusesByRole = {
+      oracles: [PUBLISHED, CONSENSUS],
+      funders: [PUBLISHED, CONSENSUS, FUNDING]
+    };
+
+    if (!allowedStatusesByRole[role].includes(status)) {
       logger.error(
-        `[ProjectService] :: It doesn't allow apply when the project is in ${status} status`
+        `[ProjectService] :: It doesn't allow apply as ${role} when the project is in ${status} status`
       );
       throw new COAError(errors.project.CantApplyToProject(status));
     }
