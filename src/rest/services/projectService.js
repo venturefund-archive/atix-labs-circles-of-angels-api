@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const config = require('config');
 const path = require('path');
 const { uniqWith } = require('lodash');
 const {
@@ -32,7 +33,8 @@ const logger = require('../logger');
 const {
   secondsToDays,
   getStartOfDay,
-  getDaysPassed
+  getDaysPassed,
+  getSecondsPassed
 } = require('../util/dateFormatters');
 
 const thumbnailType = 'thumbnail';
@@ -1060,9 +1062,25 @@ module.exports = {
         params: { project }
       });
       const { lastUpdatedStatusAt, status } = project;
-      const now = getStartOfDay(new Date());
-      const last = getStartOfDay(lastUpdatedStatusAt);
-      const daysPassedSinceLastUpdate = getDaysPassed(last, now);
+
+      // TODO: couldn't think of a better way to do this,
+      //       production needs to check by day, staging by seconds/minutes
+      //       cron in production runs at midnight, in staging every few minutes
+      const now =
+        config.defaultProjectTimes.minimumUnit === 'days'
+          ? getStartOfDay(new Date())
+          : new Date();
+
+      const last =
+        config.defaultProjectTimes.minimumUnit === 'days'
+          ? getStartOfDay(lastUpdatedStatusAt)
+          : lastUpdatedStatusAt;
+
+      const daysPassedSinceLastUpdate =
+        config.defaultProjectTimes.minimumUnit === 'days'
+          ? getDaysPassed(last, now)
+          : getSecondsPassed(last, now);
+
       let phaseSeconds;
 
       // TODO: check time for published -> consensus phase
@@ -1074,8 +1092,11 @@ module.exports = {
         return false;
       }
 
-      const phaseDays = secondsToDays(phaseSeconds);
-      return daysPassedSinceLastUpdate >= phaseDays;
+      const phaseDuration =
+        config.defaultProjectTimes.minimumUnit === 'days'
+          ? secondsToDays(phaseSeconds)
+          : phaseSeconds;
+      return daysPassedSinceLastUpdate >= phaseDuration;
     } catch (error) {
       logger.error(
         '[ProjectService] :: An error occurred while checking if time has passed',
