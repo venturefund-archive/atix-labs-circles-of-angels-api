@@ -174,8 +174,7 @@ module.exports = fastify => {
       activityService,
       milestoneBudgetStatusDao,
       projectService,
-      userService,
-      userDao
+      userService
     };
     injectDependencies(service, dependencies);
   }

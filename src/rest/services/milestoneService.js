@@ -6,7 +6,9 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { isEmpty, remove } = require('lodash');
+const { isEmpty, remove, zip } = require('lodash');
+const { coa } = require('@nomiclabs/buidler');
+const { utils } = require('ethers');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
@@ -628,5 +630,46 @@ module.exports = {
     );
 
     return { milestoneId: milestoneUpdated.id };
+  },
+
+  /**
+   * Checks in the blockchain if all tasks from
+   * a milestone are approved or not.
+   *
+   * @param {number} milestoneId
+   * @returns {boolean} completed
+   */
+  async isMilestoneCompleted(milestoneId) {
+    logger.info('[MilestoneService] :: Entering isMilestoneCompleted method');
+    validateRequiredParams({
+      method: 'isMilestoneCompleted',
+      params: { milestoneId }
+    });
+    const milestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId } = milestone;
+
+    const tasks = await this.milestoneDao.getMilestoneTasks(milestoneId);
+
+    const tasksClaimsWithValidators = await Promise.all(
+      tasks.map(async task => {
+        const oracle = await this.userService.getUserById(task.oracle);
+        if (!oracle || !oracle.address)
+          throw new COAError(errors.task.OracleAddressNotFound);
+
+        // TODO: check if we use oracle.address or oracle.id
+        // TODO: how to properly hash this
+        const claimHash = utils.id(`${projectId}${oracle.address}${task.id}`);
+        return [oracle.address, claimHash];
+      })
+    );
+
+    const [validators, claims] = zip(...tasksClaimsWithValidators);
+
+    return coa.milestoneApproved(projectId, validators, claims);
   }
 };
