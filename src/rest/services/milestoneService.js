@@ -563,10 +563,13 @@ module.exports = {
       );
     }
 
-    const milestoneUpdated = await this.milestoneDao.updateMilestone({
-      claimStatus: claimMilestoneStatus.CLAIMED
-    });
+    const milestoneUpdated = await this.milestoneDao.updateMilestone(
+      {
+        claimStatus: claimMilestoneStatus.CLAIMED
+      },
+      milestoneId
+    );
 
-    return milestoneUpdated;
+    return { milestoneId: milestoneUpdated.id };
   }
 };
