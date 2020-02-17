@@ -7,13 +7,17 @@
  */
 
 const { isEmpty, remove } = require('lodash');
-const { xlsxConfigs, projectStatuses } = require('../util/constants');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
+const {
+  xlsxConfigs,
+  projectStatuses,
+  claimMilestoneStatus
+} = require('../util/constants');
 
 const logger = require('../logger');
 
@@ -510,5 +514,59 @@ module.exports = {
       logger.error('[Milestone Service] :: Error getting Milestones:', error);
       throw Error('Error getting Milestones');
     }
+  },
+
+  /**
+   * Update claim status for the specific milestone
+   *
+   * @param {number} milestoneId
+   * @param {number} userId
+   * @returns
+   */
+  async claimMilestone({ milestoneId, userId }) {
+    logger.info('[MilestoneService] :: Entering claimMilestone method');
+    validateRequiredParams({
+      method: 'claimMilestone',
+      params: { milestoneId, userId }
+    });
+
+    const milestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId, claimStatus } = milestone;
+
+    logger.info(
+      `[MilestoneService] :: Found milestone ${milestoneId} of project ${projectId}`
+    );
+
+    const project = await this.projectService.getProjectById(projectId);
+    const { status, owner } = project;
+
+    validateOwnership(owner, userId);
+
+    if (status !== projectStatuses.EXECUTING) {
+      logger.error(
+        `[MilestoneService] :: Can't claim milestone when project is in ${status} status`
+      );
+      throw new COAError(errors.project.InvalidStatusForClaimMilestone(status));
+    }
+
+    if (claimStatus !== claimMilestoneStatus.CLAIMABLE) {
+      logger.error(
+        `[MilestoneService] :: Can't claim milestone when milestone is in ${claimStatus} status`
+      );
+      throw new COAError(
+        errors.milestone.InvalidStatusForClaimMilestone(claimStatus)
+      );
+    }
+
+    const milestoneUpdated = await this.milestoneDao.updateMilestone({
+      claimStatus: claimMilestoneStatus.CLAIMED
+    });
+
+    return milestoneUpdated;
   }
 };

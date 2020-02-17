@@ -6,8 +6,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/milestones';
-
 const milestoneService = require('../../services/milestoneService');
 
 module.exports = {
@@ -45,6 +43,18 @@ module.exports = {
       milestoneId,
       userId
     );
+    reply.status(200).send(response);
+  },
+
+  claimMilestone: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const userId = request.user.id;
+
+    const response = await milestoneService.claimMilestone({
+      milestoneId,
+      userId
+    });
+
     reply.status(200).send(response);
   }
 };
