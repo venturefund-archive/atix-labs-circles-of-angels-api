@@ -66,6 +66,7 @@ const milestonesResponse = {
       id: { type: 'integer' },
       category: { type: 'string' },
       description: { type: 'string' },
+      claimStatus: { type: 'string' },
       tasks: {
         type: 'array',
         items: {
