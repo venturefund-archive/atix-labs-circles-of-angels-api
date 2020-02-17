@@ -51,6 +51,13 @@ CREATE TYPE ProjectStatus AS ENUM (
   'cancelled'
 );
 
+CREATE TYPE ClaimStatus AS ENUM (
+  'pending',
+  'claimable',
+  'claimed',
+  'transferred'
+);
+
 CREATE TABLE public.project (
     id SERIAL NOT NULL,
     "projectName" varchar(50) NOT NULL,
@@ -115,6 +122,7 @@ CREATE TABLE public.milestone (
     "createdAt" date DEFAULT NOW(),
     description text,
     category text,
+    claimStatus ClaimStatus DEFAULT 'pending'
     PRIMARY KEY (id),
     FOREIGN KEY ("projectId") REFERENCES public.project (id) ON DELETE CASCADE
 );

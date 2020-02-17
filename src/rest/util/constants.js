@@ -71,6 +71,13 @@ const txFunderStatus = {
   VERIFIED: 'verified'
 };
 
+const claimMilestoneStatus = {
+  PENDING: 'pending',
+  CLAIMABLE: 'claimable',
+  CLAIMED: 'claimed',
+  TRANSFERRED: 'transferred'
+};
+
 const userRoles = {
   COA_ADMIN: 'admin',
   ENTREPRENEUR: 'entrepreneur',
@@ -173,5 +180,6 @@ module.exports = {
   voteEnum,
   proposalTypeEnum,
   daoMemberRoleNames,
-  daoMemberRoleEnum
+  daoMemberRoleEnum,
+  claimMilestoneStatus
 };

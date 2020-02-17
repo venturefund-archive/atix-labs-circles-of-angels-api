@@ -8,10 +8,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { projectStatuses, userRoles } = require('../../rest/util/constants');
 const { injectMocks } = require('../../rest/util/injection');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const milestoneService = require('../../rest/services/milestoneService');
+const {
+  projectStatuses,
+  userRoles,
+  claimMilestoneStatus
+} = require('../../rest/util/constants');
 
 describe('Testing milestoneService', () => {
   let dbMilestone = [];
@@ -60,6 +64,18 @@ describe('Testing milestoneService', () => {
     project: executingProject.id,
     description: 'NonUpdatableDescription',
     category: 'NonUpdatableCategory'
+  };
+
+  const claimableMilestone = {
+    id: 3,
+    project: executingProject.id,
+    claimStatus: claimMilestoneStatus.CLAIMABLE
+  };
+
+  const nonClaimableMilestone = {
+    id: 4,
+    project: executingProject.id,
+    claimStatus: claimMilestoneStatus.PENDING
   };
 
   const milestonesFile = {
@@ -118,7 +134,7 @@ describe('Testing milestoneService', () => {
       return newMilestone;
     },
     updateMilestone: (params, milestoneId) => {
-      const found = dbMilestone.find(task => task.id === milestoneId);
+      const found = dbMilestone.find(milestone => milestone.id === milestoneId);
       if (!found) return;
       const updated = { ...found, ...params };
       dbMilestone[dbMilestone.indexOf(found)] = updated;
@@ -157,7 +173,8 @@ describe('Testing milestoneService', () => {
   };
 
   const projectService = {
-    getProject: id => dbProject.find(project => project.id === id)
+    getProject: id => dbProject.find(project => project.id === id),
+    getProjectById: id => dbProject.find(project => project.id === id)
   };
 
   beforeEach(() => resetDb());
@@ -690,6 +707,88 @@ describe('Testing milestoneService', () => {
       resetDb();
       const response = await milestoneService.getAllMilestones();
       expect(response).toHaveLength(0);
+    });
+  });
+
+  describe('Testing claimMilestone', () => {
+    beforeAll(() => {
+      injectMocks(milestoneService, {
+        milestoneDao,
+        projectService
+      });
+    });
+
+    beforeEach(() => {
+      dbProject = [];
+      dbUser = [];
+      dbMilestone = [];
+      dbProject.push(executingProject);
+      dbUser.push(userEntrepreneur);
+      dbMilestone.push(claimableMilestone);
+    });
+
+    it('should claim the milestone and return its id', async () => {
+      const response = await milestoneService.claimMilestone({
+        userId: userEntrepreneur.id,
+        milestoneId: claimableMilestone.id
+      });
+
+      expect(response).toEqual({ milestoneId: claimableMilestone.id });
+    });
+
+    it('should throw an error if an argument is not defined', async () => {
+      await expect(
+        milestoneService.claimMilestone({
+          userId: userEntrepreneur.id
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('claimMilestone'));
+    });
+
+    it('should throw an error if the milestone does not exist', async () => {
+      await expect(
+        milestoneService.claimMilestone({
+          userId: userEntrepreneur.id,
+          milestoneId: 0
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('milestone', 0));
+    });
+
+    it('should throw an error if project is not the owner', async () => {
+      await expect(
+        milestoneService.claimMilestone({
+          userId: 2,
+          milestoneId: claimableMilestone.id
+        })
+      ).rejects.toThrow(errors.user.UserIsNotOwnerOfProject);
+    });
+
+    it('should throw an error if the project is not in executing status', async () => {
+      dbProject.push(newProject);
+      dbMilestone.push(updatableMilestone);
+
+      await expect(
+        milestoneService.claimMilestone({
+          userId: userEntrepreneur.id,
+          milestoneId: updatableMilestone.id
+        })
+      ).rejects.toThrow(
+        errors.project.InvalidStatusForClaimMilestone(projectStatuses.NEW)
+      );
+    });
+
+    it('should throw an error if the milestone is not in claimable status', async () => {
+      dbMilestone.push(nonClaimableMilestone);
+
+      await expect(
+        milestoneService.claimMilestone({
+          userId: userEntrepreneur.id,
+          milestoneId: nonClaimableMilestone.id
+        })
+      ).rejects.toThrow(
+        errors.milestone.InvalidStatusForClaimMilestone(
+          claimMilestoneStatus.PENDING
+        )
+      );
     });
   });
 });
