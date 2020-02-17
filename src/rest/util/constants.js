@@ -75,7 +75,7 @@ const claimMilestoneStatus = {
   PENDING: 'pending',
   CLAIMABLE: 'claimable',
   CLAIMED: 'claimed',
-  TRANSFERED: 'transfered'
+  TRANSFERRED: 'transferred'
 };
 
 const userRoles = {

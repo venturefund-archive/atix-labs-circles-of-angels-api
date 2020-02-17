@@ -2,7 +2,7 @@ CREATE TYPE ClaimStatus AS ENUM (
   'pending',
   'claimable',
   'claimed',
-  'transfered'
+  'transferred'
 );
 
 ALTER TABLE public.milestone ADD COLUMN 'claimStatus' TYPE ClaimStatus DEFAULT 'pending';
