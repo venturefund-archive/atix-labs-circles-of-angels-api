@@ -164,6 +164,26 @@ const milestoneRoutes = {
       }
     },
     handler: handlers.deleteMilestone
+  },
+
+  claimMilestone: {
+    method: 'post',
+    path: `${basePath}/:milestoneId/claim`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
+        description: 'Milestone claim',
+        summary: 'Milestone claim',
+        params: milestoneIdParam,
+        response: {
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.claimMilestone
   }
 };
 
