@@ -55,7 +55,7 @@ CREATE TYPE ClaimStatus AS ENUM (
   'pending',
   'claimable',
   'claimed',
-  'transfered'
+  'transferred'
 );
 
 CREATE TABLE public.project (
