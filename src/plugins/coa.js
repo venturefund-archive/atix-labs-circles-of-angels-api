@@ -68,6 +68,11 @@ module.exports = class COA {
     return tx;
   }
 
+  async milestoneApproved(project, validators, claims) {
+    const registry = await this.getRegistry();
+    return registry.areApproved(project, validators, claims);
+  }
+
   async approveTask(projectId, validator, taskId, proof) {
     const coa = await this.getCOA();
 
