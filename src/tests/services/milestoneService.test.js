@@ -407,9 +407,10 @@ describe('Testing milestoneService', () => {
       () => {
         const fullActivities = [
           {
-            tasks: 'Now Description'
+            tasks: 'Now Description',
+            impactCriterion: 'New review criteria'
           },
-          { tasks: 'Old tasks' }
+          { tasks: 'Old tasks', impactCriterion: 'Old impact criterion' }
         ];
         const response = milestoneService.deleteFieldsFromActivities(
           fullActivities
@@ -417,12 +418,14 @@ describe('Testing milestoneService', () => {
         expect(response).toEqual([
           {
             description: fullActivities[0].tasks,
-            reviewCriteria: 'review criteria',
+            reviewCriteria: fullActivities[0].impactCriterion,
+            impactCriterion: fullActivities[0].impactCriterion,
             tasks: fullActivities[0].tasks
           },
           {
             description: fullActivities[1].tasks,
-            reviewCriteria: 'review criteria',
+            reviewCriteria: fullActivities[1].impactCriterion,
+            impactCriterion: fullActivities[1].impactCriterion,
             tasks: fullActivities[1].tasks
           }
         ]);

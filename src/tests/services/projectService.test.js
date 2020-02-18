@@ -10,7 +10,12 @@ const validators = require('../../rest/services/helpers/projectStatusValidators/
 
 const { injectMocks } = require('../../rest/util/injection');
 
-const projectService = require('../../rest/services/projectService');
+const originalProjectService = require('../../rest/services/projectService');
+
+let projectService = Object.assign({}, originalProjectService);
+const restoreProjectService = () => {
+  projectService = Object.assign({}, originalProjectService);
+};
 
 const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 const projectName = 'validProjectName';
@@ -299,6 +304,7 @@ describe('Project Service Test', () => {
 
   describe('Update project', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, { projectDao });
     });
 
@@ -327,6 +333,7 @@ describe('Project Service Test', () => {
 
   describe('Save project', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, { projectDao });
     });
 
@@ -346,6 +353,7 @@ describe('Project Service Test', () => {
 
   describe('Project thumbnail', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, { projectDao, userService });
     });
 
@@ -526,6 +534,7 @@ describe('Project Service Test', () => {
 
   describe('Project detail', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, { projectDao, userService });
     });
 
@@ -715,6 +724,10 @@ describe('Project Service Test', () => {
   });
 
   describe('Project proposal', () => {
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, { projectDao, userService });
+    });
     describe('Update project proposal', () => {
       it('Should update the project when the project exists and all the fields are valid', async () => {
         const { projectId } = await projectService.updateProjectProposal(1, {
@@ -784,8 +797,8 @@ describe('Project Service Test', () => {
   });
 
   describe('Get projects', () => {
-    beforeAll(() => {});
-    it('Should return an empty list if no projects are published', () => {
+    it('Should return an empty list if there are no existing projects', () => {
+      beforeAll(() => restoreProjectService());
       injectMocks(projectService, {
         projectDao: Object.assign({}, projectDao, {
           findAllByProps: () => []
@@ -793,7 +806,8 @@ describe('Project Service Test', () => {
       });
       expect(projectService.getProjects()).resolves.toHaveLength(0);
     });
-    it('Should return an array of projects if there is any project published', () => {
+    it('Should return an array of projects if there is any project', () => {
+      beforeAll(() => restoreProjectService());
       injectMocks(projectService, {
         projectDao: Object.assign({}, projectDao, {
           findAllByProps: () => [pendingProject]
@@ -804,12 +818,9 @@ describe('Project Service Test', () => {
   });
 
   describe('Project milestone', () => {
-    beforeAll(() => {
-      injectMocks(projectService, { milestoneDao, projectDao, userService });
-    });
-
     describe('Process milestone file', () => {
       beforeAll(() => {
+        restoreProjectService();
         injectMocks(projectService, {
           milestoneDao,
           projectDao,
@@ -871,6 +882,7 @@ describe('Project Service Test', () => {
 
     describe('Get project milestones', () => {
       beforeAll(() => {
+        restoreProjectService();
         injectMocks(projectService, {
           milestoneService,
           projectDao,
@@ -894,6 +906,7 @@ describe('Project Service Test', () => {
 
   describe('Get projects by owner', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, {
         projectDao: Object.assign({}, projectDao, {
           findAllByProps: filter => {
@@ -929,6 +942,7 @@ describe('Project Service Test', () => {
       { id: 3, status: projectStatuses.FINISHED }
     ];
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, {
         projectDao: Object.assign({}, projectDao, {
           findAllByProps: filter =>
@@ -961,6 +975,7 @@ describe('Project Service Test', () => {
 
   describe('Generate project agreement', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, {
         milestoneService,
         transferService,
@@ -1029,6 +1044,7 @@ describe('Project Service Test', () => {
 
   describe('Get users related to a project', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, {
         projectDao
       });
@@ -1056,6 +1072,7 @@ describe('Project Service Test', () => {
 
   describe('Update project status', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, {
         projectDao
       });
@@ -1114,6 +1131,7 @@ describe('Project Service Test', () => {
 
   describe('Get featured projects', () => {
     beforeAll(() => {
+      restoreProjectService();
       injectMocks(projectService, {
         featuredProjectDao: Object.assign(
           {},
@@ -1139,6 +1157,147 @@ describe('Project Service Test', () => {
         { ...executingProject },
         { ...consensusProject }
       ]);
+    });
+  });
+
+  describe('Transition Consensus Projects', () => {
+    let dbProject = [];
+    const consensusToFunding = {
+      id: 1,
+      status: projectStatuses.CONSENSUS,
+      owner: 1
+    };
+    beforeEach(() => {
+      dbProject = [];
+    });
+
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        projectDao: Object.assign(
+          {},
+          {
+            findAllByProps: () => dbProject,
+            updateProject: (toUpdate, id) => {
+              let existing = dbProject.find(project => project.id === id);
+              if (existing) existing = { ...existing, ...toUpdate };
+              return existing;
+            }
+          }
+        ),
+        hasTimePassed: jest.fn()
+      });
+    });
+
+    it('should change the project status to funding', async () => {
+      dbProject.push(consensusToFunding);
+      projectService.hasTimePassed.mockReturnValueOnce(true);
+      const response = await projectService.transitionConsensusProjects();
+      expect(response).toHaveLength(1);
+      expect(response).toEqual([
+        { projectId: consensusToFunding.id, newStatus: projectStatuses.FUNDING }
+      ]);
+    });
+
+    it(
+      'should change the project status to rejected ' +
+        'if the validator throws an error',
+      async () => {
+        dbProject.push(consensusToFunding);
+        projectService.hasTimePassed.mockReturnValueOnce(true);
+        validators.fromConsensus.mockImplementationOnce(({ project }) => {
+          throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
+        });
+        const response = await projectService.transitionConsensusProjects();
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([
+          {
+            projectId: consensusToFunding.id,
+            newStatus: projectStatuses.REJECTED
+          }
+        ]);
+      }
+    );
+
+    it('should not update the project if the consensus time has not passed', async () => {
+      dbProject.push(consensusToFunding);
+      projectService.hasTimePassed.mockReturnValueOnce(false);
+      const response = await projectService.transitionConsensusProjects();
+      expect(response).toHaveLength(0);
+    });
+
+    it(
+      'should return an array with the projects that were ' +
+        'changed to funding and to rejected, and omit the ones not ready',
+      async () => {
+        dbProject.push(
+          consensusToFunding,
+          { ...consensusToFunding, id: 2 },
+          { ...consensusToFunding, id: 3 }
+        );
+        projectService.hasTimePassed
+          .mockReturnValueOnce(false)
+          .mockReturnValueOnce(true)
+          .mockReturnValueOnce(true);
+
+        validators.fromConsensus.mockImplementationOnce(({ project }) => {
+          throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
+        });
+        const response = await projectService.transitionConsensusProjects();
+        expect(response).toHaveLength(2);
+        expect(response).toEqual([
+          {
+            projectId: 2,
+            newStatus: projectStatuses.REJECTED
+          },
+          {
+            projectId: 3,
+            newStatus: projectStatuses.FUNDING
+          }
+        ]);
+      }
+    );
+  });
+
+  describe('Has time passed', () => {
+    const SECONDS_IN_A_DAY = 86400;
+    const TODAY = new Date();
+    const YESTERDAY = new Date(TODAY).setDate(TODAY.getDate() - 1);
+
+    beforeAll(() => restoreProjectService());
+
+    it('should return true if a day has passed since last updated', () => {
+      expect(
+        projectService.hasTimePassed({
+          lastUpdatedStatusAt: YESTERDAY,
+          status: projectStatuses.CONSENSUS,
+          consensusSeconds: SECONDS_IN_A_DAY
+        })
+      ).toBe(true);
+    });
+
+    it('should return false if a day has not passed since last updated', () => {
+      expect(
+        projectService.hasTimePassed({
+          lastUpdatedStatusAt: TODAY,
+          status: projectStatuses.CONSENSUS,
+          consensusSeconds: SECONDS_IN_A_DAY
+        })
+      ).toBe(false);
+    });
+
+    it('should return false if the project is not in consensus phase', () => {
+      expect(
+        projectService.hasTimePassed({
+          lastUpdatedStatusAt: YESTERDAY,
+          status: projectStatuses.EXECUTING,
+          consensusSeconds: SECONDS_IN_A_DAY
+        })
+      ).toBe(false);
+    });
+
+    it('should return false if it is invoked without params', () => {
+      expect(projectService.hasTimePassed()).toBe(false);
     });
   });
 });

@@ -8,15 +8,9 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const sha256 = require('sha256');
+const { coa } = require('@nomiclabs/buidler');
 const files = require('../../rest/util/files');
-const testHelper = require('../testHelper');
-const {
-  projectStatus,
-  projectStatuses,
-  activityStatus,
-  userRoles
-} = require('../../rest/util/constants');
+const { projectStatuses, userRoles } = require('../../rest/util/constants');
 const { injectMocks } = require('../../rest/util/injection');
 const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
@@ -35,11 +29,7 @@ describe('Testing activityService', () => {
     dbUser = [];
   };
 
-  const newMilestoneParams = {
-    description: 'NewDescription',
-    category: 'NewCategory',
-    projectId: 1
-  };
+  const evidenceFile = { name: 'evidence.jpg', size: 20000 };
 
   const newTaskParams = {
     description: 'NewDescription',
@@ -125,9 +115,12 @@ describe('Testing activityService', () => {
     getTaskByIdWithMilestone: taskId => {
       const found = dbTask.find(task => task.id === taskId);
       if (!found) return;
+      const populatedMilestone = dbMilestone.find(
+        milestone => milestone.id === found.milestone
+      );
       return {
         ...found,
-        milestone: newMilestoneParams
+        milestone: populatedMilestone
       };
     }
   };
@@ -364,58 +357,75 @@ describe('Testing activityService', () => {
 
   describe('Testing addClaim', () => {
     beforeAll(() => {
+      coa.addClaim = jest.fn();
       injectMocks(activityService, { activityDao });
     });
 
     beforeEach(() => {
       dbUser.push(userEntrepreneur);
+      dbTask.push({
+        ...updatableTask,
+        oracle: userEntrepreneur.id
+      });
+      dbMilestone.push(updatableMilestone);
     });
 
     it('should add an approved claim and return the task id', async () => {
-      const file = { name: 'evidence.jpg', size: 20000 };
-      const newTask = {
-        id: 1,
-        description: 'NewDescription',
-        category: 'NewCategory',
-        oracle: userEntrepreneur.id
-      };
-
-      dbTask.push(newTask);
-
       const response = await activityService.addClaim({
-        taskId: newTask.id,
+        taskId: updatableTask.id,
         userId: userEntrepreneur.id,
-        file,
+        file: evidenceFile,
         approved: true
       });
-
-      expect(response).toEqual({ taskId: newTask.id });
+      expect(response).toEqual({ taskId: updatableTask.id });
     });
 
     it('should throw an error if the user is not the oracle assigned', async () => {
-      const file = { name: 'evidence.jpg', size: 20000, md5: 'aaa' };
-      const newTask = {
-        id: 1,
-        description: 'NewDescription',
-        category: 'NewCategory',
-        oracle: userEntrepreneur.id + 1
-      };
-
-      dbTask.push(newTask);
-
       await expect(
         activityService.addClaim({
-          taskId: newTask.id,
-          userId: userEntrepreneur.id,
-          file,
+          taskId: updatableTask.id,
+          userId: 0,
+          file: evidenceFile,
           approved: true
         })
       ).rejects.toThrow(
         errors.task.OracleNotAssigned({
-          userId: userEntrepreneur.id,
-          taskId: newTask.id
+          userId: 0,
+          taskId: updatableTask.id
         })
       );
+    });
+
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        activityService.addClaim({
+          taskId: updatableTask.id,
+          userId: userEntrepreneur.id,
+          file: evidenceFile
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('addClaim'));
+    });
+
+    it('should throw an error if the file mtype is invalid', async () => {
+      await expect(
+        activityService.addClaim({
+          taskId: updatableTask.id,
+          userId: userEntrepreneur.id,
+          file: { name: 'invalidclaim.exe', size: 2000 },
+          approved: true
+        })
+      ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
+    });
+
+    it('should throw an error if the file has an invalid size', async () => {
+      await expect(
+        activityService.addClaim({
+          taskId: updatableTask.id,
+          userId: userEntrepreneur.id,
+          file: { name: 'imbig.jpg', size: 500001 },
+          approved: true
+        })
+      ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
     });
   });
 
@@ -505,384 +515,112 @@ describe('Testing activityService', () => {
       ).rejects.toThrow(errors.task.NotOracleCandidate);
     });
   });
-});
 
-jest.mock('sha256');
-
-describe.skip('Testing activityService createActivities', () => {
-  let activityDao;
-  let activityService;
-  beforeAll(() => {
-    activityDao = {
-      async saveActivity(activity, milestoneId) {
-        const toSave = {
-          ...activity,
-          milestone: milestoneId
-        };
-        return toSave;
-      }
-    };
-    activityService = require('../../rest/services/activityService');
-    injectMocks(activityService, {
-      activityDao
-    });
-  });
-
-  it('should create activities and associate them to a milestone', async () => {
-    const milestoneId = 2;
-
-    const mockActivities = [
-      testHelper.buildActivity({}),
-      testHelper.buildActivity({}),
-      testHelper.buildActivity({}),
-      testHelper.buildEmptyActivity({})
-    ];
-
-    const toSend = mockActivities.map(activity => ({
-      tasks: activity.tasks,
-      impact: activity.impact,
-      impactCriterion: activity.impactCriterion,
-      signsOfSuccess: activity.signsOfSuccess,
-      signsOfSuccessCriterion: activity.signsOfSuccessCriterion,
-      category: activity.category,
-      keyPersonnel: activity.keyPersonnel,
-      budget: activity.budget
-    }));
-
-    const expected = mockActivities
-      .filter(a => a.id !== undefined)
-      .map(activity => ({
-        tasks: activity.tasks,
-        impact: activity.impact,
-        impactCriterion: activity.impactCriterion,
-        signsOfSuccess: activity.signsOfSuccess,
-        signsOfSuccessCriterion: activity.signsOfSuccessCriterion,
-        category: activity.category,
-        keyPersonnel: activity.keyPersonnel,
-        budget: activity.budget,
-        milestone: milestoneId
-      }));
-    const activities = await activityService.createActivities(
-      toSend,
-      milestoneId
-    );
-    expect(activities).toEqual(expected);
-  });
-});
-
-describe.skip('Testing activityService updateStatus', () => {
-  let activityDao;
-  let activityService;
-
-  const activityId = 12;
-
-  let mockActivity;
-
-  beforeEach(() => {
-    mockActivity = testHelper.buildActivity({
-      id: activityId,
-      status: activityStatus.PENDING
-    });
-  });
-
-  beforeAll(() => {
-    activityDao = {
-      async findById(id) {
-        if (id === '') {
-          throw Error('Error getting activity');
-        }
-        if (id === 0) {
-          return undefined;
-        }
-        return { ...mockActivity, id };
-      },
-
-      async updateStatus(id, status) {
-        if (status === 0) {
-          return undefined;
-        }
-        return { ...mockActivity, status };
-      }
-    };
-    activityService = require('../../rest/services/activityService');
-    injectMocks(activityService, {
-      activityDao
-    });
-
-    activityService.getProjectByActivity = activity => {
-      if (activity.id === activityId) {
-        return testHelper.buildProject(1, 1, {
-          status: projectStatus.IN_PROGRESS
-        });
-      }
-
-      return testHelper.buildProject(1, 1, {
-        status: projectStatus.PUBLISHED
+  describe('Testing createActivities', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        userService,
+        projectService
       });
-    };
-
-    activityService.completeActivity = jest.fn();
-  });
-
-  it('should the activity with the updated status', async () => {
-    const status = activityStatus.VERIFIED;
-    const expected = { ...mockActivity, status };
-    const response = await activityService.updateStatus(status, activityId);
-
-    expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity does not exist', async () => {
-    const response = await activityService.updateStatus(
-      activityStatus.VERIFIED,
-      0
-    );
-    const expected = {
-      status: 404,
-      error: "Activity doesn't exist"
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should return an error if the activity project is not IN PROGRESS', async () => {
-    const response = await activityService.updateStatus(
-      activityStatus.VERIFIED,
-      activityId + 1
-    );
-    const expected = {
-      error: 'Activity status cannot be updated. Project is not started.',
-      status: 409
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should call completeActivity if the new status is COMPLETED', async () => {
-    await activityService.updateStatus(activityStatus.COMPLETED, activityId);
-    return expect(activityService.completeActivity).toBeCalled();
-  });
-
-  it('should return an error if the activity could not be updated', async () => {
-    const response = await activityService.updateStatus(0, activityId);
-    const expected = {
-      status: 409,
-      error: ' Could not update Activity status'
-    };
-    return expect(response).toEqual(expected);
-  });
-
-  it('should throw an error if an exception is caught', async () =>
-    expect(
-      activityService.updateStatus(activityStatus.VERIFIED, '')
-    ).rejects.toEqual(Error('Error updating Activity status')));
-});
-
-describe.skip('Testing ActivityService addEvidenceFiles', () => {
-  let activityService;
-  let activityDao;
-  const user = testHelper.buildUserOracle({});
-
-  beforeEach(() => {
-    activityDao = {
-      async findById(id) {
-        if (id === '') {
-          throw Error('Error getting activity');
-        }
-        if (id === 0) {
-          return undefined;
-        }
-        return testHelper.buildActivity({ id });
-      }
-    };
-
-    activityService = require('../../rest/services/activityService');
-    injectMocks(activityService, {
-      //FIXME
-      activityDao
     });
 
-    activityService.addEvidence = () => {
-      return {
-        fileHash: '23kfek32kek3edd'
+    beforeEach(() => {
+      dbProject.push(newProject);
+      dbMilestone.push(updatableMilestone);
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should save all activities and return them', async () => {
+      const newTask = {
+        description: 'TaskDescription',
+        reviewCriteria: 'TaskReview',
+        category: 'TaskCategory',
+        keyPersonnel: 'TaskPersonnel',
+        budget: '5000'
       };
-    };
+      const response = await activityService.createActivities(
+        [newTask, newTask, newTask],
+        updatableMilestone.id
+      );
+      expect(response).toHaveLength(3);
+      const savedActivities = dbTask.filter(
+        task => task.milestone === updatableMilestone.id
+      );
+      expect(response).toEqual(savedActivities);
+    });
 
-    activityService.getProjectByActivity = () =>
-      testHelper.buildProject(1, 1, {
-        status: projectStatus.IN_PROGRESS
+    it('should skip the empty activities and save and return the others', async () => {
+      const newTask = {
+        description: 'TaskDescription',
+        reviewCriteria: 'TaskReview',
+        category: 'TaskCategory',
+        keyPersonnel: 'TaskPersonnel',
+        budget: '5000'
+      };
+      const response = await activityService.createActivities(
+        [
+          newTask,
+          {
+            description: '',
+            reviewCriteria: '',
+            category: '',
+            keyPersonnel: '',
+            budget: ''
+          },
+          newTask
+        ],
+        updatableMilestone.id
+      );
+      expect(response).toHaveLength(2);
+      const savedActivities = dbTask.filter(
+        task => task.milestone === updatableMilestone.id
+      );
+      expect(response).toEqual(savedActivities);
+    });
+
+    it('should return an empty array if no activities were provided', async () => {
+      const response = await activityService.createActivities(
+        [],
+        updatableMilestone.id
+      );
+      expect(response).toHaveLength(0);
+    });
+  });
+
+  describe('Testing getMilestoneAndTaskFromId', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        userService,
+        projectService
       });
-  });
-
-  it('user oracle add evidences files should update database and blockchain', async () => {
-    const files = [
-      testHelper.getMockFiles.projectCoverPhoto,
-      testHelper.getMockFiles.projectCardPhoto
-    ];
-    const activityId = 1;
-
-    const response = await activityService.addEvidenceFiles(
-      activityId,
-      files,
-      user
-    );
-
-    expect(response).toEqual({
-      success: 'The evidence was successfully uploaded!'
     });
-  });
-});
 
-describe.skip('Testing ActivityService addEvidence', () => {
-  let activityService;
-  let activity;
-  const fileId = 1;
-  const photoId = 2;
-  const activityPhotoId = 1;
-  const activityFileId = 1;
-  const image = testHelper.getMockFiles().projectCoverPhoto;
-  const file = testHelper.getMockFiles().projectAgreement;
-
-  beforeEach(() => {
-    activity = testHelper.buildActivity({ id: 1 });
-    // activityService = activityServiceBuilder({
-    //   fastify,
-    //   activityDao: {
-    //     getActivityById: activityId => {
-    //       return activity;
-    //     }
-    //   },
-    //   fileService: {
-    //     saveFile: filePath => {
-    //       return { id: fileId };
-    //     },
-    //     checkEvidenceFileType: f => {
-    //       const type = f.name.split('.')[1];
-    //       return type !== 'error';
-    //     }
-    //   },
-    //   photoService: {
-    //     savePhoto: filePath => {
-    //       return { id: photoId };
-    //     },
-    //     checkEvidencePhotoType: f => {
-    //       const type = f.name.split('.')[1];
-    //       return type !== 'error';
-    //     }
-    //   },
-    //   activityPhotoDao: {
-    //     saveActivityPhoto: (activityId, savedPhotoId, fileHash) => {
-    //       return {
-    //         activity: activityId,
-    //         photo: savedPhotoId,
-    //         id: activityPhotoId,
-    //         fileHash
-    //       };
-    //     }
-    //   },
-    //   activityFileDao: {
-    //     saveActivityFile: (activityId, savedFileId, fileHash) => {
-    //       return {
-    //         activity: activityId,
-    //         file: savedFileId,
-    //         id: activityFileId,
-    //         fileHash
-    //       };
-    //     }
-    //   }
-    // });
-
-    activityService = require('../../rest/services/activityService');
-    injectMocks(activityService, {
-      //FIXME
-      activityDao
+    beforeEach(() => {
+      dbMilestone.push(updatableMilestone);
+      dbTask.push(updatableTask);
     });
-    activityService.readFile = jest.fn();
-    sha256.mockReturnValue('sha256mockreturnvalue');
-  });
 
-  it('should return activityPhoto object if send image', async () => {
-    const response = await activityService.addEvidence(activity.id, image);
-    expect(response).toEqual({
-      activity: 1,
-      photo: 2,
-      id: 1,
-      fileHash: 'sha256mockreturnvalue'
+    it('should return the task and the milestone it belongs to', async () => {
+      const response = await activityService.getMilestoneAndTaskFromId(
+        updatableTask.id
+      );
+      expect(response.task).toEqual(updatableTask);
+      expect(response.milestone).toEqual(updatableMilestone);
     });
-  });
 
-  it('should return activityFile object if send file', async () => {
-    const response = await activityService.addEvidence(activity.id, file);
-    expect(response).toEqual({
-      activity: 1,
-      file: 1,
-      id: 1,
-      fileHash: 'sha256mockreturnvalue'
+    it('should throw an error if the task does not exist', async () => {
+      await expect(
+        activityService.getMilestoneAndTaskFromId(0)
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
     });
-  });
-});
 
-describe.skip('Testing ActivityService assignOracleToActivity', () => {
-  const oracle = testHelper.buildUserOracle({ id: 3 });
-  oracle.role = { id: oracle.role };
-
-  const user = testHelper.buildUserSe({ id: 2 });
-  user.role = { id: user.role };
-  let activityService;
-  let activity;
-
-  beforeEach(() => {
-    activity = testHelper.buildActivity({ id: 1 });
-    // activityService = activityServiceBuilder({
-    //   fastify,
-    //   activityDao: {
-    //     getActivityById: activityId => {
-    //       return activity;
-    //     }
-    //   },
-    //   userService: {
-    //     getUserById: id => {
-    //       if (id === oracle.id) return oracle;
-    //       if (id === user.id) return user;
-    //       return null;
-    //     }
-    //   },
-    //   oracleActivityDao: {
-    //     getOracleFromActivity: activityId => {
-    //       return { user: activity.oracle };
-    //     },
-    //     assignOracleToActivity: (userId, activityId) => {
-    //       return oracle;
-    //     }
-    //   }
-    // });
-
-    activityService = require('../../rest/services/activityService');
-    injectMocks(activityService, {
-      //FIXME
-      activityDao
+    it('should throw an error if no milestone was found for the task', async () => {
+      dbTask.push({ ...updatableTask, id: 2, milestone: 0 });
+      await expect(
+        activityService.getMilestoneAndTaskFromId(2)
+      ).rejects.toThrow(errors.task.MilestoneNotFound(2));
     });
-    activityService.unassignOracleToActivity = () => true;
-  });
-  it('must return oracle user object when assign a valid oracle to an activity', async () => {
-    const response = await activityService.assignOracleToActivity(
-      oracle.id,
-      activity.id
-    );
-    expect(response).toEqual(oracle);
-  });
-
-  it('must return error when assign a non oracle user to an activity', async () => {
-    const response = await activityService.assignOracleToActivity(
-      user.id,
-      activity.id
-    );
-    expect(response).toEqual({ error: 'User is not an oracle', status: 409 });
-  });
-
-  it('must return error when assign a non existent user to an activity', async () => {
-    const response = await activityService.assignOracleToActivity(
-      -1,
-      activity.id
-    );
-    expect(response).toEqual({ error: 'User not found', status: 404 });
   });
 });

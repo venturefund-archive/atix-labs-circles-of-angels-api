@@ -21,10 +21,6 @@ module.exports = bunyan.createLogger({
       stream: formatOut
     },
     {
-      level: 'error',
-      stream: formatOut
-    },
-    {
       level: 'info',
       path: './logs/logs.info',
       type: 'rotating-file',

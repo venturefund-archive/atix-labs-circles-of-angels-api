@@ -39,8 +39,8 @@ module.exports = {
     });
   },
 
-  async update({ id, status }) {
-    return this.model.updateOne({ id }).set({ status });
+  async update({ id, status, rejectionReason }) {
+    return this.model.updateOne({ id }).set({ status, rejectionReason });
   },
 
   async getTransferById({ transferId }) {
@@ -48,7 +48,10 @@ module.exports = {
   },
 
   async getAllTransfersByProject(projectId) {
-    return this.model.find({ project: projectId });
+    return this.model
+      .find({ project: projectId })
+      .populate('sender')
+      .sort('createdAt DESC');
   },
 
   async getTransferStatusByUserAndProject({ senderId, projectId }) {

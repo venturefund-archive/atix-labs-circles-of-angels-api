@@ -25,6 +25,7 @@
  *@attribute `projectAgreement`: project consensus file
  */
 
+const config = require('config');
 const { projectStatuses } = require('../../src/rest/util/constants');
 
 module.exports = {
@@ -67,6 +68,15 @@ module.exports = {
       collection: 'user',
       via: 'project',
       through: 'project_follower'
+    },
+    consensusSeconds: {
+      type: 'number',
+      defaultsTo: config.defaultProjectTimes.consensusSeconds
+    },
+    lastUpdatedStatusAt: {
+      type: 'string',
+      autoCreatedAt: true,
+      required: false
     },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }
