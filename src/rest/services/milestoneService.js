@@ -500,20 +500,14 @@ module.exports = {
     return this.milestoneDao.findById(milestoneId);
   },
 
-  async getAllMilestones() {
-    logger.info('[Milestone Service] :: Getting all milestones');
+  async getMilestones(filters) {
+    logger.info('[MilestoneService] :: Entering getMilestones method');
+    const milestones = await this.milestoneDao.getMilestones(filters || {});
 
-    try {
-      const milestones = await this.milestoneDao.getAllMilestones();
-
-      if (!milestones.length)
-        logger.info('[Milestone Service] :: There are no milestones');
-
-      return milestones;
-    } catch (error) {
-      logger.error('[Milestone Service] :: Error getting Milestones:', error);
-      throw Error('Error getting Milestones');
-    }
+    logger.info(
+      `[MilestoneService] :: ${milestones.length} milestones were found`
+    );
+    return milestones;
   },
 
   /**

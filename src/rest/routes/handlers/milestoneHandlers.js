@@ -10,7 +10,8 @@ const milestoneService = require('../../services/milestoneService');
 
 module.exports = {
   getMilestones: () => async (request, reply) => {
-    const milestones = await milestoneService.getAllMilestones();
+    const filters = request.query;
+    const milestones = await milestoneService.getMilestones(filters);
     reply.status(200).send(milestones);
   },
 

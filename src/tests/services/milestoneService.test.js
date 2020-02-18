@@ -164,7 +164,7 @@ describe('Testing milestoneService', () => {
         return { ...milestone, tasks };
       });
     },
-    getAllMilestones: () =>
+    getMilestones: () =>
       dbMilestone.map(milestone => ({
         ...milestone,
         project: dbProject.find(p => p.id === milestone.project),
@@ -675,7 +675,7 @@ describe('Testing milestoneService', () => {
     });
   });
 
-  describe('Testing getAllMilestones', () => {
+  describe('Testing getMilestones', () => {
     beforeAll(() => {
       injectMocks(milestoneService, {
         milestoneDao
@@ -688,7 +688,7 @@ describe('Testing milestoneService', () => {
       dbTask.push(updatableTask, nonUpdatableTask);
     });
     it('should return a list with all existing milestones', async () => {
-      const response = await milestoneService.getAllMilestones();
+      const response = await milestoneService.getMilestones();
       expect(response).toHaveLength(2);
       expect(response).toEqual([
         {
@@ -705,7 +705,7 @@ describe('Testing milestoneService', () => {
     });
     it('should return an empty array if not milestones were found', async () => {
       resetDb();
-      const response = await milestoneService.getAllMilestones();
+      const response = await milestoneService.getMilestones();
       expect(response).toHaveLength(0);
     });
   });

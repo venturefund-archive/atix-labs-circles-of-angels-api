@@ -64,6 +64,13 @@ const taskResponse = {
   }
 };
 
+const milestonesFiltersProperties = {
+  claimStatus: {
+    type: 'array',
+    items: { type: 'string' }
+  }
+};
+
 const milestoneProperties = {
   description: { type: 'string' },
   category: { type: 'string' }
@@ -82,7 +89,7 @@ const milestonesResponse = {
     },
     project: projectResponse
   },
-  description: 'Returns all milestones'
+  description: 'Returns milestones'
 };
 
 const successWithMilestoneIdResponse = {
@@ -196,8 +203,9 @@ const routes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.MILESTONE.name, routeTags.GET.name],
-        description: 'Returns all existing milestones',
-        summary: 'Get all milestones'
+        description: 'Returns milestones that match with the params',
+        summary: 'Get milestones',
+        querystring: milestonesFiltersProperties
       },
       response: {
         ...successResponse(milestonesResponse),
