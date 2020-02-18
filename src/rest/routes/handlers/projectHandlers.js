@@ -20,13 +20,13 @@ module.exports = {
 
     const { projectName, location, timeframe, goalAmount } = body;
     const ownerId = request.user.id;
-    const { file } = files;
+    const { cardPhotoPath } = files;
     const response = await projectService.createProjectThumbnail({
       projectName,
       location,
       timeframe,
       goalAmount,
-      file,
+      file: cardPhotoPath,
       ownerId
     });
     reply.status(200).send(response);
@@ -39,13 +39,13 @@ module.exports = {
     const { projectId } = request.params;
     const { projectName, location, timeframe, goalAmount } = body;
     const ownerId = request.user.id;
-    const { file } = files;
+    const { cardPhotoPath } = files;
     const response = await projectService.updateProjectThumbnail(projectId, {
       projectName,
       location,
       timeframe,
       goalAmount,
-      file,
+      file: cardPhotoPath,
       ownerId
     });
     reply.status(200).send(response);
@@ -64,11 +64,11 @@ module.exports = {
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { file } = files;
+    const { coverPhotoPath } = files;
     const response = await projectService.createProjectDetail(projectId, {
       mission,
       problemAddressed,
-      file,
+      file: coverPhotoPath,
       ownerId
     });
     reply.status(200).send(response);
@@ -81,11 +81,11 @@ module.exports = {
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { file } = files;
+    const { coverPhotoPath } = files;
     const response = await projectService.updateProjectDetail(projectId, {
       mission,
       problemAddressed,
-      file,
+      file: coverPhotoPath,
       ownerId
     });
     reply.status(200).send(response);
@@ -133,10 +133,10 @@ module.exports = {
   processMilestonesFile: () => async (request, reply) => {
     const files = request.raw.files || {};
     const { projectId } = request.params;
-    const { file } = files;
+    const { milestoneFile } = files;
     const ownerId = request.user.id;
     const response = await projectService.processMilestoneFile(projectId, {
-      file,
+      file: milestoneFile,
       ownerId
     });
     reply.status(200).send(response);
@@ -189,8 +189,8 @@ module.exports = {
     reply.send(response);
   },
 
-  getProjects: () => async (request, reply) => {
-    const projects = await projectService.getProjects();
+  getProjects: props => async (request, reply) => {
+    const projects = await projectService.getProjects(props);
     reply.status(200).send(projects);
   },
 
@@ -213,13 +213,13 @@ module.exports = {
   addExperienceToProject: () => async (request, reply) => {
     const userId = request.user.id;
     const { comment } = request.raw.body || {};
-    const { files } = request.raw.files || {};
+    const { photos } = request.raw.files || {};
     const { projectId } = request.params;
     const response = await projectServiceExperience.addExperience({
       comment,
       projectId,
       userId,
-      photos: files && !files.length ? [files] : files
+      photos: photos && !photos.length ? [photos] : photos
     });
     reply.status(200).send(response);
   },

@@ -24,8 +24,6 @@ const errors = require('../errors/exporter/ErrorExporter');
 const COAError = require('../errors/COAError');
 const logger = require('../logger');
 
-const transferClaimType = 'transferClaims';
-
 // TODO: replace with actual function
 const sha3 = (a, b) => utils.id(`${a}-${b}`);
 
@@ -72,8 +70,8 @@ module.exports = {
       throw new COAError(errors.user.UnauthorizedUserRole(user.role));
     }
 
-    // TODO: change allowed project status to FUNDING when implemented
-    if (project.status !== projectStatuses.CONSENSUS) {
+    // TODO check if another status will allow transfers
+    if (project.status !== projectStatuses.FUNDING) {
       logger.error(
         `[TransferService] :: Project ${project.id} is not on consensus phase`
       );
@@ -292,11 +290,11 @@ module.exports = {
    * @param {boolean} approved
    * @returns transferId || error
    */
-  async addTransferClaim({ transferId, userId, file, approved }) {
+  async addTransferClaim({ transferId, userId, approved, rejectionReason }) {
     logger.info('[TransferService] :: Entering addTransferClaim method');
     validateRequiredParams({
       method: 'addTransferClaim',
-      params: { transferId, userId, file, approved }
+      params: { transferId, userId, approved }
     });
 
     const user = await checkExistence(this.userDao, userId, 'user');
@@ -308,35 +306,35 @@ module.exports = {
       throw new COAError(errors.common.UserNotAuthorized(userId));
     }
 
-    validateMtype(transferClaimType, file);
-    validatePhotoSize(file);
-
-    // TODO adapt to many files. Change this to rif storage
-    logger.info(
-      `[TransferService] :: Saving file of type '${transferClaimType}'`
-    );
-    const filePath = await files.saveFile(transferClaimType, file);
-    logger.info(`[TransferService] :: File saved to: ${filePath}`);
-
     const transfer = await checkExistence(
       this.transferDao,
       transferId,
       'fund_transfer'
     );
 
+    const { status: currentStatus } = transfer;
+    const { VERIFIED, CANCELLED } = txFunderStatus;
+
+    if ([VERIFIED, CANCELLED].includes(currentStatus)) {
+      logger.error(
+        '[Transfer Service] :: Transfer status transition is not valid'
+      );
+      throw new COAError(errors.transfer.InvalidTransferTransition);
+    }
+
     // TODO replace both fields with the correct information
-    const { projectId } = transfer;
-    const claim = sha3(projectId, transferId);
-    const proof = utils.id(file.name);
+    // const { projectId } = transfer;
+    // const claim = sha3(projectId, transferId);
+    // const proof = utils.id(file.name);
 
-    // TODO: uncomment this when contracts are deployed
-    // await coa.addClaim(projectId, claim, proof, approved);
+    // // TODO: uncomment this when contracts are deployed
+    // // await coa.addClaim(projectId, claim, proof, approved);
 
-    const status = approved
-      ? txFunderStatus.VERIFIED
-      : txFunderStatus.CANCELLED;
-    const updated = await this.transferDao.update({ id: transferId, status });
+    const status = approved ? VERIFIED : CANCELLED;
+    const fields = { id: transferId, status };
+    if (rejectionReason) fields.rejectionReason = rejectionReason;
 
+    const updated = await this.transferDao.update(fields);
     logger.info('[TransferService] :: Claim added and status transfer updated');
     return { transferId: updated.id };
   }

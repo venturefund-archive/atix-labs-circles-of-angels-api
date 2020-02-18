@@ -28,32 +28,6 @@ module.exports = {
     reply.status(200).send({ users });
   },
 
-  getUserRole: fastify => async (request, reply) => {
-    try {
-      fastify.log.info('[User Routes] :: Getting user role');
-      const role = await userService.getUserRole(request.params.userId);
-
-      if (!role.error) {
-        fastify.log.info('[User Routes] :: Role found: ', role);
-        reply.status(200).send(role);
-      } else {
-        fastify.log.info(
-          '[User Routes] :: Error getting user role: ',
-          role.error
-        );
-        reply.status(404).send(role);
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting the user´s role:',
-        error
-      );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting the user´s role'
-      });
-    }
-  },
-
   getAllRoles: () => (request, reply) => {
     const roles = userService.getAllRoles();
     reply.status(200).send(roles);
@@ -65,7 +39,7 @@ module.exports = {
 
     const token = fastify.jwt.sign(user);
     const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + 1);
+    expirationDate.setMonth(expirationDate.getMonth() + 3);
 
     reply
       .status(200)
@@ -82,38 +56,6 @@ module.exports = {
   signupUser: () => async (request, reply) => {
     const user = await userService.createUser(request.body);
     reply.status(200).send({ userId: user.id });
-  },
-
-  updateUser: fastify => async (request, reply) => {
-    const { userId } = request.params;
-    fastify.log.info(`PUT request at ${basePath}/${userId}`, request.body);
-    try {
-      const { body } = request;
-
-      const updatedUser = await userService.updateUser(userId, body);
-
-      if (updatedUser.error) {
-        fastify.log.error('[User Routes] :: User update failed', updatedUser);
-        reply.status(updatedUser.status).send(updatedUser);
-      } else {
-        fastify.log.info('[User Routes] :: Update successful:', updatedUser);
-        reply.status(200).send({ success: 'User successfully updated!' });
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error updating user' });
-    }
-  },
-
-  getOracles: fastify => async (request, reply) => {
-    fastify.log.info('[User Routes] :: getting list of oracles');
-    try {
-      const oracles = await userService.getOracles();
-      reply.status(200).send(oracles);
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error getting oracles' });
-    }
   },
 
   recoverPassword: fastify => async (request, reply) => {

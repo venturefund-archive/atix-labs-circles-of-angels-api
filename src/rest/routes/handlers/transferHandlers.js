@@ -10,17 +10,12 @@ const transferService = require('../../services/transferService');
 
 module.exports = {
   createTransfer: () => async (request, reply) => {
+    const { projectId } = request.params;
     const body = request.raw.body || {};
     const files = request.raw.files || {};
 
-    const {
-      transferId,
-      destinationAccount,
-      amount,
-      currency,
-      projectId
-    } = body;
-    const { receiptFile } = files;
+    const { transferId, destinationAccount, amount, currency } = body;
+    const { receiptPath } = files;
     const senderId = request.user.id;
 
     const response = await transferService.createTransfer({
@@ -30,7 +25,7 @@ module.exports = {
       currency,
       projectId,
       senderId,
-      receiptFile
+      receiptFile: receiptPath
     });
     reply.status(200).send(response);
   },
@@ -66,12 +61,10 @@ module.exports = {
   addApprovedTransferClaim: () => async (request, reply) => {
     const { transferId } = request.params;
     const userId = request.user.id;
-    const { file } = request.raw.files || {};
 
     const response = await transferService.addTransferClaim({
       transferId,
       userId,
-      file,
       approved: true
     });
 
@@ -81,13 +74,13 @@ module.exports = {
   addDisapprovedTransferClaim: () => async (request, reply) => {
     const { transferId } = request.params;
     const userId = request.user.id;
-    const { file } = request.raw.files || {};
+    const { rejectionReason } = request.body;
 
     const response = await transferService.addTransferClaim({
       transferId,
       userId,
-      file,
-      approved: false
+      approved: false,
+      rejectionReason
     });
 
     reply.status(200).send(response);

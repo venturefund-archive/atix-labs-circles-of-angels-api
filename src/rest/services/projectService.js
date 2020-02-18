@@ -29,6 +29,11 @@ const validateProjectStatusChange = require('./helpers/validateProjectStatusChan
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
+const {
+  secondsToDays,
+  getStartOfDay,
+  getDaysPassed
+} = require('../util/dateFormatters');
 
 const thumbnailType = 'thumbnail';
 const coverPhotoType = 'coverPhoto';
@@ -46,9 +51,12 @@ module.exports = {
   },
 
   async updateProject(projectId, fields) {
-    // TODO updateProject = updateMilestone, is should abstract this like validateExistence, also change tests
+    let toUpdate = { ...fields };
+    if (fields.status) {
+      toUpdate = { ...fields, lastUpdatedStatusAt: new Date() };
+    }
     const updatedProject = await this.projectDao.updateProject(
-      fields,
+      toUpdate,
       projectId
     );
     if (!updatedProject) {
@@ -488,10 +496,16 @@ module.exports = {
     });
   },
 
-  async getProjects() {
+  async getProjects({ status } = {}) {
     // TODO: implement pagination
-    logger.info('Getting all the projects.');
-    return this.projectDao.findAllByProps(undefined, { owner: true });
+    logger.info(
+      `Getting all the projects ${status ? `with status ${status}` : ''}`
+    );
+    // TODO: add user restriction?
+    return this.projectDao.findAllByProps(
+      { where: { status }, sort: 'id DESC' },
+      { owner: true }
+    );
   },
 
   /**
@@ -922,5 +936,93 @@ module.exports = {
       { project: true }
     );
     return featuredProjects.map(project => project.project);
+  },
+
+  /**
+   * Transition all projects in consensus status to `funding`
+   * if it meets all conditions or to `rejected` if not.
+   *
+   * @returns {Promise<object[]>} list of updated projects
+   */
+  async transitionConsensusProjects() {
+    logger.info(
+      '[ProjectService] :: Entering transitionConsensusProjects method'
+    );
+    const projects = await this.projectDao.findAllByProps({
+      status: projectStatuses.CONSENSUS
+    });
+
+    const updatedProjects = await Promise.all(
+      projects.map(async project => {
+        logger.info(
+          '[ProjectService] :: Checking if consensus time has passed for project',
+          project.id
+        );
+        if (!this.hasTimePassed(project)) return;
+        let newStatus = projectStatuses.FUNDING;
+        try {
+          await validateProjectStatusChange({
+            user: project.owner,
+            newStatus,
+            project
+          });
+        } catch (error) {
+          logger.error(
+            `[Project Service] :: Validation to change project ${
+              project.id
+            } to ${projectStatuses.FUNDING} status failed `,
+            error
+          );
+          newStatus = projectStatuses.REJECTED;
+        }
+
+        logger.info(
+          `[Project Service] :: Updating project ${project.id} from ${
+            project.status
+          } to ${newStatus}`
+        );
+
+        const updatedProjectId = await this.updateProject(project.id, {
+          status: newStatus
+        });
+        return { projectId: updatedProjectId, newStatus };
+      })
+    );
+    return updatedProjects.filter(updated => !!updated);
+  },
+
+  /**
+   * Checks if the established time has passed
+   * for the phase the project is currently in.
+   *
+   * Returns true or false whether the time has passed or not.
+   * @param {*} project
+   * @returns {boolean}
+   */
+  hasTimePassed(project) {
+    logger.info('[ProjectService] :: Entering hasTimePassed method');
+    try {
+      validateRequiredParams({
+        method: 'hasTimePassed',
+        params: { project }
+      });
+      const { lastUpdatedStatusAt, status } = project;
+      const now = getStartOfDay(new Date());
+      const last = getStartOfDay(lastUpdatedStatusAt);
+      const daysPassedSinceLastUpdate = getDaysPassed(last, now);
+
+      // TODO: check time for published -> consensus -> funding phases
+      if (status === projectStatuses.CONSENSUS) {
+        const { consensusSeconds } = project;
+        const consensusDays = secondsToDays(consensusSeconds);
+        return daysPassedSinceLastUpdate >= consensusDays;
+      }
+    } catch (error) {
+      logger.error(
+        '[ProjectService] :: An error occurred while checking if time has passed',
+        error
+      );
+    }
+    return false;
   }
 };

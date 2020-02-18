@@ -23,9 +23,9 @@ describe('Testing transferService', () => {
   let dbUser = [];
   let dbTransfer = [];
 
-  const consensusProject = {
+  const fundingProject = {
     id: 1,
-    status: projectStatuses.CONSENSUS
+    status: projectStatuses.FUNDING
   };
 
   const draftProject = {
@@ -52,7 +52,7 @@ describe('Testing transferService', () => {
     transferId: '1AA22SD444',
     amount: 200,
     senderId: userFunder.id,
-    projectId: consensusProject.id,
+    projectId: fundingProject.id,
     currency: 'USD',
     destinationAccount: '1235AASDD',
     receiptFile: { name: 'receipt.jpg', size: 20000 }
@@ -69,7 +69,8 @@ describe('Testing transferService', () => {
     id: 3,
     transferId: 'pendingABC',
     status: txFunderStatus.PENDING,
-    projectId: 1
+    projectId: 1,
+    rejectionReason: null
   };
 
   beforeAll(() => {
@@ -89,10 +90,13 @@ describe('Testing transferService', () => {
     getTransferById: ({ transferId }) =>
       dbTransfer.find(transfer => transfer.transferId === transferId),
 
-    update: ({ id, status }) => {
-      const existing = dbTransfer.find(transfer => transfer.id === id);
-      if (existing) existing.status = status;
-      return existing;
+    update: ({ id, status, rejectionReason }) => {
+      const found = dbTransfer.find(transfer => transfer.id === id);
+      if (!found) return;
+      const params = { status, rejectionReason };
+      const updated = { ...found, ...params };
+      dbTransfer[dbTransfer.indexOf(found)] = updated;
+      return updated;
     },
     findById: id => dbTransfer.find(transfer => transfer.id === id),
     getAllTransfersByProject: projectId =>
@@ -147,7 +151,7 @@ describe('Testing transferService', () => {
       dbProject = [];
       dbUser = [];
       dbTransfer = [];
-      dbProject.push(consensusProject);
+      dbProject.push(fundingProject);
       dbUser.push(userFunder);
     });
 
@@ -293,16 +297,16 @@ describe('Testing transferService', () => {
 
     beforeEach(() => {
       dbTransfer = [];
-      dbProject = [consensusProject];
+      dbProject = [fundingProject];
       dbTransfer.push(
-        { ...pendingTransfer, projectId: consensusProject.id },
-        { ...verifiedTransfer, projectId: consensusProject.id }
+        { ...pendingTransfer, projectId: fundingProject.id },
+        { ...verifiedTransfer, projectId: fundingProject.id }
       );
     });
 
     it('should return an object with the list of transfers', async () => {
       const response = await transferService.getAllTransfersByProject(
-        consensusProject.id
+        fundingProject.id
       );
 
       expect(response.length).toEqual(2);
@@ -367,15 +371,13 @@ describe('Testing transferService', () => {
       dbUser = [];
       dbTransfer = [];
       dbUser.push(bankOperatorUser, userFunder);
-      dbTransfer.push(pendingTransfer);
+      dbTransfer.push(pendingTransfer, verifiedTransfer);
     });
 
     it('should add an approved transfer claim and return the transfer id', async () => {
-      const file = { name: 'evidence.jpg', size: 20000 };
       const response = await transferService.addTransferClaim({
         transferId: pendingTransfer.id,
         userId: bankOperatorUser.id,
-        file,
         approved: true
       });
 
@@ -387,16 +389,42 @@ describe('Testing transferService', () => {
       expect(response).toEqual({ transferId: pendingTransfer.id });
     });
 
+    it('should add an dissaproved transfer claim and return the transfer id', async () => {
+      const rejectionReason = 'Transferencia invalida';
+      const response = await transferService.addTransferClaim({
+        transferId: pendingTransfer.id,
+        userId: bankOperatorUser.id,
+        approved: false,
+        rejectionReason
+      });
+
+      const updatedTransfer = dbTransfer.find(
+        transfer => transfer.id === response.transferId
+      );
+
+      expect(updatedTransfer.status).toEqual(txFunderStatus.CANCELLED);
+      expect(updatedTransfer.rejectionReason).toEqual(rejectionReason);
+      expect(response).toEqual({ transferId: pendingTransfer.id });
+    });
+
     it('should throw an error if the user is not bank operator', async () => {
-      const file = { name: 'evidence.jpg', size: 20000 };
       await expect(
         transferService.addTransferClaim({
           transferId: pendingTransfer.id,
           userId: userFunder.id,
-          file,
           approved: true
         })
       ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));
+    });
+
+    it('should throw an error if transfer is already evaluated', async () => {
+      await expect(
+        transferService.addTransferClaim({
+          transferId: verifiedTransfer.id,
+          userId: bankOperatorUser.id,
+          approved: true
+        })
+      ).rejects.toThrow(errors.transfer.InvalidTransferTransition);
     });
   });
 });

@@ -34,7 +34,6 @@ const transferProperties = {
   destinationAccount: { type: 'string' },
   amount: { type: 'number' },
   currency: { type: 'string' },
-  projectId: { type: 'integer' },
   receiptPath: { type: 'string' }
 };
 
@@ -50,6 +49,21 @@ const successWithTransferIdResponse = {
   description: 'Returns the id of the created transfer'
 };
 
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    email: { type: 'string' },
+    address: { type: 'string' },
+    createdAt: { type: 'string' },
+    id: { type: 'integer' },
+    role: { type: 'string' },
+    blocked: { type: 'boolean' }
+  },
+  description: "User's information"
+};
+
 const successWithTransfersArray = {
   type: 'array',
   items: {
@@ -62,8 +76,9 @@ const successWithTransfersArray = {
       status: { type: 'string' },
       createdAt: { type: 'string' },
       id: { type: 'integer' },
-      sender: { type: 'integer' },
-      project: { type: 'integer' }
+      sender: userResponse,
+      project: { type: 'integer' },
+      receiptPath: { type: 'string' }
     }
   }
 };
@@ -71,11 +86,12 @@ const successWithTransfersArray = {
 const transferRoutes = {
   createTransfer: {
     method: 'post',
-    path: `${basePath}`,
+    path: `/projects/:projectId${basePath}`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        params: projectIdParam,
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
         raw: {
@@ -83,14 +99,7 @@ const transferRoutes = {
           body: {
             type: 'object',
             properties: transferProperties,
-            required: [
-              'amount',
-              'currency',
-              'projectId',
-              'destinationAccount',
-              'transferId',
-              'receiptPath'
-            ]
+            required: ['amount', 'currency', 'destinationAccount', 'transferId']
           }
         },
         response: {
@@ -159,8 +168,6 @@ const transferRoutes = {
         description: 'Add an approved transfer claim of an existing project',
         summary: 'Add an approved transfer claim',
         params: { transferIdParam },
-        type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
         response: {
           ...successResponse(successWithTransferIdResponse),
           ...clientErrorResponse(),
@@ -181,8 +188,12 @@ const transferRoutes = {
         description: 'Add an disapproved transfer claim of an existing project',
         summary: 'Add an disapproved transfer claim',
         params: { transferIdParam },
-        type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
+        body: {
+          type: 'object',
+          properties: {
+            rejectionReason: { type: 'string' }
+          }
+        },
         response: {
           ...successResponse(successWithTransferIdResponse),
           ...clientErrorResponse(),
