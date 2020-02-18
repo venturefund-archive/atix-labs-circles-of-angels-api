@@ -653,6 +653,11 @@ module.exports = {
 
     const { project: projectId } = milestone;
 
+    const address = await this.projectService.getAddress(projectId);
+
+    if (!address && address !== 0)
+      throw new COAError(errors.project.AddressNotFound(projectId));
+
     const tasks = await this.milestoneDao.getMilestoneTasks(milestoneId);
 
     const tasksClaimsWithValidators = await Promise.all(
@@ -661,7 +666,7 @@ module.exports = {
         if (!oracle || !oracle.address)
           throw new COAError(errors.task.OracleAddressNotFound);
 
-        // TODO: check if we use oracle.address or oracle.id
+        // TODO: check what should we hash
         // TODO: how to properly hash this
         const claimHash = utils.id(`${projectId}${oracle.address}${task.id}`);
         return [oracle.address, claimHash];
@@ -670,6 +675,6 @@ module.exports = {
 
     const [validators, claims] = zip(...tasksClaimsWithValidators);
 
-    return coa.milestoneApproved(projectId, validators, claims);
+    return coa.milestoneApproved(address, validators, claims);
   }
 };

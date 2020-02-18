@@ -49,7 +49,7 @@ module.exports = {
       model: 'user'
     },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    transactionHash: { type: 'string', required: false },
+    address: { type: 'string', required: false, allowNull: true },
     milestones: {
       collection: 'milestone',
       via: 'project'

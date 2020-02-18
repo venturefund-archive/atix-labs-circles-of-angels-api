@@ -33,9 +33,9 @@ module.exports = class COA {
     await coa.createMember(profile);
   }
 
-  async createProject(name, agreement) {
+  async createProject(id, name, agreement) {
     const coa = await this.getCOA();
-    await coa.createProject(name, agreement);
+    await coa.createProject(id, name, agreement);
   }
 
   async createDAO(name) {
@@ -68,9 +68,7 @@ module.exports = class COA {
     return tx;
   }
 
-  async milestoneApproved(projectId, validators, claims) {
-    const coa = await this.getCOA();
-    const projectAddress = await coa.projects(projectId);
+  async milestoneApproved(projectAddress, validators, claims) {
     const registry = await this.getRegistry();
     return registry.areApproved(projectAddress, validators, claims);
   }

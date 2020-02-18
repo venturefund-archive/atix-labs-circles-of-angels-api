@@ -56,6 +56,29 @@ task('create-dao', 'Create DAO')
     console.log(`New DAO Address: ${daoAddress} index: ${daoIndex}`);
   });
 
+task('create-project', 'Create Project')
+  .addOptionalParam('id', 'Project id')
+  .addOptionalParam('name', 'Project name')
+  .addOptionalParam('agreement', 'Project agreement hash')
+  .setAction(async ({ id, name, agreement }, env) => {
+    const coa = await getCOAContract(env);
+    if (coa === undefined) {
+      console.error('COA contract not deployed');
+      return;
+    }
+
+    await coa.createProject(
+      id || 1,
+      name || 'Buidler Project',
+      agreement || 'ipfsagreementhash'
+    );
+    const projectIndex = (await coa.getProjectsLength()) - 1;
+    const projectAddress = await coa.projects(projectIndex);
+    console.log(
+      `New project address: ${projectAddress} index: ${projectIndex}`
+    );
+  });
+
 task('propose-member-to-dao', 'Creates proposal to add member to existing DAO')
   .addParam('daoaddress', 'DAO address')
   .addParam('applicant', 'Applicant address')

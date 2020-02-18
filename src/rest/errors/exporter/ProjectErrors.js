@@ -100,5 +100,9 @@ module.exports = {
   MinimumFundingNotReached: projectId => ({
     message: `Minimum funding amount required for project ${projectId} has not been reached`,
     statusCode: 400
+  }),
+  AddressNotFound: projectId => ({
+    message: `Project of id ${projectId} doesn't have an address`,
+    statusCode: 400
   })
 };

@@ -63,7 +63,7 @@ CREATE TABLE public.project (
     "projectName" varchar(50) NOT NULL,
     "ownerId" integer NOT NULL,
     "createdAt" date DEFAULT NOW(),
-    "transactionHash" varchar(80) NOT NULL,
+    "address" varchar(42) DEFAULT NULL,
     mission text,
     location text,
     "problemAddressed" text,
