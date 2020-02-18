@@ -16,7 +16,8 @@ const { readExcelData } = require('../util/excelParser');
 const {
   xlsxConfigs,
   projectStatuses,
-  claimMilestoneStatus
+  claimMilestoneStatus,
+  userRoles
 } = require('../util/constants');
 
 const logger = require('../logger');
@@ -560,6 +561,68 @@ module.exports = {
     const milestoneUpdated = await this.milestoneDao.updateMilestone(
       {
         claimStatus: claimMilestoneStatus.CLAIMED
+      },
+      milestoneId
+    );
+
+    return { milestoneId: milestoneUpdated.id };
+  },
+
+  /**
+   * Mark claim as transferred
+   *
+   * @param {number} milestoneId
+   * @param {number} userId
+   * @returns
+   */
+  async transferredMilestone({ milestoneId, userId }) {
+    logger.info('[MilestoneService] :: Entering transferredMilestone method');
+    validateRequiredParams({
+      method: 'transferredMilestone',
+      params: { milestoneId, userId }
+    });
+
+    const user = await this.userService.getUserById(userId);
+
+    if (user.role !== userRoles.BANK_OPERATOR) {
+      logger.error(
+        `[MilestoneService] :: User ${userId} is not authorized for this action`
+      );
+      throw new COAError(errors.common.UserNotAuthorized(userId));
+    }
+
+    const milestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId, claimStatus } = milestone;
+
+    logger.info(
+      `[MilestoneService] :: Found milestone ${milestoneId} of project ${projectId}`
+    );
+
+    const project = await this.projectService.getProjectById(projectId);
+    const { status } = project;
+
+    if (status !== projectStatuses.EXECUTING) {
+      logger.error(
+        `[MilestoneService] :: Can't set as transferred a milestone when project is in ${status} status`
+      );
+      throw new COAError(errors.common.InvalidStatus('project', status));
+    }
+
+    if (claimStatus !== claimMilestoneStatus.CLAIMED) {
+      logger.error(
+        `[MilestoneService] :: Can't set as transferred a milestone when is in ${status} status`
+      );
+      throw new COAError(errors.common.InvalidStatus('milestone', claimStatus));
+    }
+
+    const milestoneUpdated = await this.milestoneDao.updateMilestone(
+      {
+        claimStatus: claimMilestoneStatus.TRANSFERRED
       },
       milestoneId
     );

@@ -9,6 +9,7 @@
  */
 
 const { injectMocks } = require('../../rest/util/injection');
+const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const milestoneService = require('../../rest/services/milestoneService');
 const {
@@ -38,6 +39,11 @@ describe('Testing milestoneService', () => {
   const userEntrepreneur = {
     id: 1,
     role: userRoles.ENTREPRENEUR
+  };
+
+  const userBankoperator = {
+    id: 2,
+    role: userRoles.BANK_OPERATOR
   };
 
   const newProject = {
@@ -76,6 +82,12 @@ describe('Testing milestoneService', () => {
     id: 4,
     project: executingProject.id,
     claimStatus: claimMilestoneStatus.PENDING
+  };
+
+  const claimedMilestone = {
+    id: 5,
+    project: executingProject.id,
+    claimStatus: claimMilestoneStatus.CLAIMED
   };
 
   const milestonesFile = {
@@ -175,6 +187,15 @@ describe('Testing milestoneService', () => {
   const projectService = {
     getProject: id => dbProject.find(project => project.id === id),
     getProjectById: id => dbProject.find(project => project.id === id)
+  };
+
+  const userService = {
+    getUserById: id => {
+      const found = dbUser.find(user => user.id === id);
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('user', id));
+      return found;
+    }
   };
 
   beforeEach(() => resetDb());
@@ -753,7 +774,7 @@ describe('Testing milestoneService', () => {
       ).rejects.toThrow(errors.common.CantFindModelWithId('milestone', 0));
     });
 
-    it('should throw an error if project is not the owner', async () => {
+    it('should throw an error if the user is not the owner', async () => {
       await expect(
         milestoneService.claimMilestone({
           userId: 2,
@@ -788,6 +809,91 @@ describe('Testing milestoneService', () => {
         errors.milestone.InvalidStatusForClaimMilestone(
           claimMilestoneStatus.PENDING
         )
+      );
+    });
+  });
+
+  describe('Testing transferredMilestone', () => {
+    beforeAll(() => {
+      injectMocks(milestoneService, {
+        milestoneDao,
+        projectService,
+        userService
+      });
+    });
+
+    beforeEach(() => {
+      dbProject = [];
+      dbUser = [];
+      dbMilestone = [];
+      dbProject.push(executingProject);
+      dbUser.push(userBankoperator);
+      dbMilestone.push(claimedMilestone);
+    });
+
+    it('should claim the milestone and return its id', async () => {
+      const response = await milestoneService.transferredMilestone({
+        userId: userBankoperator.id,
+        milestoneId: claimedMilestone.id
+      });
+
+      expect(response).toEqual({ milestoneId: claimedMilestone.id });
+    });
+
+    it('should throw an error if user is not a bank operator', async () => {
+      dbUser.push(userEntrepreneur);
+
+      await expect(
+        milestoneService.transferredMilestone({
+          userId: userEntrepreneur.id,
+          milestoneId: claimedMilestone.id
+        })
+      ).rejects.toThrow(errors.common.UserNotAuthorized(userEntrepreneur.id));
+    });
+
+    it('should throw an error if an argument is not defined', async () => {
+      await expect(
+        milestoneService.transferredMilestone({
+          userId: userBankoperator.id
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('transferredMilestone')
+      );
+    });
+
+    it('should throw an error if the milestone does not exist', async () => {
+      await expect(
+        milestoneService.transferredMilestone({
+          userId: userBankoperator.id,
+          milestoneId: 0
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('milestone', 0));
+    });
+
+    it('should throw an error if the project is not in executing status', async () => {
+      dbProject.push(newProject);
+      dbMilestone.push(updatableMilestone);
+
+      await expect(
+        milestoneService.transferredMilestone({
+          userId: userBankoperator.id,
+          milestoneId: updatableMilestone.id
+        })
+      ).rejects.toThrow(
+        errors.common.InvalidStatus('project', projectStatuses.NEW)
+      );
+    });
+
+    it('should throw an error if the milestone is not in claimed status', async () => {
+      dbMilestone.push(nonClaimableMilestone);
+
+      await expect(
+        milestoneService.transferredMilestone({
+          userId: userBankoperator.id,
+          milestoneId: nonClaimableMilestone.id
+        })
+      ).rejects.toThrow(
+        errors.common.InvalidStatus('milestone', claimMilestoneStatus.PENDING)
       );
     });
   });

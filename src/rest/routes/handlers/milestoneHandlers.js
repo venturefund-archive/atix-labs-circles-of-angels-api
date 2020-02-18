@@ -57,5 +57,17 @@ module.exports = {
     });
 
     reply.status(200).send(response);
+  },
+
+  transferredMilestone: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const userId = request.user.id;
+
+    const response = await milestoneService.transferredMilestone({
+      milestoneId,
+      userId
+    });
+
+    reply.status(200).send(response);
   }
 };

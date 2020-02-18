@@ -191,6 +191,26 @@ const milestoneRoutes = {
       }
     },
     handler: handlers.claimMilestone
+  },
+
+  transferredMilestone: {
+    method: 'post',
+    path: `${basePath}/:milestoneId/transferred`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
+        description: 'Milestone transferred',
+        summary: 'Milestone transferred',
+        params: milestoneIdParam,
+        response: {
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.transferredMilestone
   }
 };
 
