@@ -45,8 +45,7 @@ const successWithMessageResponse = {
   properties: {
     success: { type: 'string' }
   },
-  description:
-    'Returns a success message if the user was signed up correctly'
+  description: 'Returns a success message if the user was signed up correctly'
 };
 
 const successWithUserResponse = {
@@ -360,6 +359,25 @@ const routes = {
       }
     },
     handler: handlers.getFollowedProjects
+  },
+
+  getAppliedProjects: {
+    method: 'get',
+    path: `${basePath}/applied-projects`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns all projects applied of an existing user',
+        summary: 'Get all applied projects by user',
+        response: {
+          ...successResponse(successWithProjectsResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getAppliedProjects
   }
 };
 
