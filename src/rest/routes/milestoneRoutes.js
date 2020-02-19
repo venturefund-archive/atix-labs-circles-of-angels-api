@@ -64,6 +64,20 @@ const taskResponse = {
   }
 };
 
+const milestonesFiltersProperties = {
+  claimStatus: {
+    anyOf: [
+      {
+        type: 'array',
+        items: { type: 'string' }
+      },
+      {
+        type: 'string'
+      }
+    ],
+  }
+};
+
 const milestoneProperties = {
   description: { type: 'string' },
   category: { type: 'string' }
@@ -82,7 +96,7 @@ const milestonesResponse = {
     },
     project: projectResponse
   },
-  description: 'Returns all milestones'
+  description: 'Returns milestones'
 };
 
 const successWithMilestoneIdResponse = {
@@ -184,6 +198,26 @@ const milestoneRoutes = {
       }
     },
     handler: handlers.claimMilestone
+  },
+
+  transferredMilestone: {
+    method: 'post',
+    path: `${basePath}/:milestoneId/transferred`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
+        description: 'Milestone transferred',
+        summary: 'Milestone transferred',
+        params: milestoneIdParam,
+        response: {
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.transferredMilestone
   }
 };
 
@@ -196,8 +230,9 @@ const routes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.MILESTONE.name, routeTags.GET.name],
-        description: 'Returns all existing milestones',
-        summary: 'Get all milestones'
+        description: 'Returns milestones that match with the params',
+        summary: 'Get milestones',
+        querystring: milestonesFiltersProperties
       },
       response: {
         ...successResponse(milestonesResponse),
