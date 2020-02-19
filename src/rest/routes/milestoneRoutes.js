@@ -66,8 +66,15 @@ const taskResponse = {
 
 const milestonesFiltersProperties = {
   claimStatus: {
-    type: 'array',
-    items: { type: 'string' }
+    anyOf: [
+      {
+        type: 'array',
+        items: { type: 'string' }
+      },
+      {
+        type: 'string'
+      }
+    ],
   }
 };
 
