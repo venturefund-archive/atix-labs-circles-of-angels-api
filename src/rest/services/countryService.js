@@ -5,6 +5,6 @@ module.exports = {
     logger.info('[CountryService] :: Entering getAll method');
     const filters = props && props.filters ? props.filters : {};
     const countries = await this.countryDao.findAllByProps(filters);
-    return countries.map(({ name }) => name);
+    return countries.map(({ id, name }) => ({ id, name }));
   }
 };
