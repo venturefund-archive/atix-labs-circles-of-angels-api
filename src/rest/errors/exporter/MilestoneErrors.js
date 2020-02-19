@@ -33,5 +33,9 @@ module.exports = {
   InvalidStatusForClaimMilestone: status => ({
     message: `Can't claim milestone when milestone is in ${status} status`,
     statusCode: 400
+  }),
+  InvalidStatusForClaimableMilestone: status => ({
+    message: `Can't set milestone as claimable when claim status is ${status}`,
+    statusCode: 400
   })
 };

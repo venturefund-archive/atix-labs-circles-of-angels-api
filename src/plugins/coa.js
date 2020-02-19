@@ -60,11 +60,16 @@ module.exports = class COA {
     console.log(tx);
   }
 
-  async addClaim(project, claim, proof, valid) {
+  async addClaim(project, claim, proof, valid, milestoneId) {
     const registry = await this.getRegistry();
-    const tx = await registry.addClaim(project, claim, proof, valid);
+    const tx = await registry.addClaim(
+      project,
+      claim,
+      proof,
+      valid,
+      milestoneId
+    );
     // get receipt and check logs
-    console.log(tx);
     return tx;
   }
 

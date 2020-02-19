@@ -8,13 +8,13 @@
 
 const { isEmpty, remove, zip } = require('lodash');
 const { coa } = require('@nomiclabs/buidler');
-const { utils } = require('ethers');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
+const { sha3 } = require('../util/hash');
 const {
   xlsxConfigs,
   projectStatuses,
@@ -25,6 +25,12 @@ const {
 const logger = require('../logger');
 
 module.exports = {
+  async getMilestoneById(id) {
+    logger.info('[MilestoneService] :: Entering getMilestoneById method');
+    const milestone = await checkExistence(this.milestoneDao, id, 'milestone');
+    logger.info(`[MilestoneService] :: Milestone id ${milestone.id} found`);
+    return milestone;
+  },
   /**
    * Returns the project that the milestone belongs to
    * or `undefined` if the milestone doesn't have a project.
@@ -499,10 +505,6 @@ module.exports = {
     return this.milestoneDao.getMilestonesByProjectId(projectId);
   },
 
-  async getMilestoneById(milestoneId) {
-    return this.milestoneDao.findById(milestoneId);
-  },
-
   async getMilestones(filters) {
     logger.info('[MilestoneService] :: Entering getMilestones method');
     const milestones = await this.milestoneDao.getMilestones(filters || {});
@@ -629,7 +631,81 @@ module.exports = {
       milestoneId
     );
 
+    try {
+      logger.info('[MilestoneService] :: Marking next milestone as claimable');
+      await this.setNextAsClaimable(milestoneId);
+    } catch (error) {
+      // If it fails still return, do not throw
+      logger.error(
+        '[MilestoneService] :: Error setting next milestone as claimable',
+        error
+      );
+    }
+
     return { milestoneId: milestoneUpdated.id };
+  },
+
+  /**
+   * Updates claim status for the specific milestone
+   * to `claimable` and returns its id
+   *
+   * @param {number} milestoneId
+   * @returns {Promise<{numberd}>}
+   */
+  async setClaimable(milestoneId) {
+    logger.info('[MilestoneService] :: Entering setClaimable method');
+    validateRequiredParams({
+      method: 'setClaimable',
+      params: { milestoneId }
+    });
+
+    const milestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId, claimStatus } = milestone;
+
+    logger.info(
+      `[MilestoneService] :: Found milestone ${milestoneId} of project ${projectId}`
+    );
+
+    const project = await this.projectService.getProjectById(projectId);
+    const { status } = project;
+
+    if (status !== projectStatuses.EXECUTING) {
+      logger.error(
+        `[MilestoneService] :: A milestone can't be claimable when project status is ${status}`
+      );
+      throw new COAError(
+        errors.project.InvalidStatusForClaimableMilestone(status)
+      );
+    }
+
+    if (claimStatus !== claimMilestoneStatus.PENDING) {
+      logger.error(
+        `[MilestoneService] :: Can't set milestone as claimable when claim status is ${claimStatus}`
+      );
+      throw new COAError(
+        errors.milestone.InvalidStatusForClaimableMilestone(claimStatus)
+      );
+    }
+
+    logger.info(
+      `[MilestoneService] :: Updating claimStatus of milestone ${milestoneId} as ${
+        claimMilestoneStatus.CLAIMABLE
+      }`
+    );
+
+    const milestoneUpdated = await this.milestoneDao.updateMilestone(
+      {
+        claimStatus: claimMilestoneStatus.CLAIMABLE
+      },
+      milestoneId
+    );
+
+    return milestoneUpdated.id;
   },
 
   /**
@@ -637,7 +713,7 @@ module.exports = {
    * a milestone are approved or not.
    *
    * @param {number} milestoneId
-   * @returns {boolean} completed
+   * @returns {Promise<boolean>} completed
    */
   async isMilestoneCompleted(milestoneId) {
     logger.info('[MilestoneService] :: Entering isMilestoneCompleted method');
@@ -668,7 +744,7 @@ module.exports = {
 
         // TODO: check what should we hash
         // TODO: how to properly hash this
-        const claimHash = utils.id(`${projectId}${oracle.address}${task.id}`);
+        const claimHash = sha3(projectId, oracle.address, task.id);
         return [oracle.address, claimHash];
       })
     );
@@ -676,5 +752,54 @@ module.exports = {
     const [validators, claims] = zip(...tasksClaimsWithValidators);
 
     return coa.milestoneApproved(address, validators, claims);
+  },
+
+  /**
+   * Returns the next milestone's id from the same project
+   * or `undefined` if it is the last
+   *
+   * @param {number} milestoneId
+   * @returns {Promise<number>}
+   */
+  async getNextMilestoneId(milestoneId) {
+    logger.info('[MilestoneService] :: Entering getNextMilestoneId method');
+    const foundMilestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId } = foundMilestone;
+    const projectMilestones = await this.getAllMilestonesByProject(projectId);
+    const currentMilestoneIndex = projectMilestones.indexOf(
+      projectMilestones.find(milestone => milestone.id === milestoneId)
+    );
+
+    if (currentMilestoneIndex === projectMilestones.length - 1) {
+      // last milestone
+      return;
+    }
+
+    const nextMilestone = projectMilestones[currentMilestoneIndex + 1];
+    return nextMilestone.id;
+  },
+
+  /**
+   * Finds the next milestone of the project and
+   * sets its claim status as `claimable`
+   *
+   * @param {number} currentMilestoneId
+   * @returns {Promise<number>} next milestone id
+   */
+  async setNextAsClaimable(currentMilestoneId) {
+    logger.info('[MilestoneService] :: Entering setNextAsClaimable method');
+    const nextMilestoneId = await this.getNextMilestoneId(currentMilestoneId);
+    if (!nextMilestoneId) {
+      logger.info(
+        `[MilestoneService] :: Milestone ${currentMilestoneId} is the last milestone of the project`
+      );
+      return;
+    }
+    return this.setClaimable(nextMilestoneId);
   }
 };

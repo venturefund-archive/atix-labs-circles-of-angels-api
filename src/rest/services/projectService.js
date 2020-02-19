@@ -1195,10 +1195,10 @@ module.exports = {
    * Returns the address of an existing project in COA contract
    *
    * @param {number} projectId
-   * @returns {string} project address
+   * @returns {Promise<string>} project address
    */
   async getAddress(projectId) {
-    logger.info('[ProjectService] :: Entering getCOAIndexById method');
+    logger.info('[ProjectService] :: Entering getAddress method');
     const project = await checkExistence(this.projectDao, projectId, 'project');
     logger.info(`[ProjectService] :: Project id ${project.id} found`);
     return project.address;

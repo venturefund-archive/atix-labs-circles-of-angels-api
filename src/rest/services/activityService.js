@@ -7,13 +7,13 @@
  */
 
 const { coa } = require('@nomiclabs/buidler');
-const { utils } = require('ethers');
 const { values, isEmpty } = require('lodash');
 const fs = require('fs');
 const { promisify } = require('util');
 const files = require('../util/files');
 const { forEachPromise } = require('../util/promises');
 const { projectStatuses, userRoles } = require('../util/constants');
+const { sha3 } = require('../util/hash');
 
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -23,9 +23,6 @@ const validatePhotoSize = require('./helpers/validatePhotoSize');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
-
-// TODO: replace with actual function
-const sha3 = (a, b, c) => utils.id(`${a}-${b}-${c}`);
 
 const claimType = 'claims';
 
@@ -438,11 +435,11 @@ module.exports = {
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
-    const { project } = milestone;
+    const { id: milestoneId, project: projectId } = milestone;
     const { oracle } = task;
 
-    const projectFound = await this.projectService.getProjectById(project);
-    const { status } = projectFound;
+    const projectFound = await this.projectService.getProjectById(projectId);
+    const { status, address } = projectFound;
 
     if (status !== projectStatuses.EXECUTING) {
       logger.error(
@@ -458,18 +455,18 @@ module.exports = {
       throw new COAError(errors.task.OracleNotAssigned({ userId, taskId }));
     }
 
+    // TODO: we shouldn't save the file once we have the ipfs storage working
     validateMtype(claimType, file);
     validatePhotoSize(file);
-
     logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
     const filePath = await files.saveFile(claimType, file);
     logger.info(`[ActivityService] :: File saved to: ${filePath}`);
 
-    // TODO replace both fields with the correct information
-    // const claim = sha3(projectId, oracle, taskId);
-    // const proof = utils.id(file.name);
+    // TODO: is this correct?
+    const claim = sha3(projectId, oracle, taskId);
+    const proof = sha3(filePath); // TODO: this should be an ipfs hash
 
-    // await coa.addClaim(projectId, claim, proof, approved);
+    await coa.addClaim(address, claim, proof, approved, milestoneId);
 
     const evidence = {
       description,

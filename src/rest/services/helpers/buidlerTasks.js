@@ -77,6 +77,7 @@ task('create-project', 'Create Project')
     console.log(
       `New project address: ${projectAddress} index: ${projectIndex}`
     );
+    return projectAddress;
   });
 
 task('propose-member-to-dao', 'Creates proposal to add member to existing DAO')

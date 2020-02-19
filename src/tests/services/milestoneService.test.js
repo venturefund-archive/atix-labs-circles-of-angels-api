@@ -690,9 +690,10 @@ describe('Testing milestoneService', () => {
       expect(response).toEqual(updatableMilestone);
     });
 
-    it('should return undefined if not found', async () => {
-      const response = await milestoneService.getMilestoneById(0);
-      expect(response).toBeUndefined();
+    it('should throw an error if milestone was not found', async () => {
+      await expect(milestoneService.getMilestoneById(0)).rejects.toThrow(
+        errors.common.CantFindModelWithId('milestone', 0)
+      );
     });
   });
 
