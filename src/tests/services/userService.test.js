@@ -204,7 +204,8 @@ describe('Testing userService', () => {
       answers: JSON.stringify({
         'Question?': 'Test',
         'Another question?': 'OK'
-      })
+      }),
+      company: 'AtixLabs'
     };
     const mockedWallet = {
       address: 'address',

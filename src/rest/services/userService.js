@@ -87,6 +87,7 @@ module.exports = {
     role,
     phoneNumber,
     country,
+    company,
     answers
   }) {
     logger.info(`[User Routes] :: Creating new user with email ${email}`);
@@ -130,6 +131,7 @@ module.exports = {
       phoneNumber,
       country,
       answers,
+      company,
       address,
       privKey: privateKey
     };

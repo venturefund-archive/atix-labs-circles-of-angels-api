@@ -62,7 +62,8 @@ module.exports = {
       model: 'country'
     },
     phoneNumber: { type: 'string', required: true },
-    answers: { type: 'string', required: true }
+    answers: { type: 'string', required: true },
+    company: { type: 'string', required: false, allowNull: true }
   },
   customToJSON: function toJson() {
     return omit(this, ['password', 'privKey']);

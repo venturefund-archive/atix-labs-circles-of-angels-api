@@ -206,7 +206,8 @@ const routes = {
             role: { type: 'string' },
             phoneNumber: { type: 'string' },
             country: { type: 'number' },
-            answers: { type: 'string' }
+            answers: { type: 'string' },
+            company: { type: 'string' }
           },
           required: [
             'firstName',
