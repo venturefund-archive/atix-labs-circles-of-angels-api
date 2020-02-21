@@ -45,8 +45,7 @@ const successWithMessageResponse = {
   properties: {
     success: { type: 'string' }
   },
-  description:
-    'Returns a success message if the user was signed up correctly'
+  description: 'Returns a success message if the user was signed up correctly'
 };
 
 const successWithUserResponse = {
@@ -205,15 +204,21 @@ const routes = {
             email: { type: 'string' },
             password: { type: 'string' },
             role: { type: 'string' },
-            detail: { type: 'object' },
-            questionnaire: {
-              type: 'array',
-              items: {
-                type: 'object'
-              }
-            }
+            phoneNumber: { type: 'string' },
+            country: { type: 'number' },
+            answers: { type: 'string' }
           },
-          required: ['firstName', 'lastName', 'email', 'password', 'role'],
+          required: [
+            'firstName',
+            'lastName',
+            'email',
+            'password',
+            'role',
+            'phoneNumber',
+            'country',
+            'answers'
+          ],
+          additionalProperties: false,
           description: 'User on-boarding information'
         },
         response: {

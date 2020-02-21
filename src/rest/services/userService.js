@@ -85,8 +85,9 @@ module.exports = {
     email,
     password,
     role,
-    detail,
-    questionnaire
+    phoneNumber,
+    country,
+    answers
   }) {
     logger.info(`[User Routes] :: Creating new user with email ${email}`);
     validateRequiredParams({
@@ -96,14 +97,12 @@ module.exports = {
         lastName,
         email,
         password,
-        role
+        role,
+        phoneNumber,
+        country,
+        answers
       }
     });
-
-    const hashedPwd = await bcrypt.hash(password, 10);
-
-    const wallet = Wallet.createRandom();
-    const { address, privateKey } = wallet;
 
     const existingUser = await this.userDao.getUserByEmail(email);
 
@@ -113,6 +112,14 @@ module.exports = {
       );
       throw new COAError(errors.user.EmailAlreadyInUse);
     }
+    await this.countryService.getCountryById(country);
+
+    // TODO: check phoneNumber format
+
+    const hashedPwd = await bcrypt.hash(password, 10);
+
+    const wallet = Wallet.createRandom();
+    const { address, privateKey } = wallet;
 
     const user = {
       firstName,
@@ -120,6 +127,9 @@ module.exports = {
       email: email.toLowerCase(),
       password: hashedPwd,
       role,
+      phoneNumber,
+      country,
+      answers,
       address,
       privKey: privateKey
     };

@@ -12,8 +12,14 @@ const bcrypt = require('bcrypt');
 const { Wallet } = require('ethers');
 const { injectMocks } = require('../../rest/util/injection');
 const { userRoles, projectStatuses } = require('../../rest/util/constants');
-const userService = require('../../rest/services/userService');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
+const COAError = require('../../rest/errors/COAError');
+const originalUserService = require('../../rest/services/userService');
+
+let userService = Object.assign({}, originalUserService);
+const restoreUserService = () => {
+  userService = Object.assign({}, originalUserService);
+};
 
 const mailService = {
   sendMail: jest.fn()
@@ -22,12 +28,15 @@ const mailService = {
 describe('Testing userService', () => {
   let dbProject = [];
   let dbUser = [];
+  let dbCountry = [];
 
   const resetDb = () => {
     dbProject = [];
     dbUser = [];
+    dbCountry = [];
   };
 
+  // USERS
   const userEntrepreneur = {
     id: 1,
     role: userRoles.ENTREPRENEUR
@@ -56,6 +65,7 @@ describe('Testing userService', () => {
     blocked: true
   };
 
+  // PROJECTS
   const newProject = {
     id: 1,
     status: projectStatuses.NEW,
@@ -66,6 +76,12 @@ describe('Testing userService', () => {
     id: 2,
     status: projectStatuses.EXECUTING,
     owner: userEntrepreneur.id
+  };
+
+  // COUNTRIES
+  const argentinaCountry = {
+    id: 1,
+    name: 'Argentina'
   };
 
   const userDao = {
@@ -89,12 +105,23 @@ describe('Testing userService', () => {
       dbProject.filter(project => project.owner === owner)
   };
 
+  const countryService = {
+    getCountryById: id => {
+      const found = dbCountry.find(country => country.id === id);
+      if (!found) {
+        throw new COAError(errors.common.CantFindModelWithId('country', id));
+      }
+      return found;
+    }
+  };
+
   beforeEach(() => resetDb());
 
   describe('Testing getUserById', () => {
     beforeAll(() => {
       injectMocks(userService, { userDao });
     });
+    afterAll(() => restoreUserService());
 
     beforeEach(() => {
       dbUser.push(userSupporter);
@@ -117,6 +144,7 @@ describe('Testing userService', () => {
       injectMocks(userService, { userDao });
       bcrypt.compare = jest.fn();
     });
+    afterAll(() => restoreUserService());
 
     beforeEach(() => {
       dbUser.push(userSupporter, blockedUser);
@@ -170,7 +198,13 @@ describe('Testing userService', () => {
       lastName: 'NewLastName',
       email: 'new@email.com',
       password: 'newPass123*',
-      role: userRoles.ENTREPRENEUR
+      role: userRoles.ENTREPRENEUR,
+      country: 1,
+      phoneNumber: '12345678',
+      answers: JSON.stringify({
+        'Question?': 'Test',
+        'Another question?': 'OK'
+      })
     };
     const mockedWallet = {
       address: 'address',
@@ -180,7 +214,12 @@ describe('Testing userService', () => {
     beforeAll(() => {
       Wallet.createRandom = jest.fn();
       bcrypt.hash = jest.fn();
-      injectMocks(userService, { userDao, mailService });
+      injectMocks(userService, { userDao, mailService, countryService });
+    });
+    afterAll(() => restoreUserService());
+
+    beforeEach(() => {
+      dbCountry.push(argentinaCountry);
     });
 
     it("should return an object with the new user's information", async () => {
@@ -206,13 +245,16 @@ describe('Testing userService', () => {
         })
       ).rejects.toThrow(errors.common.RequiredParamsMissing('createUser'));
     });
-    it('should return an error if an user exists with the same email', async () => {
+    it('should return an error if a user exists with the same email', async () => {
       dbUser.push(userSupporter);
-      Wallet.createRandom.mockReturnValueOnce(mockedWallet);
-      bcrypt.hash.mockReturnValueOnce(newUser.password);
       await expect(
         userService.createUser({ ...newUser, email: userSupporter.email })
       ).rejects.toThrow(errors.user.EmailAlreadyInUse);
+    });
+    it('should return an error if the country provided does not exist', async () => {
+      await expect(
+        userService.createUser({ ...newUser, country: 0 })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('country', 0));
     });
   });
 
@@ -222,6 +264,7 @@ describe('Testing userService', () => {
         userDao
       });
     });
+    afterAll(() => restoreUserService());
 
     it('should return a list with all existing non admin users', async () => {
       dbUser.push(userEntrepreneur, userSupporter, userAdmin);
@@ -243,6 +286,7 @@ describe('Testing userService', () => {
         userDao
       });
     });
+    afterAll(() => restoreUserService());
 
     beforeEach(() => {
       dbProject.push(newProject, executingProject);
@@ -270,6 +314,7 @@ describe('Testing userService', () => {
     beforeAll(() => {
       injectMocks(userService, { userDao });
     });
+    afterAll(() => restoreUserService());
 
     beforeEach(() => {
       dbUser.push(userSupporter);
@@ -296,6 +341,7 @@ describe('Testing userService', () => {
         userDao
       });
     });
+    afterAll(() => restoreUserService());
 
     beforeEach(() => dbUser.push(userSupporter, blockedUser));
 
