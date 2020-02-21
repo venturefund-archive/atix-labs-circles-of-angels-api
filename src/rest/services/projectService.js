@@ -849,14 +849,14 @@ module.exports = {
     }
 
     const alreadyApply = project[role].some(
-      participant => participant.id === userId
+      participant => participant.user === userId
     );
 
     if (alreadyApply) {
       logger.error(
         `[ProjectService] :: User already apply to ${role} in this project`
       );
-      throw new COAError(errors.project.AlreadyApplyToProject());
+      throw new COAError(errors.project.AlreadyApplyToProject(role));
     }
 
     const dao =
