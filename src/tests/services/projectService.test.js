@@ -3,7 +3,8 @@ const files = require('../../rest/util/files');
 const {
   userRoles,
   projectStatuses,
-  txFunderStatus
+  txFunderStatus,
+  supporterRoles
 } = require('../../rest/util/constants');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const validators = require('../../rest/services/helpers/projectStatusValidators/validators');
@@ -1606,6 +1607,162 @@ describe('Project Service Test', () => {
         fundingProject
       );
       expect(response).toHaveLength(0);
+    });
+  });
+
+  describe('Test applyToProject', () => {
+    let dbProject = [];
+    let dbProjectFunder = [];
+    let dbProjectOracle = [];
+    let dbUser = [];
+
+    const resetDb = () => {
+      dbProject = [];
+      dbUser = [];
+      dbProjectOracle = [];
+      dbProjectFunder = [];
+    };
+
+    beforeEach(() => {
+      resetDb();
+      dbUser.push(supporterUser);
+      dbProject.push(consensusProject);
+    });
+
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        projectDao: {
+          findOneByProps: ({ id }, { oracles, funders }) => {
+            const [foundProject] = dbProject.filter(
+              project => project.id === id
+            );
+
+            if (!foundProject) return;
+
+            return Object.assign({}, foundProject, {
+              oracles:
+                oracles && dbProjectOracle.filter(po => po.project === id),
+              funders:
+                funders && dbProjectFunder.filter(po => po.project === id)
+            });
+          }
+        },
+        userService: {
+          getUserById: id => {
+            const found = dbUser.find(user => user.id === id);
+            if (!found)
+              throw new COAError(errors.common.CantFindModelWithId('user', id));
+            return found;
+          }
+        },
+        oracleDao: {
+          addCandidate: ({ projectId, userId }) => {
+            dbProjectOracle.push({
+              id: dbProjectOracle.length + 1,
+              project: projectId,
+              user: userId
+            });
+
+            return { id: dbProjectOracle.length };
+          }
+        },
+        funderDao: {
+          addCandidate: ({ projectId, userId }) => {
+            dbProjectFunder.push({
+              id: dbProjectFunder.length + 1,
+              project: projectId,
+              user: userId
+            });
+
+            return { id: dbProjectFunder.length };
+          }
+        }
+      });
+    });
+
+    it('should add a new oracle candidate and returns its id', async () => {
+      const response = await projectService.applyToProject({
+        projectId: consensusProject.id,
+        userId: supporterUser.id,
+        role: supporterRoles.ORACLES
+      });
+
+      expect(response.candidateId).toBeDefined();
+    });
+
+    it('should add a new funder candidate and returns its id', async () => {
+      const response = await projectService.applyToProject({
+        projectId: consensusProject.id,
+        userId: supporterUser.id,
+        role: supporterRoles.FUNDERS
+      });
+
+      expect(response.candidateId).toBeDefined();
+    });
+
+    it('should throw an error if an argument is not defined', async () => {
+      await expect(
+        projectService.applyToProject({
+          userId: supporterUser.id
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('applyToProject'));
+    });
+
+    it('should throw an error if the project does not exist', async () => {
+      await expect(
+        projectService.applyToProject({
+          userId: supporterUser.id,
+          projectId: 0,
+          role: supporterRoles.ORACLES
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 0));
+    });
+
+    it('should throw an error if the project is not in executing status', async () => {
+      dbProject.push(pendingProject);
+
+      await expect(
+        projectService.applyToProject({
+          userId: supporterUser.id,
+          projectId: pendingProject.id,
+          role: supporterRoles.FUNDERS
+        })
+      ).rejects.toThrow(
+        errors.project.CantApplyToProject(projectStatuses.TO_REVIEW)
+      );
+    });
+
+    it('should throw an error if the user is not supporter', async () => {
+      dbUser.push(entrepreneurUser);
+
+      await expect(
+        projectService.applyToProject({
+          userId: entrepreneurUser.id,
+          projectId: consensusProject.id,
+          role: supporterRoles.FUNDERS
+        })
+      ).rejects.toThrow(
+        errors.user.UnauthorizedUserRole(entrepreneurUser.role)
+      );
+    });
+
+    it('should throw an error if the user already apply to the project as funder', async () => {
+      dbProjectFunder.push({
+        id: 1,
+        project: consensusProject.id,
+        user: supporterUser.id
+      });
+
+      await expect(
+        projectService.applyToProject({
+          userId: supporterUser.id,
+          projectId: consensusProject.id,
+          role: supporterRoles.FUNDERS
+        })
+      ).rejects.toThrow(
+        errors.project.AlreadyApplyToProject(supporterRoles.FUNDERS)
+      );
     });
   });
 });

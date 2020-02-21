@@ -53,8 +53,8 @@ module.exports = {
     message: 'User already follow this project',
     statusCode: 400
   }),
-  AlreadyApplyToProject: () => ({
-    message: 'User already apply to this project',
+  AlreadyApplyToProject: role => ({
+    message: `User already apply to ${role} in this project`,
     statusCode: 400
   }),
   IsNotFollower: () => ({
