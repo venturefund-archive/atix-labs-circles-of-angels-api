@@ -119,6 +119,15 @@ const successWithBooleanResponse = {
   description: 'Returns the boolean result'
 };
 
+const successWithApplyingResponse = {
+  type: 'object',
+  properties: {
+    oracles: { type: 'boolean' },
+    funders: { type: 'boolean' }
+  },
+  description: 'Returns if user already apply to project'
+};
+
 const userProperties = {
   id: { type: 'integer' },
   firstName: { type: 'string' },
@@ -828,7 +837,7 @@ const commonProjectRoutes = {
         summary: 'Check project applying',
         params: projectIdParam,
         response: {
-          ...successResponse(successWithBooleanResponse),
+          ...successResponse(successWithApplyingResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }

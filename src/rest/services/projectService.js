@@ -848,12 +848,14 @@ module.exports = {
       throw new COAError(errors.user.UnauthorizedUserRole(user.role));
     }
 
-    const alreadyApply = Object.values(supporterRoles).some(collection =>
-      project[collection].some(participant => participant.id === userId)
+    const alreadyApply = project[role].some(
+      participant => participant.id === userId
     );
 
     if (alreadyApply) {
-      logger.error('[ProjectService] :: User already apply to this project');
+      logger.error(
+        `[ProjectService] :: User already apply to ${role} in this project`
+      );
       throw new COAError(errors.project.AlreadyApplyToProject());
     }
 
@@ -900,9 +902,13 @@ module.exports = {
       );
     }
 
-    const alreadyApply = Object.values(supporterRoles).some(collection =>
-      project[collection].some(participant => participant.id === userId)
-    );
+    const alreadyApply = {};
+
+    Object.values(supporterRoles).forEach(collection => {
+      alreadyApply[collection] = project[collection].some(
+        participant => participant.id === userId
+      );
+    });
 
     return alreadyApply;
   },
