@@ -253,13 +253,7 @@ module.exports = {
 
     const project = await checkExistence(this.projectDao, projectId, 'project');
 
-    const allowedStatuses = [
-      projectStatuses.FUNDING,
-      projectStatuses.EXECUTING,
-      projectStatuses.FINISHED
-    ];
-
-    if (!allowedStatuses.includes(project.status)) {
+    if (!Object.values(publicProjectStatuses).includes(project.status)) {
       logger.error(
         `[TransferService] :: Can't get total fund amount when project is in ${
           project.status
