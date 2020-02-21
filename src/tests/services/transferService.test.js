@@ -345,7 +345,7 @@ describe('Testing transferService', () => {
     });
   });
 
-  describe('Testing projectService getTotalFundedByProject', () => {
+  describe('Testing projectService getFundedAmount', () => {
     beforeAll(() => {
       injectMocks(transferService, {
         transferDao
@@ -359,26 +359,26 @@ describe('Testing transferService', () => {
       dbTransfer.push(verifiedTransfer, anotherVerifiedTransfer);
     });
 
-    it('should return the fund amount for a project', async () => {
-      const response = await transferService.getFundAmount({
+    it('should return the funded amount for a project', async () => {
+      const response = await transferService.getFundedAmount({
         projectId: fundingProject.id
       });
 
-      const fundAmount =
+      const fundedAmount =
         verifiedTransfer.amount + anotherVerifiedTransfer.amount;
 
-      return expect(response).toEqual({ fundAmount });
+      return expect(response).toEqual({ fundedAmount });
     });
 
     it('should throw an error if an argument is not defined', async () => {
-      await expect(transferService.getFundAmount({})).rejects.toThrow(
-        errors.common.RequiredParamsMissing('getFundAmount')
+      await expect(transferService.getFundedAmount({})).rejects.toThrow(
+        errors.common.RequiredParamsMissing('getFundedAmount')
       );
     });
 
     it('should throw an error if the project does not exist', async () => {
       await expect(
-        transferService.getFundAmount({
+        transferService.getFundedAmount({
           projectId: 0
         })
       ).rejects.toThrow(errors.common.CantFindModelWithId('project', 0));

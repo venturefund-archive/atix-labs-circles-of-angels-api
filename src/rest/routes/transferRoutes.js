@@ -64,12 +64,12 @@ const userResponse = {
   description: "User's information"
 };
 
-const fundAmountResponse = {
+const fundedAmountResponse = {
   type: 'object',
   properties: {
-    fundAmount: { type: 'integer' }
+    fundedAmount: { type: 'integer' }
   },
-  description: 'Current fund amount'
+  description: 'Current funded amount'
 };
 
 const successWithTransfersArray = {
@@ -166,24 +166,24 @@ const transferRoutes = {
     handler: handlers.getTransfers
   },
 
-  getFundAmount: {
+  getFundedAmount: {
     method: 'get',
-    path: `/projects/:projectId${basePath}/fund-amount`,
+    path: `/projects/:projectId${basePath}/funded-amount`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.GET.name],
-        description: 'Returns the current fund amount for and specific project',
-        summary: 'Get the current fund amount by project',
+        description: 'Returns the current funded amount for and specific project',
+        summary: 'Get the current funded amount by project',
         params: projectIdParam,
         response: {
-          ...successResponse(fundAmountResponse),
+          ...successResponse(fundedAmountResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.getFundAmount
+    handler: handlers.getFundedAmount
   },
 
   addApprovedTransferClaim: {
