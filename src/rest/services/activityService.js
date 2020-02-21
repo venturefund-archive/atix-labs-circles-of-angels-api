@@ -334,64 +334,6 @@ module.exports = {
     return savedActivities;
   },
 
-  // /**
-  //  * Sends the activity to be validated on the blockchain
-  //  *
-  //  * @param {object} activity
-  //  * @returns activity | error
-  //  */
-  // async completeActivity(activity) {
-  //   try {
-  //     logger.error(
-  //       `[Activity Service] Completing Activity ID ${activity.id}`
-  //     );
-
-  //     if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
-  //       logger.error(
-  //         `[Activity Service] Activity ${
-  //           activity.id
-  //         } is not confirmed on the blockchain`
-  //       );
-  //       return {
-  //         error:
-  //           'Activity must be confirmed on the blockchain to mark as completed',
-  //         status: 409
-  //       };
-  //     }
-
-  //     const oracle = await oraclethis.activityDao.getOracleFromActivity(activity.id);
-  //     const validatedTransactionHash = await fastify.eth.validateActivity(
-  //       oracle.user.address,
-  //       oracle.user.pwd,
-  //       { activityId: activity.id }
-  //     );
-
-  //     if (!validatedTransactionHash) {
-  //       logger.error(
-  //         `[Activity Service] Activity ${
-  //           activity.id
-  //         } could not be validated on the blockchain`
-  //       );
-  //       return {
-  //         error: 'Activity could not be validated on the blockchain',
-  //         status: 409
-  //       };
-  //     }
-
-  //     const validatedActivity = await this.activityDao.updateActivity({
-  //       validatedTransactionHash
-  //     });
-
-  //     return validatedActivity;
-  //   } catch (error) {
-  //     logger.error(
-  //       '[Activity Service] :: Activity could not be validated on the blockchain:',
-  //       error
-  //     );
-  //     throw Error('Error validating activity');
-  //   }
-  // },
-
   /**
    * Returns the milestone that the task belongs to or `undefined`
    *

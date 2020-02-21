@@ -2,8 +2,9 @@ const { coa } = require('@nomiclabs/buidler');
 const logger = require('../../../logger');
 const daoHandlers = require('./daoHandlers');
 const { registerHandlers } = require('../../../util/listener');
-// TODO: see if we can inject this service
+// TODO: see if we can inject these services
 const projectService = require('../../../services/projectService');
+const milestoneService = require('../../../services/milestoneService');
 const { projectStatuses } = require('../../../util/constants');
 
 module.exports = {
@@ -19,6 +20,14 @@ module.exports = {
       status: projectStatuses.EXECUTING,
       address
     });
+
+    const milestones = await milestoneService.getAllMilestonesByProject(
+      projectId
+    );
+    // set first milestone as claimable
+    if (milestones && milestones.length && milestones[0]) {
+      await milestoneService.setClaimable(milestones[0].id);
+    }
     logger.info(
       `[COA] :: Project ${projectId} status updated to ${
         projectStatuses.EXECUTING

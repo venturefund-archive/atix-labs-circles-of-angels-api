@@ -320,11 +320,11 @@ describe('Project Service Test', () => {
 
     it('Whenever there is no update, an error should be thrown', async () => {
       expect(
-        projectService.updateProject(3, {
+        projectService.updateProject(0, {
           field: 'field1',
           field2: 'field2'
         })
-      ).rejects.toThrow(errors.project.CantUpdateProject(3));
+      ).rejects.toThrow(errors.project.CantUpdateProject(0));
     });
     it('When an update is done, it should return the id of the updated project', async () => {
       const projectUpdated = await projectService.updateProject(1, {

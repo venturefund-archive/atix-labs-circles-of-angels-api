@@ -410,7 +410,7 @@ describe('Testing activityService', () => {
     });
   });
 
-  describe.only('Testing addClaim', () => {
+  describe('Testing addClaim', () => {
     beforeAll(() => {
       injectMocks(activityService, {
         activityDao,

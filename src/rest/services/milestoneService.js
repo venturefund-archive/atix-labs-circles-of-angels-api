@@ -731,8 +731,7 @@ module.exports = {
 
     const address = await this.projectService.getAddress(projectId);
 
-    if (!address && address !== 0)
-      throw new COAError(errors.project.AddressNotFound(projectId));
+    if (!address) throw new COAError(errors.project.AddressNotFound(projectId));
 
     const tasks = await this.milestoneDao.getMilestoneTasks(milestoneId);
 
@@ -740,11 +739,11 @@ module.exports = {
       tasks.map(async task => {
         const oracle = await this.userService.getUserById(task.oracle);
         if (!oracle || !oracle.address)
-          throw new COAError(errors.task.OracleAddressNotFound);
+          throw new COAError(errors.task.OracleAddressNotFound(task.id));
 
         // TODO: check what should we hash
         // TODO: how to properly hash this
-        const claimHash = sha3(projectId, oracle.address, task.id);
+        const claimHash = sha3(projectId, oracle.id, task.id);
         return [oracle.address, claimHash];
       })
     );
@@ -763,6 +762,10 @@ module.exports = {
    */
   async getNextMilestoneId(milestoneId) {
     logger.info('[MilestoneService] :: Entering getNextMilestoneId method');
+    validateRequiredParams({
+      method: 'getNextMilestoneId',
+      params: { milestoneId }
+    });
     const foundMilestone = await checkExistence(
       this.milestoneDao,
       milestoneId,

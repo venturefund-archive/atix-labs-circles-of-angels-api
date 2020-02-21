@@ -11,6 +11,7 @@ const path = require('path');
 const { uniqWith } = require('lodash');
 const { utils } = require('ethers');
 const { coa } = require('@nomiclabs/buidler');
+const { sha3 } = require('../util/hash');
 const {
   projectStatuses,
   userRoles,
@@ -42,9 +43,6 @@ const {
 const thumbnailType = 'thumbnail';
 const coverPhotoType = 'coverPhoto';
 const milestonesType = 'milestones';
-
-// TODO: replace with actual function
-const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 
 module.exports = {
   async getProjectById(id) {
