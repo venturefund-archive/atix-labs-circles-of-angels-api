@@ -788,7 +788,7 @@ const commonProjectRoutes = {
 
   applyAsOracle: {
     method: 'post',
-    path: `${basePath}/:projectId/oracle`,
+    path: `${basePath}/:projectId/oracles`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -808,7 +808,7 @@ const commonProjectRoutes = {
 
   applyAsFunder: {
     method: 'post',
-    path: `${basePath}/:projectId/funder`,
+    path: `${basePath}/:projectId/funders`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
