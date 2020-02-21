@@ -64,6 +64,14 @@ const userResponse = {
   description: "User's information"
 };
 
+const fundAmountResponse = {
+  type: 'object',
+  properties: {
+    fundAmount: { type: 'integer' }
+  },
+  description: 'Current fund amount'
+};
+
 const successWithTransfersArray = {
   type: 'array',
   items: {
@@ -156,6 +164,26 @@ const transferRoutes = {
       }
     },
     handler: handlers.getTransfers
+  },
+
+  getFundAmount: {
+    method: 'get',
+    path: `/projects/:projectId${basePath}/fund-amount`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description: 'Returns the current fund amount for and specific project',
+        summary: 'Get the current fund amount by project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(fundAmountResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getFundAmount
   },
 
   addApprovedTransferClaim: {

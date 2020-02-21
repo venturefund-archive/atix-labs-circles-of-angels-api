@@ -43,6 +43,12 @@ module.exports = {
     reply.status(200).send(response);
   },
 
+  getFundAmount: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await transferService.getFundAmount({ projectId });
+    reply.status(200).send(response);
+  },
+
   getState: () => async (request, reply) => {
     const status = await transferService.getTransferStatusByUserAndProject({
       senderId: request.params.userId,
