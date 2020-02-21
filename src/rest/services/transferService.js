@@ -244,10 +244,10 @@ module.exports = {
    * @param {number} projectId
    * @returns total funded amount || error
    */
-  async getFundAmount({ projectId }) {
-    logger.info('[TransferService] :: Entering getFundAmount method');
+  async getFundedAmount({ projectId }) {
+    logger.info('[TransferService] :: Entering getFundedAmount method');
     validateRequiredParams({
-      method: 'getFundAmount',
+      method: 'getFundedAmount',
       params: { projectId }
     });
 
@@ -284,7 +284,7 @@ module.exports = {
       `[Transfer Service] :: Project ${projectId} has ${totalAmount} total funds`
     );
 
-    return { fundAmount: totalAmount };
+    return { fundedAmount: totalAmount };
   },
 
   /**

@@ -43,9 +43,9 @@ module.exports = {
     reply.status(200).send(response);
   },
 
-  getFundAmount: () => async (request, reply) => {
+  getFundedAmount: () => async (request, reply) => {
     const { projectId } = request.params;
-    const response = await transferService.getFundAmount({ projectId });
+    const response = await transferService.getFundedAmount({ projectId });
     reply.status(200).send(response);
   },
 
