@@ -12,7 +12,6 @@ const {
   txFunderStatus,
   projectStatuses,
   userRoles,
-  transferStatus,
   publicProjectStatuses
 } = require('../util/constants');
 const files = require('../util/files');
@@ -240,45 +239,46 @@ module.exports = {
   },
 
   /**
-   * Finds all verified funds for a project and returns the total amount
+   * Finds all approved funds for a project and returns the total amount
    *
    * @param {number} projectId
    * @returns total funded amount || error
    */
-  async getTotalFundedByProject(projectId) {
-    logger.info(
-      '[Transfer Service] :: Getting total transfers amount for Project ID',
-      projectId
-    );
-    try {
-      const transfers = await this.transferDao.getTransfersByProjectAndState(
-        projectId,
-        transferStatus.VERIFIED
+  async getFundedAmount({ projectId }) {
+    logger.info('[TransferService] :: Entering getFundedAmount method');
+    validateRequiredParams({
+      method: 'getFundedAmount',
+      params: { projectId }
+    });
+
+    const project = await checkExistence(this.projectDao, projectId, 'project');
+
+    if (!Object.values(publicProjectStatuses).includes(project.status)) {
+      logger.error(
+        `[TransferService] :: Can't get total fund amount when project is in ${
+          project.status
+        } status`
       );
-
-      // project doesn't have any transfers
-      if (!transfers || transfers.length === 0) {
-        logger.info(
-          `[Transfer Service] :: Project ID ${projectId} does not have any funds transferred`
-        );
-        return 0;
-      }
-
-      // sum transfers amount
-      const totalAmount = transfers.reduce(
-        (total, transfer) => total + transfer.amount,
-        0
+      throw new COAError(
+        errors.project.InvalidStatusForGetFundAmount(project.status)
       );
-
-      logger.info(
-        `[Transfer Service] :: Project ID ${projectId} total funds: ${totalAmount}`
-      );
-
-      return totalAmount;
-    } catch (error) {
-      logger.error('[Transfer Service] :: Error getting transfers:', error);
-      throw Error('Error getting transfers');
     }
+
+    const transfers = await this.transferDao.findAllByProps({
+      project: projectId,
+      status: txFunderStatus.VERIFIED
+    });
+
+    const totalAmount = transfers.reduce(
+      (total, transfer) => total + transfer.amount,
+      0
+    );
+
+    logger.info(
+      `[Transfer Service] :: Project ${projectId} has ${totalAmount} total funds`
+    );
+
+    return { fundedAmount: totalAmount };
   },
 
   /**
