@@ -81,6 +81,10 @@ module.exports = {
     message: `Can't claim milestone when project is in ${status} status`,
     statusCode: 400
   }),
+  InvalidStatusForClaimableMilestone: status => ({
+    message: `Can't set milestone as claimable when project status is ${status}`,
+    statusCode: 400
+  }),
   MilestonesNotFound: projectId => ({
     message: `Milestones not found for project ${projectId}`,
     statusCode: 400
@@ -99,6 +103,10 @@ module.exports = {
   }),
   MinimumFundingNotReached: projectId => ({
     message: `Minimum funding amount required for project ${projectId} has not been reached`,
+    statusCode: 400
+  }),
+  AddressNotFound: projectId => ({
+    message: `Project of id ${projectId} doesn't have an address`,
     statusCode: 400
   })
 };

@@ -1,5 +1,7 @@
+const { run, coa } = require('@nomiclabs/buidler');
 const COAError = require('../../rest/errors/COAError');
 const files = require('../../rest/util/files');
+const { sha3 } = require('../../rest/util/hash');
 const {
   userRoles,
   projectStatuses,
@@ -17,7 +19,15 @@ const restoreProjectService = () => {
   projectService = Object.assign({}, originalProjectService);
 };
 
-const sha3 = (a, b, c) => `${a}-${b}-${c}`;
+const TEST_TIMEOUT_MS = 10000;
+const deployContracts = async () => {
+  await run('deploy', { reset: true });
+  const coaContract = await coa.getCOA();
+  const superDaoAddress = await coaContract.daos(0);
+  const { _address } = await coa.getSigner();
+  return { coaContract, superDaoAddress, superUserAddress: _address };
+};
+
 const projectName = 'validProjectName';
 const location = 'Argentina';
 const timeframe = '12';
@@ -310,11 +320,11 @@ describe('Project Service Test', () => {
 
     it('Whenever there is no update, an error should be thrown', async () => {
       expect(
-        projectService.updateProject(3, {
+        projectService.updateProject(0, {
           field: 'field1',
           field2: 'field2'
         })
-      ).rejects.toThrow(errors.project.CantUpdateProject(3));
+      ).rejects.toThrow(errors.project.CantUpdateProject(0));
     });
     it('When an update is done, it should return the id of the updated project', async () => {
       const projectUpdated = await projectService.updateProject(1, {
@@ -1275,16 +1285,19 @@ describe('Project Service Test', () => {
   describe('Transition Funding Projects', () => {
     let dbProject = [];
     let dbProjectFunder = [];
+    let coaContract;
     const fundingToExecuting = {
       id: 1,
       status: projectStatuses.FUNDING,
+      projectName: 'toExecutingProject',
       owner: 1
     };
 
-    beforeEach(() => {
+    beforeEach(async () => {
       dbProject = [];
       dbProjectFunder = [];
-    });
+      ({ coaContract } = await deployContracts());
+    }, TEST_TIMEOUT_MS);
 
     beforeAll(() => {
       restoreProjectService();
@@ -1312,29 +1325,31 @@ describe('Project Service Test', () => {
         ),
         hasTimePassed: jest.fn(),
         getNextValidStatus: jest.fn(),
-        removeFundersWithNoTransfersFromProject: jest.fn()
+        removeFundersWithNoTransfersFromProject: jest.fn(),
+        generateProjectAgreement: jest.fn(() => 'agreementJson')
       });
     });
 
-    it('should change the project status to executing', async () => {
-      dbProject.push(fundingToExecuting);
-      projectService.hasTimePassed.mockReturnValueOnce(true);
-      projectService.getNextValidStatus.mockReturnValueOnce(
-        projectStatuses.EXECUTING
-      );
-      const response = await projectService.transitionFundingProjects();
-      expect(response).toHaveLength(1);
-      expect(response).toEqual([
-        {
-          projectId: fundingToExecuting.id,
-          newStatus: projectStatuses.EXECUTING
-        }
-      ]);
-      const updated = dbProject.find(
-        project => project.id === fundingToExecuting.id
-      );
-      expect(updated.status).toEqual(projectStatuses.EXECUTING);
-    });
+    it(
+      'should create the project in the blockchain ' +
+        'when changing to executing and return its id and new status',
+      async () => {
+        dbProject.push(fundingToExecuting);
+        projectService.hasTimePassed.mockReturnValueOnce(true);
+        projectService.getNextValidStatus.mockReturnValueOnce(
+          projectStatuses.EXECUTING
+        );
+        const response = await projectService.transitionFundingProjects();
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([
+          {
+            projectId: fundingToExecuting.id,
+            newStatus: projectStatuses.EXECUTING
+          }
+        ]);
+        expect((await coaContract.getProjectsLength()).toNumber()).toBe(1);
+      }
+    );
 
     it(
       'should change the project status to consensus ' +
@@ -1606,6 +1621,41 @@ describe('Project Service Test', () => {
         fundingProject
       );
       expect(response).toHaveLength(0);
+    });
+  });
+
+  describe('Get address', () => {
+    let dbProject = [];
+    const projectWithAddress = {
+      id: 1,
+      status: projectStatuses.EXECUTING,
+      address: '0x0'
+    };
+    beforeEach(() => {
+      dbProject = [];
+    });
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        projectDao: Object.assign(
+          {},
+          {
+            findById: id => dbProject.find(project => project.id === id)
+          }
+        )
+      });
+    });
+
+    it('should return the existing user', async () => {
+      dbProject.push(projectWithAddress);
+      const response = await projectService.getAddress(projectWithAddress.id);
+      expect(response).toEqual(projectWithAddress.address);
+    });
+
+    it('should throw an error if the user does not exist', async () => {
+      await expect(projectService.getAddress(0)).rejects.toThrow(
+        errors.common.CantFindModelWithId('project', 0)
+      );
     });
   });
 });

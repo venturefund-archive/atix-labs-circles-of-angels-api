@@ -1,6 +1,7 @@
 const { readArtifact } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory, Wallet } = require('ethers');
 
+const { sha3 } = require('../../util/hash');
 const { proposalTypeEnum, voteEnum } = require('../../util/constants');
 
 const getCOAContract = async env => {
@@ -24,6 +25,21 @@ const getDAOContract = async (env, address, signer) => {
   const factory = new ContractFactory(abi, bytecode, signer);
   return factory.attach(address);
 };
+
+const getRegistryContract = async env => {
+  const [registry] = await env.deployments.getDeployedContracts(
+    'ClaimsRegistry'
+  );
+  return registry;
+};
+
+task('get-signer-zero', 'Gets signer zero address').setAction(
+  async (_args, env) => {
+    const signer = await getSigner(env);
+    console.log('Signer:', signer._address);
+    return signer._address;
+  }
+);
 
 task('create-member', 'Create COA member')
   .addOptionalParam('profile', 'New member profile')
@@ -54,6 +70,54 @@ task('create-dao', 'Create DAO')
     const daoIndex = (await coa.getDaosLength()) - 1;
     const daoAddress = await coa.daos(daoIndex);
     console.log(`New DAO Address: ${daoAddress} index: ${daoIndex}`);
+  });
+
+task('create-project', 'Create Project')
+  .addOptionalParam('id', 'Project id')
+  .addOptionalParam('name', 'Project name')
+  .addOptionalParam('agreement', 'Project agreement hash')
+  .setAction(async ({ id, name, agreement }, env) => {
+    const coa = await getCOAContract(env);
+    if (coa === undefined) {
+      console.error('COA contract not deployed');
+      return;
+    }
+
+    await coa.createProject(
+      id || 1,
+      name || 'Buidler Project',
+      agreement || 'ipfsagreementhash'
+    );
+    const projectIndex = (await coa.getProjectsLength()) - 1;
+    const projectAddress = await coa.projects(projectIndex);
+    console.log(
+      `New project address: ${projectAddress} index: ${projectIndex}`
+    );
+    return projectAddress;
+  });
+
+task('add-claim', 'Add claim')
+  .addParam('project', 'Project address')
+  .addParam('milestone', 'Milestone id')
+  .addOptionalParam('claim', 'Claim hash')
+  .addOptionalParam('proof', 'Claim proof hash')
+  .addOptionalParam('valid', 'Claim validity', true, types.boolean)
+  .setAction(async ({ project, claim, proof, valid, milestone }, env) => {
+    const registry = await getRegistryContract(env);
+    if (registry === undefined) {
+      console.error('ClaimRegistry contract not deployed');
+      return;
+    }
+
+    await registry.addClaim(
+      project,
+      claim || sha3(1, 1, 1),
+      proof || sha3('ipfsproofhash'),
+      valid,
+      milestone
+    );
+
+    return getSigner(env);
   });
 
 task('propose-member-to-dao', 'Creates proposal to add member to existing DAO')
