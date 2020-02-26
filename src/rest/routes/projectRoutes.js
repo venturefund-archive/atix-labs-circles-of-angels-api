@@ -222,7 +222,6 @@ const projectsResponse = {
 };
 
 const projectThumbnailRoutes = {
-  // create project thumbnail
   createProjectThumbnail: {
     method: 'post',
     path: `${basePath}/description`,
@@ -249,6 +248,7 @@ const projectThumbnailRoutes = {
     },
     handler: handlers.createProjectThumbnail
   },
+
   updateProjectThumbnail: {
     method: 'put',
     path: `${basePath}/:projectId/description`,
@@ -276,6 +276,7 @@ const projectThumbnailRoutes = {
     },
     handler: handlers.updateProjectThumbnail
   },
+
   getThumbnail: {
     method: 'get',
     path: `${basePath}/:projectId/description`,

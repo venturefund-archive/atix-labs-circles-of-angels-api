@@ -31,6 +31,13 @@ module.exports = {
     return this.model.findOne({ id }).populate('following');
   },
 
+  async getAppliedProjects(id) {
+    return this.model
+      .findOne({ id })
+      .populate('funding')
+      .populate('monitoring');
+  },
+
   async updateUser(id, user) {
     const updatedUser = await this.model.updateOne({ id }).set({ ...user });
     return updatedUser;
