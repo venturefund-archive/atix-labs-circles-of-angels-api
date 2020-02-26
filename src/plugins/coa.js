@@ -33,9 +33,9 @@ module.exports = class COA {
     await coa.createMember(profile);
   }
 
-  async createProject(name, agreement) {
+  async createProject(id, name, agreement) {
     const coa = await this.getCOA();
-    await coa.createProject(name, agreement);
+    await coa.createProject(id, name, agreement);
   }
 
   async createDAO(name) {
@@ -60,17 +60,22 @@ module.exports = class COA {
     console.log(tx);
   }
 
-  async addClaim(project, claim, proof, valid) {
+  async addClaim(project, claim, proof, valid, milestoneId) {
     const registry = await this.getRegistry();
-    const tx = await registry.addClaim(project, claim, proof, valid);
+    const tx = await registry.addClaim(
+      project,
+      claim,
+      proof,
+      valid,
+      milestoneId
+    );
     // get receipt and check logs
-    console.log(tx);
     return tx;
   }
 
-  async milestoneApproved(project, validators, claims) {
+  async milestoneApproved(projectAddress, validators, claims) {
     const registry = await this.getRegistry();
-    return registry.areApproved(project, validators, claims);
+    return registry.areApproved(projectAddress, validators, claims);
   }
 
   async approveTask(projectId, validator, taskId, proof) {

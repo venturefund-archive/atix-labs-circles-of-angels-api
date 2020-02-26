@@ -8,13 +8,22 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { coa } = require('@nomiclabs/buidler');
+const { coa, run } = require('@nomiclabs/buidler');
 const files = require('../../rest/util/files');
 const { projectStatuses, userRoles } = require('../../rest/util/constants');
 const { injectMocks } = require('../../rest/util/injection');
 const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const activityService = require('../../rest/services/activityService');
+
+const TEST_TIMEOUT_MS = 10000;
+const deployContracts = async () => {
+  await run('deploy', { reset: true });
+  const coaContract = await coa.getCOA();
+  const superDaoAddress = await coaContract.daos(0);
+  const { _address } = await coa.getSigner();
+  return { coaContract, superDaoAddress, superUserAddress: _address };
+};
 
 describe('Testing activityService', () => {
   let dbTask = [];
@@ -403,7 +412,6 @@ describe('Testing activityService', () => {
 
   describe('Testing addClaim', () => {
     beforeAll(() => {
-      coa.addClaim = jest.fn();
       injectMocks(activityService, {
         activityDao,
         taskEvidenceDao,
@@ -411,15 +419,17 @@ describe('Testing activityService', () => {
       });
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
       dbUser.push(userEntrepreneur);
       dbTask.push({
         ...nonUpdatableTask,
         oracle: userEntrepreneur.id
       });
       dbMilestone.push(nonUpdatableMilestone);
-      dbProject.push(executingProject);
-    });
+      await deployContracts();
+      const projectAddress = await run('create-project');
+      dbProject.push({ ...executingProject, address: projectAddress });
+    }, TEST_TIMEOUT_MS);
 
     it('should add an approved claim and return the claim id', async () => {
       const response = await activityService.addClaim({
@@ -547,7 +557,7 @@ describe('Testing activityService', () => {
 
     it(
       'should assign an oracle to an existing activity if the oracle ' +
-      'applied as candidate for the project',
+        'applied as candidate for the project',
       async () => {
         projectService.isOracleCandidate.mockReturnValueOnce(true);
         const response = await activityService.assignOracle(

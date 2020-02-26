@@ -214,7 +214,7 @@ const projectsResponse = {
       status: { type: 'string' },
       owner: userResponse,
       createdAt: { type: 'string' },
-      transactionHash: { type: 'string' },
+      // address: { type: 'string' },
       id: { type: 'number' }
     }
   },

@@ -47,13 +47,13 @@ module.exports = {
     return deleted;
   },
 
-  // FIXME : unclear name
-  async getMilestoneActivities(milestoneId) {
+  async getMilestoneTasks(milestoneId) {
     const milestone = await this.model
       .findOne({ id: milestoneId })
       .populate('tasks');
 
-    return milestone || [];
+    if (!milestone) return;
+    return milestone.tasks || [];
   },
   async updateMilestoneStatus(milestoneId, status) {
     this.model.update(milestoneId).set({ status });

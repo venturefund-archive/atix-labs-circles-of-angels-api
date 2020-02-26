@@ -46,13 +46,6 @@ module.exports = {
     return response;
   },
 
-  async updateProjectTransaction({ projectId, transactionHash }) {
-    const response = this.model
-      .updateOne({ id: projectId })
-      .set({ transactionHash });
-    return response;
-  },
-
   async getProjectById({ projectId }) {
     const project = await this.model.findOne({ id: projectId });
 
@@ -142,21 +135,5 @@ module.exports = {
       id: projectsId,
       status: { '>=': projectStatus.PUBLISHED }
     });
-  },
-
-  async updateBlockchainStatus(id, blockchainStatus) {
-    return this.model.updateOne({ id }).set({ blockchainStatus });
-  },
-
-  async updateStartBlockchainStatus(id, startBlockchainStatus) {
-    return this.model.updateOne({ id }).set({ startBlockchainStatus });
-  },
-
-  async updateCreationTransactionHash(id, creationTransactionHash) {
-    return this.model.updateOne({ id }).set({ creationTransactionHash });
-  },
-
-  async updateStartTransactionHash(id, transactionHash) {
-    return this.model.updateOne({ id }).set({ transactionHash });
   }
 };
