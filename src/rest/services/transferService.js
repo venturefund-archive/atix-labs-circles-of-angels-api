@@ -11,7 +11,6 @@ const {
   txFunderStatus,
   projectStatuses,
   userRoles,
-  transferStatus,
   publicProjectStatuses
 } = require('../util/constants');
 const { sha3 } = require('../util/hash');
@@ -59,8 +58,8 @@ module.exports = {
         receiptFile
       }
     });
-    const project = await checkExistence(this.projectDao, projectId, 'project');
-    const user = await checkExistence(this.userDao, senderId, 'user');
+    const project = await this.projectService.getProjectById(projectId);
+    const user = await this.userService.getUserById(senderId);
 
     if (user.role !== userRoles.PROJECT_SUPPORTER) {
       logger.error(`[TransferService] :: User ${user.id} is not a funder`);
@@ -177,7 +176,7 @@ module.exports = {
       params: { projectId }
     });
 
-    const project = await checkExistence(this.projectDao, projectId, 'project');
+    const project = await this.projectService.getProjectById(projectId);
 
     // TODO: define in which project phase/s this list would make sense
     if (!Object.values(publicProjectStatuses).includes(project.status)) {
@@ -237,45 +236,46 @@ module.exports = {
   },
 
   /**
-   * Finds all verified funds for a project and returns the total amount
+   * Finds all approved funds for a project and returns the total amount
    *
    * @param {number} projectId
    * @returns total funded amount || error
    */
-  async getTotalFundedByProject(projectId) {
-    logger.info(
-      '[Transfer Service] :: Getting total transfers amount for Project ID',
-      projectId
-    );
-    try {
-      const transfers = await this.transferDao.getTransfersByProjectAndState(
-        projectId,
-        transferStatus.VERIFIED
+  async getFundedAmount({ projectId }) {
+    logger.info('[TransferService] :: Entering getFundedAmount method');
+    validateRequiredParams({
+      method: 'getFundedAmount',
+      params: { projectId }
+    });
+
+    const project = await this.projectService.getProjectById(projectId);
+
+    if (!Object.values(publicProjectStatuses).includes(project.status)) {
+      logger.error(
+        `[TransferService] :: Can't get total fund amount when project is in ${
+          project.status
+        } status`
       );
-
-      // project doesn't have any transfers
-      if (!transfers || transfers.length === 0) {
-        logger.info(
-          `[Transfer Service] :: Project ID ${projectId} does not have any funds transferred`
-        );
-        return 0;
-      }
-
-      // sum transfers amount
-      const totalAmount = transfers.reduce(
-        (total, transfer) => total + transfer.amount,
-        0
+      throw new COAError(
+        errors.project.InvalidStatusForGetFundAmount(project.status)
       );
-
-      logger.info(
-        `[Transfer Service] :: Project ID ${projectId} total funds: ${totalAmount}`
-      );
-
-      return totalAmount;
-    } catch (error) {
-      logger.error('[Transfer Service] :: Error getting transfers:', error);
-      throw Error('Error getting transfers');
     }
+
+    const transfers = await this.transferDao.findAllByProps({
+      project: projectId,
+      status: txFunderStatus.VERIFIED
+    });
+
+    const totalAmount = transfers.reduce(
+      (total, transfer) => total + transfer.amount,
+      0
+    );
+
+    logger.info(
+      `[Transfer Service] :: Project ${projectId} has ${totalAmount} total funds`
+    );
+
+    return { fundedAmount: totalAmount };
   },
 
   /**
@@ -294,7 +294,7 @@ module.exports = {
       params: { transferId, userId, approved }
     });
 
-    const user = await checkExistence(this.userDao, userId, 'user');
+    const user = await this.userService.getUserById(userId);
 
     if (user.role !== userRoles.BANK_OPERATOR) {
       logger.error(
