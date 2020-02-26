@@ -227,6 +227,32 @@ module.exports = {
     return following || [];
   },
 
+  /**
+   * Returns an array of projects where the user applied as candidate
+   *
+   * @param {number} userId
+   * @returns {Promise<Project[]>} array of found projects
+   */
+  async getAppliedProjects({ userId }) {
+    logger.info('[UserService] :: Entering getAppliedProjects method');
+    validateRequiredParams({
+      method: 'getAppliedProjects',
+      params: { userId }
+    });
+
+    const user = await this.userDao.getAppliedProjects(userId);
+
+    if (!user) {
+      logger.error(`[User Service] :: User ID ${userId} does not exist`);
+      throw new COAError(errors.user.UserNotFound);
+    }
+
+    return {
+      funding: user.funding,
+      monitoring: user.monitoring
+    };
+  },
+
   async validUser(user, roleId) {
     const existentUser = await this.getUserById(user.id);
     const role = roleId ? existentUser.role === roleId : true;

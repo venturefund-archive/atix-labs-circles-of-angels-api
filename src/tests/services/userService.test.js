@@ -91,6 +91,12 @@ describe('Testing userService', () => {
       userFound.following = [newProject, executingProject];
       return userFound;
     },
+    getAppliedProjects: id => {
+      const userFound = dbUser.find(user => user.id === id);
+      userFound.funding = [newProject];
+      userFound.monitoring = [executingProject];
+      return userFound;
+    },
     getUserByEmail: email => dbUser.find(user => user.email === email),
     createUser: user => {
       const created = { ...user, id: dbUser.length + 1 };
@@ -331,6 +337,31 @@ describe('Testing userService', () => {
 
     it("should fail if user doesn't exist", async () => {
       expect(userService.getFollowedProjects({ userId: 10 })).rejects.toThrow(
+        errors.user.UserNotFound
+      );
+    });
+  });
+
+  describe.only('Testing getAppliedProjects', () => {
+    beforeAll(() => {
+      injectMocks(userService, { userDao });
+    });
+
+    beforeEach(() => {
+      dbUser.push(userSupporter);
+    });
+
+    it('should return the array of applied projects belonging to the user', async () => {
+      const response = await userService.getAppliedProjects({
+        userId: userSupporter.id
+      });
+
+      expect(response.monitoring).toHaveLength(1);
+      expect(response.funding).toHaveLength(1);
+    });
+
+    it("should fail if user doesn't exist", async () => {
+      expect(userService.getAppliedProjects({ userId: 10 })).rejects.toThrow(
         errors.user.UserNotFound
       );
     });

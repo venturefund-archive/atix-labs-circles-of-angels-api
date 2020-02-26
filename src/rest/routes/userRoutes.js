@@ -86,6 +86,15 @@ const successWithProjectsResponse = {
   description: 'Returns an array of objects with the projects information'
 };
 
+const appliedProjectsResponse = {
+  type: 'object',
+  properties: {
+    funding: successWithProjectsResponse,
+    monitoring: successWithProjectsResponse
+  },
+  description: 'Returns an object with the applied projects'
+};
+
 const routes = {
   getUser: {
     method: 'get',
@@ -366,6 +375,25 @@ const routes = {
       }
     },
     handler: handlers.getFollowedProjects
+  },
+
+  getAppliedProjects: {
+    method: 'get',
+    path: `${basePath}/applied-projects`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns all projects applied of an existing user',
+        summary: 'Get all applied projects by user',
+        response: {
+          ...successResponse(appliedProjectsResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getAppliedProjects
   }
 };
 
