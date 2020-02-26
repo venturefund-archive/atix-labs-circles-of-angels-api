@@ -850,7 +850,7 @@ module.exports = {
     }
 
     const alreadyApply = project[role].some(
-      participant => participant.user === userId
+      participant => participant.id === userId
     );
 
     if (alreadyApply) {
