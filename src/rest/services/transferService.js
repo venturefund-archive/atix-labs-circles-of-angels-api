@@ -58,8 +58,8 @@ module.exports = {
         receiptFile
       }
     });
-    const project = await checkExistence(this.projectDao, projectId, 'project');
-    const user = await checkExistence(this.userDao, senderId, 'user');
+    const project = await this.projectService.getProjectById(projectId);
+    const user = await this.userService.getUserById(senderId);
 
     if (user.role !== userRoles.PROJECT_SUPPORTER) {
       logger.error(`[TransferService] :: User ${user.id} is not a funder`);
@@ -176,7 +176,7 @@ module.exports = {
       params: { projectId }
     });
 
-    const project = await checkExistence(this.projectDao, projectId, 'project');
+    const project = await this.projectService.getProjectById(projectId);
 
     // TODO: define in which project phase/s this list would make sense
     if (!Object.values(publicProjectStatuses).includes(project.status)) {
@@ -248,7 +248,7 @@ module.exports = {
       params: { projectId }
     });
 
-    const project = await checkExistence(this.projectDao, projectId, 'project');
+    const project = await this.projectService.getProjectById(projectId);
 
     if (!Object.values(publicProjectStatuses).includes(project.status)) {
       logger.error(
@@ -294,7 +294,7 @@ module.exports = {
       params: { transferId, userId, approved }
     });
 
-    const user = await checkExistence(this.userDao, userId, 'user');
+    const user = await this.userService.getUserById(userId);
 
     if (user.role !== userRoles.BANK_OPERATOR) {
       logger.error(

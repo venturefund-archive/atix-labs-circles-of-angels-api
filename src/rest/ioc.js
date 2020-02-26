@@ -145,8 +145,8 @@ module.exports = fastify => {
   function configureTransferService(service) {
     const dependencies = {
       transferDao,
-      projectDao,
-      userDao
+      projectService,
+      userService
     };
 
     injectDependencies(service, dependencies);

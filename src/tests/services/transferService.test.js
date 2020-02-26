@@ -16,6 +16,7 @@ const {
 const { injectMocks } = require('../../rest/util/injection');
 const files = require('../../rest/util/files');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
+const COAError = require('../../rest/errors/COAError');
 const transferService = require('../../rest/services/transferService');
 
 describe('Testing transferService', () => {
@@ -151,12 +152,30 @@ describe('Testing transferService', () => {
     findById: id => dbUser.find(user => user.id === id)
   };
 
+  const projectService = {
+    getProjectById: id => {
+      const found = dbProject.find(project => project.id === id);
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('project', id));
+      return found;
+    }
+  };
+
+  const userService = {
+    getUserById: id => {
+      const found = dbUser.find(user => user.id === id);
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('user', id));
+      return found;
+    }
+  };
+
   describe('Testing transferService createTransfer', () => {
     beforeAll(() => {
       injectMocks(transferService, {
-        projectDao,
-        userDao,
-        transferDao
+        transferDao,
+        projectService,
+        userService
       });
     });
 
@@ -304,7 +323,7 @@ describe('Testing transferService', () => {
     beforeAll(() => {
       injectMocks(transferService, {
         transferDao,
-        projectDao
+        projectService
       });
     });
 
@@ -348,7 +367,8 @@ describe('Testing transferService', () => {
   describe('Testing projectService getFundedAmount', () => {
     beforeAll(() => {
       injectMocks(transferService, {
-        transferDao
+        transferDao,
+        projectService
       });
     });
 
@@ -385,11 +405,11 @@ describe('Testing transferService', () => {
     });
   });
 
-  describe('Testing transferService addTransferClaim', () => {
+  describe.only('Testing transferService addTransferClaim', () => {
     beforeAll(() => {
       injectMocks(transferService, {
-        userDao,
-        transferDao
+        transferDao,
+        userService
       });
     });
 
