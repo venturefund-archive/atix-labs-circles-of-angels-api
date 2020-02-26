@@ -73,6 +73,10 @@ module.exports = {
     message: `Can't upload experiences when project is in ${status} status`,
     statusCode: 400
   }),
+  InvalidStatusForGetFundAmount: status => ({
+    message: `Can't get total fund amount when project is in ${status} status`,
+    statusCode: 400
+  }),
   InvalidStatusForEvidenceUpload: status => ({
     message: `Can't upload evidence when project is in ${status} status`,
     statusCode: 400
