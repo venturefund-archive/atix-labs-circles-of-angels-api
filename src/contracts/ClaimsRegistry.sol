@@ -6,13 +6,12 @@ pragma solidity ^0.5.8;
         now it has been heavily changed.
  */
 contract ClaimsRegistry {
-
     struct Claim {
         bool approved;
         bytes32 proof;
     }
 
-    // Claim[] can be used to amend previous verifications 
+    // Claim[] can be used to amend previous verifications
     // Claim by project address => validator address => claim's hash => claim.
     mapping(address => mapping(address => mapping(bytes32 => Claim))) public registry;
 
@@ -25,7 +24,8 @@ contract ClaimsRegistry {
         bytes32 indexed claim,
         bool _approved,
         bytes32 proof,
-        uint verifiedAt
+        uint256 verifiedAt,
+        uint256 milestone
     );
 
     /**
@@ -33,23 +33,30 @@ contract ClaimsRegistry {
     * @param _project - address of a project.
     * @param _claim - bytes32 of the claim's hash.
     * @param _proof - bytes32 of the proof's hash.
-    * @param _approved - true if the claim is approved, false otherwise. 
+    * @param _approved - true if the claim is approved, false otherwise.
     */
     function addClaim(
         address _project,
         bytes32 _claim,
         bytes32 _proof,
-        bool _approved
-    )
-        public
-    {
+        bool _approved,
+        uint256 _milestone
+    ) public {
         address validator = msg.sender;
         registry[_project][validator][_claim] = Claim({
             approved: _approved,
             proof: _proof
         });
 
-        emit ClaimApproved(_project, validator, _claim, _approved, _proof, now);
+        emit ClaimApproved(
+            _project,
+            validator,
+            _claim,
+            _approved,
+            _proof,
+            now,
+            _milestone
+        );
     }
 
     /**

@@ -7,7 +7,6 @@
  */
 
 const { coa } = require('@nomiclabs/buidler');
-const { utils } = require('ethers');
 const {
   txFunderStatus,
   projectStatuses,
@@ -15,6 +14,7 @@ const {
   transferStatus,
   publicProjectStatuses
 } = require('../util/constants');
+const { sha3 } = require('../util/hash');
 const files = require('../util/files');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -23,9 +23,6 @@ const validatePhotoSize = require('./helpers/validatePhotoSize');
 const errors = require('../errors/exporter/ErrorExporter');
 const COAError = require('../errors/COAError');
 const logger = require('../logger');
-
-// TODO: replace with actual function
-const sha3 = (a, b) => utils.id(`${a}-${b}`);
 
 module.exports = {
   /**

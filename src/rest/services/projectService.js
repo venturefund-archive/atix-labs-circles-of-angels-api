@@ -9,6 +9,9 @@
 const config = require('config');
 const path = require('path');
 const { uniqWith } = require('lodash');
+const { utils } = require('ethers');
+const { coa } = require('@nomiclabs/buidler');
+const { sha3 } = require('../util/hash');
 const {
   projectStatuses,
   userRoles,
@@ -41,9 +44,6 @@ const thumbnailType = 'thumbnail';
 const coverPhotoType = 'coverPhoto';
 const milestonesType = 'milestones';
 
-// TODO: replace with actual function
-const sha3 = (a, b, c) => `${a}-${b}-${c}`;
-
 module.exports = {
   async getProjectById(id) {
     logger.info('[ProjectService] :: Entering getProjectById method');
@@ -53,6 +53,7 @@ module.exports = {
   },
 
   async updateProject(projectId, fields) {
+    logger.info('[ProjectService] :: Entering updateProject method');
     let toUpdate = { ...fields };
     if (fields.status) {
       toUpdate = { ...fields, lastUpdatedStatusAt: new Date() };
@@ -1035,12 +1036,24 @@ module.exports = {
             '[ProjectService] :: Funders removed from project:',
             removedFunders
           );
-        }
 
-        const updatedProjectId = await this.updateProject(project.id, {
-          status: newStatus
-        });
-        return { projectId: updatedProjectId, newStatus };
+          await this.updateProject(project.id, {
+            status: newStatus
+          });
+        } else if (newStatus === projectStatuses.EXECUTING) {
+          const agreement = await this.generateProjectAgreement(project.id);
+          logger.info(
+            `[ProjectService] :: Sending project ${project.id} to blockchain`
+          );
+
+          // TODO: do we need an extra status while waiting for the tx confirmation?
+          await coa.createProject(
+            project.id,
+            project.projectName,
+            utils.id(agreement) // TODO: this should be a ipfs hash
+          );
+        }
+        return { projectId: project.id, newStatus };
       })
     );
     return updatedProjects.filter(updated => !!updated);
@@ -1174,5 +1187,18 @@ module.exports = {
     return removedFunders
       ? removedFunders.filter(funder => !!funder).map(funder => funder.user)
       : [];
+  },
+
+  /**
+   * Returns the address of an existing project in COA contract
+   *
+   * @param {number} projectId
+   * @returns {Promise<string>} project address
+   */
+  async getAddress(projectId) {
+    logger.info('[ProjectService] :: Entering getAddress method');
+    const project = await checkExistence(this.projectDao, projectId, 'project');
+    logger.info(`[ProjectService] :: Project id ${project.id} found`);
+    return project.address;
   }
 };
