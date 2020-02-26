@@ -18,21 +18,31 @@ CREATE TYPE TX_FUNDER_STATUS AS ENUM (
     'verified'
 );
 
+CREATE TABLE public.country (
+    id SERIAL NOT NULL,
+    "name" varchar(42) NOT NULL,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE public.user (
     id SERIAL NOT NULL,
     "firstName" varchar(80) NOT NULL,
     "lastName" varchar(80),
+    "phoneNumber" varchar(80) DEFAULT NULL,
+    "company" varchar(80) DEFAULT NULL,
+    "countryId" int4 DEFAULT NULL,
     email varchar(40) NOT NULL,
     password varchar(80) NOT NULL,
-    -- TODO : is there any way to use `role` as field name.
     "role" ROLE NOT NULL,
+    "answers" text DEFAULT NULL,
     "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
     "privKey" varchar(80) NOT NULL,
     blocked BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     UNIQUE (email),
-    UNIQUE (address)
+    UNIQUE (address),
+    CONSTRAINT "user_countryId_fkey" FOREIGN KEY ("countryId") REFERENCES public."country"(id)
 );
 
 CREATE TYPE ProjectStatus AS ENUM (
@@ -63,7 +73,7 @@ CREATE TABLE public.project (
     "projectName" varchar(50) NOT NULL,
     "ownerId" integer NOT NULL,
     "createdAt" date DEFAULT NOW(),
-    "transactionHash" varchar(80) NOT NULL,
+    "address" varchar(42) DEFAULT NULL,
     mission text,
     location text,
     "problemAddressed" text,
@@ -160,12 +170,6 @@ CREATE TABLE public.transaction (
     id SERIAL NOT NULL,
     sender varchar(42) NOT NULL,
     data text NOT NULL,
-    PRIMARY KEY (id)
-);
-
-CREATE TABLE public.country (
-    id SERIAL NOT NULL,
-    "name" varchar(42) NOT NULL,
     PRIMARY KEY (id)
 );
 

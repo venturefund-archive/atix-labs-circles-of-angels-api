@@ -5,11 +5,11 @@ module.exports = {
   }),
   ProjectNotFound: taskId => ({
     message: `Project of task id ${taskId} not found`,
-    statusCode: 404
+    statusCode: 400
   }),
   MilestoneNotFound: taskId => ({
     message: `Milestone of task id ${taskId} not found`,
-    statusCode: 404
+    statusCode: 400
   }),
   OracleNotAssigned: ({ userId, taskId }) => ({
     message: `User ${userId} is not the oracle assigned for task ${taskId}`,
@@ -30,5 +30,9 @@ module.exports = {
   NotOracleCandidate: {
     message: 'The user has not applied as an oracle for the project',
     statusCode: 403
-  }
+  },
+  OracleAddressNotFound: taskId => ({
+    message: `Address of oracle assigned for task ${taskId} not found`,
+    statusCode: 400
+  })
 };

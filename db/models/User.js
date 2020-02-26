@@ -56,7 +56,14 @@ module.exports = {
       collection: 'project',
       via: 'user',
       through: 'project_oracle'
-    }
+    },
+    country: {
+      columnName: 'countryId',
+      model: 'country'
+    },
+    phoneNumber: { type: 'string', required: true },
+    answers: { type: 'string', required: true },
+    company: { type: 'string', required: false, allowNull: true }
   },
   customToJSON: function toJson() {
     return omit(this, ['password', 'privKey']);
