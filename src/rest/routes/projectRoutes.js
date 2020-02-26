@@ -119,6 +119,15 @@ const successWithBooleanResponse = {
   description: 'Returns the boolean result'
 };
 
+const successWithApplyingResponse = {
+  type: 'object',
+  properties: {
+    oracles: { type: 'boolean' },
+    funders: { type: 'boolean' }
+  },
+  description: 'Returns if user already apply to project'
+};
+
 const userProperties = {
   id: { type: 'integer' },
   firstName: { type: 'string' },
@@ -779,7 +788,7 @@ const commonProjectRoutes = {
 
   applyAsOracle: {
     method: 'post',
-    path: `${basePath}/:projectId/oracle`,
+    path: `${basePath}/:projectId/oracles`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -799,7 +808,7 @@ const commonProjectRoutes = {
 
   applyAsFunder: {
     method: 'post',
-    path: `${basePath}/:projectId/funder`,
+    path: `${basePath}/:projectId/funders`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -828,7 +837,7 @@ const commonProjectRoutes = {
         summary: 'Check project applying',
         params: projectIdParam,
         response: {
-          ...successResponse(successWithBooleanResponse),
+          ...successResponse(successWithApplyingResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
