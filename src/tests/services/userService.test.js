@@ -342,7 +342,7 @@ describe('Testing userService', () => {
     });
   });
 
-  describe('Testing getAppliedProjects', () => {
+  describe.only('Testing getAppliedProjects', () => {
     beforeAll(() => {
       injectMocks(userService, { userDao });
     });
@@ -356,7 +356,8 @@ describe('Testing userService', () => {
         userId: userSupporter.id
       });
 
-      expect(response).toHaveLength(2);
+      expect(response.monitoring).toHaveLength(1);
+      expect(response.funding).toHaveLength(1);
     });
 
     it("should fail if user doesn't exist", async () => {

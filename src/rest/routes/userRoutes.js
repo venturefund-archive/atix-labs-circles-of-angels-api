@@ -86,6 +86,15 @@ const successWithProjectsResponse = {
   description: 'Returns an array of objects with the projects information'
 };
 
+const appliedProjectsResponse = {
+  type: 'object',
+  properties: {
+    funding: successWithProjectsResponse,
+    monitoring: successWithProjectsResponse
+  },
+  description: 'Returns an object with the applied projects'
+};
+
 const routes = {
   getUser: {
     method: 'get',
@@ -378,7 +387,7 @@ const routes = {
         description: 'Returns all projects applied of an existing user',
         summary: 'Get all applied projects by user',
         response: {
-          ...successResponse(successWithProjectsResponse),
+          ...successResponse(appliedProjectsResponse),
           ...serverErrorResponse(),
           ...clientErrorResponse()
         }

@@ -247,9 +247,10 @@ module.exports = {
       throw new COAError(errors.user.UserNotFound);
     }
 
-    const funding = user.funding || [];
-    const monitoring = user.monitoring || [];
-    return funding.concat(monitoring);
+    return {
+      funding: user.funding,
+      monitoring: user.monitoring
+    };
   },
 
   async validUser(user, roleId) {
