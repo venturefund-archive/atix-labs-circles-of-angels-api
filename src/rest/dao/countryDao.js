@@ -9,5 +9,8 @@
 module.exports = {
   async findAllByProps(filters) {
     return this.model.find(filters);
+  },
+  async findById(id) {
+    return this.model.findOne({ id });
   }
 };
