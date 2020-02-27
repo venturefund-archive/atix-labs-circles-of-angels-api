@@ -247,6 +247,11 @@ describe('Testing milestoneService', () => {
     }
   };
 
+  const activityService = {
+    isTaskVerified: jest.fn(taskId => !!taskId),
+    createActivities: () => {}
+  };
+
   beforeEach(() => resetDb());
 
   describe('Testing createMilestone', () => {
@@ -530,7 +535,7 @@ describe('Testing milestoneService', () => {
       restoreMilestoneService();
       milestoneService.processMilestones = jest.fn();
       injectMocks(milestoneService, {
-        activityService: Object.assign({}, { createActivities: () => {} }),
+        activityService,
         milestoneDao
       });
     });
@@ -699,7 +704,8 @@ describe('Testing milestoneService', () => {
     beforeAll(() => {
       restoreMilestoneService();
       injectMocks(milestoneService, {
-        milestoneDao
+        milestoneDao,
+        activityService
       });
     });
 
@@ -720,9 +726,12 @@ describe('Testing milestoneService', () => {
         {
           ...updatableMilestone,
           project: executingProject.id,
-          tasks: [updatableTask]
+          tasks: [{ ...updatableTask, verified: true }]
         },
-        { ...nonUpdatableMilestone, tasks: [nonUpdatableTask] }
+        {
+          ...nonUpdatableMilestone,
+          tasks: [{ ...nonUpdatableTask, verified: true }]
+        }
       ]);
     });
 

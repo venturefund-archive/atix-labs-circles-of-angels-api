@@ -79,7 +79,8 @@ const milestonesResponse = {
             category: { type: 'string' },
             keyPersonnel: { type: 'string' },
             oracle: { type: ['integer', 'null'] },
-            budget: { type: 'string' }
+            budget: { type: 'string' },
+            verified: { type: 'boolean' }
           }
         }
       }
