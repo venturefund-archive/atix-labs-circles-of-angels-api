@@ -35,7 +35,20 @@ const userResponse = {
     createdAt: { type: 'string' },
     id: { type: 'integer' },
     role: { type: 'string' },
-    blocked: { type: 'boolean' }
+    blocked: { type: 'boolean' },
+    phoneNumber: { type: 'string' },
+    country: {
+      anyOf: [
+        { type: 'number' },
+        {
+          type: 'object',
+          properties: {
+            id: { type: 'number' },
+            name: { type: 'string' }
+          }
+        }
+      ]
+    }
   },
   description: "User's information"
 };
