@@ -212,7 +212,7 @@ const projectDao = {
     return undefined;
   },
   updateProject: (fields, projectId) => {
-    if (projectId === 1 || projectId === 3) {
+    if (projectId === 1 || projectId === 3 || projectId === 4) {
       return {
         projectName: 'projectUpdateado',
         ...fields,
@@ -222,18 +222,11 @@ const projectDao = {
     return undefined;
   },
   findById: id => {
-    if (id === 1) {
-      return draftProject;
-    }
-    if (id === 3) {
-      return pendingProject;
-    }
-    if (id === 10) {
-      return draftProjectWithMilestone;
-    }
-    if (id === 15) {
-      return executingProject;
-    }
+    if (id === 1) return draftProject;
+    if (id === 3) return pendingProject;
+    if (id === 4) return consensusProject;
+    if (id === 10) return draftProjectWithMilestone;
+    if (id === 15) return executingProject;
     return undefined;
   },
   findOneByProps: (filters, populate) => {
@@ -739,13 +732,18 @@ describe('Project Service Test', () => {
       restoreProjectService();
       injectMocks(projectService, { projectDao, userService });
     });
+
     describe('Update project proposal', () => {
       it('Should update the project when the project exists and all the fields are valid', async () => {
-        const { projectId } = await projectService.updateProjectProposal(1, {
-          proposal,
-          ownerId: 2
-        });
-        expect(projectId).toEqual(1);
+        const { projectId } = await projectService.updateProjectProposal(
+          consensusProject.id,
+          {
+            proposal,
+            ownerId: 2
+          }
+        );
+
+        expect(projectId).toEqual(consensusProject.id);
       });
 
       it('Should not update the project whenever the fields are valid but the project is in executing status', async () => {
