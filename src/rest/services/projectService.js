@@ -309,7 +309,13 @@ module.exports = {
     const { owner, status } = project;
     validateOwnership(owner, ownerId);
 
-    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
+    const allowedUpdateStatuses = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+
+    if (!allowedUpdateStatuses.includes(status)) {
       logger.error(
         `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
       );
