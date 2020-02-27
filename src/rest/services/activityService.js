@@ -65,12 +65,17 @@ module.exports = {
 
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to edit a task
-    if (project.status !== projectStatuses.NEW) {
+    const allowEditStatuses = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+
+    if (!allowEditStatuses.includes(project.status)) {
       logger.error(
-        `[ActivityService] :: Status of project with id ${project.id} is not ${
-          projectStatuses.NEW
-        }`
+        `[ActivityService] :: It can't update an activity when the project is in ${
+          project.status
+        } status`
       );
       throw new COAError(
         errors.task.UpdateWithInvalidProjectStatus(project.status)

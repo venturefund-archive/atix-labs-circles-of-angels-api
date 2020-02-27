@@ -148,12 +148,17 @@ module.exports = {
 
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to edit a milestone
-    if (project.status !== projectStatuses.NEW) {
+    const allowEditStatuses = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+
+    if (!allowEditStatuses.includes(project.status)) {
       logger.error(
-        `[MilestoneService] :: Status of project with id ${project.id} is not ${
-          projectStatuses.NEW
-        }`
+        `[MilestoneService] :: It can't update a milestone when the project is in ${
+          project.status
+        } status`
       );
       throw new COAError(
         errors.milestone.UpdateWithInvalidProjectStatus(project.status)
