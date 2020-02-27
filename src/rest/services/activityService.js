@@ -450,5 +450,32 @@ module.exports = {
 
     await checkExistence(this.activityDao, taskId, 'task');
     return this.taskEvidenceDao.getEvidencesByTaskId(taskId);
+  },
+
+  /**
+   * Returns true or false whether a task
+   * has a verified evidence or not
+   *
+   * @param {number} taskId
+   * @returns {Promise<boolean>}
+   */
+  async isTaskVerified(taskId) {
+    try {
+      // TODO: this should check the blockchain
+      logger.info('[ActivityService] :: Entering isTaskVerified method');
+      validateRequiredParams({
+        method: 'isTaskVerified',
+        params: { taskId }
+      });
+      const evidences = await this.getTaskEvidences({ taskId });
+      if (!evidences || evidences.length === 0) return false;
+      return evidences.some(evidence => !!evidence.approved);
+    } catch (error) {
+      logger.error(
+        '[ActivityService] :: There was an error checking if task is verified',
+        error
+      );
+      return false;
+    }
   }
 };
