@@ -3,6 +3,7 @@ usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('solidity-coverage');
 
 // const deployments = ;
+const config = require('config');
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
 const {
   createChainIdGetter
@@ -74,7 +75,7 @@ module.exports = {
     tests: './src/tests/contracts',
     sources: './src/contracts'
   },
-  defaultNetwork: process.env.NODE_ENV === 'test' ? 'buidlerevm' : 'develop',
+  defaultNetwork: config.buidler.defaultNetwork || 'develop',
   networks: {
     develop: {
       url: 'http://localhost:8545'
