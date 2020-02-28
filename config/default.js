@@ -90,5 +90,9 @@ module.exports = {
     minimumUnit: 'days',
     consensusSeconds: 10 * SECONDS_IN_A_DAY, // TODO: define this
     fundingSeconds: 10 * SECONDS_IN_A_DAY // TODO: define this
+  },
+
+  buidler: {
+    defaultNetwork: 'develop'
   }
 };
