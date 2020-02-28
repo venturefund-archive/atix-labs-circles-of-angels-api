@@ -136,6 +136,17 @@ module.exports = {
       privKey: privateKey
     };
 
+    const profile = `${firstName} ${lastName}`;
+    await coa.createMember(profile);
+
+    // TODO: this should be replaced by a gas relayer
+    const accounts = await ethers.signers();
+    const tx = {
+      to: address,
+      value: utils.parseEther('1.0')
+    };
+    await accounts[9].sendTransaction(tx);
+
     const savedUser = await this.userDao.createUser(user);
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
 
@@ -149,19 +160,6 @@ module.exports = {
     //   <p>We are reviewing your account details. You will be notified once we are done. </br></p>
     //   <p>Thank you for your support. </br></p>`
     // });
-
-    // TODO: uncomment this when sc are deployed
-    //      and move it before saving to db so the signup fails if this fails
-
-    // const profile = firstName + ' ' + lastName; // TODO: what should be saved?
-    // await coa.createMember(profile);
-    // TODO: this should be replaced by a gas relayer
-    // const accounts = await ethers.signers();
-    // const tx = {
-    //   to: address,
-    //   value: utils.parseEther('1.0')
-    // };
-    // await accounts[9].sendTransaction(tx);
 
     return savedUser;
   },
