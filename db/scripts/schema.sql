@@ -1,8 +1,3 @@
-CREATE DATABASE coadb;
-
-ALTER DATABASE coadb OWNER TO postgres;
-
-\connect coadb
 CREATE TYPE ROLE AS ENUM(
   'admin',
   'entrepreneur',
@@ -78,7 +73,7 @@ CREATE TABLE public.project (
     location text,
     "problemAddressed" text,
     timeframe text,
-    status ProjectStatus DEFAULT 'draft',
+    status ProjectStatus DEFAULT 'new',
     "goalAmount" real NOT NULL,
     "faqLink" text,
     "coverPhotoPath" varchar(200),
@@ -91,6 +86,13 @@ CREATE TABLE public.project (
     "lastUpdatedStatusAt" timestamp with time zone DEFAULT NOW(),
     PRIMARY KEY (id),
     FOREIGN KEY ("ownerId") REFERENCES public.user (id)
+);
+
+CREATE TABLE public."featured_project" (
+    id SERIAL NOT NULL, --needed because ORM
+    "projectId" int4 NOT NULL,
+    PRIMARY KEY (id),
+	CONSTRAINT "featured_project_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES project(id)
 );
 
 CREATE TABLE public.project_funder (
@@ -132,7 +134,7 @@ CREATE TABLE public.milestone (
     "createdAt" date DEFAULT NOW(),
     description text,
     category text,
-    claimStatus ClaimStatus DEFAULT 'pending'
+    "claimStatus" ClaimStatus DEFAULT 'pending',
     PRIMARY KEY (id),
     FOREIGN KEY ("projectId") REFERENCES public.project (id) ON DELETE CASCADE
 );
@@ -204,6 +206,7 @@ CREATE TABLE public.fund_transfer (
     "projectId" int NOT NULL,
     status TX_FUNDER_STATUS NOT NULL,
     "createdAt" DATE,
+    "rejectionReason" varchar(80) DEFAULT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY ("projectId") REFERENCES public.project (id),
     FOREIGN KEY ("senderId") REFERENCES public.user (id)
