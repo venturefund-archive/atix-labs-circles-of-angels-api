@@ -32,7 +32,7 @@
     "config": "3.1.0",
     "cron": "1.8.2",
     "dotenv": "8.2.0",
-    "ethers": "git+https://github.com/atixlabs/ethers.js.git#v4.0.44-fix",
+    "ethers": "git+https://github.com/atixlabs/ethers.js.git#v4.0.45",
     "ethereumjs-tx": "2.1.2",
     "fast-water": "1.0.2",
     "fastify": "1.14.1",
