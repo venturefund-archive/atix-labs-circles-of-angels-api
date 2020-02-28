@@ -14,8 +14,12 @@ const { projectStatuses, userRoles } = require('../../rest/util/constants');
 const { injectMocks } = require('../../rest/util/injection');
 const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
-const activityService = require('../../rest/services/activityService');
+const originalActivityService = require('../../rest/services/activityService');
 
+let activityService = Object.assign({}, originalActivityService);
+const restoreActivityService = () => {
+  activityService = Object.assign({}, originalActivityService);
+};
 const TEST_TIMEOUT_MS = 10000;
 const deployContracts = async () => {
   await run('deploy', { reset: true });
@@ -52,6 +56,7 @@ describe('Testing activityService', () => {
     budget: 5000
   };
 
+  // USERS
   const userEntrepreneur = {
     id: 1,
     role: userRoles.ENTREPRENEUR
@@ -62,6 +67,7 @@ describe('Testing activityService', () => {
     role: userRoles.PROJECT_SUPPORTER
   };
 
+  // PROJECTS
   const newProject = {
     id: 1,
     status: projectStatuses.NEW,
@@ -74,6 +80,7 @@ describe('Testing activityService', () => {
     owner: userEntrepreneur.id
   };
 
+  // MILESTONES
   const updatableMilestone = {
     id: 1,
     project: newProject.id
@@ -84,6 +91,7 @@ describe('Testing activityService', () => {
     project: executingProject.id
   };
 
+  // TASKS
   const updatableTask = {
     id: 1,
     description: 'TaskDescription',
@@ -99,12 +107,22 @@ describe('Testing activityService', () => {
     milestone: nonUpdatableMilestone.id
   };
 
+  // EVIDENCES
   const taskEvidence = {
     id: 1,
     createdAt: '2020-02-13',
     description: mockedDescription,
     proof: '/file/taskEvidence',
     approved: true,
+    task: nonUpdatableTask.id
+  };
+
+  const taskEvidenceNotApproved = {
+    id: 2,
+    createdAt: '2020-02-13',
+    description: mockedDescription,
+    proof: '/file/taskEvidence',
+    approved: false,
     task: nonUpdatableTask.id
   };
 
@@ -203,6 +221,7 @@ describe('Testing activityService', () => {
   };
 
   beforeAll(() => {
+    restoreActivityService();
     files.saveFile = jest.fn(() => '/dir/path');
   });
 
@@ -222,6 +241,8 @@ describe('Testing activityService', () => {
       dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
       dbUser.push(userEntrepreneur);
     });
+
+    afterAll(() => restoreActivityService());
 
     it('should update the task and return its id', async () => {
       const taskParams = {
@@ -291,6 +312,8 @@ describe('Testing activityService', () => {
       dbUser.push(userEntrepreneur);
     });
 
+    afterAll(() => restoreActivityService());
+
     it('should delete the task and return its id', async () => {
       const response = await activityService.deleteTask(
         updatableTask.id,
@@ -341,6 +364,8 @@ describe('Testing activityService', () => {
       dbMilestone.push(updatableMilestone, nonUpdatableMilestone);
       dbUser.push(userEntrepreneur);
     });
+
+    afterAll(() => restoreActivityService());
 
     it('should create the task and return its id', async () => {
       const response = await activityService.createTask(updatableMilestone.id, {
@@ -430,6 +455,8 @@ describe('Testing activityService', () => {
       const projectAddress = await run('create-project');
       dbProject.push({ ...executingProject, address: projectAddress });
     }, TEST_TIMEOUT_MS);
+
+    afterAll(() => restoreActivityService());
 
     it('should add an approved claim and return the claim id', async () => {
       const response = await activityService.addClaim({
@@ -529,6 +556,8 @@ describe('Testing activityService', () => {
       dbTaskEvidence.push(taskEvidence);
     });
 
+    afterAll(() => restoreActivityService());
+
     it('should return a list of all task evidences', async () => {
       const response = await activityService.getTaskEvidences({
         taskId: nonUpdatableTask.id
@@ -554,6 +583,8 @@ describe('Testing activityService', () => {
       dbMilestone.push(updatableMilestone);
       dbTask.push(updatableTask);
     });
+
+    afterAll(() => restoreActivityService());
 
     it(
       'should assign an oracle to an existing activity if the oracle ' +
@@ -641,6 +672,8 @@ describe('Testing activityService', () => {
       dbUser.push(userEntrepreneur);
     });
 
+    afterAll(() => restoreActivityService());
+
     it('should save all activities and return them', async () => {
       const newTask = {
         description: 'TaskDescription',
@@ -712,6 +745,8 @@ describe('Testing activityService', () => {
       dbTask.push(updatableTask);
     });
 
+    afterAll(() => restoreActivityService());
+
     it('should return the task and the milestone it belongs to', async () => {
       const response = await activityService.getMilestoneAndTaskFromId(
         updatableTask.id
@@ -731,6 +766,46 @@ describe('Testing activityService', () => {
       await expect(
         activityService.getMilestoneAndTaskFromId(2)
       ).rejects.toThrow(errors.task.MilestoneNotFound(2));
+    });
+  });
+
+  describe('Testing isTaskVerified', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        getTaskEvidences: jest.fn(({ taskId }) =>
+          dbTaskEvidence.filter(evidence => evidence.task === taskId)
+        )
+      });
+    });
+
+    beforeEach(() => {
+      dbTaskEvidence.push(taskEvidence, taskEvidenceNotApproved);
+    });
+
+    afterAll(() => restoreActivityService());
+
+    it('should return true when a task has at least one verified evidence', async () => {
+      await expect(
+        activityService.isTaskVerified(nonUpdatableTask.id)
+      ).resolves.toBe(true);
+    });
+
+    it('should return false when a task does not have any verified evidence', async () => {
+      dbTaskEvidence = [taskEvidenceNotApproved];
+      await expect(
+        activityService.isTaskVerified(nonUpdatableTask.id)
+      ).resolves.toBe(false);
+    });
+
+    it('should return false if any required param is missing', async () => {
+      await expect(activityService.isTaskVerified()).resolves.toBe(false);
+    });
+
+    it('should return false if getTaskEvidences throws an error', async () => {
+      activityService.getTaskEvidences.mockImplementationOnce(({ taskId }) => {
+        throw new COAError(errors.common.CantFindModelWithId('task', taskId));
+      });
+      await expect(activityService.isTaskVerified(0)).resolves.toBe(false);
     });
   });
 });
