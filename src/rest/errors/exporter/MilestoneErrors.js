@@ -29,5 +29,13 @@ module.exports = {
   DeleteWithInvalidProjectStatus: status => ({
     message: `Milestone of project with status ${status} can't be deleted`,
     statusCode: 403
+  }),
+  InvalidStatusForClaimMilestone: status => ({
+    message: `Can't claim milestone when milestone is in ${status} status`,
+    statusCode: 400
+  }),
+  InvalidStatusForClaimableMilestone: status => ({
+    message: `Can't set milestone as claimable when claim status is ${status}`,
+    statusCode: 400
   })
 };

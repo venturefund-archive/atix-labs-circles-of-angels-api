@@ -7,13 +7,13 @@
  */
 
 const { coa } = require('@nomiclabs/buidler');
-const { utils } = require('ethers');
 const { values, isEmpty } = require('lodash');
 const fs = require('fs');
 const { promisify } = require('util');
 const files = require('../util/files');
 const { forEachPromise } = require('../util/promises');
 const { projectStatuses, userRoles } = require('../util/constants');
+const { sha3 } = require('../util/hash');
 
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -23,9 +23,6 @@ const validatePhotoSize = require('./helpers/validatePhotoSize');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
-
-// TODO: replace with actual function
-const sha3 = (a, b, c) => utils.id(`${a}-${b}-${c}`);
 
 const claimType = 'claims';
 
@@ -68,12 +65,17 @@ module.exports = {
 
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to edit a task
-    if (project.status !== projectStatuses.NEW) {
+    const allowEditStatuses = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+
+    if (!allowEditStatuses.includes(project.status)) {
       logger.error(
-        `[ActivityService] :: Status of project with id ${project.id} is not ${
-          projectStatuses.NEW
-        }`
+        `[ActivityService] :: It can't update an activity when the project is in ${
+          project.status
+        } status`
       );
       throw new COAError(
         errors.task.UpdateWithInvalidProjectStatus(project.status)
@@ -126,12 +128,17 @@ module.exports = {
 
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to delete a task
-    if (project.status !== projectStatuses.NEW) {
+    const allowEditStatuses = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+
+    if (!allowEditStatuses.includes(project.status)) {
       logger.error(
-        `[ActivityService] :: Status of project with id ${project.id} is not ${
-          projectStatuses.NEW
-        }`
+        `[ActivityService] :: It can't delete a milestone when the project is in ${
+          project.status
+        } status`
       );
       throw new COAError(
         errors.task.DeleteWithInvalidProjectStatus(project.status)
@@ -337,64 +344,6 @@ module.exports = {
     return savedActivities;
   },
 
-  // /**
-  //  * Sends the activity to be validated on the blockchain
-  //  *
-  //  * @param {object} activity
-  //  * @returns activity | error
-  //  */
-  // async completeActivity(activity) {
-  //   try {
-  //     logger.error(
-  //       `[Activity Service] Completing Activity ID ${activity.id}`
-  //     );
-
-  //     if (activity.blockchainStatus !== blockchainStatus.CONFIRMED) {
-  //       logger.error(
-  //         `[Activity Service] Activity ${
-  //           activity.id
-  //         } is not confirmed on the blockchain`
-  //       );
-  //       return {
-  //         error:
-  //           'Activity must be confirmed on the blockchain to mark as completed',
-  //         status: 409
-  //       };
-  //     }
-
-  //     const oracle = await oraclethis.activityDao.getOracleFromActivity(activity.id);
-  //     const validatedTransactionHash = await fastify.eth.validateActivity(
-  //       oracle.user.address,
-  //       oracle.user.pwd,
-  //       { activityId: activity.id }
-  //     );
-
-  //     if (!validatedTransactionHash) {
-  //       logger.error(
-  //         `[Activity Service] Activity ${
-  //           activity.id
-  //         } could not be validated on the blockchain`
-  //       );
-  //       return {
-  //         error: 'Activity could not be validated on the blockchain',
-  //         status: 409
-  //       };
-  //     }
-
-  //     const validatedActivity = await this.activityDao.updateActivity({
-  //       validatedTransactionHash
-  //     });
-
-  //     return validatedActivity;
-  //   } catch (error) {
-  //     logger.error(
-  //       '[Activity Service] :: Activity could not be validated on the blockchain:',
-  //       error
-  //     );
-  //     throw Error('Error validating activity');
-  //   }
-  // },
-
   /**
    * Returns the milestone that the task belongs to or `undefined`
    *
@@ -428,18 +377,28 @@ module.exports = {
    * @param {number} userId
    * @param {object} file
    * @param {boolean} approved
-   * @returns transferId || error
+   * @returns taskId || error
    */
-  async addClaim({ taskId, userId, file, approved }) {
+  async addClaim({ taskId, userId, file, description, approved }) {
     logger.info('[ActivityService] :: Entering addClaim method');
     validateRequiredParams({
       method: 'addClaim',
-      params: { userId, taskId, file, approved }
+      params: { userId, taskId, file, description, approved }
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
-    const { projectId } = milestone;
+    const { id: milestoneId, project: projectId } = milestone;
     const { oracle } = task;
+
+    const projectFound = await this.projectService.getProjectById(projectId);
+    const { status, address } = projectFound;
+
+    if (status !== projectStatuses.EXECUTING) {
+      logger.error(
+        `[ActivityService] :: Can't upload evidence when project is in ${status} status`
+      );
+      throw new COAError(errors.project.InvalidStatusForEvidenceUpload(status));
+    }
 
     if (oracle !== userId) {
       logger.error(
@@ -448,19 +407,75 @@ module.exports = {
       throw new COAError(errors.task.OracleNotAssigned({ userId, taskId }));
     }
 
+    // TODO: we shouldn't save the file once we have the ipfs storage working
     validateMtype(claimType, file);
     validatePhotoSize(file);
-
     logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
     const filePath = await files.saveFile(claimType, file);
     logger.info(`[ActivityService] :: File saved to: ${filePath}`);
 
-    // TODO replace both fields with the correct information
-    // const claim = sha3(projectId, oracle, taskId);
-    // const proof = utils.id(file.name);
+    // TODO: is this correct?
+    const claim = sha3(projectId, oracle, taskId);
+    const proof = sha3(filePath); // TODO: this should be an ipfs hash
 
-    // await coa.addClaim(projectId, claim, proof, approved);
+    await coa.addClaim(address, claim, proof, approved, milestoneId);
 
-    return { taskId };
+    const evidence = {
+      description,
+      proof: filePath,
+      task: taskId,
+      approved
+    };
+
+    const evidenceCreated = await this.taskEvidenceDao.addTaskEvidence(
+      evidence
+    );
+
+    logger.info('[ActivityService] :: Claim added succesfully');
+    return { taskId: evidenceCreated.task };
+  },
+
+  /**
+   * Get evidences by task
+   *
+   * @param {number} taskId
+   * @returns transferId || error
+   */
+  async getTaskEvidences({ taskId }) {
+    logger.info('[ActivityService] :: Entering getClaims method');
+    validateRequiredParams({
+      method: 'getClaims',
+      params: { taskId }
+    });
+
+    await checkExistence(this.activityDao, taskId, 'task');
+    return this.taskEvidenceDao.getEvidencesByTaskId(taskId);
+  },
+
+  /**
+   * Returns true or false whether a task
+   * has a verified evidence or not
+   *
+   * @param {number} taskId
+   * @returns {Promise<boolean>}
+   */
+  async isTaskVerified(taskId) {
+    try {
+      // TODO: this should check the blockchain
+      logger.info('[ActivityService] :: Entering isTaskVerified method');
+      validateRequiredParams({
+        method: 'isTaskVerified',
+        params: { taskId }
+      });
+      const evidences = await this.getTaskEvidences({ taskId });
+      if (!evidences || evidences.length === 0) return false;
+      return evidences.some(evidence => !!evidence.approved);
+    } catch (error) {
+      logger.error(
+        '[ActivityService] :: There was an error checking if task is verified',
+        error
+      );
+      return false;
+    }
   }
 };

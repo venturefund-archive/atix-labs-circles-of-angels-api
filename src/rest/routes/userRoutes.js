@@ -25,8 +25,6 @@ const idParam = (description, param) => ({
   }
 });
 
-const userIdParam = idParam('User identification', 'userId');
-
 const userResponse = {
   type: 'object',
   properties: {
@@ -37,9 +35,30 @@ const userResponse = {
     createdAt: { type: 'string' },
     id: { type: 'integer' },
     role: { type: 'string' },
-    blocked: { type: 'boolean' }
+    blocked: { type: 'boolean' },
+    phoneNumber: { type: 'string' },
+    country: {
+      anyOf: [
+        { type: 'number' },
+        {
+          type: 'object',
+          properties: {
+            id: { type: 'number' },
+            name: { type: 'string' }
+          }
+        }
+      ]
+    }
   },
   description: "User's information"
+};
+
+const successWithMessageResponse = {
+  type: 'object',
+  properties: {
+    success: { type: 'string' }
+  },
+  description: 'Returns a success message if the user was signed up correctly'
 };
 
 const successWithUserResponse = {
@@ -51,12 +70,6 @@ const successWithUserResponse = {
     }
   },
   description: 'Returns an array of objects with the users information'
-};
-
-const successWithRolesResponse = {
-  type: 'array',
-  items: { type: 'string' },
-  description: 'Returns an array of objects with each available user roles'
 };
 
 const projectResponse = {
@@ -84,6 +97,15 @@ const successWithProjectsResponse = {
     properties: projectResponse
   },
   description: 'Returns an array of objects with the projects information'
+};
+
+const appliedProjectsResponse = {
+  type: 'object',
+  properties: {
+    funding: successWithProjectsResponse,
+    monitoring: successWithProjectsResponse
+  },
+  description: 'Returns an object with the applied projects'
 };
 
 const routes = {
@@ -159,25 +181,6 @@ const routes = {
     handler: handlers.getUsers
   },
 
-  getAllRoles: {
-    method: 'get',
-    path: `${basePath}/roles`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.USER.name, routeTags.GET.name],
-        description: 'Returns all available user roles in COA',
-        summary: 'Get all user roles',
-        response: {
-          ...successResponse(successWithRolesResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.getAllRoles
-  },
-
   loginUser: {
     method: 'post',
     path: `${basePath}/login`,
@@ -223,42 +226,28 @@ const routes = {
             email: { type: 'string' },
             password: { type: 'string' },
             role: { type: 'string' },
-            detail: { type: 'object' },
-            questionnaire: {
-              type: 'array',
-              items: {
-                type: 'object'
-              }
-            }
+            phoneNumber: { type: 'string' },
+            country: { type: 'number' },
+            answers: { type: 'string' },
+            company: { type: 'string' }
           },
-          required: ['firstName', 'lastName', 'email', 'password', 'role'],
+          required: [
+            'firstName',
+            'lastName',
+            'email',
+            'password',
+            'role',
+            'phoneNumber',
+            'country',
+            'answers'
+          ],
+          additionalProperties: false,
           description: 'User on-boarding information'
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'string' }
-            },
-            description:
-              'Returns a success message if the user was signed up correctly'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            response: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            response: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithMessageResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
@@ -399,6 +388,25 @@ const routes = {
       }
     },
     handler: handlers.getFollowedProjects
+  },
+
+  getAppliedProjects: {
+    method: 'get',
+    path: `${basePath}/applied-projects`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns all projects applied of an existing user',
+        summary: 'Get all applied projects by user',
+        response: {
+          ...successResponse(appliedProjectsResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getAppliedProjects
   }
 };
 

@@ -66,6 +66,7 @@ const milestonesResponse = {
       id: { type: 'integer' },
       category: { type: 'string' },
       description: { type: 'string' },
+      claimStatus: { type: 'string' },
       tasks: {
         type: 'array',
         items: {
@@ -78,7 +79,8 @@ const milestonesResponse = {
             category: { type: 'string' },
             keyPersonnel: { type: 'string' },
             oracle: { type: ['integer', 'null'] },
-            budget: { type: 'string' }
+            budget: { type: 'string' },
+            verified: { type: 'boolean' }
           }
         }
       }
@@ -116,6 +118,15 @@ const successWithCandidateIdResponse = {
 const successWithBooleanResponse = {
   type: 'boolean',
   description: 'Returns the boolean result'
+};
+
+const successWithApplyingResponse = {
+  type: 'object',
+  properties: {
+    oracles: { type: 'boolean' },
+    funders: { type: 'boolean' }
+  },
+  description: 'Returns if user already apply to project'
 };
 
 const userProperties = {
@@ -204,7 +215,7 @@ const projectsResponse = {
       status: { type: 'string' },
       owner: userResponse,
       createdAt: { type: 'string' },
-      transactionHash: { type: 'string' },
+      // address: { type: 'string' },
       id: { type: 'number' }
     }
   },
@@ -212,7 +223,6 @@ const projectsResponse = {
 };
 
 const projectThumbnailRoutes = {
-  // create project thumbnail
   createProjectThumbnail: {
     method: 'post',
     path: `${basePath}/description`,
@@ -239,6 +249,7 @@ const projectThumbnailRoutes = {
     },
     handler: handlers.createProjectThumbnail
   },
+
   updateProjectThumbnail: {
     method: 'put',
     path: `${basePath}/:projectId/description`,
@@ -266,6 +277,7 @@ const projectThumbnailRoutes = {
     },
     handler: handlers.updateProjectThumbnail
   },
+
   getThumbnail: {
     method: 'get',
     path: `${basePath}/:projectId/description`,
@@ -567,6 +579,26 @@ const projectStatusRoutes = {
     handler: handlers.publishProject
   },
 
+  deleteProject: {
+    method: 'delete',
+    path: `${basePath}/:projectId`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.DELETE.name],
+        description: 'Deletes a project',
+        summary: 'Deletes a project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.deleteProject
+  },
+
   // TODO: make one endpoint for each possible status change
   updateProjectStatus: {
     method: 'put',
@@ -758,7 +790,7 @@ const commonProjectRoutes = {
 
   applyAsOracle: {
     method: 'post',
-    path: `${basePath}/:projectId/oracle`,
+    path: `${basePath}/:projectId/oracles`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -778,7 +810,7 @@ const commonProjectRoutes = {
 
   applyAsFunder: {
     method: 'post',
-    path: `${basePath}/:projectId/funder`,
+    path: `${basePath}/:projectId/funders`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -807,7 +839,7 @@ const commonProjectRoutes = {
         summary: 'Check project applying',
         params: projectIdParam,
         response: {
-          ...successResponse(successWithBooleanResponse),
+          ...successResponse(successWithApplyingResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }

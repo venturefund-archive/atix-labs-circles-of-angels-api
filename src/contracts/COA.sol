@@ -24,6 +24,7 @@ contract COA is Ownable {
     ClaimsRegistry public registry;
 
     event DAOCreated(address addr);
+    event ProjectCreated(uint256 id, address addr);
 
     constructor(address _registryAddress) Ownable() public {
         registry = ClaimsRegistry(_registryAddress);
@@ -51,10 +52,14 @@ contract COA is Ownable {
     * @param _name - string of the Project's name.
     * @param _agreementHash - string of the agreement's hash.
     */
-    function createProject(string memory _name, string memory _agreementHash) public returns(uint256) {
+    function createProject(
+        uint256 _id,
+        string memory _name,
+        string memory _agreementHash
+    ) public returns (uint256) {
         Project project = new Project(_name, _agreementHash);
         projects.push(project);
-        return projects.length - 1;
+        emit ProjectCreated(_id, address(project));
     }
 
     /**
@@ -67,7 +72,6 @@ contract COA is Ownable {
         daos.push(dao);
         emit DAOCreated(address(dao));
     }
-
 
     /**
     * @dev Create a SuperDAO
@@ -82,5 +86,9 @@ contract COA is Ownable {
 
     function getDaosLength() public view returns(uint256) {
         return daos.length;
+    }
+
+    function getProjectsLength() public view returns (uint256) {
+        return projects.length;
     }
 }

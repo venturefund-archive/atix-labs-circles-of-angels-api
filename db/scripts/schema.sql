@@ -1,8 +1,3 @@
-CREATE DATABASE coadb;
-
-ALTER DATABASE coadb OWNER TO postgres;
-
-\connect coadb
 CREATE TYPE ROLE AS ENUM(
   'admin',
   'entrepreneur',
@@ -18,21 +13,31 @@ CREATE TYPE TX_FUNDER_STATUS AS ENUM (
     'verified'
 );
 
+CREATE TABLE public.country (
+    id SERIAL NOT NULL,
+    "name" varchar(42) NOT NULL,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE public.user (
     id SERIAL NOT NULL,
     "firstName" varchar(80) NOT NULL,
     "lastName" varchar(80),
+    "phoneNumber" varchar(80) DEFAULT NULL,
+    "company" varchar(80) DEFAULT NULL,
+    "countryId" int4 DEFAULT NULL,
     email varchar(40) NOT NULL,
     password varchar(80) NOT NULL,
-    -- TODO : is there any way to use `role` as field name.
     "role" ROLE NOT NULL,
+    "answers" text DEFAULT NULL,
     "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
     "privKey" varchar(80) NOT NULL,
     blocked BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     UNIQUE (email),
-    UNIQUE (address)
+    UNIQUE (address),
+    CONSTRAINT "user_countryId_fkey" FOREIGN KEY ("countryId") REFERENCES public."country"(id)
 );
 
 CREATE TYPE ProjectStatus AS ENUM (
@@ -51,17 +56,24 @@ CREATE TYPE ProjectStatus AS ENUM (
   'cancelled'
 );
 
+CREATE TYPE ClaimStatus AS ENUM (
+  'pending',
+  'claimable',
+  'claimed',
+  'transferred'
+);
+
 CREATE TABLE public.project (
     id SERIAL NOT NULL,
     "projectName" varchar(50) NOT NULL,
     "ownerId" integer NOT NULL,
     "createdAt" date DEFAULT NOW(),
-    "transactionHash" varchar(80) NOT NULL,
+    "address" varchar(42) DEFAULT NULL,
     mission text,
     location text,
     "problemAddressed" text,
     timeframe text,
-    status ProjectStatus DEFAULT 'draft',
+    status ProjectStatus DEFAULT 'new',
     "goalAmount" real NOT NULL,
     "faqLink" text,
     "coverPhotoPath" varchar(200),
@@ -70,9 +82,17 @@ CREATE TABLE public.project (
     proposal text,
     "agreementPath" varchar(200),
     "consensusSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default
+    "fundingSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default
     "lastUpdatedStatusAt" timestamp with time zone DEFAULT NOW(),
     PRIMARY KEY (id),
     FOREIGN KEY ("ownerId") REFERENCES public.user (id)
+);
+
+CREATE TABLE public."featured_project" (
+    id SERIAL NOT NULL, --needed because ORM
+    "projectId" int4 NOT NULL,
+    PRIMARY KEY (id),
+	CONSTRAINT "featured_project_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES project(id)
 );
 
 CREATE TABLE public.project_funder (
@@ -114,6 +134,7 @@ CREATE TABLE public.milestone (
     "createdAt" date DEFAULT NOW(),
     description text,
     category text,
+    "claimStatus" ClaimStatus DEFAULT 'pending',
     PRIMARY KEY (id),
     FOREIGN KEY ("projectId") REFERENCES public.project (id) ON DELETE CASCADE
 );
@@ -135,16 +156,22 @@ CREATE TABLE public.task (
     CONSTRAINT "task_oracleId_fkey" FOREIGN KEY ("oracleId") REFERENCES public."user"(id)
 );
 
+CREATE TABLE public.task_evidence (
+    -- this id is needed because the ORM can't handle composite pks
+	"id" serial NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+	"description"  varchar(80) DEFAULT NULL,
+	"proof" text NOT NULL,
+	"approved" boolean DEFAULT NULL,
+	"taskId" int4 NOT NULL,
+	CONSTRAINT task_evidence_pkey PRIMARY KEY ("id"),
+	CONSTRAINT "task_evidence_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES task(id)
+);
+
 CREATE TABLE public.transaction (
     id SERIAL NOT NULL,
     sender varchar(42) NOT NULL,
     data text NOT NULL,
-    PRIMARY KEY (id)
-);
-
-CREATE TABLE public.country (
-    id SERIAL NOT NULL,
-    "name" varchar(42) NOT NULL,
     PRIMARY KEY (id)
 );
 
@@ -179,6 +206,7 @@ CREATE TABLE public.fund_transfer (
     "projectId" int NOT NULL,
     status TX_FUNDER_STATUS NOT NULL,
     "createdAt" DATE,
+    "rejectionReason" varchar(80) DEFAULT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY ("projectId") REFERENCES public.project (id),
     FOREIGN KEY ("senderId") REFERENCES public.user (id)

@@ -2,7 +2,11 @@ const errors = require('../../../errors/exporter/ErrorExporter');
 const COAError = require('../../../errors/COAError');
 const validateOwnership = require('../validateOwnership');
 
-const { projectStatuses, userRoles } = require('../../../util/constants');
+const {
+  projectStatuses,
+  userRoles,
+  txFunderStatus
+} = require('../../../util/constants');
 
 const isOwner = (user, ownerId) => validateOwnership(ownerId, user.id);
 
@@ -41,6 +45,7 @@ module.exports = {
     return isCurator(user);
   },
   async fromRejected({ user, project }) {
+    // TODO: add validations for REJECTED -> DELETED transition if needed
     return isOwner(user, project.owner);
   },
 
@@ -81,9 +86,27 @@ module.exports = {
     }
   },
 
-  async fromFunding() {
-    // TODO add validation to check that time set already happen
-    throw new COAError(errors.project.ChangingStatus);
+  async fromFunding({ project, newStatus }) {
+    if (newStatus === projectStatuses.EXECUTING) {
+      // The minimum funding required by the project has been reached and has approved transfers
+      const transfers = await this.transferService.getAllTransfersByProject(
+        project.id
+      );
+      if (!transfers || !transfers.length)
+        throw new COAError(errors.project.TransfersNotFound(project.id));
+
+      const totalFunded = transfers
+        .filter(transfer => transfer.status === txFunderStatus.VERIFIED)
+        .reduce((total, transfer) => total + transfer.amount, 0);
+
+      // TODO: what is the minimum amount??
+      if (totalFunded < project.goalAmount)
+        throw new COAError(errors.project.MinimumFundingNotReached(project.id));
+
+      // TODO: The project has at least one funder with the signed contract. (what does this mean?)
+
+      return true;
+    }
   },
 
   async fromExecuting({ user, newStatus, project }) {

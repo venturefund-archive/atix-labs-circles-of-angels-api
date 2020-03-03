@@ -159,6 +159,17 @@ module.exports = {
     reply.send(response);
   },
 
+  deleteProject: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const { user } = request;
+    const response = await projectService.updateProjectStatus(
+      user,
+      projectId,
+      projectStatuses.DELETED
+    );
+    reply.send(response);
+  },
+
   publishProject: () => async (request, reply) => {
     const { projectId } = request.params;
     const { user } = request;

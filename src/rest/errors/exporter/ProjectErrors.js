@@ -53,8 +53,8 @@ module.exports = {
     message: 'User already follow this project',
     statusCode: 400
   }),
-  AlreadyApplyToProject: () => ({
-    message: 'User already apply to this project',
+  AlreadyApplyToProject: role => ({
+    message: `User already apply to ${role} in this project`,
     statusCode: 400
   }),
   IsNotFollower: () => ({
@@ -73,6 +73,22 @@ module.exports = {
     message: `Can't upload experiences when project is in ${status} status`,
     statusCode: 400
   }),
+  InvalidStatusForGetFundAmount: status => ({
+    message: `Can't get total fund amount when project is in ${status} status`,
+    statusCode: 400
+  }),
+  InvalidStatusForEvidenceUpload: status => ({
+    message: `Can't upload evidence when project is in ${status} status`,
+    statusCode: 400
+  }),
+  InvalidStatusForClaimMilestone: status => ({
+    message: `Can't claim milestone when project is in ${status} status`,
+    statusCode: 400
+  }),
+  InvalidStatusForClaimableMilestone: status => ({
+    message: `Can't set milestone as claimable when project status is ${status}`,
+    statusCode: 400
+  }),
   MilestonesNotFound: projectId => ({
     message: `Milestones not found for project ${projectId}`,
     statusCode: 400
@@ -83,6 +99,18 @@ module.exports = {
   }),
   NoFunderCandidates: projectId => ({
     message: `Project ${projectId} doesn't have funder candidates`,
+    statusCode: 400
+  }),
+  TransfersNotFound: projectId => ({
+    message: `Project ${projectId} doesn't have any transfers done`,
+    statusCode: 400
+  }),
+  MinimumFundingNotReached: projectId => ({
+    message: `Minimum funding amount required for project ${projectId} has not been reached`,
+    statusCode: 400
+  }),
+  AddressNotFound: projectId => ({
+    message: `Project of id ${projectId} doesn't have an address`,
     statusCode: 400
   })
 };

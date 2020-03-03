@@ -6,8 +6,12 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const config = require('config');
 const path = require('path');
 const { uniqWith } = require('lodash');
+const { utils } = require('ethers');
+const { coa } = require('@nomiclabs/buidler');
+const { sha3 } = require('../util/hash');
 const {
   projectStatuses,
   userRoles,
@@ -32,15 +36,13 @@ const logger = require('../logger');
 const {
   secondsToDays,
   getStartOfDay,
-  getDaysPassed
+  getDaysPassed,
+  getSecondsPassed
 } = require('../util/dateFormatters');
 
 const thumbnailType = 'thumbnail';
 const coverPhotoType = 'coverPhoto';
 const milestonesType = 'milestones';
-
-// TODO: replace with actual function
-const sha3 = (a, b, c) => `${a}-${b}-${c}`;
 
 module.exports = {
   async getProjectById(id) {
@@ -51,6 +53,7 @@ module.exports = {
   },
 
   async updateProject(projectId, fields) {
+    logger.info('[ProjectService] :: Entering updateProject method');
     let toUpdate = { ...fields };
     if (fields.status) {
       toUpdate = { ...fields, lastUpdatedStatusAt: new Date() };
@@ -306,7 +309,13 @@ module.exports = {
     const { owner, status } = project;
     validateOwnership(owner, ownerId);
 
-    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
+    const allowedUpdateStatuses = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+
+    if (!allowedUpdateStatuses.includes(status)) {
       logger.error(
         `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
       );
@@ -517,7 +526,13 @@ module.exports = {
   async getProjectsByOwner(ownerId) {
     // TODO: implement pagination
     logger.info('[ProjectService] :: Entering getProjectsByOwner method');
-    return this.projectDao.findAllByProps({ owner: ownerId });
+
+    const filters = {
+      where: { status: { '!=': projectStatuses.DELETED }, owner: ownerId },
+      sort: 'id DESC'
+    };
+
+    return this.projectDao.findAllByProps(filters);
   },
 
   /**
@@ -820,10 +835,15 @@ module.exports = {
     }
 
     const { status } = project;
-    const { PUBLISHED, CONSENSUS } = projectStatuses;
-    if (status !== PUBLISHED && status !== CONSENSUS) {
+    const { PUBLISHED, CONSENSUS, FUNDING } = projectStatuses;
+    const allowedStatusesByRole = {
+      oracles: [PUBLISHED, CONSENSUS],
+      funders: [PUBLISHED, CONSENSUS, FUNDING]
+    };
+
+    if (!allowedStatusesByRole[role].includes(status)) {
       logger.error(
-        `[ProjectService] :: It doesn't allow apply when the project is in ${status} status`
+        `[ProjectService] :: It doesn't allow apply as ${role} when the project is in ${status} status`
       );
       throw new COAError(errors.project.CantApplyToProject(status));
     }
@@ -835,13 +855,15 @@ module.exports = {
       throw new COAError(errors.user.UnauthorizedUserRole(user.role));
     }
 
-    const alreadyApply = Object.values(supporterRoles).some(collection =>
-      project[collection].some(participant => participant.id === userId)
+    const alreadyApply = project[role].some(
+      participant => participant.id === userId
     );
 
     if (alreadyApply) {
-      logger.error('[ProjectService] :: User already apply to this project');
-      throw new COAError(errors.project.AlreadyApplyToProject());
+      logger.error(
+        `[ProjectService] :: User already apply to ${role} in this project`
+      );
+      throw new COAError(errors.project.AlreadyApplyToProject(role));
     }
 
     const dao =
@@ -887,9 +909,13 @@ module.exports = {
       );
     }
 
-    const alreadyApply = Object.values(supporterRoles).some(collection =>
-      project[collection].some(participant => participant.id === userId)
-    );
+    const alreadyApply = {};
+
+    Object.values(supporterRoles).forEach(collection => {
+      alreadyApply[collection] = project[collection].some(
+        participant => participant.id === userId
+      );
+    });
 
     return alreadyApply;
   },
@@ -939,7 +965,7 @@ module.exports = {
   },
 
   /**
-   * Transition all projects in consensus status to `funding`
+   * Transition all projects in `consensus` status to `funding`
    * if it meets all conditions or to `rejected` if not.
    *
    * @returns {Promise<object[]>} list of updated projects
@@ -959,33 +985,87 @@ module.exports = {
           project.id
         );
         if (!this.hasTimePassed(project)) return;
-        let newStatus = projectStatuses.FUNDING;
-        try {
-          await validateProjectStatusChange({
-            user: project.owner,
-            newStatus,
-            project
-          });
-        } catch (error) {
-          logger.error(
-            `[Project Service] :: Validation to change project ${
-              project.id
-            } to ${projectStatuses.FUNDING} status failed `,
-            error
-          );
-          newStatus = projectStatuses.REJECTED;
-        }
+        const newStatus = await this.getNextValidStatus(
+          project,
+          projectStatuses.FUNDING,
+          projectStatuses.REJECTED
+        );
 
         logger.info(
           `[Project Service] :: Updating project ${project.id} from ${
             project.status
           } to ${newStatus}`
         );
-
         const updatedProjectId = await this.updateProject(project.id, {
           status: newStatus
         });
         return { projectId: updatedProjectId, newStatus };
+      })
+    );
+    return updatedProjects.filter(updated => !!updated);
+  },
+
+  /**
+   * Transition all projects in `funding` status to `executing`
+   * if it meets all conditions or to `consensus` if not.
+   *
+   * @returns {Promise<object[]>} list of updated projects
+   */
+  async transitionFundingProjects() {
+    logger.info(
+      '[ProjectService] :: Entering transitionFundingProjects method'
+    );
+    const projects = await this.projectDao.findAllByProps(
+      {
+        status: projectStatuses.FUNDING
+      },
+      { funders: true }
+    );
+
+    const updatedProjects = await Promise.all(
+      projects.map(async project => {
+        logger.info(
+          '[ProjectService] :: Checking if funding time has passed for project',
+          project.id
+        );
+        if (!this.hasTimePassed(project)) return;
+        const newStatus = await this.getNextValidStatus(
+          project,
+          projectStatuses.EXECUTING,
+          projectStatuses.CONSENSUS
+        );
+
+        logger.info(
+          `[ProjectService] :: Updating project ${project.id} from ${
+            project.status
+          } to ${newStatus}`
+        );
+        if (newStatus === projectStatuses.CONSENSUS) {
+          const removedFunders = await this.removeFundersWithNoTransfersFromProject(
+            project
+          );
+          logger.info(
+            '[ProjectService] :: Funders removed from project:',
+            removedFunders
+          );
+
+          await this.updateProject(project.id, {
+            status: newStatus
+          });
+        } else if (newStatus === projectStatuses.EXECUTING) {
+          const agreement = await this.generateProjectAgreement(project.id);
+          logger.info(
+            `[ProjectService] :: Sending project ${project.id} to blockchain`
+          );
+
+          // TODO: do we need an extra status while waiting for the tx confirmation?
+          await coa.createProject(
+            project.id,
+            project.projectName,
+            utils.id(agreement) // TODO: this should be a ipfs hash
+          );
+        }
+        return { projectId: project.id, newStatus };
       })
     );
     return updatedProjects.filter(updated => !!updated);
@@ -1007,16 +1087,41 @@ module.exports = {
         params: { project }
       });
       const { lastUpdatedStatusAt, status } = project;
-      const now = getStartOfDay(new Date());
-      const last = getStartOfDay(lastUpdatedStatusAt);
-      const daysPassedSinceLastUpdate = getDaysPassed(last, now);
 
-      // TODO: check time for published -> consensus -> funding phases
+      // TODO: couldn't think of a better way to do this,
+      //       production needs to check by day, staging by seconds/minutes
+      //       cron in production runs at midnight, in staging every few minutes
+      const now =
+        config.defaultProjectTimes.minimumUnit === 'days'
+          ? getStartOfDay(new Date())
+          : new Date();
+
+      const last =
+        config.defaultProjectTimes.minimumUnit === 'days'
+          ? getStartOfDay(lastUpdatedStatusAt)
+          : lastUpdatedStatusAt;
+
+      const daysPassedSinceLastUpdate =
+        config.defaultProjectTimes.minimumUnit === 'days'
+          ? getDaysPassed(last, now)
+          : getSecondsPassed(last, now);
+
+      let phaseSeconds;
+
+      // TODO: check time for published -> consensus phase
       if (status === projectStatuses.CONSENSUS) {
-        const { consensusSeconds } = project;
-        const consensusDays = secondsToDays(consensusSeconds);
-        return daysPassedSinceLastUpdate >= consensusDays;
+        phaseSeconds = project.consensusSeconds;
+      } else if (status === projectStatuses.FUNDING) {
+        phaseSeconds = project.fundingSeconds;
+      } else {
+        return false;
       }
+
+      const phaseDuration =
+        config.defaultProjectTimes.minimumUnit === 'days'
+          ? secondsToDays(phaseSeconds)
+          : phaseSeconds;
+      return daysPassedSinceLastUpdate >= phaseDuration;
     } catch (error) {
       logger.error(
         '[ProjectService] :: An error occurred while checking if time has passed',
@@ -1024,5 +1129,88 @@ module.exports = {
       );
     }
     return false;
+  },
+
+  /**
+   * Returns the next valid status of the project between two choices.
+   *
+   * One if the validation passes, the other if it fails.
+   * @param {*} project
+   * @param {string} successStatus status if validation passes
+   * @param {string} failStatus status if validation fails
+   * @returns {Promise<string>} new status
+   */
+  async getNextValidStatus(project, successStatus, failStatus) {
+    logger.info('[ProjectService] :: Entering getNextValidStatus method');
+    let newStatus = successStatus;
+    try {
+      await validateProjectStatusChange({
+        user: project.owner,
+        newStatus,
+        project
+      });
+    } catch (error) {
+      logger.error(
+        `[Project Service] :: Validation to change project ${
+          project.id
+        } to ${successStatus} status failed `,
+        error
+      );
+      newStatus = failStatus;
+    }
+    return newStatus;
+  },
+
+  /**
+   * Removes all candidate funders
+   * with no verified transfers from a project.a1
+   *
+   * Returns a list of the funders ids that were removed
+   *
+   * @param {{ id: number, funders: any[] }} project
+   * @returns {Promise<number[]>} removed funders id's
+   */
+  async removeFundersWithNoTransfersFromProject(project) {
+    logger.info(
+      '[ProjectService] :: Entering removeFundersWithNoTransfersFromProject method'
+    );
+    const verifiedTransfers = await this.transferService.getAllTransfersByProps(
+      {
+        filters: { project: project.id, status: txFunderStatus.VERIFIED }
+      }
+    );
+    const fundersWithTransfers = verifiedTransfers
+      ? verifiedTransfers.map(transfer => transfer.sender)
+      : [];
+    const fundersWithNoTransfers = project.funders
+      ? project.funders.filter(
+          funder => !fundersWithTransfers.includes(funder.id)
+        )
+      : [];
+    const removedFunders = await Promise.all(
+      fundersWithNoTransfers.map(funder =>
+        this.funderDao.deleteByProjectAndFunderId({
+          projectId: project.id,
+          userId: funder.id
+        })
+      )
+    );
+
+    return removedFunders
+      ? removedFunders.filter(funder => !!funder).map(funder => funder.user)
+      : [];
+  },
+
+  /**
+   * Returns the address of an existing project in COA contract
+   *
+   * @param {number} projectId
+   * @returns {Promise<string>} project address
+   */
+  async getAddress(projectId) {
+    logger.info('[ProjectService] :: Entering getAddress method');
+    const project = await checkExistence(this.projectDao, projectId, 'project');
+    logger.info(`[ProjectService] :: Project id ${project.id} found`);
+    return project.address;
   }
 };

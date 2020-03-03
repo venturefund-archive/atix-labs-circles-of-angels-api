@@ -6,18 +6,31 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { isEmpty, remove } = require('lodash');
-const { xlsxConfigs, projectStatuses } = require('../util/constants');
+const { isEmpty, remove, zip } = require('lodash');
+const { coa } = require('@nomiclabs/buidler');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const { readExcelData } = require('../util/excelParser');
+const { sha3 } = require('../util/hash');
+const {
+  xlsxConfigs,
+  projectStatuses,
+  claimMilestoneStatus,
+  userRoles
+} = require('../util/constants');
 
 const logger = require('../logger');
 
 module.exports = {
+  async getMilestoneById(id) {
+    logger.info('[MilestoneService] :: Entering getMilestoneById method');
+    const milestone = await checkExistence(this.milestoneDao, id, 'milestone');
+    logger.info(`[MilestoneService] :: Milestone id ${milestone.id} found`);
+    return milestone;
+  },
   /**
    * Returns the project that the milestone belongs to
    * or `undefined` if the milestone doesn't have a project.
@@ -135,12 +148,17 @@ module.exports = {
 
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to edit a milestone
-    if (project.status !== projectStatuses.NEW) {
+    const allowEditStatuses = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+
+    if (!allowEditStatuses.includes(project.status)) {
       logger.error(
-        `[MilestoneService] :: Status of project with id ${project.id} is not ${
-          projectStatuses.NEW
-        }`
+        `[MilestoneService] :: It can't update a milestone when the project is in ${
+          project.status
+        } status`
       );
       throw new COAError(
         errors.milestone.UpdateWithInvalidProjectStatus(project.status)
@@ -187,12 +205,17 @@ module.exports = {
     }
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to delete a milestone
-    if (project.status !== projectStatuses.NEW) {
+    const allowEditStatuses = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+
+    if (!allowEditStatuses.includes(project.status)) {
       logger.error(
-        `[MilestoneService] :: Status of project with id ${project.id} is not ${
-          projectStatuses.NEW
-        }`
+        `[MilestoneService] :: It can't delete a milestone when the project is in ${
+          project.status
+        } status`
       );
       throw new COAError(
         errors.milestone.DeleteWithInvalidProjectStatus(project.status)
@@ -489,26 +512,324 @@ module.exports = {
     logger.info(
       '[MilestoneService] :: Entering getAllMilestonesByProject method'
     );
-    return this.milestoneDao.getMilestonesByProjectId(projectId);
+
+    const milestones = await this.milestoneDao.getMilestonesByProjectId(
+      projectId
+    );
+
+    const milestonesWithTaskStatus = await Promise.all(
+      milestones.map(async milestone => {
+        const tasksWithStatus = await Promise.all(
+          milestone.tasks.map(async task => {
+            const verified = await this.activityService.isTaskVerified(task.id);
+            return { ...task, verified };
+          })
+        );
+        return { ...milestone, tasks: tasksWithStatus };
+      })
+    );
+
+    return milestonesWithTaskStatus;
   },
 
-  async getMilestoneById(milestoneId) {
-    return this.milestoneDao.findById(milestoneId);
+  async getMilestones(filters) {
+    logger.info('[MilestoneService] :: Entering getMilestones method');
+    const milestones = await this.milestoneDao.getMilestones(filters || {});
+
+    logger.info(
+      `[MilestoneService] :: ${milestones.length} milestones were found`
+    );
+    return milestones;
   },
 
-  async getAllMilestones() {
-    logger.info('[Milestone Service] :: Getting all milestones');
+  /**
+   * Update claim status for the specific milestone
+   *
+   * @param {number} milestoneId
+   * @param {number} userId
+   * @returns
+   */
+  async claimMilestone({ milestoneId, userId }) {
+    logger.info('[MilestoneService] :: Entering claimMilestone method');
+    validateRequiredParams({
+      method: 'claimMilestone',
+      params: { milestoneId, userId }
+    });
+
+    const milestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId, claimStatus } = milestone;
+
+    logger.info(
+      `[MilestoneService] :: Found milestone ${milestoneId} of project ${projectId}`
+    );
+
+    const project = await this.projectService.getProjectById(projectId);
+    const { status, owner } = project;
+
+    validateOwnership(owner, userId);
+
+    if (status !== projectStatuses.EXECUTING) {
+      logger.error(
+        `[MilestoneService] :: Can't claim milestone when project is in ${status} status`
+      );
+      throw new COAError(errors.project.InvalidStatusForClaimMilestone(status));
+    }
+
+    if (claimStatus !== claimMilestoneStatus.CLAIMABLE) {
+      logger.error(
+        `[MilestoneService] :: Can't claim milestone when milestone is in ${claimStatus} status`
+      );
+      throw new COAError(
+        errors.milestone.InvalidStatusForClaimMilestone(claimStatus)
+      );
+    }
+
+    const milestoneUpdated = await this.milestoneDao.updateMilestone(
+      {
+        claimStatus: claimMilestoneStatus.CLAIMED
+      },
+      milestoneId
+    );
+
+    return { milestoneId: milestoneUpdated.id };
+  },
+
+  /**
+   * Mark claim as transferred
+   *
+   * @param {number} milestoneId
+   * @param {number} userId
+   * @returns
+   */
+  async transferredMilestone({ milestoneId, userId }) {
+    logger.info('[MilestoneService] :: Entering transferredMilestone method');
+    validateRequiredParams({
+      method: 'transferredMilestone',
+      params: { milestoneId, userId }
+    });
+
+    const user = await this.userService.getUserById(userId);
+
+    if (user.role !== userRoles.BANK_OPERATOR) {
+      logger.error(
+        `[MilestoneService] :: User ${userId} is not authorized for this action`
+      );
+      throw new COAError(errors.common.UserNotAuthorized(userId));
+    }
+
+    const milestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId, claimStatus } = milestone;
+
+    logger.info(
+      `[MilestoneService] :: Found milestone ${milestoneId} of project ${projectId}`
+    );
+
+    const project = await this.projectService.getProjectById(projectId);
+    const { status } = project;
+
+    if (status !== projectStatuses.EXECUTING) {
+      logger.error(
+        `[MilestoneService] :: Can't set as transferred a milestone when project is in ${status} status`
+      );
+      throw new COAError(errors.common.InvalidStatus('project', status));
+    }
+
+    if (claimStatus !== claimMilestoneStatus.CLAIMED) {
+      logger.error(
+        `[MilestoneService] :: Can't set as transferred a milestone when is in ${status} status`
+      );
+      throw new COAError(errors.common.InvalidStatus('milestone', claimStatus));
+    }
+
+    const milestoneUpdated = await this.milestoneDao.updateMilestone(
+      {
+        claimStatus: claimMilestoneStatus.TRANSFERRED
+      },
+      milestoneId
+    );
 
     try {
-      const milestones = await this.milestoneDao.getAllMilestones();
-
-      if (!milestones.length)
-        logger.info('[Milestone Service] :: There are no milestones');
-
-      return milestones;
+      logger.info('[MilestoneService] :: Marking next milestone as claimable');
+      await this.setNextAsClaimable(milestoneId);
     } catch (error) {
-      logger.error('[Milestone Service] :: Error getting Milestones:', error);
-      throw Error('Error getting Milestones');
+      // If it fails still return, do not throw
+      logger.error(
+        '[MilestoneService] :: Error setting next milestone as claimable',
+        error
+      );
     }
+
+    return { milestoneId: milestoneUpdated.id };
+  },
+
+  /**
+   * Updates claim status for the specific milestone
+   * to `claimable` and returns its id
+   *
+   * @param {number} milestoneId
+   * @returns {Promise<{numberd}>}
+   */
+  async setClaimable(milestoneId) {
+    logger.info('[MilestoneService] :: Entering setClaimable method');
+    validateRequiredParams({
+      method: 'setClaimable',
+      params: { milestoneId }
+    });
+
+    const milestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId, claimStatus } = milestone;
+
+    logger.info(
+      `[MilestoneService] :: Found milestone ${milestoneId} of project ${projectId}`
+    );
+
+    const project = await this.projectService.getProjectById(projectId);
+    const { status } = project;
+
+    if (status !== projectStatuses.EXECUTING) {
+      logger.error(
+        `[MilestoneService] :: A milestone can't be claimable when project status is ${status}`
+      );
+      throw new COAError(
+        errors.project.InvalidStatusForClaimableMilestone(status)
+      );
+    }
+
+    if (claimStatus !== claimMilestoneStatus.PENDING) {
+      logger.error(
+        `[MilestoneService] :: Can't set milestone as claimable when claim status is ${claimStatus}`
+      );
+      throw new COAError(
+        errors.milestone.InvalidStatusForClaimableMilestone(claimStatus)
+      );
+    }
+
+    logger.info(
+      `[MilestoneService] :: Updating claimStatus of milestone ${milestoneId} as ${
+        claimMilestoneStatus.CLAIMABLE
+      }`
+    );
+
+    const milestoneUpdated = await this.milestoneDao.updateMilestone(
+      {
+        claimStatus: claimMilestoneStatus.CLAIMABLE
+      },
+      milestoneId
+    );
+
+    return milestoneUpdated.id;
+  },
+
+  /**
+   * Checks in the blockchain if all tasks from
+   * a milestone are approved or not.
+   *
+   * @param {number} milestoneId
+   * @returns {Promise<boolean>} completed
+   */
+  async isMilestoneCompleted(milestoneId) {
+    logger.info('[MilestoneService] :: Entering isMilestoneCompleted method');
+    validateRequiredParams({
+      method: 'isMilestoneCompleted',
+      params: { milestoneId }
+    });
+    const milestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId } = milestone;
+
+    const address = await this.projectService.getAddress(projectId);
+
+    if (!address) throw new COAError(errors.project.AddressNotFound(projectId));
+
+    const tasks = await this.milestoneDao.getMilestoneTasks(milestoneId);
+
+    const tasksClaimsWithValidators = await Promise.all(
+      tasks.map(async task => {
+        const oracle = await this.userService.getUserById(task.oracle);
+        if (!oracle || !oracle.address)
+          throw new COAError(errors.task.OracleAddressNotFound(task.id));
+
+        // TODO: check what should we hash
+        // TODO: how to properly hash this
+        const claimHash = sha3(projectId, oracle.id, task.id);
+        return [oracle.address, claimHash];
+      })
+    );
+
+    const [validators, claims] = zip(...tasksClaimsWithValidators);
+
+    return coa.milestoneApproved(address, validators, claims);
+  },
+
+  /**
+   * Returns the next milestone's id from the same project
+   * or `undefined` if it is the last
+   *
+   * @param {number} milestoneId
+   * @returns {Promise<number>}
+   */
+  async getNextMilestoneId(milestoneId) {
+    logger.info('[MilestoneService] :: Entering getNextMilestoneId method');
+    validateRequiredParams({
+      method: 'getNextMilestoneId',
+      params: { milestoneId }
+    });
+    const foundMilestone = await checkExistence(
+      this.milestoneDao,
+      milestoneId,
+      'milestone'
+    );
+
+    const { project: projectId } = foundMilestone;
+    const projectMilestones = await this.getAllMilestonesByProject(projectId);
+    const currentMilestoneIndex = projectMilestones.indexOf(
+      projectMilestones.find(milestone => milestone.id === milestoneId)
+    );
+
+    if (currentMilestoneIndex === projectMilestones.length - 1) {
+      // last milestone
+      return;
+    }
+
+    const nextMilestone = projectMilestones[currentMilestoneIndex + 1];
+    return nextMilestone.id;
+  },
+
+  /**
+   * Finds the next milestone of the project and
+   * sets its claim status as `claimable`
+   *
+   * @param {number} currentMilestoneId
+   * @returns {Promise<number>} next milestone id
+   */
+  async setNextAsClaimable(currentMilestoneId) {
+    logger.info('[MilestoneService] :: Entering setNextAsClaimable method');
+    const nextMilestoneId = await this.getNextMilestoneId(currentMilestoneId);
+    if (!nextMilestoneId) {
+      logger.info(
+        `[MilestoneService] :: Milestone ${currentMilestoneId} is the last milestone of the project`
+      );
+      return;
+    }
+    return this.setClaimable(nextMilestoneId);
   }
 };

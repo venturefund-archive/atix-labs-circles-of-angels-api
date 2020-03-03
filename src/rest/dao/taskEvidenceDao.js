@@ -7,10 +7,16 @@
  */
 
 module.exports = {
-  async findAllByProps(filters) {
-    return this.model.find(filters);
-  },
   async findById(id) {
     return this.model.findOne({ id });
+  },
+
+  async addTaskEvidence(data) {
+    const evidenceCreated = await this.model.create(data);
+    return evidenceCreated;
+  },
+
+  async getEvidencesByTaskId(taskId) {
+    return this.model.find({ task: taskId });
   }
 };
