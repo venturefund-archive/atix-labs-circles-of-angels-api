@@ -17,7 +17,13 @@ const {
 
 const countriesResponse = {
   type: 'array',
-  items: { type: 'string' },
+  items: {
+    type: 'object',
+    properties: {
+      id: { type: 'number' },
+      name: { type: 'string' }
+    }
+  },
   description: 'Returns all countries'
 };
 

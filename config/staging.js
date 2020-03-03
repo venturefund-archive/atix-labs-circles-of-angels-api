@@ -19,6 +19,8 @@ module.exports = {
     }
   },
   defaultProjectTimes: {
-    consensusSeconds: 300
+    minimumUnit: 'seconds',
+    consensusSeconds: 300,
+    fundingSeconds: 300
   }
 };

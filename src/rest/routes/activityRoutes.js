@@ -36,6 +36,10 @@ const taskProperties = {
   budget: { type: 'string' }
 };
 
+const claimProperties = {
+  description: { type: 'string' }
+};
+
 const oracleProperties = {
   oracleId: { type: 'number' }
 };
@@ -46,6 +50,22 @@ const successWithTaskIdResponse = {
     taskId: { type: 'integer' }
   },
   description: 'Returns the id of the task'
+};
+
+const successWithTaskEvidences = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      id: { type: 'integer' },
+      createdAt: { type: 'string' },
+      description: { type: 'string' },
+      proof: { type: 'string' },
+      approved: { type: 'boolean' },
+      task: { type: 'integer' }
+    },
+    description: 'Returns an array with the task evidences'
+  }
 };
 
 const taskRoutes = {
@@ -160,7 +180,7 @@ const routes = {
 
   addApprovedClaim: {
     method: 'post',
-    path: '/task/:taskId/claim/approve',
+    path: `${basePath}/:taskId/claim/approve`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -169,7 +189,13 @@ const routes = {
         summary: 'Add an approved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: claimProperties
+          }
+        },
         response: {
           ...successResponse(successWithTaskIdResponse),
           ...clientErrorResponse(),
@@ -182,7 +208,7 @@ const routes = {
 
   addDisapprovedClaim: {
     method: 'post',
-    path: '/task/:taskId/claim/disapproved',
+    path: `${basePath}/:taskId/claim/disapprove`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
@@ -192,7 +218,13 @@ const routes = {
         summary: 'Add an disapproved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
-        raw: { files: { type: 'object' } },
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: claimProperties
+          }
+        },
         response: {
           ...successResponse(successWithTaskIdResponse),
           ...clientErrorResponse(),
@@ -201,6 +233,26 @@ const routes = {
       }
     },
     handler: handlers.addDisapprovedClaim
+  },
+
+  getTaskEvidences: {
+    method: 'get',
+    path: `${basePath}/:taskId/claims`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.GET.name],
+        description: 'Get all the evidences uploaded for a specific task',
+        summary: 'Get task evidences',
+        params: { taskIdParam },
+        response: {
+          ...successResponse(successWithTaskEvidences),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getTasksEvidences
   }
 };
 

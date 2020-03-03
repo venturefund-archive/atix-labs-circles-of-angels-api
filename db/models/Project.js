@@ -49,7 +49,7 @@ module.exports = {
       model: 'user'
     },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    transactionHash: { type: 'string', required: false },
+    address: { type: 'string', required: false, allowNull: true },
     milestones: {
       collection: 'milestone',
       via: 'project'
@@ -72,6 +72,10 @@ module.exports = {
     consensusSeconds: {
       type: 'number',
       defaultsTo: config.defaultProjectTimes.consensusSeconds
+    },
+    fundingSeconds: {
+      type: 'number',
+      defaultsTo: config.defaultProjectTimes.fundingSeconds
     },
     lastUpdatedStatusAt: {
       type: 'string',

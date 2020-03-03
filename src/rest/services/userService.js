@@ -85,8 +85,10 @@ module.exports = {
     email,
     password,
     role,
-    detail,
-    questionnaire
+    phoneNumber,
+    country,
+    company,
+    answers
   }) {
     logger.info(`[User Routes] :: Creating new user with email ${email}`);
     validateRequiredParams({
@@ -96,14 +98,12 @@ module.exports = {
         lastName,
         email,
         password,
-        role
+        role,
+        phoneNumber,
+        country,
+        answers
       }
     });
-
-    const hashedPwd = await bcrypt.hash(password, 10);
-
-    const wallet = Wallet.createRandom();
-    const { address, privateKey } = wallet;
 
     const existingUser = await this.userDao.getUserByEmail(email);
 
@@ -113,6 +113,14 @@ module.exports = {
       );
       throw new COAError(errors.user.EmailAlreadyInUse);
     }
+    await this.countryService.getCountryById(country);
+
+    // TODO: check phoneNumber format
+
+    const hashedPwd = await bcrypt.hash(password, 10);
+
+    const wallet = Wallet.createRandom();
+    const { address, privateKey } = wallet;
 
     const user = {
       firstName,
@@ -120,56 +128,40 @@ module.exports = {
       email: email.toLowerCase(),
       password: hashedPwd,
       role,
+      phoneNumber,
+      country,
+      answers,
+      company,
       address,
       privKey: privateKey
     };
 
+    const profile = `${firstName} ${lastName}`;
+    await coa.createMember(profile);
+
+    // TODO: this should be replaced by a gas relayer
+    const accounts = await ethers.signers();
+    const tx = {
+      to: address,
+      value: utils.parseEther('1.0')
+    };
+    await accounts[9].sendTransaction(tx);
+
     const savedUser = await this.userDao.createUser(user);
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
 
-    await this.mailService.sendMail({
-      from: '"Circles of Angels Support" <coa@support.com>',
-      to: email,
-      subject: 'Circles of Angels - Welcome',
-      text: 'Welcome to Circles of Angels!',
-      html: `<p>Your Circles Of Angels account was created successfully! </br></p>
-      <p>We are reviewing your account details. You will be notified once we are done. </br></p>
-      <p>Thank you for your support. </br></p>`
-    });
-
-    // TODO: uncomment this when sc are deployed
-    //      and move it before saving to db so the signup fails if this fails
-
-    // const profile = firstName + ' ' + lastName; // TODO: what should be saved?
-    // await coa.createMember(profile);
-    // TODO: this should be replaced by a gas relayer
-    // const accounts = await ethers.signers();
-    // const tx = {
-    //   to: address,
-    //   value: utils.parseEther('1.0')
-    // };
-    // await accounts[9].sendTransaction(tx);
+    // TODO: FIX mailService
+    // await this.mailService.sendMail({
+    //   from: '"Circles of Angels Support" <coa@support.com>',
+    //   to: email,
+    //   subject: 'Circles of Angels - Welcome',
+    //   text: 'Welcome to Circles of Angels!',
+    //   html: `<p>Your Circles Of Angels account was created successfully! </br></p>
+    //   <p>We are reviewing your account details. You will be notified once we are done. </br></p>
+    //   <p>Thank you for your support. </br></p>`
+    // });
 
     return savedUser;
-  },
-
-  /**
-   * Gets all valid user roles
-   * @returns role list
-   */
-  // TODO : i'd say this function does not make sense anymore.
-  getAllRoles() {
-    logger.info('[User Service] :: Getting all User Roles');
-
-    try {
-      const userRoleWithoutAdmin = Object.assign({}, userRoles);
-      delete userRoleWithoutAdmin.COA_ADMIN;
-
-      return Object.values(userRoleWithoutAdmin);
-    } catch (error) {
-      logger.error('[User Service] :: Error getting all User Roles:', error);
-      throw new COAError(errors.common.ErrorGetting('user roles'));
-    }
   },
 
   /**
@@ -231,6 +223,32 @@ module.exports = {
 
     const { following } = user;
     return following || [];
+  },
+
+  /**
+   * Returns an array of projects where the user applied as candidate
+   *
+   * @param {number} userId
+   * @returns {Promise<Project[]>} array of found projects
+   */
+  async getAppliedProjects({ userId }) {
+    logger.info('[UserService] :: Entering getAppliedProjects method');
+    validateRequiredParams({
+      method: 'getAppliedProjects',
+      params: { userId }
+    });
+
+    const user = await this.userDao.getAppliedProjects(userId);
+
+    if (!user) {
+      logger.error(`[User Service] :: User ID ${userId} does not exist`);
+      throw new COAError(errors.user.UserNotFound);
+    }
+
+    return {
+      funding: user.funding,
+      monitoring: user.monitoring
+    };
   },
 
   async validUser(user, roleId) {

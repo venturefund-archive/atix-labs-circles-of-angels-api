@@ -1,9 +1,12 @@
+const { run, coa } = require('@nomiclabs/buidler');
 const COAError = require('../../rest/errors/COAError');
 const files = require('../../rest/util/files');
+const { sha3 } = require('../../rest/util/hash');
 const {
   userRoles,
   projectStatuses,
-  txFunderStatus
+  txFunderStatus,
+  supporterRoles
 } = require('../../rest/util/constants');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const validators = require('../../rest/services/helpers/projectStatusValidators/validators');
@@ -17,7 +20,15 @@ const restoreProjectService = () => {
   projectService = Object.assign({}, originalProjectService);
 };
 
-const sha3 = (a, b, c) => `${a}-${b}-${c}`;
+const TEST_TIMEOUT_MS = 10000;
+const deployContracts = async () => {
+  await run('deploy', { reset: true });
+  const coaContract = await coa.getCOA();
+  const superDaoAddress = await coaContract.daos(0);
+  const { _address } = await coa.getSigner();
+  return { coaContract, superDaoAddress, superUserAddress: _address };
+};
+
 const projectName = 'validProjectName';
 const location = 'Argentina';
 const timeframe = '12';
@@ -201,7 +212,7 @@ const projectDao = {
     return undefined;
   },
   updateProject: (fields, projectId) => {
-    if (projectId === 1 || projectId === 3) {
+    if (projectId === 1 || projectId === 3 || projectId === 4) {
       return {
         projectName: 'projectUpdateado',
         ...fields,
@@ -211,18 +222,11 @@ const projectDao = {
     return undefined;
   },
   findById: id => {
-    if (id === 1) {
-      return draftProject;
-    }
-    if (id === 3) {
-      return pendingProject;
-    }
-    if (id === 10) {
-      return draftProjectWithMilestone;
-    }
-    if (id === 15) {
-      return executingProject;
-    }
+    if (id === 1) return draftProject;
+    if (id === 3) return pendingProject;
+    if (id === 4) return consensusProject;
+    if (id === 10) return draftProjectWithMilestone;
+    if (id === 15) return executingProject;
     return undefined;
   },
   findOneByProps: (filters, populate) => {
@@ -310,11 +314,11 @@ describe('Project Service Test', () => {
 
     it('Whenever there is no update, an error should be thrown', async () => {
       expect(
-        projectService.updateProject(3, {
+        projectService.updateProject(0, {
           field: 'field1',
           field2: 'field2'
         })
-      ).rejects.toThrow(errors.project.CantUpdateProject(3));
+      ).rejects.toThrow(errors.project.CantUpdateProject(0));
     });
     it('When an update is done, it should return the id of the updated project', async () => {
       const projectUpdated = await projectService.updateProject(1, {
@@ -728,13 +732,18 @@ describe('Project Service Test', () => {
       restoreProjectService();
       injectMocks(projectService, { projectDao, userService });
     });
+
     describe('Update project proposal', () => {
       it('Should update the project when the project exists and all the fields are valid', async () => {
-        const { projectId } = await projectService.updateProjectProposal(1, {
-          proposal,
-          ownerId: 2
-        });
-        expect(projectId).toEqual(1);
+        const { projectId } = await projectService.updateProjectProposal(
+          consensusProject.id,
+          {
+            proposal,
+            ownerId: 2
+          }
+        );
+
+        expect(projectId).toEqual(consensusProject.id);
       });
 
       it('Should not update the project whenever the fields are valid but the project is in executing status', async () => {
@@ -915,8 +924,8 @@ describe('Project Service Test', () => {
               { id: 2, owner: 2 },
               { id: 3, owner: 3 }
             ];
-            return projects.filter(project =>
-              Object.keys(filter).every(key => project[key] === filter[key])
+            return projects.filter(
+              project => project.owner === filter.where.owner
             );
           }
         })
@@ -1177,11 +1186,16 @@ describe('Project Service Test', () => {
         projectDao: Object.assign(
           {},
           {
-            findAllByProps: () => dbProject,
+            findAllByProps: () =>
+              dbProject.filter(
+                project => project.status === projectStatuses.CONSENSUS
+              ),
             updateProject: (toUpdate, id) => {
-              let existing = dbProject.find(project => project.id === id);
-              if (existing) existing = { ...existing, ...toUpdate };
-              return existing;
+              const found = dbProject.find(project => project.id === id);
+              if (!found) return;
+              const updated = { ...found, ...toUpdate };
+              dbProject[dbProject.indexOf(found)] = updated;
+              return updated;
             }
           }
         ),
@@ -1197,33 +1211,41 @@ describe('Project Service Test', () => {
       expect(response).toEqual([
         { projectId: consensusToFunding.id, newStatus: projectStatuses.FUNDING }
       ]);
+      const updated = dbProject.find(
+        project => project.id === consensusToFunding.id
+      );
+      expect(updated.status).toEqual(projectStatuses.FUNDING);
     });
 
-    it(
-      'should change the project status to rejected ' +
-        'if the validator throws an error',
-      async () => {
-        dbProject.push(consensusToFunding);
-        projectService.hasTimePassed.mockReturnValueOnce(true);
-        validators.fromConsensus.mockImplementationOnce(({ project }) => {
-          throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
-        });
-        const response = await projectService.transitionConsensusProjects();
-        expect(response).toHaveLength(1);
-        expect(response).toEqual([
-          {
-            projectId: consensusToFunding.id,
-            newStatus: projectStatuses.REJECTED
-          }
-        ]);
-      }
-    );
+    it('should change the project status to rejected if the validator fails', async () => {
+      dbProject.push(consensusToFunding);
+      projectService.hasTimePassed.mockReturnValueOnce(true);
+      validators.fromConsensus.mockImplementationOnce(({ project }) => {
+        throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
+      });
+      const response = await projectService.transitionConsensusProjects();
+      expect(response).toHaveLength(1);
+      expect(response).toEqual([
+        {
+          projectId: consensusToFunding.id,
+          newStatus: projectStatuses.REJECTED
+        }
+      ]);
+      const updated = dbProject.find(
+        project => project.id === consensusToFunding.id
+      );
+      expect(updated.status).toEqual(projectStatuses.REJECTED);
+    });
 
     it('should not update the project if the consensus time has not passed', async () => {
       dbProject.push(consensusToFunding);
       projectService.hasTimePassed.mockReturnValueOnce(false);
       const response = await projectService.transitionConsensusProjects();
       expect(response).toHaveLength(0);
+      const notUpdated = dbProject.find(
+        project => project.id === consensusToFunding.id
+      );
+      expect(notUpdated.status).toEqual(projectStatuses.CONSENSUS);
     });
 
     it(
@@ -1259,6 +1281,143 @@ describe('Project Service Test', () => {
     );
   });
 
+  describe('Transition Funding Projects', () => {
+    let dbProject = [];
+    let dbProjectFunder = [];
+    let coaContract;
+    const fundingToExecuting = {
+      id: 1,
+      status: projectStatuses.FUNDING,
+      projectName: 'toExecutingProject',
+      owner: 1
+    };
+
+    beforeEach(async () => {
+      dbProject = [];
+      dbProjectFunder = [];
+      ({ coaContract } = await deployContracts());
+    }, TEST_TIMEOUT_MS);
+
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        projectDao: Object.assign(
+          {},
+          {
+            findAllByProps: () => {
+              const projects = dbProject.filter(
+                project => project.status === projectStatuses.FUNDING
+              );
+              return projects.map(project => ({
+                ...project,
+                funders: dbProjectFunder.filter(pf => pf.project === project.id)
+              }));
+            },
+            updateProject: (toUpdate, id) => {
+              const found = dbProject.find(project => project.id === id);
+              if (!found) return;
+              const updated = { ...found, ...toUpdate };
+              dbProject[dbProject.indexOf(found)] = updated;
+              return updated;
+            }
+          }
+        ),
+        hasTimePassed: jest.fn(),
+        getNextValidStatus: jest.fn(),
+        removeFundersWithNoTransfersFromProject: jest.fn(),
+        generateProjectAgreement: jest.fn(() => 'agreementJson')
+      });
+    });
+
+    it(
+      'should create the project in the blockchain ' +
+        'when changing to executing and return its id and new status',
+      async () => {
+        dbProject.push(fundingToExecuting);
+        projectService.hasTimePassed.mockReturnValueOnce(true);
+        projectService.getNextValidStatus.mockReturnValueOnce(
+          projectStatuses.EXECUTING
+        );
+        const response = await projectService.transitionFundingProjects();
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([
+          {
+            projectId: fundingToExecuting.id,
+            newStatus: projectStatuses.EXECUTING
+          }
+        ]);
+        expect((await coaContract.getProjectsLength()).toNumber()).toBe(1);
+      }
+    );
+
+    it(
+      'should change the project status to consensus ' +
+        'if the validator fails',
+      async () => {
+        dbProject.push(fundingToExecuting);
+        projectService.hasTimePassed.mockReturnValueOnce(true);
+        projectService.getNextValidStatus.mockReturnValueOnce(
+          projectStatuses.CONSENSUS
+        );
+        const response = await projectService.transitionFundingProjects();
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([
+          {
+            projectId: fundingToExecuting.id,
+            newStatus: projectStatuses.CONSENSUS
+          }
+        ]);
+        const updated = dbProject.find(
+          project => project.id === fundingToExecuting.id
+        );
+        expect(updated.status).toEqual(projectStatuses.CONSENSUS);
+      }
+    );
+
+    it('should not update the project if the consensus time has not passed', async () => {
+      dbProject.push(fundingToExecuting);
+      projectService.hasTimePassed.mockReturnValueOnce(false);
+      const response = await projectService.transitionFundingProjects();
+      expect(response).toHaveLength(0);
+      const updated = dbProject.find(
+        project => project.id === fundingToExecuting.id
+      );
+      expect(updated.status).toEqual(projectStatuses.FUNDING);
+    });
+
+    it(
+      'should return an array with the projects that were ' +
+        'changed to funding and to rejected, and omit the ones not ready',
+      async () => {
+        dbProject.push(
+          fundingToExecuting,
+          { ...fundingToExecuting, id: 2 },
+          { ...fundingToExecuting, id: 3 }
+        );
+        projectService.hasTimePassed
+          .mockReturnValueOnce(false)
+          .mockReturnValueOnce(true)
+          .mockReturnValueOnce(true);
+
+        projectService.getNextValidStatus
+          .mockReturnValueOnce(projectStatuses.EXECUTING)
+          .mockReturnValueOnce(projectStatuses.CONSENSUS);
+        const response = await projectService.transitionFundingProjects();
+        expect(response).toHaveLength(2);
+        expect(response).toEqual([
+          {
+            projectId: 2,
+            newStatus: projectStatuses.EXECUTING
+          },
+          {
+            projectId: 3,
+            newStatus: projectStatuses.CONSENSUS
+          }
+        ]);
+      }
+    );
+  });
+
   describe('Has time passed', () => {
     const SECONDS_IN_A_DAY = 86400;
     const TODAY = new Date();
@@ -1266,15 +1425,33 @@ describe('Project Service Test', () => {
 
     beforeAll(() => restoreProjectService());
 
-    it('should return true if a day has passed since last updated', () => {
-      expect(
-        projectService.hasTimePassed({
-          lastUpdatedStatusAt: YESTERDAY,
-          status: projectStatuses.CONSENSUS,
-          consensusSeconds: SECONDS_IN_A_DAY
-        })
-      ).toBe(true);
-    });
+    it(
+      'should return true if a day has passed since last updated ' +
+        'when project is in consensus phase',
+      () => {
+        expect(
+          projectService.hasTimePassed({
+            lastUpdatedStatusAt: YESTERDAY,
+            status: projectStatuses.CONSENSUS,
+            consensusSeconds: SECONDS_IN_A_DAY
+          })
+        ).toBe(true);
+      }
+    );
+
+    it(
+      'should return true if a day has passed since last updated ' +
+        'when project is in funding phase',
+      () => {
+        expect(
+          projectService.hasTimePassed({
+            lastUpdatedStatusAt: YESTERDAY,
+            status: projectStatuses.FUNDING,
+            fundingSeconds: SECONDS_IN_A_DAY
+          })
+        ).toBe(true);
+      }
+    );
 
     it('should return false if a day has not passed since last updated', () => {
       expect(
@@ -1286,7 +1463,7 @@ describe('Project Service Test', () => {
       ).toBe(false);
     });
 
-    it('should return false if the project is not in consensus phase', () => {
+    it('should return false if the project is not in consensus or funding phase', () => {
       expect(
         projectService.hasTimePassed({
           lastUpdatedStatusAt: YESTERDAY,
@@ -1298,6 +1475,342 @@ describe('Project Service Test', () => {
 
     it('should return false if it is invoked without params', () => {
       expect(projectService.hasTimePassed()).toBe(false);
+    });
+  });
+
+  describe('Get next valid status', () => {
+    it('should return the success status if the validation does not fail', async () => {
+      validators.fromFunding.mockReturnValueOnce(true);
+      await expect(
+        projectService.getNextValidStatus(
+          {
+            id: 1,
+            status: projectStatuses.FUNDING,
+            owner: 1
+          },
+          projectStatuses.EXECUTING,
+          projectStatuses.CONSENSUS
+        )
+      ).resolves.toEqual(projectStatuses.EXECUTING);
+    });
+
+    it('should return the fail status if the validation not fails', async () => {
+      validators.fromFunding.mockImplementationOnce(() => {
+        throw new COAError(
+          errors.project.errors.project.MinimumFundingNotReached(1)
+        );
+      });
+      await expect(
+        projectService.getNextValidStatus(
+          {
+            id: 1,
+            status: projectStatuses.FUNDING,
+            owner: 1
+          },
+          projectStatuses.EXECUTING,
+          projectStatuses.CONSENSUS
+        )
+      ).resolves.toEqual(projectStatuses.CONSENSUS);
+    });
+  });
+
+  describe('Remove funders with no transfers', () => {
+    let dbTransfer = [];
+    let dbProjectFunder = [];
+    const funderUser = {
+      id: 1,
+      role: userRoles.PROJECT_SUPPORTER
+    };
+    const noFunderUser = {
+      id: 2,
+      role: userRoles.PROJECT_SUPPORTER
+    };
+    const fundingProject = {
+      id: 1,
+      status: projectStatuses.FUNDING,
+      owner: 1,
+      funders: [funderUser, noFunderUser]
+    };
+    const verifiedTransfer = {
+      id: 1,
+      sender: funderUser.id,
+      status: txFunderStatus.VERIFIED,
+      project: fundingProject.id
+    };
+
+    beforeEach(() => {
+      dbProjectFunder = [];
+      dbTransfer = [];
+    });
+
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        transferService: Object.assign(
+          {},
+          {
+            getAllTransfersByProps: () =>
+              dbTransfer.filter(
+                transfer =>
+                  transfer.project === fundingProject.id &&
+                  transfer.status === txFunderStatus.VERIFIED
+              )
+          }
+        ),
+        funderDao: Object.assign(
+          {},
+          {
+            deleteByProjectAndFunderId: ({ projectId, userId }) => {
+              const found = dbProjectFunder.find(
+                funder => funder.user === userId && funder.project === projectId
+              );
+              if (!found) return;
+              dbProjectFunder.splice(dbProjectFunder.indexOf(found), 1);
+              return found;
+            }
+          }
+        )
+      });
+    });
+
+    it(
+      'should remove the funders with no verified transfers ' +
+        'from the project and return their ids',
+      async () => {
+        dbTransfer.push(verifiedTransfer);
+        dbProjectFunder.push(
+          {
+            id: 1,
+            project: fundingProject.id,
+            user: funderUser.id
+          },
+          {
+            id: 2,
+            project: fundingProject.id,
+            user: noFunderUser.id
+          }
+        );
+        const response = await projectService.removeFundersWithNoTransfersFromProject(
+          fundingProject
+        );
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([noFunderUser.id]);
+        const wasDeleted = !dbTransfer.find(
+          transfer => transfer.sender === noFunderUser.id
+        );
+        expect(wasDeleted).toBe(true);
+      }
+    );
+
+    it('should return an empty array if the project has no funders assigned', async () => {
+      const response = await projectService.removeFundersWithNoTransfersFromProject(
+        fundingProject
+      );
+      expect(response).toHaveLength(0);
+    });
+
+    it('should return an empty array if all funders made transfers', async () => {
+      dbTransfer.push(verifiedTransfer);
+      dbProjectFunder.push({
+        id: 1,
+        project: fundingProject.id,
+        user: funderUser.id
+      });
+      const response = await projectService.removeFundersWithNoTransfersFromProject(
+        fundingProject
+      );
+      expect(response).toHaveLength(0);
+    });
+  });
+
+  describe('Test applyToProject', () => {
+    let dbProject = [];
+    let dbProjectFunder = [];
+    let dbProjectOracle = [];
+    let dbUser = [];
+
+    const resetDb = () => {
+      dbProject = [];
+      dbUser = [];
+      dbProjectOracle = [];
+      dbProjectFunder = [];
+    };
+
+    beforeEach(() => {
+      resetDb();
+      dbUser.push(supporterUser);
+      dbProject.push(consensusProject);
+    });
+
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        projectDao: {
+          findOneByProps: ({ id }, { oracles, funders }) => {
+            const [foundProject] = dbProject.filter(
+              project => project.id === id
+            );
+
+            if (!foundProject) return;
+
+            return Object.assign({}, foundProject, {
+              oracles:
+                oracles && dbProjectOracle.filter(po => po.project === id),
+              funders:
+                funders && dbProjectFunder.filter(po => po.project === id)
+            });
+          }
+        },
+        userService: {
+          getUserById: id => {
+            const found = dbUser.find(user => user.id === id);
+            if (!found)
+              throw new COAError(errors.common.CantFindModelWithId('user', id));
+            return found;
+          }
+        },
+        oracleDao: {
+          addCandidate: ({ projectId, userId }) => {
+            dbProjectOracle.push({
+              id: dbProjectOracle.length + 1,
+              project: projectId,
+              user: userId
+            });
+
+            return { id: dbProjectOracle.length };
+          }
+        },
+        funderDao: {
+          addCandidate: ({ projectId, userId }) => {
+            dbProjectFunder.push({
+              id: dbProjectFunder.length + 1,
+              project: projectId,
+              user: userId
+            });
+
+            return { id: dbProjectFunder.length };
+          }
+        }
+      });
+    });
+
+    it('should add a new oracle candidate and returns its id', async () => {
+      const response = await projectService.applyToProject({
+        projectId: consensusProject.id,
+        userId: supporterUser.id,
+        role: supporterRoles.ORACLES
+      });
+
+      expect(response.candidateId).toBeDefined();
+    });
+
+    it('should add a new funder candidate and returns its id', async () => {
+      const response = await projectService.applyToProject({
+        projectId: consensusProject.id,
+        userId: supporterUser.id,
+        role: supporterRoles.FUNDERS
+      });
+
+      expect(response.candidateId).toBeDefined();
+    });
+
+    it('should throw an error if an argument is not defined', async () => {
+      await expect(
+        projectService.applyToProject({
+          userId: supporterUser.id
+        })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('applyToProject'));
+    });
+
+    it('should throw an error if the project does not exist', async () => {
+      await expect(
+        projectService.applyToProject({
+          userId: supporterUser.id,
+          projectId: 0,
+          role: supporterRoles.ORACLES
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 0));
+    });
+
+    it('should throw an error if the project is not in executing status', async () => {
+      dbProject.push(pendingProject);
+
+      await expect(
+        projectService.applyToProject({
+          userId: supporterUser.id,
+          projectId: pendingProject.id,
+          role: supporterRoles.FUNDERS
+        })
+      ).rejects.toThrow(
+        errors.project.CantApplyToProject(projectStatuses.TO_REVIEW)
+      );
+    });
+
+    it('should throw an error if the user is not supporter', async () => {
+      dbUser.push(entrepreneurUser);
+
+      await expect(
+        projectService.applyToProject({
+          userId: entrepreneurUser.id,
+          projectId: consensusProject.id,
+          role: supporterRoles.FUNDERS
+        })
+      ).rejects.toThrow(
+        errors.user.UnauthorizedUserRole(entrepreneurUser.role)
+      );
+    });
+
+    it('should throw an error if the user already apply to the project as funder', async () => {
+      dbProjectFunder.push({
+        id: 1,
+        project: consensusProject.id,
+        user: supporterUser.id
+      });
+
+      await expect(
+        projectService.applyToProject({
+          userId: supporterUser.id,
+          projectId: consensusProject.id,
+          role: supporterRoles.FUNDERS
+        })
+      ).rejects.toThrow(
+        errors.project.AlreadyApplyToProject(supporterRoles.FUNDERS)
+      );
+    });
+  });
+
+  describe('Get address', () => {
+    let dbProject = [];
+    const projectWithAddress = {
+      id: 1,
+      status: projectStatuses.EXECUTING,
+      address: '0x0'
+    };
+    beforeEach(() => {
+      dbProject = [];
+    });
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        projectDao: Object.assign(
+          {},
+          {
+            findById: id => dbProject.find(project => project.id === id)
+          }
+        )
+      });
+    });
+
+    it('should return the existing user', async () => {
+      dbProject.push(projectWithAddress);
+      const response = await projectService.getAddress(projectWithAddress.id);
+      expect(response).toEqual(projectWithAddress.address);
+    });
+
+    it('should throw an error if the user does not exist', async () => {
+      await expect(projectService.getAddress(0)).rejects.toThrow(
+        errors.common.CantFindModelWithId('project', 0)
+      );
     });
   });
 });

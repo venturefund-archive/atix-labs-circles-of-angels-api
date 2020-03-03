@@ -16,6 +16,7 @@ const {
 const { injectMocks } = require('../../rest/util/injection');
 const files = require('../../rest/util/files');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
+const COAError = require('../../rest/errors/COAError');
 const transferService = require('../../rest/services/transferService');
 
 describe('Testing transferService', () => {
@@ -60,9 +61,10 @@ describe('Testing transferService', () => {
 
   const verifiedTransfer = {
     id: 2,
+    amount: 150,
     transferId: 'existing123',
     status: txFunderStatus.VERIFIED,
-    projectId: 1
+    project: fundingProject.id
   };
 
   const pendingTransfer = {
@@ -73,11 +75,23 @@ describe('Testing transferService', () => {
     rejectionReason: null
   };
 
+  const anotherVerifiedTransfer = {
+    id: 4,
+    amount: 50,
+    transferId: 'existing123',
+    status: txFunderStatus.VERIFIED,
+    project: fundingProject.id
+  };
+
   beforeAll(() => {
     files.saveFile = jest.fn(() => '/dir/path');
   });
 
   const transferDao = {
+    findAllByProps: filter =>
+      dbTransfer.filter(transfer =>
+        Object.keys(filter).every(key => transfer[key] === filter[key])
+      ),
     create: transfer => {
       const toCreate = {
         ...transfer,
@@ -138,12 +152,30 @@ describe('Testing transferService', () => {
     findById: id => dbUser.find(user => user.id === id)
   };
 
+  const projectService = {
+    getProjectById: id => {
+      const found = dbProject.find(project => project.id === id);
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('project', id));
+      return found;
+    }
+  };
+
+  const userService = {
+    getUserById: id => {
+      const found = dbUser.find(user => user.id === id);
+      if (!found)
+        throw new COAError(errors.common.CantFindModelWithId('user', id));
+      return found;
+    }
+  };
+
   describe('Testing transferService createTransfer', () => {
     beforeAll(() => {
       injectMocks(transferService, {
-        projectDao,
-        userDao,
-        transferDao
+        transferDao,
+        projectService,
+        userService
       });
     });
 
@@ -291,7 +323,7 @@ describe('Testing transferService', () => {
     beforeAll(() => {
       injectMocks(transferService, {
         transferDao,
-        projectDao
+        projectService
       });
     });
 
@@ -332,38 +364,52 @@ describe('Testing transferService', () => {
     });
   });
 
-  describe('Testing projectService getTotalFundedByProject', () => {
-    const project = 1;
-
+  describe('Testing projectService getFundedAmount', () => {
     beforeAll(() => {
       injectMocks(transferService, {
-        transferDao
+        transferDao,
+        projectService
       });
     });
 
-    it('should return the amount total for an array of transfers for a project', async () => {
-      const response = await transferService.getTotalFundedByProject(project);
-      const expected = 600;
-      return expect(response).toEqual(expected);
+    beforeEach(() => {
+      dbProject = [];
+      dbTransfer = [];
+      dbProject.push(fundingProject);
+      dbTransfer.push(verifiedTransfer, anotherVerifiedTransfer);
     });
 
-    it('should return 0 if the project does not have any funds transferred', async () => {
-      const response = await transferService.getTotalFundedByProject(0);
-      const expected = 0;
-      return expect(response).toEqual(expected);
+    it('should return the funded amount for a project', async () => {
+      const response = await transferService.getFundedAmount({
+        projectId: fundingProject.id
+      });
+
+      const fundedAmount =
+        verifiedTransfer.amount + anotherVerifiedTransfer.amount;
+
+      return expect(response).toEqual({ fundedAmount });
     });
 
-    it('should throw an error if it fails to get the transfers for a project', async () =>
-      expect(transferService.getTotalFundedByProject()).rejects.toEqual(
-        Error('Error getting transfers')
-      ));
+    it('should throw an error if an argument is not defined', async () => {
+      await expect(transferService.getFundedAmount({})).rejects.toThrow(
+        errors.common.RequiredParamsMissing('getFundedAmount')
+      );
+    });
+
+    it('should throw an error if the project does not exist', async () => {
+      await expect(
+        transferService.getFundedAmount({
+          projectId: 0
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('project', 0));
+    });
   });
 
   describe('Testing transferService addTransferClaim', () => {
     beforeAll(() => {
       injectMocks(transferService, {
-        userDao,
-        transferDao
+        transferDao,
+        userService
       });
     });
 
