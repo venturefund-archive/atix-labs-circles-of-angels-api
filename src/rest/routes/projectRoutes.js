@@ -211,6 +211,7 @@ const projectsResponse = {
       faqLink: { type: 'string' },
       coverPhotoPath: { type: 'string' },
       cardPhotoPath: { type: 'string' },
+      milestonePath: { type: 'string' },
       goalAmount: { type: 'number' },
       status: { type: 'string' },
       owner: userResponse,
