@@ -22,7 +22,9 @@ module.exports = {
       'Access-Control-Allow-Headers': [
         'Origin, X-Requested-With, Content-Type, Accept'
       ]
-    }
+    },
+    isHttps: false,
+    domain: 'localhost'
   },
   frontendUrl: 'http://localhost:3000',
   support: {
@@ -33,7 +35,8 @@ module.exports = {
   },
 
   jwt: {
-    secret: 'atix2018'
+    secret: 'atix2018',
+    expirationTime: 3 // in months
   },
 
   database: {
