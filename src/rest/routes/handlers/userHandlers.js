@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const config = require('config');
 const apiHelper = require('../../services/helper');
 
 const userService = require('../../services/userService');
@@ -33,16 +34,18 @@ module.exports = {
 
     const token = fastify.jwt.sign(user);
     const expirationDate = new Date();
-    expirationDate.setMonth(expirationDate.getMonth() + 3);
+    expirationDate.setMonth(
+      expirationDate.getMonth() + config.jwt.expirationTime
+    );
 
     reply
       .status(200)
       .setCookie('userAuth', token, {
-        domain: fastify.configs.server.host,
+        domain: config.server.domain,
         path: '/',
         httpOnly: true,
-        expires: expirationDate
-        // secure: true
+        expires: expirationDate,
+        secure: config.server.isHttps
       })
       .send(user);
   },
