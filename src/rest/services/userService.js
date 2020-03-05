@@ -143,9 +143,9 @@ module.exports = {
     const accounts = await ethers.signers();
     const tx = {
       to: address,
-      value: utils.parseEther('1.0')
+      value: utils.parseEther('0.001')
     };
-    await accounts[9].sendTransaction(tx);
+    await accounts[0].sendTransaction(tx);
 
     const savedUser = await this.userDao.createUser(user);
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
