@@ -379,11 +379,11 @@ module.exports = {
    * @param {boolean} approved
    * @returns taskId || error
    */
-  async addClaim({ taskId, userId, file, description, approved }) {
+  async addClaim({ taskId, userId, file, description, approved, userWallet }) {
     logger.info('[ActivityService] :: Entering addClaim method');
     validateRequiredParams({
       method: 'addClaim',
-      params: { userId, taskId, file, description, approved }
+      params: { userId, taskId, file, description, approved, userWallet }
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
@@ -418,7 +418,14 @@ module.exports = {
     const claim = sha3(projectId, oracle, taskId);
     const proof = sha3(filePath); // TODO: this should be an ipfs hash
 
-    await coa.addClaim(address, claim, proof, approved, milestoneId);
+    await coa.addClaim(
+      address,
+      claim,
+      proof,
+      approved,
+      milestoneId,
+      userWallet
+    );
 
     const evidence = {
       description,

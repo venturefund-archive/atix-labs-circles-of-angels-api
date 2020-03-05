@@ -60,9 +60,10 @@ module.exports = class COA {
     console.log(tx);
   }
 
-  async addClaim(project, claim, proof, valid, milestoneId) {
+  async addClaim(project, claim, proof, valid, milestoneId, validator) {
     const registry = await this.getRegistry();
-    const tx = await registry.addClaim(
+    const registryWithSigner = await registry.connect(validator);
+    const tx = await registryWithSigner.addClaim(
       project,
       claim,
       proof,
