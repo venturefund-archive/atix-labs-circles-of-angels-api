@@ -217,6 +217,8 @@ const projectsResponse = {
       owner: userResponse,
       createdAt: { type: 'string' },
       // address: { type: 'string' },
+      proposalFilePath: { type: 'string' },
+      agreementFilePath: { type: 'string' },
       id: { type: 'number' }
     }
   },

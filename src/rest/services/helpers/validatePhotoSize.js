@@ -10,6 +10,7 @@ const MAX_PHOTO_SIZE = 500000;
  * @param {File} file - File to validate its size
  */
 module.exports = file => {
+  // TODO: change file name to validateFileSize
   logger.info('[ValidatePhotoSize] :: Entering validatePhotoSize method');
   if (file.size > MAX_PHOTO_SIZE) {
     logger.error(

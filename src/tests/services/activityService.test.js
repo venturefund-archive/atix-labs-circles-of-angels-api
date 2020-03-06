@@ -226,6 +226,9 @@ describe('Testing activityService', () => {
   });
 
   beforeEach(() => resetDb());
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
 
   describe('Testing updateTask', () => {
     beforeAll(() => {
@@ -573,7 +576,8 @@ describe('Testing activityService', () => {
       injectMocks(activityService, {
         activityDao,
         userService,
-        projectService
+        projectService,
+        milestoneService
       });
     });
 
