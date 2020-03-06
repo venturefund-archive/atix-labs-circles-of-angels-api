@@ -205,12 +205,16 @@ module.exports = {
     }
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to create a task
-    if (project.status !== projectStatuses.NEW) {
+    const allowedProjectStatus = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+    if (!allowedProjectStatus.includes(project.status)) {
       logger.error(
-        `[ActivityService] :: Status of project with id ${project.id} is not ${
-          projectStatuses.NEW
-        }`
+        `[ActivityService] :: Can't create activities in project ${
+          project.id
+        } with status ${project.status}`
       );
       throw new COAError(
         errors.task.CreateWithInvalidProjectStatus(project.status)
