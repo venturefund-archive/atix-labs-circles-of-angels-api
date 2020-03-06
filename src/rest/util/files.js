@@ -66,10 +66,10 @@ const getTransferClaimsPath = () =>
   `${configs.fileServer.filePath}/projects/transfers/claims/`;
 
 const getProposalPath = () =>
-  `${configs.fileServer.filePath}/projects/projects/agreement/`;
+  `${configs.fileServer.filePath}/projects/proposal/`;
 
 const getAgreementPath = () =>
-  `${configs.fileServer.filePath}/projects/projects/proposal/`;
+  `${configs.fileServer.filePath}/projects/agreement/`;
 
 const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
   new Promise((resolve, reject) => {
