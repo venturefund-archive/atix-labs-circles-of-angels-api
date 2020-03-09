@@ -435,7 +435,7 @@ describe('Testing activityService', () => {
     });
   });
 
-  describe.only('Testing addClaim', () => {
+  describe('Testing addClaim', () => {
     let coaSigner;
     beforeAll(() => {
       injectMocks(activityService, {

@@ -665,6 +665,10 @@ module.exports = {
           '[MilestoneService] :: Marking next milestone as claimable'
         );
         await this.setNextAsClaimable(milestoneId);
+      } else {
+        logger.info(
+          `[MilestoneService] :: Milestone ${milestoneId} is not completed yet`
+        );
       }
     } catch (error) {
       // If it fails still return, do not throw
