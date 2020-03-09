@@ -64,11 +64,13 @@ module.exports = {
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { coverPhotoPath } = files;
+    const { coverPhotoPath, agreementFile, proposalFile } = files;
     const response = await projectService.createProjectDetail(projectId, {
       mission,
       problemAddressed,
-      file: coverPhotoPath,
+      coverPhoto: coverPhotoPath,
+      agreementFile,
+      proposalFile,
       ownerId
     });
     reply.status(200).send(response);
@@ -81,11 +83,13 @@ module.exports = {
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { coverPhotoPath } = files;
+    const { coverPhotoPath, agreementFile, proposalFile } = files;
     const response = await projectService.updateProjectDetail(projectId, {
       mission,
       problemAddressed,
-      file: coverPhotoPath,
+      coverPhoto: coverPhotoPath,
+      agreementFile,
+      proposalFile,
       ownerId
     });
     reply.status(200).send(response);
