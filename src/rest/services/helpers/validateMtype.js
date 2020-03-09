@@ -43,7 +43,7 @@ const docValidator = file => {
   const fileType = mime.lookup(file.name);
   const validTypes = [MIME_TYPES.DOCX, MIME_TYPES.DOC, MIME_TYPES.PDF];
   if (!validTypes.includes(fileType)) {
-    logger.error('[ValidateMtype] :: File type is not a valid excel type');
+    logger.error('[ValidateMtype] :: File type is not a valid doc or pdf type');
     throw new COAError(errors.file.DocFileTypeNotValid);
   }
 };
