@@ -89,10 +89,15 @@ module.exports = {
     validateOwnership(project.owner, userId);
 
     // TODO: define in which statuses is ok to create a milestone
-    if (project.status !== projectStatuses.NEW) {
+    const allowedProjectStatus = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+    if (!allowedProjectStatus.includes(project.status)) {
       logger.error(
-        `[MilestoneService] :: Status of project with id ${projectId} is not ${
-          projectStatuses.NEW
+        `[MilestoneService] :: Can't create milestones in project ${projectId} with status ${
+          project.status
         }`
       );
       throw new COAError(

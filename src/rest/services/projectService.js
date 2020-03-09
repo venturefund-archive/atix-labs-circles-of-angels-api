@@ -359,7 +359,12 @@ module.exports = {
     validateMtype(milestonesType, file);
 
     const { status } = project;
-    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
+    const allowedStatus = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+    if (!allowedStatus.includes(status)) {
       logger.error(
         `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
       );
