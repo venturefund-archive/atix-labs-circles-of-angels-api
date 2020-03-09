@@ -79,8 +79,10 @@ CREATE TABLE public.project (
     "coverPhotoPath" varchar(200),
     "cardPhotoPath" varchar(200),
     "milestonePath" varchar(200),
-    proposal text,
-    "agreementPath" varchar(200),
+    proposal text, -- html
+	"proposalFilePath" varchar(200) NULL, -- file
+    "agreementPath" varchar(200), -- coa generated
+    "agreementFilePath" varchar(200) NULL, -- user uploaded
     "consensusSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default
     "fundingSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default
     "lastUpdatedStatusAt" timestamp with time zone DEFAULT NOW(),
