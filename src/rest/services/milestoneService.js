@@ -659,8 +659,17 @@ module.exports = {
     );
 
     try {
-      logger.info('[MilestoneService] :: Marking next milestone as claimable');
-      await this.setNextAsClaimable(milestoneId);
+      const milestoneCompleted = await this.isMilestoneCompleted(milestoneId);
+      if (milestoneCompleted) {
+        logger.info(
+          '[MilestoneService] :: Marking next milestone as claimable'
+        );
+        await this.setNextAsClaimable(milestoneId);
+      } else {
+        logger.info(
+          `[MilestoneService] :: Milestone ${milestoneId} is not completed yet`
+        );
+      }
     } catch (error) {
       // If it fails still return, do not throw
       logger.error(
@@ -777,7 +786,13 @@ module.exports = {
 
     const [validators, claims] = zip(...tasksClaimsWithValidators);
 
-    return coa.milestoneApproved(address, validators, claims);
+    const approved = await coa.milestoneApproved(address, validators, claims);
+
+    logger.info(
+      `[MilestoneService] :: Milestone ${milestoneId} completed: ${approved}`
+    );
+
+    return approved;
   },
 
   /**
