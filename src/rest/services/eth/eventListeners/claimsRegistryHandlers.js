@@ -11,12 +11,13 @@ module.exports = {
     approved,
     proof,
     verifiedAt,
-    milestoneId
+    milestoneIdHex
   ) => {
     logger.info(
       '[ClaimRegistry] :: Incoming event ClaimApproved - claim:',
       claim
     );
+    const milestoneId = Number(milestoneIdHex);
 
     const milestoneCompleted = await milestoneService.isMilestoneCompleted(
       milestoneId
