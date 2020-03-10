@@ -1021,11 +1021,12 @@ module.exports = {
    *
    * @returns {Promise<object[]>} list of updated projects
    */
-  async transitionConsensusProjects() {
+  async transitionConsensusProjects(projectId) {
     logger.info(
       '[ProjectService] :: Entering transitionConsensusProjects method'
     );
     const projects = await this.projectDao.findAllByProps({
+      id: projectId,
       status: projectStatuses.CONSENSUS
     });
 
@@ -1062,12 +1063,13 @@ module.exports = {
    *
    * @returns {Promise<object[]>} list of updated projects
    */
-  async transitionFundingProjects() {
+  async transitionFundingProjects(projectId) {
     logger.info(
       '[ProjectService] :: Entering transitionFundingProjects method'
     );
     const projects = await this.projectDao.findAllByProps(
       {
+        id: projectId,
         status: projectStatuses.FUNDING
       },
       { funders: true }
