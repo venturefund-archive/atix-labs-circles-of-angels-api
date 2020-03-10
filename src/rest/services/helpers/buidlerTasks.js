@@ -1,5 +1,5 @@
 const { readArtifact } = require('@nomiclabs/buidler/plugins');
-const { ContractFactory, Wallet } = require('ethers');
+const { ContractFactory, Wallet, utils } = require('ethers');
 
 const { sha3 } = require('../../util/hash');
 const { proposalTypeEnum, voteEnum } = require('../../util/constants');
@@ -160,3 +160,27 @@ task('process-proposal', 'Process a proposal')
     const dao = await getDAOContract(env, daoaddress, member);
     await dao.processProposal(proposal);
   });
+
+task('migrate-members', 'Migrate existing users to current contract').setAction(
+  async (_args, env) => {
+    const owner = await getSigner(env);
+    const coa = await getCOAContract(env);
+    if (coa === undefined) {
+      console.error('COA contract not deployed');
+      return;
+    }
+    const users = [];
+    await Promise.all(
+      users.map(async ({ profile, address }) => {
+        await coa.migrateMember(profile, address);
+        const tx = {
+          to: address,
+          value: utils.parseEther('0.001')
+        };
+        await owner.sendTransaction(tx);
+        console.log(`${profile} - ${address} successfully migrated.`);
+      })
+    );
+    console.log(`Finished migration for ${users.length} users.`);
+  }
+);
