@@ -1,9 +1,10 @@
+const config = require('config');
 const errors = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
 
 const logger = require('../../logger');
 
-const MAX_PHOTO_SIZE = 500000;
+const MAX_PHOTO_SIZE = config.fileServer.maxFileSize;
 
 /**
  * Validates that the file size is not larger than the max allowed
