@@ -181,5 +181,6 @@ task('migrate-members', 'Migrate existing users to current contract').setAction(
         console.log(`${profile} - ${address} successfully migrated.`);
       })
     );
+    console.log(`Finished migration for ${users.length} users.`);
   }
 );
