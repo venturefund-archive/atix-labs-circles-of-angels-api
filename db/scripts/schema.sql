@@ -81,7 +81,7 @@ CREATE TABLE public.project (
     "milestonePath" varchar(200),
     proposal text, -- html
 	"proposalFilePath" varchar(200) NULL, -- file
-    "agreementPath" varchar(200), -- coa generated
+    "agreementJson" text, -- coa generated
     "agreementFilePath" varchar(200) NULL, -- user uploaded
     "consensusSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default
     "fundingSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default

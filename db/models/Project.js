@@ -39,6 +39,7 @@ module.exports = {
     timeframe: { type: 'string', required: false, allowNull: true },
     proposal: { type: 'string', required: false, allowNull: true },
     faqLink: { type: 'string', required: false, allowNull: true },
+    agreementJson: { type: 'string', required: false, allowNull: true },
     coverPhotoPath: { type: 'string', required: false, allowNull: true },
     cardPhotoPath: { type: 'string', required: false, allowNull: true },
     milestonePath: { type: 'string', required: false, allowNull: true },

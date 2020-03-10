@@ -667,7 +667,7 @@ module.exports = {
       funders
     };
 
-    const agreementJson = JSON.stringify(agreement, undefined, 2);
+    const agreementJson = JSON.stringify(agreement, undefined);
     return agreementJson;
   },
 
@@ -1105,6 +1105,11 @@ module.exports = {
           });
         } else if (newStatus === projectStatuses.EXECUTING) {
           const agreement = await this.generateProjectAgreement(project.id);
+          logger.info(
+            `[ProjectService] :: Saving agreement for project ${project.id}`
+          );
+          await this.updateProject(project.id, { agreementJson: agreement });
+
           logger.info(
             `[ProjectService] :: Sending project ${project.id} to blockchain`
           );
