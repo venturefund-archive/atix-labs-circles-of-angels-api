@@ -10,11 +10,11 @@ module.exports = {
   identity: 'task',
   primaryKey: 'id',
   attributes: {
-    taskHash: { type: 'string', required: false },
+    taskHash: { type: 'string', required: false, allowNull: true },
     description: { type: 'string', required: true },
-    reviewCriteria: { type: 'string', required: false },
+    reviewCriteria: { type: 'string', required: false, allowNull: true },
     category: { type: 'string', required: true },
-    keyPersonnel: { type: 'string', required: false },
+    keyPersonnel: { type: 'string', required: false, allowNull: true },
     budget: { type: 'string', required: true },
     milestone: {
       columnName: 'milestoneId',

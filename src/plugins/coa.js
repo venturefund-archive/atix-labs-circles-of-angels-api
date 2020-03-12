@@ -28,9 +28,10 @@ module.exports = class COA {
   }
   // testing methods
 
-  async createMember(profile) {
+  async createMember(profile, wallet) {
     const coa = await this.getCOA();
-    await coa.createMember(profile);
+    const connected = await coa.connect(wallet);
+    await connected.createMember(profile);
   }
 
   async createProject(id, name, agreement) {
