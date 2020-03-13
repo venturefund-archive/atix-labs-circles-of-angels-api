@@ -8,7 +8,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const nodemailer = require('nodemailer');
 const mailService = require('./services/mailService');
 const userService = require('./services/userService');
 const projectService = require('./services/projectService');
@@ -24,6 +23,7 @@ const daoService = require('./services/daoService');
 
 const projectStatusValidators = require('./services/helpers/projectStatusValidators/validators');
 const cronjobService = require('./services/cronjob/cronjobService');
+const { createEmailClient } = require('./services/helpers/emailClient');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
@@ -52,17 +52,6 @@ module.exports = fastify => {
   const injectModel = (daoInstance, model) => {
     injectDependencies(daoInstance, { model });
   };
-
-  function createEmailClient() {
-    const { service, email, password } = fastify.configs.support;
-    return nodemailer.createTransport({
-      service,
-      auth: {
-        user: email,
-        pass: password
-      }
-    });
-  }
 
   function configureFileService(service) {
     const dependencies = {
