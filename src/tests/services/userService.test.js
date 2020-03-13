@@ -9,6 +9,7 @@
  */
 
 const bcrypt = require('bcrypt');
+const { coa, ethers } = require('@nomiclabs/buidler');
 const { Wallet } = require('ethers');
 const { injectMocks } = require('../../rest/util/injection');
 const { userRoles, projectStatuses } = require('../../rest/util/constants');
@@ -22,7 +23,8 @@ const restoreUserService = () => {
 };
 
 const mailService = {
-  sendMail: jest.fn()
+  sendMail: jest.fn(),
+  sendSignUpMail: jest.fn()
 };
 
 describe('Testing userService', () => {
@@ -221,6 +223,13 @@ describe('Testing userService', () => {
     beforeAll(() => {
       Wallet.createRandom = jest.fn();
       bcrypt.hash = jest.fn();
+      coa.createMember = jest.fn();
+      const sendTransaction = jest.fn();
+      ethers.signers = jest.fn(() => [
+        {
+          sendTransaction
+        }
+      ]);
       injectMocks(userService, { userDao, mailService, countryService });
     });
     afterAll(() => restoreUserService());
@@ -242,6 +251,8 @@ describe('Testing userService', () => {
 
       const created = dbUser.find(user => user.id === response.id);
       expect(created).toBeDefined();
+      expect(coa.createMember).toHaveBeenCalled();
+      expect(mailService.sendSignUpMail).toHaveBeenCalled();
     });
     it('should return an error if any required param is missing', async () => {
       await expect(
@@ -342,7 +353,7 @@ describe('Testing userService', () => {
     });
   });
 
-  describe.only('Testing getAppliedProjects', () => {
+  describe('Testing getAppliedProjects', () => {
     beforeAll(() => {
       injectMocks(userService, { userDao });
     });
