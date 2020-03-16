@@ -22,19 +22,21 @@ module.exports = {
    * Sends an email.
    *
    * @param {string} to - email's recipient.
+   * @param {string} from - email's sender.
    * @param {string} subject - email's subject.
    * @param {number} text <= TODO : what is this?
    * @param {object} html - email's html content.
    * @returns
    */
-  async sendMail({ to, subject, text, html }) {
+  async sendMail({ to, from = config.email.from, subject, text, html }) {
     logger.info(`[MailService] :: Sending email to: ${to} subject: ${subject}`);
     validateRequiredParams({
       method: 'sendMail',
-      params: { to, subject, html }
+      params: { to, from, subject, html }
     });
     const info = await this.emailClient.sendMail({
       to,
+      from,
       subject,
       text,
       html

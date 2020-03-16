@@ -23,7 +23,7 @@ const daoService = require('./services/daoService');
 
 const projectStatusValidators = require('./services/helpers/projectStatusValidators/validators');
 const cronjobService = require('./services/cronjob/cronjobService');
-const { createEmailClient } = require('./services/helpers/emailClient');
+const emailClient = require('./services/helpers/emailClient');
 
 const milestoneBudgetStatusDao = require('./dao/milestoneBudgetStatusDao');
 const projectDao = require('./dao/projectDao');
@@ -64,7 +64,7 @@ module.exports = fastify => {
   // Configure the mail service.
   function configureMailService(service) {
     const dependencies = {
-      emailClient: createEmailClient()
+      emailClient
     };
 
     injectDependencies(service, dependencies);
