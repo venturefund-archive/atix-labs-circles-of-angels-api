@@ -144,8 +144,8 @@ module.exports = {
     await accounts[0].sendTransaction(tx);
 
     const profile = `${firstName} ${lastName}`;
-    const walletWithProvider = wallet.connect(ethers.provider);
-    await coa.createMember(profile, walletWithProvider);
+    // using migrateMember instead of createMember for now
+    await coa.migrateMember(profile, address);
 
     const savedUser = await this.userDao.createUser(user);
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
