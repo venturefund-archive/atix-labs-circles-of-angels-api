@@ -667,7 +667,7 @@ module.exports = {
       funders
     };
 
-    const agreementJson = JSON.stringify(agreement, undefined, 2);
+    const agreementJson = JSON.stringify(agreement, undefined);
     return agreementJson;
   },
 
@@ -1021,11 +1021,12 @@ module.exports = {
    *
    * @returns {Promise<object[]>} list of updated projects
    */
-  async transitionConsensusProjects() {
+  async transitionConsensusProjects(projectId) {
     logger.info(
       '[ProjectService] :: Entering transitionConsensusProjects method'
     );
     const projects = await this.projectDao.findAllByProps({
+      id: projectId,
       status: projectStatuses.CONSENSUS
     });
 
@@ -1062,12 +1063,13 @@ module.exports = {
    *
    * @returns {Promise<object[]>} list of updated projects
    */
-  async transitionFundingProjects() {
+  async transitionFundingProjects(projectId) {
     logger.info(
       '[ProjectService] :: Entering transitionFundingProjects method'
     );
     const projects = await this.projectDao.findAllByProps(
       {
+        id: projectId,
         status: projectStatuses.FUNDING
       },
       { funders: true }
@@ -1105,6 +1107,11 @@ module.exports = {
           });
         } else if (newStatus === projectStatuses.EXECUTING) {
           const agreement = await this.generateProjectAgreement(project.id);
+          logger.info(
+            `[ProjectService] :: Saving agreement for project ${project.id}`
+          );
+          await this.updateProject(project.id, { agreementJson: agreement });
+
           logger.info(
             `[ProjectService] :: Sending project ${project.id} to blockchain`
           );

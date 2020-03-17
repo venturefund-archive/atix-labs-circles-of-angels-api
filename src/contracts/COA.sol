@@ -45,6 +45,20 @@ contract COA is Ownable {
         members[msg.sender] = member;
     }
 
+    /**
+    * @dev Migrates an old member in COA.
+    * @param _profile - string of the member's profile.
+    * @param _existingAddress - address of the old member
+    */
+    function migrateMember(string memory _profile, address _existingAddress) public onlyOwner {
+            // role: Role.Activist,
+        Member memory member = Member({
+            profile: _profile
+        });
+        members[_existingAddress] = member;
+    }
+
+
     // the agreement hash can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
     // we could strip the first two bytes but for now it seems unnecessary
     /**

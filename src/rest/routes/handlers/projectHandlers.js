@@ -316,5 +316,19 @@ module.exports = {
     const userId = request.user.id;
     const response = await projectService.isCandidate({ projectId, userId });
     reply.status(200).send(response);
+  },
+
+  setProjectAsExecuting: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectService.transitionFundingProjects(projectId);
+    reply.status(200).send(response);
+  },
+
+  setProjectAsFunding: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectService.transitionConsensusProjects(
+      projectId
+    );
+    reply.status(200).send(response);
   }
 };
