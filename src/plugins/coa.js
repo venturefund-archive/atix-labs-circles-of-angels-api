@@ -34,6 +34,11 @@ module.exports = class COA {
     await connected.createMember(profile);
   }
 
+  async migrateMember(profile, address) {
+    const coa = await this.getCOA();
+    await coa.migrateMember(profile, address);
+  }
+
   async createProject(id, name, agreement) {
     const coa = await this.getCOA();
     await coa.createProject(id, name, agreement);
