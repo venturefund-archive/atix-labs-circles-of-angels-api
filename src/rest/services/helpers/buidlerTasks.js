@@ -1,5 +1,5 @@
 const { readArtifact } = require('@nomiclabs/buidler/plugins');
-const { ContractFactory, Wallet } = require('ethers');
+const { ContractFactory, Wallet, utils } = require('ethers');
 
 const { sha3 } = require('../../util/hash');
 const { proposalTypeEnum, voteEnum } = require('../../util/constants');
@@ -52,7 +52,15 @@ task('create-member', 'Create COA member')
     const wallet = Wallet.createRandom();
     const { address } = wallet;
     const memberProfile = profile || 'Member created by buidler';
-    await coa.createMember(memberProfile);
+    const accounts = await env.ethers.signers();
+    const tx = {
+      to: address,
+      value: utils.parseEther('0.001')
+    };
+    await accounts[0].sendTransaction(tx);
+    const walletWithProvider = wallet.connect(env.ethers.provider);
+    const coaWithSigner = await coa.connect(walletWithProvider);
+    await coaWithSigner.createMember(memberProfile);
     console.log('New member address:', address);
     return address;
   });
@@ -159,4 +167,81 @@ task('process-proposal', 'Process a proposal')
     const member = await getSigner(env, signer);
     const dao = await getDAOContract(env, daoaddress, member);
     await dao.processProposal(proposal);
+  });
+
+task('migrate-members', 'Migrate existing users to current contract').setAction(
+  async (_args, env) => {
+    const owner = await getSigner(env);
+    const coa = await getCOAContract(env);
+    if (coa === undefined) {
+      console.error('COA contract not deployed');
+      return;
+    }
+
+    // this array can be used to migrate the members
+    const users = [];
+
+    await Promise.all(
+      users.map(async ({ profile, address }) => {
+        await coa.migrateMember(profile, address);
+        const tx = {
+          to: address,
+          value: utils.parseEther('0.001')
+        };
+        await owner.sendTransaction(tx);
+        console.log(`${profile} - ${address} successfully migrated.`);
+      })
+    );
+    console.log(`Finished migration for ${users.length} users.`);
+  }
+);
+
+task('migrate-member', 'Migrate existing user to current contract')
+  .addParam('profile', 'Member profile')
+  .addParam('address', 'Member address')
+  .addOptionalParam('notransfer', 'Transfer 0.001 eth', false, types.boolean)
+  .addOptionalParam('onlytransfer', 'Transfer 0.001 eth', false, types.boolean)
+  .setAction(async ({ profile, address, notransfer, onlytransfer }, env) => {
+    const owner = await getSigner(env);
+    const coa = await getCOAContract(env);
+    if (coa === undefined) {
+      console.error('COA contract not deployed');
+      return;
+    }
+    if (!onlytransfer) {
+      await coa.migrateMember(profile, address);
+      console.log(`${profile} - ${address} successfully migrated.`);
+    }
+    if (!notransfer) {
+      const value = utils.parseEther('0.001');
+      const tx = {
+        to: address,
+        value
+      };
+      await owner.sendTransaction(tx);
+      console.log(`Transferred ${value} Wei to ${address}`);
+    }
+  });
+
+task('check-balance')
+  .addOptionalParam('address')
+  .setAction(async ({ address }, env) => {
+    const coa = await getCOAContract(env);
+    if (coa === undefined) {
+      console.error('COA contract not deployed');
+      return;
+    }
+    // this array could be used to check for several addresses
+    const addresses = [];
+    if (address) {
+      console.log(`${address}: ${await web3.eth.getBalance(address)}`);
+    } else {
+      await Promise.all(
+        addresses.map(async userAddress => {
+          console.log(
+            `${userAddress}: ${await web3.eth.getBalance(userAddress)}`
+          );
+        })
+      );
+    }
   });
