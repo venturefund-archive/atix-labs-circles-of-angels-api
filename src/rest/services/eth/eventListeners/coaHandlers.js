@@ -21,6 +21,11 @@ module.exports = {
       address
     });
 
+    const project = await projectService.getProjectById(projectId);
+    await projectService.notifyProjectStatusChange(
+      project,
+      projectStatuses.EXECUTING
+    );
     const milestones = await milestoneService.getAllMilestonesByProject(
       projectId
     );
