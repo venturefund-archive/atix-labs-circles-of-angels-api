@@ -24,6 +24,7 @@
     "@nomiclabs/buidler-truffle5": "1.1.2",
     "@nomiclabs/buidler-web3": "1.1.2",
     "@openzeppelin/contracts": "2.3.0",
+    "@sendgrid/mail": "6.5.4",
     "@truffle/hdwallet-provider": "1.0.29",
     "bcrypt": "3.0.5",
     "blueimp-md5": "2.12.0",
