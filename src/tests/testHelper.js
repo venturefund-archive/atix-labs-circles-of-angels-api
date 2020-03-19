@@ -33,9 +33,7 @@ const {
   userRoles
 } = require('../rest/util/constants');
 
-exports.buildGenericUserWithEmail = email => {
-  return genericUser(email);
-};
+exports.buildGenericUserWithEmail = email => genericUser(email);
 
 exports.buildUserOracle = id => {
   const user = JSON.parse(JSON.stringify(userOracle));
