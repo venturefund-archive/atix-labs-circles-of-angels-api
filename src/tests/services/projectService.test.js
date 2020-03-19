@@ -97,6 +97,11 @@ const anotherSupporterUser = {
   address: '0x03333333'
 };
 
+const curatorUser = {
+  id: 4,
+  role: userRoles.PROJECT_CURATOR
+};
+
 const pendingProject = {
   id: 3,
   projectName,
@@ -300,6 +305,10 @@ const transferService = {
       return verifiedTransfers;
     }
   }
+};
+
+const mailService = {
+  sendProjectStatusChangeMail: jest.fn()
 };
 
 describe('Project Service Test', () => {
@@ -1194,17 +1203,36 @@ describe('Project Service Test', () => {
     beforeAll(() => {
       restoreProjectService();
       injectMocks(projectService, {
-        projectDao
+        projectDao,
+        notifyProjectStatusChange: jest.fn()
       });
     });
-    it('should update a project if the status transition is valid', async () => {
-      const response = await projectService.updateProjectStatus(
-        entrepreneurUser,
-        draftProject.id,
-        projectStatuses.TO_REVIEW
-      );
-      expect(response).toEqual({ projectId: draftProject.id });
-    });
+    it(
+      'should update a project if the status transition is valid ' +
+        'and not call notifyProjectStatusChange',
+      async () => {
+        const response = await projectService.updateProjectStatus(
+          entrepreneurUser,
+          draftProject.id,
+          projectStatuses.TO_REVIEW
+        );
+        expect(projectService.notifyProjectStatusChange).not.toHaveBeenCalled();
+        expect(response).toEqual({ projectId: draftProject.id });
+      }
+    );
+    it(
+      'should update a project if the status transition is valid ' +
+        'and call notifyProjectStatusChange',
+      async () => {
+        const response = await projectService.updateProjectStatus(
+          curatorUser,
+          pendingProject.id,
+          projectStatuses.PUBLISHED
+        );
+        expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
+        expect(response).toEqual({ projectId: pendingProject.id });
+      }
+    );
     it('should throw an error if required params are missing', async () => {
       await expect(
         projectService.updateProjectStatus(
@@ -1310,43 +1338,57 @@ describe('Project Service Test', () => {
             }
           }
         ),
-        hasTimePassed: jest.fn()
+        hasTimePassed: jest.fn(),
+        notifyProjectStatusChange: jest.fn()
       });
     });
 
-    it('should change the project status to funding', async () => {
-      dbProject.push(consensusToFunding);
-      projectService.hasTimePassed.mockReturnValueOnce(true);
-      const response = await projectService.transitionConsensusProjects();
-      expect(response).toHaveLength(1);
-      expect(response).toEqual([
-        { projectId: consensusToFunding.id, newStatus: projectStatuses.FUNDING }
-      ]);
-      const updated = dbProject.find(
-        project => project.id === consensusToFunding.id
-      );
-      expect(updated.status).toEqual(projectStatuses.FUNDING);
-    });
+    it(
+      'should change the project status to funding and ' +
+        'call notifyProjectStatusChange once',
+      async () => {
+        dbProject.push(consensusToFunding);
+        projectService.hasTimePassed.mockReturnValueOnce(true);
+        const response = await projectService.transitionConsensusProjects();
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([
+          {
+            projectId: consensusToFunding.id,
+            newStatus: projectStatuses.FUNDING
+          }
+        ]);
+        const updated = dbProject.find(
+          project => project.id === consensusToFunding.id
+        );
+        expect(updated.status).toEqual(projectStatuses.FUNDING);
+        expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
+      }
+    );
 
-    it('should change the project status to rejected if the validator fails', async () => {
-      dbProject.push(consensusToFunding);
-      projectService.hasTimePassed.mockReturnValueOnce(true);
-      validators.fromConsensus.mockImplementationOnce(({ project }) => {
-        throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
-      });
-      const response = await projectService.transitionConsensusProjects();
-      expect(response).toHaveLength(1);
-      expect(response).toEqual([
-        {
-          projectId: consensusToFunding.id,
-          newStatus: projectStatuses.REJECTED
-        }
-      ]);
-      const updated = dbProject.find(
-        project => project.id === consensusToFunding.id
-      );
-      expect(updated.status).toEqual(projectStatuses.REJECTED);
-    });
+    it(
+      'should change the project status to rejected if the validator fails ' +
+        'call notifyProjectStatusChange once',
+      async () => {
+        dbProject.push(consensusToFunding);
+        projectService.hasTimePassed.mockReturnValueOnce(true);
+        validators.fromConsensus.mockImplementationOnce(({ project }) => {
+          throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
+        });
+        const response = await projectService.transitionConsensusProjects();
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([
+          {
+            projectId: consensusToFunding.id,
+            newStatus: projectStatuses.REJECTED
+          }
+        ]);
+        const updated = dbProject.find(
+          project => project.id === consensusToFunding.id
+        );
+        expect(updated.status).toEqual(projectStatuses.REJECTED);
+        expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
+      }
+    );
 
     it('should not update the project if the consensus time has not passed', async () => {
       dbProject.push(consensusToFunding);
@@ -1357,11 +1399,13 @@ describe('Project Service Test', () => {
         project => project.id === consensusToFunding.id
       );
       expect(notUpdated.status).toEqual(projectStatuses.CONSENSUS);
+      expect(projectService.notifyProjectStatusChange).not.toHaveBeenCalled();
     });
 
     it(
       'should return an array with the projects that were ' +
-        'changed to funding and to rejected, and omit the ones not ready',
+        'changed to funding and to rejected, omit the ones not ready, ' +
+        ' and call notifyProjectStatusChange for each changed',
       async () => {
         dbProject.push(
           consensusToFunding,
@@ -1388,6 +1432,8 @@ describe('Project Service Test', () => {
             newStatus: projectStatuses.FUNDING
           }
         ]);
+
+        expect(projectService.notifyProjectStatusChange).toBeCalledTimes(2);
       }
     );
   });
@@ -1436,7 +1482,8 @@ describe('Project Service Test', () => {
         hasTimePassed: jest.fn(),
         getNextValidStatus: jest.fn(),
         removeFundersWithNoTransfersFromProject: jest.fn(),
-        generateProjectAgreement: jest.fn(() => 'agreementJson')
+        generateProjectAgreement: jest.fn(() => 'agreementJson'),
+        notifyProjectStatusChange: jest.fn()
       });
     });
 
@@ -1458,12 +1505,13 @@ describe('Project Service Test', () => {
           }
         ]);
         expect((await coaContract.getProjectsLength()).toNumber()).toBe(1);
+        expect(projectService.notifyProjectStatusChange).not.toHaveBeenCalled();
       }
     );
 
     it(
       'should change the project status to consensus ' +
-        'if the validator fails',
+        'if the validator fails and call notifyProjectStatusChange',
       async () => {
         dbProject.push(fundingToExecuting);
         projectService.hasTimePassed.mockReturnValueOnce(true);
@@ -1482,6 +1530,7 @@ describe('Project Service Test', () => {
           project => project.id === fundingToExecuting.id
         );
         expect(updated.status).toEqual(projectStatuses.CONSENSUS);
+        expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
       }
     );
 
@@ -1494,11 +1543,13 @@ describe('Project Service Test', () => {
         project => project.id === fundingToExecuting.id
       );
       expect(updated.status).toEqual(projectStatuses.FUNDING);
+      expect(projectService.notifyProjectStatusChange).not.toHaveBeenCalled();
     });
 
     it(
       'should return an array with the projects that were ' +
-        'changed to funding and to rejected, and omit the ones not ready',
+        'changed to consensus and to executing, omit the ones not ready ' +
+        'and call notifyProjectStatusChange for each change to consensus',
       async () => {
         dbProject.push(
           fundingToExecuting,
@@ -1525,6 +1576,7 @@ describe('Project Service Test', () => {
             newStatus: projectStatuses.CONSENSUS
           }
         ]);
+        expect(projectService.notifyProjectStatusChange).toBeCalledTimes(1);
       }
     );
   });
@@ -1929,5 +1981,85 @@ describe('Project Service Test', () => {
         errors.common.CantFindModelWithId('project', 0)
       );
     });
+  });
+
+  describe('Notify project status change', () => {
+    const projectOwner = { id: 1, email: 'owner@coa.com' };
+    let projectFollowers = [];
+    let projectFunders = [];
+    let projectOracles = [];
+
+    beforeEach(() => {
+      projectFollowers = [];
+      projectFunders = [];
+      projectOracles = [];
+    });
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        mailService,
+        getProjectUsers: () => ({
+          owner: projectOwner,
+          followers: projectFollowers,
+          funders: projectFunders,
+          oracles: projectOracles
+        })
+      });
+    });
+
+    it('should call mailService sendProjectStatusChangeMail with the owner email', async () => {
+      await projectService.notifyProjectStatusChange(
+        consensusProject,
+        projectStatuses.FUNDING
+      );
+      expect(mailService.sendProjectStatusChangeMail).toBeCalledWith({
+        to: projectOwner.email,
+        bodyContent: expect.anything()
+      });
+    });
+
+    it(
+      'should call mailService sendProjectStatusChangeMail for the owner ' +
+        'and once for each follower',
+      async () => {
+        projectFollowers = [
+          {
+            id: 2,
+            email: 'follower@test.com'
+          },
+          { id: 3, email: 'follower2@test.com' }
+        ];
+        await projectService.notifyProjectStatusChange(
+          consensusProject,
+          projectStatuses.FUNDING
+        );
+        expect(mailService.sendProjectStatusChangeMail).toBeCalledTimes(3);
+      }
+    );
+    it(
+      'should call mailService sendProjectStatusChangeMail for the owner ' +
+        'and once for each unique supporter',
+      async () => {
+        projectFunders = [
+          {
+            id: 2,
+            email: 'funder@test.com'
+          },
+          { id: 3, email: 'supporter@test.com' }
+        ];
+        projectOracles = [
+          { id: 3, email: 'supporter@test.com' },
+          {
+            id: 4,
+            email: 'oracle@test.com'
+          }
+        ];
+        await projectService.notifyProjectStatusChange(
+          consensusProject,
+          projectStatuses.FUNDING
+        );
+        expect(mailService.sendProjectStatusChangeMail).toBeCalledTimes(4);
+      }
+    );
   });
 });

@@ -562,15 +562,10 @@ module.exports = {
     logger.info(
       '[ProjectService] :: Entering notifyProjectStatusChange method'
     );
-
     const { id, projectName } = project;
-
     const { owner, followers, funders, oracles } = await this.getProjectUsers(
       id
     );
-
-    // CALL ALSO IN TRANSITION METHODS
-
     logger.info(
       '[ProjectService] :: Notifying project status change for project of id',
       id
@@ -598,7 +593,6 @@ module.exports = {
     });
 
     const supporters = unionBy(oracles, funders, 'id');
-
     supporters.forEach(async supporter => {
       await this.mailService.sendProjectStatusChangeMail({
         to: supporter.email,
