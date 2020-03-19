@@ -74,7 +74,7 @@ const milestonesFiltersProperties = {
       {
         type: 'string'
       }
-    ],
+    ]
   }
 };
 
@@ -201,15 +201,19 @@ const milestoneRoutes = {
   },
 
   transferredMilestone: {
-    method: 'post',
+    method: 'put',
     path: `${basePath}/:milestoneId/transferred`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
+        tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
         description: 'Milestone transferred',
         summary: 'Milestone transferred',
         params: milestoneIdParam,
+        type: 'multipart/form-data',
+        raw: {
+          files: { type: 'object' }
+        },
         response: {
           ...successResponse(successWithMilestoneIdResponse),
           ...clientErrorResponse(),

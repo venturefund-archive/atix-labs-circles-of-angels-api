@@ -137,6 +137,7 @@ CREATE TABLE public.milestone (
     description text,
     category text,
     "claimStatus" ClaimStatus DEFAULT 'pending',
+    "claimReceiptPath" varchar(200) NULL,
     PRIMARY KEY (id),
     FOREIGN KEY ("projectId") REFERENCES public.project (id) ON DELETE CASCADE
 );

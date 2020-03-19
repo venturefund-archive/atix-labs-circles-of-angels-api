@@ -37,7 +37,8 @@ const TYPES = {
   claims: 'claims',
   transferClaims: 'transferClaims',
   agreementFile: 'agreementFile',
-  proposalFile: 'proposalFile'
+  proposalFile: 'proposalFile',
+  milestoneClaim: 'milestoneClaim'
 };
 
 const JPEG = '.jpeg';
@@ -71,6 +72,9 @@ const getProposalPath = () =>
 const getAgreementPath = () =>
   `${configs.fileServer.filePath}/projects/agreement/`;
 
+const getMilestoneClaimPath = () =>
+  `${configs.fileServer.filePath}/projects/milestones/claim/`;
+
 const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
   new Promise((resolve, reject) => {
     sharp(image.data)
@@ -93,6 +97,7 @@ const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
 const commonSaver = async (file, savePath) => file.mv(savePath);
 
 const fileSaver = {
+  // TODO: import type validators and indicate max size for each one
   [TYPES.milestones]: {
     save: commonSaver,
     getBasePath: getMilestonesPath,
@@ -137,6 +142,11 @@ const fileSaver = {
     save: commonSaver,
     getBasePath: getProposalPath,
     defaultFileExtension: PDF
+  },
+  [TYPES.milestoneClaim]: {
+    save: savePhotoJpgFormat,
+    getBasePath: getMilestoneClaimPath,
+    defaultFileExtension: JPEG
   }
 };
 
@@ -158,6 +168,7 @@ const saveFile = async (type, file) => {
 };
 
 const validateAndSaveFile = async (type, file) => {
+  // TODO: should get fileSaver[type] with validator for type and max size
   validateMtype(type, file);
   validatePhotoSize(file);
   logger.info(`[Files] :: Saving file of type '${type}'`);

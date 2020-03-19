@@ -61,11 +61,13 @@ module.exports = {
 
   transferredMilestone: () => async (request, reply) => {
     const { milestoneId } = request.params;
+    const { claimReceiptFile } = request.raw.files || {};
     const userId = request.user.id;
 
     const response = await milestoneService.transferredMilestone({
       milestoneId,
-      userId
+      userId,
+      claimReceiptFile
     });
 
     reply.status(200).send(response);

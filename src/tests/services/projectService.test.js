@@ -1,6 +1,5 @@
 const { run, coa } = require('@nomiclabs/buidler');
 const COAError = require('../../rest/errors/COAError');
-const files = require('../../rest/util/files');
 const { sha3 } = require('../../rest/util/hash');
 const {
   userRoles,
@@ -15,6 +14,7 @@ const validators = require('../../rest/services/helpers/projectStatusValidators/
 
 const { injectMocks } = require('../../rest/util/injection');
 
+const files = require('../../rest/util/files');
 const originalProjectService = require('../../rest/services/projectService');
 
 let projectService = Object.assign({}, originalProjectService);
