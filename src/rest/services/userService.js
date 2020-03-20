@@ -150,16 +150,12 @@ module.exports = {
     const savedUser = await this.userDao.createUser(user);
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
 
-    // TODO: FIX mailService
-    // await this.mailService.sendMail({
-    //   from: '"Circles of Angels Support" <coa@support.com>',
-    //   to: email,
-    //   subject: 'Circles of Angels - Welcome',
-    //   text: 'Welcome to Circles of Angels!',
-    //   html: `<p>Your Circles Of Angels account was created successfully! </br></p>
-    //   <p>We are reviewing your account details. You will be notified once we are done. </br></p>
-    //   <p>Thank you for your support. </br></p>`
-    // });
+    await this.mailService.sendSignUpMail({
+      to: email,
+      bodyContent: {
+        userName: firstName
+      }
+    });
 
     return savedUser;
   },
