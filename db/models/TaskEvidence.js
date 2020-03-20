@@ -19,6 +19,7 @@ module.exports = {
     task: {
       columnName: 'taskId',
       model: 'task'
-    }
+    },
+    txHash: { type: 'string', required: false, allowNull: true }
   }
 };

@@ -86,6 +86,7 @@ CREATE TABLE public.project (
     "consensusSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default
     "fundingSeconds" int4 DEFAULT 864000, -- 10 days. TODO: change this default
     "lastUpdatedStatusAt" timestamp with time zone DEFAULT NOW(),
+    "txHash" varchar(80) DEFAULT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY ("ownerId") REFERENCES public.user (id)
 );
@@ -167,6 +168,7 @@ CREATE TABLE public.task_evidence (
 	"proof" text NOT NULL,
 	"approved" boolean DEFAULT NULL,
 	"taskId" int4 NOT NULL,
+    "txHash" varchar(80) DEFAULT NULL,
 	CONSTRAINT task_evidence_pkey PRIMARY KEY ("id"),
 	CONSTRAINT "task_evidence_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES task(id)
 );

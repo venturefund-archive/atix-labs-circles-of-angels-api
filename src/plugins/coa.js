@@ -41,7 +41,8 @@ module.exports = class COA {
 
   async createProject(id, name, agreement) {
     const coa = await this.getCOA();
-    await coa.createProject(id, name, agreement);
+    const tx = await coa.createProject(id, name, agreement);
+    return tx;
   }
 
   async createDAO(name) {
