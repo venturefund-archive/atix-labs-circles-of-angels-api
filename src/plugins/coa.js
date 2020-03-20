@@ -41,7 +41,8 @@ module.exports = class COA {
 
   async createProject(id, name, agreement) {
     const coa = await this.getCOA();
-    await coa.createProject(id, name, agreement);
+    const tx = await coa.createProject(id, name, agreement);
+    return tx;
   }
 
   async createDAO(name) {
@@ -119,12 +120,12 @@ module.exports = class COA {
   }
 
   async getContract(name, signer) {
-    signer = await this.getSigner(signer);
+    const _signer = await this.getSigner(signer);
     const { abi, bytecode } = await readArtifact(
       this.env.config.paths.artifacts,
       name
     );
-    return new ContractFactory(abi, bytecode, signer);
+    return new ContractFactory(abi, bytecode, _signer);
   }
 
   async getContractAt(name, address, signer) {

@@ -12,18 +12,21 @@ const { run, coa } = require('@nomiclabs/buidler');
 const { injectMocks } = require('../../rest/util/injection');
 const { sha3 } = require('../../rest/util/hash');
 const COAError = require('../../rest/errors/COAError');
+const validateMtype = require('../../rest/services/helpers/validateMtype');
+const validatePhotoSize = require('../../rest/services/helpers/validatePhotoSize');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
+const {
+  projectStatuses,
+  userRoles,
+  claimMilestoneStatus
+} = require('../../rest/util/constants');
+const files = require('../../rest/util/files');
 const originalMilestoneService = require('../../rest/services/milestoneService');
 
 let milestoneService = Object.assign({}, originalMilestoneService);
 const restoreMilestoneService = () => {
   milestoneService = Object.assign({}, originalMilestoneService);
 };
-const {
-  projectStatuses,
-  userRoles,
-  claimMilestoneStatus
-} = require('../../rest/util/constants');
 
 const TEST_TIMEOUT_MS = 10000;
 const deployContracts = async () => {
@@ -53,6 +56,8 @@ describe('Testing milestoneService', () => {
     description: 'NewDescription',
     category: 'NewCategory'
   };
+
+  const imgFile = { name: 'file.jpeg', size: 12345, md5: 'a1b2cd12' };
 
   // USERS
   const userEntrepreneur = {
@@ -252,7 +257,19 @@ describe('Testing milestoneService', () => {
     createActivities: () => {}
   };
 
+  beforeAll(() => {
+    files.saveFile = jest.fn();
+    files.validateAndSaveFile = jest.fn((type, fileToSave) => {
+      validateMtype(type, fileToSave);
+      validatePhotoSize(fileToSave);
+      return '/path/to/file';
+    });
+  });
+  // afterAll(() => restoreFiles());
   beforeEach(() => resetDb());
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
   describe('Testing createMilestone', () => {
     beforeAll(() => {
@@ -914,7 +931,8 @@ describe('Testing milestoneService', () => {
     it('should claim the milestone and return its id', async () => {
       const response = await milestoneService.transferredMilestone({
         userId: userBankoperator.id,
-        milestoneId: claimedMilestone.id
+        milestoneId: claimedMilestone.id,
+        claimReceiptFile: imgFile
       });
       expect(response).toEqual({ milestoneId: claimedMilestone.id });
     });
@@ -947,7 +965,8 @@ describe('Testing milestoneService', () => {
       await expect(
         milestoneService.transferredMilestone({
           userId: userEntrepreneur.id,
-          milestoneId: claimedMilestone.id
+          milestoneId: claimedMilestone.id,
+          claimReceiptFile: imgFile
         })
       ).rejects.toThrow(errors.common.UserNotAuthorized(userEntrepreneur.id));
     });
@@ -966,7 +985,8 @@ describe('Testing milestoneService', () => {
       await expect(
         milestoneService.transferredMilestone({
           userId: userBankoperator.id,
-          milestoneId: 0
+          milestoneId: 0,
+          claimReceiptFile: imgFile
         })
       ).rejects.toThrow(errors.common.CantFindModelWithId('milestone', 0));
     });
@@ -978,7 +998,8 @@ describe('Testing milestoneService', () => {
       await expect(
         milestoneService.transferredMilestone({
           userId: userBankoperator.id,
-          milestoneId: updatableMilestone.id
+          milestoneId: updatableMilestone.id,
+          claimReceiptFile: imgFile
         })
       ).rejects.toThrow(
         errors.common.InvalidStatus('project', projectStatuses.NEW)
@@ -991,7 +1012,8 @@ describe('Testing milestoneService', () => {
       await expect(
         milestoneService.transferredMilestone({
           userId: userBankoperator.id,
-          milestoneId: pendingClaimMilestone.id
+          milestoneId: pendingClaimMilestone.id,
+          claimReceiptFile: imgFile
         })
       ).rejects.toThrow(
         errors.common.InvalidStatus('milestone', claimMilestoneStatus.PENDING)

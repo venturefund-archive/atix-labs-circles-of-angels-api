@@ -48,6 +48,7 @@ const docValidator = file => {
   }
 };
 
+// TODO: these validators for each type should be indicated in files.fileSaver object
 const mtypesValidator = {
   coverPhoto: imgValidator,
   thumbnail: imgValidator,
@@ -57,7 +58,8 @@ const mtypesValidator = {
   experiencePhoto: imgValidator,
   transferReceipt: imgValidator,
   agreementFile: docValidator,
-  proposalFile: docValidator
+  proposalFile: docValidator,
+  milestoneClaim: imgValidator
 };
 
 /**

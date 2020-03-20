@@ -16,7 +16,7 @@ module.exports = {
     statusCode: 401
   }),
   InvalidStatus: (model, status) => ({
-    message: `Can't make this action when the ${model} in ${status} status`,
+    message: `Can't make this action when the ${model} is in ${status} status`,
     statusCode: 400
   })
 };
