@@ -324,8 +324,9 @@ module.exports = {
     // const claim = sha3(projectId, transferId);
     // const proof = utils.id(file.name);
 
-    // // TODO: uncomment this when contracts are deployed
-    // // await coa.addClaim(projectId, claim, proof, approved);
+    // TODO: uncomment this when contracts are deployed
+    // const tx = await coa.addClaim(projectId, claim, proof, approved);
+    // const { hash } = tx; // save in db
 
     const status = approved ? VERIFIED : CANCELLED;
     const fields = { id: transferId, status };
