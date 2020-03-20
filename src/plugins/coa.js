@@ -119,12 +119,12 @@ module.exports = class COA {
   }
 
   async getContract(name, signer) {
-    signer = await this.getSigner(signer);
+    const _signer = await this.getSigner(signer);
     const { abi, bytecode } = await readArtifact(
       this.env.config.paths.artifacts,
       name
     );
-    return new ContractFactory(abi, bytecode, signer);
+    return new ContractFactory(abi, bytecode, _signer);
   }
 
   async getContractAt(name, address, signer) {
