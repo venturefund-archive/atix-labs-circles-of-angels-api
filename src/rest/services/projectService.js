@@ -8,7 +8,7 @@
 
 const config = require('config');
 const path = require('path');
-const { uniqWith } = require('lodash');
+const { uniqWith, unionBy } = require('lodash');
 const { utils } = require('ethers');
 const { coa } = require('@nomiclabs/buidler');
 const { sha3 } = require('../util/hash');
@@ -30,6 +30,7 @@ const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
 const validateOwnership = require('./helpers/validateOwnership');
 const validateProjectStatusChange = require('./helpers/validateProjectStatusChange');
+const projectStatusChangeEmailHelper = require('./helpers/mail/projectStatusChange');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -531,7 +532,77 @@ module.exports = {
     const updatedProjectId = await this.updateProject(projectId, {
       status: newStatus
     });
+
+    const skipNotificationStatus = [
+      projectStatuses.NEW,
+      projectStatuses.TO_REVIEW,
+      projectStatuses.DELETED
+    ];
+    // send email
+    try {
+      if (!skipNotificationStatus.includes(newStatus)) {
+        await this.notifyProjectStatusChange(project, newStatus);
+      }
+    } catch (error) {
+      logger.error(
+        '[ProjectService] :: An error occurred sending the project status change email',
+        error
+      );
+    }
+
     return { projectId: updatedProjectId };
+  },
+
+  /**
+   * Sends an email to the owner and users that follow or have applied to the project
+   * @param {{ id: number, projectName: string }} project project's data
+   * @param {string} newStatus new status
+   */
+  async notifyProjectStatusChange(project, newStatus) {
+    logger.info(
+      '[ProjectService] :: Entering notifyProjectStatusChange method'
+    );
+    const { id, projectName } = project;
+    const { owner, followers, funders, oracles } = await this.getProjectUsers(
+      id
+    );
+    logger.info(
+      '[ProjectService] :: Notifying project status change for project of id',
+      id
+    );
+    if (owner) {
+      await this.mailService.sendProjectStatusChangeMail({
+        to: owner.email,
+        bodyContent: projectStatusChangeEmailHelper.getBodyContent(
+          { id, projectName },
+          newStatus,
+          'owner'
+        )
+      });
+    }
+
+    followers.forEach(async follower => {
+      await this.mailService.sendProjectStatusChangeMail({
+        to: follower.email,
+        bodyContent: projectStatusChangeEmailHelper.getBodyContent(
+          { id, projectName },
+          newStatus,
+          'follower'
+        )
+      });
+    });
+
+    const supporters = unionBy(oracles, funders, 'id');
+    supporters.forEach(async supporter => {
+      await this.mailService.sendProjectStatusChangeMail({
+        to: supporter.email,
+        bodyContent: projectStatusChangeEmailHelper.getBodyContent(
+          { id, projectName },
+          newStatus,
+          'supporter'
+        )
+      });
+    });
   },
 
   async getProject(id) {
@@ -1051,6 +1122,7 @@ module.exports = {
         const updatedProjectId = await this.updateProject(project.id, {
           status: newStatus
         });
+        await this.notifyProjectStatusChange(project, newStatus);
         return { projectId: updatedProjectId, newStatus };
       })
     );
@@ -1105,6 +1177,7 @@ module.exports = {
           await this.updateProject(project.id, {
             status: newStatus
           });
+          await this.notifyProjectStatusChange(project, newStatus);
         } else if (newStatus === projectStatuses.EXECUTING) {
           const agreement = await this.generateProjectAgreement(project.id);
           logger.info(
