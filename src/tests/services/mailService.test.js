@@ -23,6 +23,7 @@ const invalidEmail = 'invalid@notfound.com';
 describe('Testing mailService', () => {
   const email = {
     to: 'user@test.com',
+    from: 'coa@support.com',
     subject: 'Hello from COA',
     text: 'Welcome to',
     html: '<b>COA</b>'
