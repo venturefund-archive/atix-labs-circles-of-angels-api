@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "lint": "eslint src/**/*.js",
+    "lint-fix": "eslint --fix src/**/*.js",
     "test": "export NODE_ENV=test && jest",
     "test:coverage": "npm test -- --coverage",
     "start": "export NODE_ENV=development && node index",
@@ -30,6 +31,7 @@
     "blueimp-md5": "2.12.0",
     "bunyan": "1.8.12",
     "bunyan-format": "0.2.1",
+    "commitizen": "4.0.3",
     "config": "3.1.0",
     "cron": "1.8.2",
     "dotenv": "8.2.0",
@@ -57,8 +59,11 @@
     "xlsx": "0.14.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "8.3.5",
+    "@commitlint/config-conventional": "8.3.4",
     "babel-eslint": "10.0.1",
     "chai": "4.2.0",
+    "commitlint": "8.3.5",
     "eslint": "5.14.1",
     "eslint-config-airbnb": "17.1.0",
     "eslint-config-prettier": "4.0.0",
@@ -69,8 +74,24 @@
     "eslint-plugin-promise": "4.0.1",
     "eslint-plugin-react": "7.12.4",
     "ganache-cli": "6.8.2",
+    "husky": "4.2.3",
     "jest": "24.1.0",
+    "lint-staged": "10.0.8",
     "prettier": "1.16.4",
     "solidity-coverage": "git+https://github.com/sc-forks/solidity-coverage.git#buidler-plugin"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "**/*.js": [
+      "./node_modules/.bin/eslint --fix"
+    ],
+    "**/*.md{,x}": [
+      "prettier --check"
+    ]
   }
 }
