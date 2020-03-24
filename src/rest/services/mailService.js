@@ -69,5 +69,27 @@ module.exports = {
       templateNames.SIGNUP
     );
     await this.sendMail({ to, subject, text, html });
+  },
+
+  async sendProjectStatusChangeMail({
+    to,
+    subject = 'Circles of Angels: A project has been updated',
+    text,
+    bodyContent
+  }) {
+    logger.info('[MailService] :: Sending project status change mail to:', to);
+    validateRequiredParams({
+      method: 'sendProjectStatusChangeMail',
+      params: { to, subject, bodyContent }
+    });
+
+    const html = await templateParser.completeTemplate(
+      {
+        ...bodyContent,
+        frontendUrl: config.frontendUrl
+      },
+      templateNames.PROJECT_STATUS_CHANGE
+    );
+    await this.sendMail({ to, subject, text, html });
   }
 };

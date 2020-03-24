@@ -50,7 +50,9 @@ describe('Testing mailService', () => {
     });
 
     it('should resolve and return the info', async () => {
-      await expect(mailService.sendMail(email)).resolves.toEqual(email);
+      await expect(mailService.sendMail(email)).resolves.toEqual(
+        expect.anything()
+      );
     });
 
     it('should throw an error if any required param is missing', async () => {
@@ -90,6 +92,35 @@ describe('Testing mailService', () => {
       await expect(
         mailService.sendSignUpMail({ text: 'optional' })
       ).rejects.toThrow(errors.common.RequiredParamsMissing('sendSignUpMail'));
+    });
+  });
+
+  describe('Test sendProjectStatusChangeMail method', () => {
+    beforeEach(() => {
+      injectMocks(mailService, {
+        sendMail: jest.fn()
+      });
+    });
+
+    it('should resolve and call completeTemplate and sendMail', async () => {
+      const bodyContent = { param: 'Email Param' };
+      await expect(
+        mailService.sendProjectStatusChangeMail({
+          ...email,
+          bodyContent
+        })
+      ).resolves.toBeUndefined();
+
+      expect(templateParser.completeTemplate).toHaveBeenCalled();
+      expect(mailService.sendMail).toHaveBeenCalled();
+    });
+
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        mailService.sendProjectStatusChangeMail({ text: 'optional' })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('sendProjectStatusChangeMail')
+      );
     });
   });
 });
