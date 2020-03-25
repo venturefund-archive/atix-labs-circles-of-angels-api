@@ -20,6 +20,7 @@ const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
+const txExplorerHelper = require('./helpers/txExplorerHelper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -461,7 +462,16 @@ module.exports = {
     });
 
     await checkExistence(this.activityDao, taskId, 'task');
-    return this.taskEvidenceDao.getEvidencesByTaskId(taskId);
+    const evidences = await this.taskEvidenceDao.getEvidencesByTaskId(taskId);
+    if (!evidences) return [];
+
+    const evidencesWithLink = evidences.map(evidence => ({
+      ...evidence,
+      txLink: evidence.txHash
+        ? txExplorerHelper.buildTxURL(evidence.txHash)
+        : undefined
+    }));
+    return evidencesWithLink;
   },
 
   /**
