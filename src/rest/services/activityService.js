@@ -89,6 +89,24 @@ module.exports = {
       taskParams,
       taskId
     );
+
+    if (taskParams.budget) {
+      const actualBudget = Number(task.budget);
+      const newBudget = Number(taskParams.budget);
+      const difference = newBudget - actualBudget;
+      if (difference !== 0) {
+        const newGoalAmount = Number(project.goalAmount) + difference;
+        logger.info(
+          `[ActivityService] :: Updating project ${
+            project.id
+          } goalAmount to ${newGoalAmount}`
+        );
+        await this.projectService.updateProject(project.id, {
+          goalAmount: newGoalAmount
+        });
+      }
+    }
+
     logger.info(`[ActivityService] :: Task of id ${updatedTask.id} updated`);
     return { taskId: updatedTask.id };
   },
@@ -151,6 +169,16 @@ module.exports = {
     const deletedTask = await this.activityDao.deleteActivity(taskId);
     logger.info(`[ActivityService] :: Task of id ${deletedTask.id} deleted`);
 
+    const taskBudget = Number(task.budget);
+    const newGoalAmount = Number(project.goalAmount) - taskBudget;
+    logger.info(
+      `[ActivityService] :: Updating project ${
+        project.id
+      } goalAmount to ${newGoalAmount}`
+    );
+    await this.projectService.updateProject(project.id, {
+      goalAmount: newGoalAmount
+    });
     // if all activities of a milestone are deleted,
     // should the milestone be deleted as well?
     return { taskId: deletedTask.id };
@@ -240,6 +268,17 @@ module.exports = {
     logger.info(
       `[ActivityService] :: New task with id ${createdTask.id} created`
     );
+
+    const taskBudget = Number(budget);
+    const newGoalAmount = Number(project.goalAmount) + taskBudget;
+    logger.info(
+      `[ActivityService] :: Updating project ${
+        project.id
+      } goalAmount to ${newGoalAmount}`
+    );
+    await this.projectService.updateProject(project.id, {
+      goalAmount: newGoalAmount
+    });
     return { taskId: createdTask.id };
   },
   /**
