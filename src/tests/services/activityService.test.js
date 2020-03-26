@@ -71,13 +71,15 @@ describe('Testing activityService', () => {
   const newProject = {
     id: 1,
     status: projectStatuses.NEW,
-    owner: userEntrepreneur.id
+    owner: userEntrepreneur.id,
+    goalAmount: 5000
   };
 
   const executingProject = {
     id: 2,
     status: projectStatuses.EXECUTING,
-    owner: userEntrepreneur.id
+    owner: userEntrepreneur.id,
+    goalAmount: 5000
   };
 
   // MILESTONES
@@ -212,6 +214,13 @@ describe('Testing activityService', () => {
 
   const projectService = {
     isOracleCandidate: jest.fn(),
+    updateProject: (projectId, params) => {
+      const found = dbProject.find(task => task.id === projectId);
+      if (!found) return;
+      const updated = { ...found, ...params };
+      dbProject[dbProject.indexOf(found)] = updated;
+      return updated;
+    },
     getProjectById: id => {
       const found = dbProject.find(project => project.id === id);
       if (!found)
@@ -234,7 +243,8 @@ describe('Testing activityService', () => {
     beforeAll(() => {
       injectMocks(activityService, {
         activityDao,
-        milestoneService
+        milestoneService,
+        projectService
       });
     });
 
@@ -260,6 +270,24 @@ describe('Testing activityService', () => {
       const updated = dbTask.find(task => task.id === response.taskId);
       expect(updated.description).toEqual(taskParams.description);
       expect(updated.category).toEqual(taskParams.category);
+    });
+
+    it('should update the task budget, the project goal amount and return the task id', async () => {
+      dbProject = [{ ...newProject, goalAmount: updatableTask.budget }];
+      const taskParams = {
+        budget: 1000
+      };
+      const response = await activityService.updateTask(updatableTask.id, {
+        userId: userEntrepreneur.id,
+        taskParams
+      });
+      expect(response).toEqual({ taskId: updatableTask.id });
+      const updatedTask = dbTask.find(task => task.id === response.taskId);
+      const updatedProject = dbProject.find(
+        project => project.id === newProject.id
+      );
+      expect(updatedTask.budget).toEqual(taskParams.budget);
+      expect(updatedProject.goalAmount).toEqual(taskParams.budget);
     });
 
     it('should throw an error if parameters are not valid', async () => {
@@ -304,7 +332,8 @@ describe('Testing activityService', () => {
     beforeAll(() => {
       injectMocks(activityService, {
         activityDao,
-        milestoneService
+        milestoneService,
+        projectService
       });
     });
 
@@ -317,15 +346,26 @@ describe('Testing activityService', () => {
 
     afterAll(() => restoreActivityService());
 
-    it('should delete the task and return its id', async () => {
-      const response = await activityService.deleteTask(
-        updatableTask.id,
-        userEntrepreneur.id
-      );
-      const updated = dbTask.find(task => task.id === response.taskId);
-      expect(response).toEqual({ taskId: updatableTask.id });
-      expect(updated).toEqual(undefined);
-    });
+    it(
+      'should delete the task, substract the budget from the project goal amount ' +
+        'and return the task id',
+      async () => {
+        dbProject = [{ ...newProject, goalAmount: 10000000 }];
+        const response = await activityService.deleteTask(
+          updatableTask.id,
+          userEntrepreneur.id
+        );
+        const updatedTask = dbTask.find(task => task.id === response.taskId);
+        const updatedProject = dbProject.find(
+          project => project.id === newProject.id
+        );
+        expect(response).toEqual({ taskId: updatableTask.id });
+        expect(updatedTask).toEqual(undefined);
+        expect(updatedProject.goalAmount).toEqual(
+          10000000 - updatableTask.budget
+        );
+      }
+    );
 
     it('should throw an error if parameters are not valid', async () => {
       await expect(
@@ -358,7 +398,8 @@ describe('Testing activityService', () => {
     beforeAll(() => {
       injectMocks(activityService, {
         activityDao,
-        milestoneService
+        milestoneService,
+        projectService
       });
     });
 
@@ -386,6 +427,41 @@ describe('Testing activityService', () => {
       expect(createdTask).toHaveProperty('keyPersonnel', 'NewKeyPersonnel');
       expect(createdTask).toHaveProperty('budget', 5000);
     });
+
+    it(
+      'should delete the task, add the budget to the project goal amount ' +
+        'and return the task id',
+      async () => {
+        const initialGoalAmount = 1000;
+        dbProject = [{ ...newProject, goalAmount: initialGoalAmount }];
+        const response = await activityService.createTask(
+          updatableMilestone.id,
+          {
+            userId: userEntrepreneur.id,
+            taskParams: newTaskParams
+          }
+        );
+        const createdTask = dbTask.find(task => task.id === response.taskId);
+        const updatedProject = dbProject.find(
+          project => project.id === newProject.id
+        );
+        expect(response).toHaveProperty('taskId');
+        expect(response.taskId).toBeDefined();
+        expect(createdTask).toHaveProperty('id', response.taskId);
+        expect(createdTask).toHaveProperty('milestone', updatableMilestone.id);
+        expect(createdTask).toHaveProperty('description', 'NewDescription');
+        expect(createdTask).toHaveProperty(
+          'reviewCriteria',
+          'NewReviewCriteria'
+        );
+        expect(createdTask).toHaveProperty('category', 'NewCategory');
+        expect(createdTask).toHaveProperty('keyPersonnel', 'NewKeyPersonnel');
+        expect(createdTask).toHaveProperty('budget', 5000);
+        expect(updatedProject.goalAmount).toEqual(
+          initialGoalAmount + newTaskParams.budget
+        );
+      }
+    );
 
     it('should throw an error if an argument is not defined', async () => {
       await expect(

@@ -18,14 +18,13 @@ module.exports = {
     const body = request.raw.body || {};
     const files = request.raw.files || {};
 
-    const { projectName, location, timeframe, goalAmount } = body;
+    const { projectName, location, timeframe } = body;
     const ownerId = request.user.id;
     const { cardPhotoPath } = files;
     const response = await projectService.createProjectThumbnail({
       projectName,
       location,
       timeframe,
-      goalAmount,
       file: cardPhotoPath,
       ownerId
     });
@@ -37,14 +36,13 @@ module.exports = {
     const files = request.raw.files || {};
 
     const { projectId } = request.params;
-    const { projectName, location, timeframe, goalAmount } = body;
+    const { projectName, location, timeframe } = body;
     const ownerId = request.user.id;
     const { cardPhotoPath } = files;
     const response = await projectService.updateProjectThumbnail(projectId, {
       projectName,
       location,
       timeframe,
-      goalAmount,
       file: cardPhotoPath,
       ownerId
     });
