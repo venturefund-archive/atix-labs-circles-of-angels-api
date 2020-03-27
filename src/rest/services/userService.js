@@ -88,7 +88,9 @@ module.exports = {
     phoneNumber,
     country,
     company,
-    answers
+    answers,
+    address,
+    encryptedWallet
   }) {
     logger.info(`[User Routes] :: Creating new user with email ${email}`);
     validateRequiredParams({
@@ -101,7 +103,9 @@ module.exports = {
         role,
         phoneNumber,
         country,
-        answers
+        answers,
+        address,
+        encryptedWallet
       }
     });
 
@@ -119,9 +123,6 @@ module.exports = {
 
     const hashedPwd = await bcrypt.hash(password, 10);
 
-    const wallet = Wallet.createRandom();
-    const { address, privateKey } = wallet;
-
     const user = {
       firstName,
       lastName,
@@ -133,7 +134,7 @@ module.exports = {
       answers,
       company,
       address,
-      privKey: privateKey
+      encryptedWallet
     };
     // TODO: this should be replaced by a gas relayer
     const accounts = await ethers.signers();
@@ -256,8 +257,8 @@ module.exports = {
   async getUserWallet(userId) {
     logger.info('[UserService] :: Entering getUserWallet method');
     const user = await this.getUserById(userId);
-    const { privKey } = user;
-    const wallet = new Wallet(privKey, ethers.provider);
-    return wallet;
+    const { encryptedWallet, address } = user;
+    // const wallet = new Wallet(privKey, ethers.provider);
+    return { address, encryptedWallet };
   }
 };

@@ -32,7 +32,7 @@ CREATE TABLE public.user (
     "answers" text DEFAULT NULL,
     "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
-    "privKey" varchar(80) NOT NULL,
+    "encryptedWallet" json NOT NULL,
     blocked BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     UNIQUE (email),
