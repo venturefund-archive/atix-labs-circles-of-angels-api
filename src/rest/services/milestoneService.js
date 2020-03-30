@@ -201,6 +201,8 @@ module.exports = {
       params: { milestoneId, userId }
     });
 
+    await checkExistence(this.milestoneDao, milestoneId, 'milestone');
+
     const project = await this.getProjectFromMilestone(milestoneId);
     // if the milestone exists this shouldn't happen
     if (!project) {
@@ -230,6 +232,14 @@ module.exports = {
 
     // TODO: any other restriction for deleting?
 
+    const milestoneTasks = await this.milestoneDao.getMilestoneTasks(
+      milestoneId
+    );
+    const milestoneBudget = milestoneTasks.reduce(
+      (total, task) => Number(task.budget) + total,
+      0
+    );
+
     logger.info(
       `[MilestoneService] :: Deleting milestone of id ${milestoneId}`
     );
@@ -239,6 +249,17 @@ module.exports = {
     logger.info(
       `[MilestoneService] :: Milestone of id ${deletedMilestone.id} deleted`
     );
+
+    const newGoalAmount = Number(project.goalAmount) - milestoneBudget;
+    logger.info(
+      `[MilestoneService] :: Updating project ${
+        project.id
+      } goalAmount to ${newGoalAmount}`
+    );
+    await this.projectService.updateProject(project.id, {
+      goalAmount: newGoalAmount
+    });
+
     return { milestoneId: deletedMilestone.id };
   },
 
@@ -265,7 +286,9 @@ module.exports = {
   deleteFieldsFromActivities(activities) {
     // TODO: check this
     return activities.map(activity => {
+      // eslint-disable-next-line no-param-reassign
       activity.reviewCriteria = activity.impactCriterion;
+      // eslint-disable-next-line no-param-reassign
       activity.description = activity.tasks;
       // delete activity.tasks;
       // delete activity.signsOfSuccess;
@@ -323,11 +346,11 @@ module.exports = {
               savedMilestone
             );
             // create the activities for this milestone
-            await this.activityService.createActivities(
+            const savedActivities = await this.activityService.createActivities(
               this.deleteFieldsFromActivities(activityList),
               savedMilestone.id
             );
-            return savedMilestone;
+            return { ...savedMilestone, tasks: savedActivities };
           }
         })
       );
