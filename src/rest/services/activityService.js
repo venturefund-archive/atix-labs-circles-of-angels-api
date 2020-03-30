@@ -20,6 +20,7 @@ const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
+const txExplorerHelper = require('./helpers/txExplorerHelper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -493,14 +494,32 @@ module.exports = {
    * @returns transferId || error
    */
   async getTaskEvidences({ taskId }) {
-    logger.info('[ActivityService] :: Entering getClaims method');
+    logger.info('[ActivityService] :: Entering getTaskEvidences method');
     validateRequiredParams({
-      method: 'getClaims',
+      method: 'getTaskEvidences',
       params: { taskId }
     });
 
     await checkExistence(this.activityDao, taskId, 'task');
-    return this.taskEvidenceDao.getEvidencesByTaskId(taskId);
+    logger.info('[ActivityService] :: Getting evidences for task', taskId);
+    const evidences = await this.taskEvidenceDao.getEvidencesByTaskId(taskId);
+    if (!evidences) {
+      logger.info('[ActivityService] :: No evidences found for task', taskId);
+      return [];
+    }
+    logger.info(
+      `[ActivityService] :: Found ${
+        evidences.length
+      } evidences for task ${taskId}`
+    );
+
+    const evidencesWithLink = evidences.map(evidence => ({
+      ...evidence,
+      txLink: evidence.txHash
+        ? txExplorerHelper.buildTxURL(evidence.txHash)
+        : undefined
+    }));
+    return evidencesWithLink;
   },
 
   /**

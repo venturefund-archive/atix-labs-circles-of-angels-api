@@ -615,7 +615,7 @@ describe('Testing activityService', () => {
         activityService.addClaim({
           taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
-          file: { name: 'imbig.jpg', size: 500001 },
+          file: { name: 'imbig.jpg', size: 999999999999 },
           description: mockedDescription,
           approved: true,
           userWallet: coaSigner
