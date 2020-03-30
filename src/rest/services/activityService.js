@@ -455,15 +455,24 @@ module.exports = {
    * @returns transferId || error
    */
   async getTaskEvidences({ taskId }) {
-    logger.info('[ActivityService] :: Entering getClaims method');
+    logger.info('[ActivityService] :: Entering getTaskEvidences method');
     validateRequiredParams({
-      method: 'getClaims',
+      method: 'getTaskEvidences',
       params: { taskId }
     });
 
     await checkExistence(this.activityDao, taskId, 'task');
+    logger.info('[ActivityService] :: Getting evidences for task', taskId);
     const evidences = await this.taskEvidenceDao.getEvidencesByTaskId(taskId);
-    if (!evidences) return [];
+    if (!evidences) {
+      logger.info('[ActivityService] :: No evidences found for task', taskId);
+      return [];
+    }
+    logger.info(
+      `[ActivityService] :: Found ${
+        evidences.length
+      } evidences for task ${taskId}`
+    );
 
     const evidencesWithLink = evidences.map(evidence => ({
       ...evidence,
