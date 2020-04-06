@@ -74,7 +74,7 @@ CREATE TABLE public.project (
     "problemAddressed" text,
     timeframe text,
     status ProjectStatus DEFAULT 'new',
-    "goalAmount" real NOT NULL,
+    "goalAmount" numeric NOT NULL,
     "faqLink" text,
     "coverPhotoPath" varchar(200),
     "cardPhotoPath" varchar(200),

@@ -49,7 +49,8 @@ const successWithTaskEvidences = {
       description: { type: 'string' },
       proof: { type: 'string' },
       approved: { type: 'boolean' },
-      task: { type: 'integer' }
+      task: { type: 'integer' },
+      txLink: { type: 'string' }
     },
     description: 'Returns an array with the task evidences'
   }

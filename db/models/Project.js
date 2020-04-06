@@ -45,7 +45,8 @@ module.exports = {
     milestonePath: { type: 'string', required: false, allowNull: true },
     proposalFilePath: { type: 'string', required: false, allowNull: true },
     agreementFilePath: { type: 'string', required: false, allowNull: true },
-    goalAmount: { type: 'number', required: false },
+    // ref type is needed because number doesn't support floats apparently
+    goalAmount: { type: 'ref', required: false, defaultsTo: 0 },
     status: { type: 'string', defaultsTo: projectStatuses.NEW },
     owner: {
       columnName: 'ownerId',

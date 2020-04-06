@@ -390,7 +390,6 @@ describe('Project Service Test', () => {
           projectName,
           location,
           timeframe,
-          goalAmount,
           ownerId,
           file
         });
@@ -416,7 +415,6 @@ describe('Project Service Test', () => {
             projectName,
             location,
             timeframe,
-            goalAmount,
             ownerId,
             file: { name: 'invalidFile.json' }
           })
@@ -429,7 +427,6 @@ describe('Project Service Test', () => {
             projectName,
             location,
             timeframe,
-            goalAmount,
             ownerId: 34,
             file
           })
@@ -442,7 +439,6 @@ describe('Project Service Test', () => {
             projectName,
             location,
             timeframe,
-            goalAmount,
             ownerId,
             file: { name: 'project.jpeg', size: 123455555 }
           })
@@ -456,7 +452,6 @@ describe('Project Service Test', () => {
           projectName,
           location,
           timeframe,
-          goalAmount,
           ownerId,
           file
         });
@@ -469,7 +464,6 @@ describe('Project Service Test', () => {
             projectName,
             location,
             timeframe,
-            goalAmount,
             ownerId,
             file
           })
@@ -484,7 +478,6 @@ describe('Project Service Test', () => {
             projectName,
             location,
             timeframe,
-            goalAmount,
             ownerId,
             file
           })
@@ -497,7 +490,6 @@ describe('Project Service Test', () => {
             projectName,
             location,
             timeframe,
-            goalAmount,
             ownerId: 3,
             file
           })
@@ -510,7 +502,6 @@ describe('Project Service Test', () => {
             projectName,
             location,
             timeframe,
-            goalAmount,
             ownerId,
             file: { name: 'file.json', size: 1234 }
           })
@@ -523,7 +514,6 @@ describe('Project Service Test', () => {
             projectName,
             location,
             timeframe,
-            goalAmount,
             ownerId,
             file: { name: 'file.jpeg', size: 90000000 }
           })
@@ -535,7 +525,6 @@ describe('Project Service Test', () => {
           projectName,
           location,
           timeframe,
-          goalAmount,
           ownerId
         });
         expect(projectId).toEqual(1);
@@ -2061,5 +2050,24 @@ describe('Project Service Test', () => {
         expect(mailService.sendProjectStatusChangeMail).toBeCalledTimes(4);
       }
     );
+  });
+
+  describe.only('Calculate goal amount from milestones', () => {
+    it('should return the goal amount as the sum of all tasks budgets', () => {
+      const milestones = [
+        {
+          tasks: [{ budget: 200 }, { budget: 300 }]
+        },
+        { tasks: [{ budget: 150 }] }
+      ];
+      const response = projectService.calculateGoalAmountFromMilestones(
+        milestones
+      );
+      expect(response).toEqual(650);
+    });
+    it('should return 0 when an empty array is passed', () => {
+      const response = projectService.calculateGoalAmountFromMilestones([]);
+      expect(response).toEqual(0);
+    });
   });
 });
