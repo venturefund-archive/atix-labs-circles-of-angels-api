@@ -1,4 +1,4 @@
-const { run, coa } = require('@nomiclabs/buidler');
+const { coa } = require('@nomiclabs/buidler');
 const COAError = require('../../rest/errors/COAError');
 const { sha3 } = require('../../rest/util/hash');
 const {
@@ -20,15 +20,6 @@ const originalProjectService = require('../../rest/services/projectService');
 let projectService = Object.assign({}, originalProjectService);
 const restoreProjectService = () => {
   projectService = Object.assign({}, originalProjectService);
-};
-
-const TEST_TIMEOUT_MS = 10000;
-const deployContracts = async () => {
-  await run('deploy', { reset: true });
-  const coaContract = await coa.getCOA();
-  const superDaoAddress = await coaContract.daos(0);
-  const { _address } = await coa.getSigner();
-  return { coaContract, superDaoAddress, superUserAddress: _address };
 };
 
 const projectName = 'validProjectName';
@@ -751,7 +742,7 @@ describe('Project Service Test', () => {
           projectService.updateProjectDetail(1, {
             mission,
             problemAddressed,
-            coverPhoto: { name: 'hi.jpeg', size: 1231232 },
+            coverPhoto: { name: 'hi.jpeg', size: 1231239992 },
             ownerId: 2
           })
         ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
@@ -1330,14 +1321,21 @@ describe('Project Service Test', () => {
         hasTimePassed: jest.fn(),
         notifyProjectStatusChange: jest.fn()
       });
+      coa.createProject = jest.fn(() => ({ hash: '0x01' }));
+    });
+
+    afterAll(() => {
+      jest.clearAllMocks();
     });
 
     it(
-      'should change the project status to funding and ' +
-        'call notifyProjectStatusChange once',
+      'should create the project in the blockchain and save the tx hash ' +
+        'when changing to funding, return its id and new status ' +
+        'without updating the status in db',
       async () => {
         dbProject.push(consensusToFunding);
         projectService.hasTimePassed.mockReturnValueOnce(true);
+        coa.createProject.mockReturnValueOnce({ hash: '0x00' });
         const response = await projectService.transitionConsensusProjects();
         expect(response).toHaveLength(1);
         expect(response).toEqual([
@@ -1349,8 +1347,9 @@ describe('Project Service Test', () => {
         const updated = dbProject.find(
           project => project.id === consensusToFunding.id
         );
-        expect(updated.status).toEqual(projectStatuses.FUNDING);
-        expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
+        expect(updated.status).toEqual(projectStatuses.CONSENSUS);
+        expect(updated.txHash).toEqual('0x00');
+        expect(projectService.notifyProjectStatusChange).not.toHaveBeenCalled();
       }
     );
 
@@ -1394,7 +1393,7 @@ describe('Project Service Test', () => {
     it(
       'should return an array with the projects that were ' +
         'changed to funding and to rejected, omit the ones not ready, ' +
-        ' and call notifyProjectStatusChange for each changed',
+        ' and call notifyProjectStatusChange for every rejected',
       async () => {
         dbProject.push(
           consensusToFunding,
@@ -1422,7 +1421,7 @@ describe('Project Service Test', () => {
           }
         ]);
 
-        expect(projectService.notifyProjectStatusChange).toBeCalledTimes(2);
+        expect(projectService.notifyProjectStatusChange).toBeCalledTimes(1);
       }
     );
   });
@@ -1430,7 +1429,6 @@ describe('Project Service Test', () => {
   describe('Transition Funding Projects', () => {
     let dbProject = [];
     let dbProjectFunder = [];
-    let coaContract;
     const fundingToExecuting = {
       id: 1,
       status: projectStatuses.FUNDING,
@@ -1441,8 +1439,7 @@ describe('Project Service Test', () => {
     beforeEach(async () => {
       dbProject = [];
       dbProjectFunder = [];
-      ({ coaContract } = await deployContracts());
-    }, TEST_TIMEOUT_MS);
+    });
 
     beforeAll(() => {
       restoreProjectService();
@@ -1468,22 +1465,32 @@ describe('Project Service Test', () => {
             }
           }
         ),
+        milestoneService: {
+          getAllMilestonesByProject: jest.fn(),
+          setClaimable: jest.fn()
+        },
         hasTimePassed: jest.fn(),
         getNextValidStatus: jest.fn(),
         removeFundersWithNoTransfersFromProject: jest.fn(),
         generateProjectAgreement: jest.fn(() => 'agreementJson'),
         notifyProjectStatusChange: jest.fn()
       });
+      coa.addProjectAgreement = jest.fn(() => ({ hash: '0x01' }));
     });
 
     it(
-      'should create the project in the blockchain ' +
-        'when changing to executing and return its id and new status',
+      'should generate the project agreement and add it to the blockchain, ' +
+        'set the first milestone as claimable, update the project status in db, ' +
+        'send notifications and return its id and new status ' +
+        'when changing to executing',
       async () => {
         dbProject.push(fundingToExecuting);
         projectService.hasTimePassed.mockReturnValueOnce(true);
         projectService.getNextValidStatus.mockReturnValueOnce(
           projectStatuses.EXECUTING
+        );
+        projectService.milestoneService.getAllMilestonesByProject.mockReturnValueOnce(
+          [{ id: 1 }, { id: 2 }]
         );
         const response = await projectService.transitionFundingProjects();
         expect(response).toHaveLength(1);
@@ -1493,8 +1500,11 @@ describe('Project Service Test', () => {
             newStatus: projectStatuses.EXECUTING
           }
         ]);
-        expect((await coaContract.getProjectsLength()).toNumber()).toBe(1);
-        expect(projectService.notifyProjectStatusChange).not.toHaveBeenCalled();
+        const updated = dbProject.find(p => p.id === fundingToExecuting.id);
+        expect(updated.status).toEqual(projectStatuses.EXECUTING);
+        expect(coa.addProjectAgreement).toHaveBeenCalled();
+        expect(projectService.milestoneService.setClaimable).toBeCalledTimes(1);
+        expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
       }
     );
 
@@ -1538,7 +1548,7 @@ describe('Project Service Test', () => {
     it(
       'should return an array with the projects that were ' +
         'changed to consensus and to executing, omit the ones not ready ' +
-        'and call notifyProjectStatusChange for each change to consensus',
+        'and call notifyProjectStatusChange for each change',
       async () => {
         dbProject.push(
           fundingToExecuting,
@@ -1565,7 +1575,7 @@ describe('Project Service Test', () => {
             newStatus: projectStatuses.CONSENSUS
           }
         ]);
-        expect(projectService.notifyProjectStatusChange).toBeCalledTimes(1);
+        expect(projectService.notifyProjectStatusChange).toBeCalledTimes(2);
       }
     );
   });
@@ -2052,7 +2062,7 @@ describe('Project Service Test', () => {
     );
   });
 
-  describe.only('Calculate goal amount from milestones', () => {
+  describe('Calculate goal amount from milestones', () => {
     it('should return the goal amount as the sum of all tasks budgets', () => {
       const milestones = [
         {

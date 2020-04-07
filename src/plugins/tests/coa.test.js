@@ -84,5 +84,22 @@ describe('COA plugin tests', () => {
     );
   });
 
+  describe('Testing createProject method', () => {
+    it('should send the project to the COA contract', async () => {
+      const response = await coa.createProject(1, 'Test Project');
+      expect(response).toHaveProperty('hash', expect.any(String));
+    });
+  });
+
+  describe('Testing addProjectAgreement method', () => {
+    it('should add the agreement to the COA contract', async () => {
+      const response = await coa.addProjectAgreement(
+        address,
+        sha3('agreement')
+      );
+      expect(response).toHaveProperty('hash', expect.any(String));
+    });
+  });
+
   test.todo('Write missing tests');
 });

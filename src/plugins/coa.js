@@ -39,10 +39,16 @@ module.exports = class COA {
     await coa.migrateMember(profile, address);
   }
 
-  async createProject(id, name, agreement) {
+  async createProject(id, name) {
     const coa = await this.getCOA();
-    const tx = await coa.createProject(id, name, agreement);
+    const tx = await coa.createProject(id, name);
     return tx;
+  }
+
+  async addProjectAgreement(projectAddress, agreement) {
+    const coa = await this.getCOA();
+    const txReceipt = await coa.addAgreement(projectAddress, agreement);
+    return txReceipt;
   }
 
   async createDAO(name) {

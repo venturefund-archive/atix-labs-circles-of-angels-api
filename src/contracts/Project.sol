@@ -12,12 +12,9 @@ contract Project is Ownable {
     string public name;
     address public entrepreneurAddress;
 
-    string public agreementHash;
-
     mapping (bytes32 => bool) public isClaimValidated;
 
-    constructor(string memory _name, string memory _agreementHash) Ownable() public {
+    constructor(string memory _name) Ownable() public {
         name = _name;
-        agreementHash = _agreementHash;
     }
 }
