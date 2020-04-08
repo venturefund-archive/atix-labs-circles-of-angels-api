@@ -309,4 +309,13 @@ module.exports = class COA {
       data
     };
   }
+
+  /**
+   * Returns the transaction count of an address
+   * @param {String} address
+   */
+  async getTransactionNonce(address) {
+    const nonce = await this.env.ethers.provider.getTransactionCount(address);
+    return nonce;
+  }
 };

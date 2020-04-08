@@ -525,13 +525,15 @@ module.exports = {
       approved,
       milestoneId
     );
+    const nonce = await coa.getTransactionNonce(userWallet.address);
+    const txWithNonce = { ...unsignedTx, nonce };
 
     logger.info(
       '[ActivityService] :: Sending unsigned transaction to client',
-      unsignedTx
+      txWithNonce
     );
     return {
-      tx: unsignedTx,
+      tx: txWithNonce,
       encryptedWallet: userWallet.encryptedWallet
     };
   },

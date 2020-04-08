@@ -89,6 +89,7 @@ describe('Testing transferService', () => {
     files.saveFile = jest.fn(() => '/dir/path');
     coa.sendAddClaimTransaction = jest.fn(() => ({ hash: '0x01' }));
     coa.getAddClaimTransaction = jest.fn();
+    coa.getTransactionNonce = jest.fn(() => 0);
   });
   afterAll(() => jest.clearAllMocks());
 
@@ -523,7 +524,8 @@ describe('Testing transferService', () => {
       const unsignedTx = {
         to: 'address',
         data: 'txdata',
-        gasLimit: 60000
+        gasLimit: 60000,
+        nonce: 0
       };
       coa.getAddClaimTransaction.mockReturnValueOnce(unsignedTx);
       const response = await transferService.getAddTransferClaimTransaction({
