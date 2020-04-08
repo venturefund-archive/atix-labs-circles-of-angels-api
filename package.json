@@ -15,7 +15,8 @@
     "get-flyway": "./get_flyway.sh",
     "migrate": "flyway -configFiles=flyway.conf -locations=filesystem:db/migrations migrate",
     "clean": "flyway -configFiles=flyway.conf -locations=filesystem:db/migrations clean",
-    "contracts-coverage": "SOLIDITY_COVERAGE=true scripts/test.sh"
+    "contracts-coverage": "SOLIDITY_COVERAGE=true scripts/test.sh",
+    "ganache": "ganache-cli -g 60000000"
   },
   "author": "Atix Labs S.R.L",
   "license": "ISC",

@@ -18,6 +18,10 @@ module.exports = {
       claim
     );
     const milestoneId = Number(milestoneIdHex);
+    if (milestoneId === 0) {
+      logger.info('[ClaimRegistry] :: Transfer fund claim created');
+      return;
+    }
 
     const milestoneCompleted = await milestoneService.isMilestoneCompleted(
       milestoneId
