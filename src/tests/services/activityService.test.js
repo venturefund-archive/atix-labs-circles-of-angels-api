@@ -242,6 +242,7 @@ describe('Testing activityService', () => {
     files.getSaveFilePath = jest.fn(() => '/dir/path');
     coa.sendAddClaimTransaction = jest.fn();
     coa.getAddClaimTransaction = jest.fn();
+    coa.getTransactionNonce = jest.fn(() => 0);
   });
 
   beforeEach(() => resetDb());
@@ -687,7 +688,8 @@ describe('Testing activityService', () => {
       const unsignedTx = {
         to: 'address',
         data: 'txdata',
-        gasLimit: 60000
+        gasLimit: 60000,
+        nonce: 0
       };
       coa.getAddClaimTransaction.mockReturnValueOnce(unsignedTx);
       const response = await activityService.getAddClaimTransaction({
