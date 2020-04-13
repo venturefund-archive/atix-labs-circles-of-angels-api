@@ -31,6 +31,7 @@ describe('COA plugin tests', () => {
         );
         expect(response).toHaveProperty('to', expect.any(String));
         expect(response).toHaveProperty('gasLimit', expect.any(Number));
+        expect(response).toHaveProperty('gasPrice', expect.any(Number));
         expect(response).toHaveProperty('data', expect.any(String));
       }
     );
