@@ -484,7 +484,7 @@ module.exports = {
   },
 
   /**
-   * Saves a task evidence and sends the unsigned
+   * Receives a task evidence and sends the unsigned
    * transaction to the client with the user's encrypted json wallet
    *
    * @param {Number} taskId

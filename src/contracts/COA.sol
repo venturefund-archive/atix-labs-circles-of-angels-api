@@ -22,6 +22,8 @@ contract COA is Ownable {
     mapping (address => Member) public members;
     DAO[] public daos;
     ClaimsRegistry public registry;
+    // Agreements by project address => agreementHash
+    mapping (address => string) public agreements;
 
     event DAOCreated(address addr);
     event ProjectCreated(uint256 id, address addr);
@@ -58,20 +60,15 @@ contract COA is Ownable {
         members[_existingAddress] = member;
     }
 
-
-    // the agreement hash can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
-    // we could strip the first two bytes but for now it seems unnecessary
     /**
     * @dev Create a Project
     * @param _name - string of the Project's name.
-    * @param _agreementHash - string of the agreement's hash.
     */
     function createProject(
         uint256 _id,
-        string memory _name,
-        string memory _agreementHash
+        string memory _name
     ) public returns (uint256) {
-        Project project = new Project(_name, _agreementHash);
+        Project project = new Project(_name);
         projects.push(project);
         emit ProjectCreated(_id, address(project));
     }
@@ -96,6 +93,17 @@ contract COA is Ownable {
         daos.push(dao);
         emit DAOCreated(address(dao));
 
+    }
+
+    // the agreement hash can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
+    // we could strip the first two bytes but for now it seems unnecessary
+    /**
+    * @dev Adds an agreement hash to the array
+    * @param _project - address of the project the agreement belongs to
+    * @param _agreementHash - string of the agreement's hash.
+    */
+    function addAgreement(address _project, string memory _agreementHash) public {
+        agreements[_project] = _agreementHash;
     }
 
     function getDaosLength() public view returns(uint256) {

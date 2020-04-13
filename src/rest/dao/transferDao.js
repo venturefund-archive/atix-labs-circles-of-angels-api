@@ -39,8 +39,10 @@ module.exports = {
     });
   },
 
-  async update({ id, status, rejectionReason }) {
-    return this.model.updateOne({ id }).set({ status, rejectionReason });
+  async update({ id, status, rejectionReason, txHash }) {
+    return this.model
+      .updateOne({ id })
+      .set({ status, rejectionReason, txHash });
   },
 
   async getTransferById({ transferId }) {

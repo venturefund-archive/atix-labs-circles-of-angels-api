@@ -64,31 +64,46 @@ module.exports = {
     }
   },
 
-  addApprovedTransferClaim: () => async (request, reply) => {
+  sendApprovedTransferClaim: () => async (request, reply) => {
     const { transferId } = request.params;
     const userId = request.user.id;
+    const { signedTransaction } = request.body;
 
-    const response = await transferService.addTransferClaim({
+    const response = await transferService.sendAddTransferClaimTransaction({
       transferId,
       userId,
-      approved: true
+      approved: true,
+      signedTransaction
     });
 
     reply.status(200).send(response);
   },
 
-  addDisapprovedTransferClaim: () => async (request, reply) => {
+  sendDisapprovedTransferClaim: () => async (request, reply) => {
     const { transferId } = request.params;
     const userId = request.user.id;
-    const { rejectionReason } = request.body;
+    const { rejectionReason, signedTransaction } = request.body;
 
-    const response = await transferService.addTransferClaim({
+    const response = await transferService.sendAddTransferClaimTransaction({
       transferId,
       userId,
       approved: false,
-      rejectionReason
+      rejectionReason,
+      signedTransaction
     });
 
+    reply.status(200).send(response);
+  },
+
+  getAddTransferClaimTransaction: approved => async (request, reply) => {
+    const { transferId } = request.params;
+    const { wallet: userWallet, id: userId } = request.user;
+    const response = await transferService.getAddTransferClaimTransaction({
+      transferId,
+      userId,
+      approved,
+      userWallet
+    });
     reply.status(200).send(response);
   }
 };
