@@ -27,9 +27,7 @@ module.exports = {
     amount: { type: 'number', required: true },
     currency: { type: 'string', required: true },
     rejectionReason: { type: 'string', required: false, allowNull: true },
-
     receiptPath: { type: 'string', required: true },
-
     sender: {
       columnName: 'senderId',
       model: 'user'
@@ -38,7 +36,6 @@ module.exports = {
       columnName: 'projectId',
       model: 'project'
     },
-
     status: {
       type: 'string',
       required: true,
@@ -47,9 +44,8 @@ module.exports = {
         defaultsTo: txFunderStatus.pending
       }
     },
-
     createdAt: { type: 'string', autoCreatedAt: true },
-
-    id: { type: 'number', autoMigrations: { autoIncrement: true } }
+    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    txHash: { type: 'string', required: false, allowNull: true }
   }
 };

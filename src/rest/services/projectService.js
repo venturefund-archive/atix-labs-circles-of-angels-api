@@ -1091,7 +1091,7 @@ module.exports = {
    * Transition all projects in `consensus` status to `funding`
    * if it meets all conditions or to `rejected` if not.
    *
-   * @returns {Promise<object[]>} list of updated projects
+   * @returns {Promise<Project[]>} list of updated projects
    */
   async transitionConsensusProjects(projectId) {
     logger.info(
@@ -1114,17 +1114,28 @@ module.exports = {
           projectStatuses.FUNDING,
           projectStatuses.REJECTED
         );
-
         logger.info(
           `[Project Service] :: Updating project ${project.id} from ${
             project.status
           } to ${newStatus}`
         );
-        const updatedProjectId = await this.updateProject(project.id, {
-          status: newStatus
-        });
-        await this.notifyProjectStatusChange(project, newStatus);
-        return { projectId: updatedProjectId, newStatus };
+
+        if (newStatus === projectStatuses.REJECTED) {
+          await this.updateProject(project.id, {
+            status: newStatus
+          });
+          await this.notifyProjectStatusChange(project, newStatus);
+        } else if (newStatus === projectStatuses.FUNDING) {
+          logger.info(
+            `[ProjectService] :: Sending project ${project.id} to blockchain`
+          );
+          // TODO: do we need an extra status while waiting for the tx confirmation?
+          const tx = await coa.createProject(project.id, project.projectName);
+          await this.updateProject(project.id, {
+            txHash: tx.hash
+          });
+        }
+        return { projectId: project.id, newStatus };
       })
     );
     return updatedProjects.filter(updated => !!updated);
@@ -1134,7 +1145,7 @@ module.exports = {
    * Transition all projects in `funding` status to `executing`
    * if it meets all conditions or to `consensus` if not.
    *
-   * @returns {Promise<object[]>} list of updated projects
+   * @returns {Promise<Project[]>} list of updated projects
    */
   async transitionFundingProjects(projectId) {
     logger.info(
@@ -1160,12 +1171,12 @@ module.exports = {
           projectStatuses.EXECUTING,
           projectStatuses.CONSENSUS
         );
-
         logger.info(
           `[ProjectService] :: Updating project ${project.id} from ${
             project.status
           } to ${newStatus}`
         );
+
         if (newStatus === projectStatuses.CONSENSUS) {
           const removedFunders = await this.removeFundersWithNoTransfersFromProject(
             project
@@ -1174,33 +1185,38 @@ module.exports = {
             '[ProjectService] :: Funders removed from project:',
             removedFunders
           );
-
           await this.updateProject(project.id, {
             status: newStatus
           });
-          await this.notifyProjectStatusChange(project, newStatus);
         } else if (newStatus === projectStatuses.EXECUTING) {
           const agreement = await this.generateProjectAgreement(project.id);
           logger.info(
             `[ProjectService] :: Saving agreement for project ${project.id}`
           );
-          await this.updateProject(project.id, { agreementJson: agreement });
+          await this.updateProject(project.id, {
+            agreementJson: agreement,
+            status: newStatus
+          });
+
+          const milestones = await this.milestoneService.getAllMilestonesByProject(
+            projectId
+          );
+          // set first milestone as claimable
+          if (milestones && milestones.length && milestones[0]) {
+            await this.milestoneService.setClaimable(milestones[0].id);
+          }
 
           logger.info(
-            `[ProjectService] :: Sending project ${project.id} to blockchain`
+            `[ProjectService] :: Uploading agreement of project ${
+              project.id
+            } to blockchain`
           );
-
-          // TODO: do we need an extra status while waiting for the tx confirmation?
-          const tx = await coa.createProject(
-            project.id,
-            project.projectName,
-            utils.id(agreement) // TODO: this should be a ipfs hash
+          await coa.addProjectAgreement(
+            project.address,
+            sha3(agreement) // TODO: this should be a ipfs hash
           );
-
-          await this.updateProject(project.id, {
-            txHash: tx.hash
-          });
         }
+        await this.notifyProjectStatusChange(project, newStatus);
         return { projectId: project.id, newStatus };
       })
     );

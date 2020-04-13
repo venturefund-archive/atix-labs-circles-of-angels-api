@@ -245,3 +245,13 @@ task('check-balance')
       );
     }
   });
+
+task('encrypt-wallet')
+  .addParam('pk')
+  .addParam('password')
+  .setAction(async ({ pk, password }, env) => {
+    const wallet = new Wallet(pk, env.ethers.provider);
+    const encryptedJson = JSON.stringify(await wallet.encrypt(password));
+    console.log(encryptedJson);
+    return encryptedJson;
+  });

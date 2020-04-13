@@ -101,17 +101,17 @@ contract(
         it('should create a project', async () => {
           const project = {
             id: 1,
-            name: 'a good project',
-            agreementHash: 'an IPFS/RIF Storage hash'
+            name: 'a good project'
           };
-          await coa.createProject(
-            project.id,
-            project.name,
-            project.agreementHash
-          );
+          await coa.createProject(project.id, project.name);
           const instance = await getProjectAt(await coa.projects(0));
           assert.equal(await instance.name(), project.name);
-          assert.equal(await instance.agreementHash(), project.agreementHash);
+        });
+        it('should add an agreement to an address', async () => {
+          const agreementHash = 'an IPFS/RIF Storage hash';
+          await coa.addAgreement(coa.address, agreementHash);
+          const agreementAdded = await coa.agreements(coa.address);
+          assert.equal(agreementAdded, agreementHash);
         });
       });
 
@@ -190,7 +190,7 @@ contract(
         for (let i = 0; i < 50; i++) {
           claims.push(utils.id(i));
           validators.push(creator);
-          await registry.addClaim(project, claims[i], proof, true);
+          registry.addClaim(project, claims[i], proof, true);
         }
         const approved = await registry.areApproved(
           project,

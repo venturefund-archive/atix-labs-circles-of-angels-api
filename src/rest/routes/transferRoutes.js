@@ -173,7 +173,8 @@ const transferRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.GET.name],
-        description: 'Returns the current funded amount for and specific project',
+        description:
+          'Returns the current funded amount for a specific project',
         summary: 'Get the current funded amount by project',
         params: projectIdParam,
         response: {
@@ -184,42 +185,24 @@ const transferRoutes = {
       }
     },
     handler: handlers.getFundedAmount
-  },
+  }
+};
 
-  addApprovedTransferClaim: {
-    method: 'post',
-    path: `${basePath}/:transferId/claim/approved`,
+const claimsRoutes = {
+  sendApprovedTransferClaim: {
+    method: 'put',
+    path: `${basePath}/:transferId/claim/approved/send-transaction`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
         description: 'Add an approved transfer claim of an existing project',
         summary: 'Add an approved transfer claim',
-        params: { transferIdParam },
-        response: {
-          ...successResponse(successWithTransferIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.addApprovedTransferClaim
-  },
-
-  addDisapprovedTransferClaim: {
-    method: 'post',
-    path: `${basePath}/:transferId/claim/disapproved`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.TRANSFER.name, routeTags.POST.name],
-        description: 'Add an disapproved transfer claim of an existing project',
-        summary: 'Add an disapproved transfer claim',
         params: { transferIdParam },
         body: {
           type: 'object',
           properties: {
-            rejectionReason: { type: 'string' }
+            signedTransaction: { type: 'string' }
           }
         },
         response: {
@@ -229,7 +212,73 @@ const transferRoutes = {
         }
       }
     },
-    handler: handlers.addDisapprovedTransferClaim
+    handler: handlers.sendApprovedTransferClaim
+  },
+
+  sendDisapprovedTransferClaim: {
+    method: 'put',
+    path: `${basePath}/:transferId/claim/disapproved/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
+        description: 'Add an disapproved transfer claim of an existing project',
+        summary: 'Add an disapproved transfer claim',
+        params: { transferIdParam },
+        body: {
+          type: 'object',
+          properties: {
+            rejectionReason: { type: 'string' },
+            signedTransaction: { type: 'string' }
+          }
+        },
+        response: {
+          ...successResponse(successWithTransferIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendDisapprovedTransferClaim
+  },
+
+  getAddApprovedTransferClaimTx: {
+    method: 'get',
+    path: `${basePath}/:transferId/claim/approved/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description:
+          'Returns unsigned tx to add an approved transfer claim of an existing project',
+        summary: 'Returns unsigned tx to add an approved transfer claim',
+        params: { transferIdParam },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.getAddTransferClaimTransaction(true)
+  },
+  getAddDisaprovedTransferClaimTx: {
+    method: 'get',
+    path: `${basePath}/:transferId/claim/disapproved/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description:
+          'Returns unsigned tx to add a disapproved transfer claim of an existing project',
+        summary: 'Returns unsigned tx to add a disapproved transfer claim',
+        params: { transferIdParam },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.getAddTransferClaimTransaction(true)
   }
 };
 
@@ -277,7 +326,8 @@ const routes = {
     handler: handlers.getState
   },
 
-  ...transferRoutes
+  ...transferRoutes,
+  ...claimsRoutes
 };
 
 module.exports = routes;

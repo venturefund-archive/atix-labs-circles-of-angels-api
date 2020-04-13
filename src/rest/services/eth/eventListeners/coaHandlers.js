@@ -17,25 +17,18 @@ module.exports = {
     const projectId = id.toNumber();
     logger.info('[COA] :: Incoming event ProjectCreated - address:', address);
     await projectService.updateProject(projectId, {
-      status: projectStatuses.EXECUTING,
+      status: projectStatuses.FUNDING,
       address
     });
 
     const project = await projectService.getProjectById(projectId);
     await projectService.notifyProjectStatusChange(
       project,
-      projectStatuses.EXECUTING
+      projectStatuses.FUNDING
     );
-    const milestones = await milestoneService.getAllMilestonesByProject(
-      projectId
-    );
-    // set first milestone as claimable
-    if (milestones && milestones.length && milestones[0]) {
-      await milestoneService.setClaimable(milestones[0].id);
-    }
     logger.info(
       `[COA] :: Project ${projectId} status updated to ${
-        projectStatuses.EXECUTING
+        projectStatuses.FUNDING
       }`
     );
   }
