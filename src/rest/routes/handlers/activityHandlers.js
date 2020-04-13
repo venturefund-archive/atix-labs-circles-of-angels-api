@@ -50,39 +50,53 @@ module.exports = {
     reply.status(200).send(response);
   },
 
-  addApprovedClaim: () => async (request, reply) => {
+  getApprovedClaimTransaction: () => async (request, reply) => {
     const { taskId } = request.params;
     const { id: userId, wallet: userWallet } = request.user;
     const { proof } = request.raw.files || {};
     const { description } = request.raw.body || {};
 
-    const response = await activityService.addClaim({
+    const response = await activityService.getAddClaimTransaction({
       taskId,
       userId,
-      userWallet,
       file: proof,
       description,
-      approved: true
+      approved: true,
+      userWallet
     });
 
     reply.status(200).send(response);
   },
 
-  addDisapprovedClaim: () => async (request, reply) => {
+  getDisapprovedClaimTransaction: () => async (request, reply) => {
     const { taskId } = request.params;
-    const { id: userId, wallet: userWallet } = request.user;
+    const { wallet: userWallet } = request.user;
     const { proof } = request.raw.files || {};
-    const { description } = request.raw.body || {};
 
-    const response = await activityService.addClaim({
+    const response = await activityService.getAddClaimTransaction({
       taskId,
-      userId,
-      userWallet,
       file: proof,
-      description,
-      approved: false
+      approved: false,
+      userWallet
     });
 
+    reply.status(200).send(response);
+  },
+
+  sendClaimTransaction: approved => async (request, reply) => {
+    const { taskId } = request.params;
+    const { id: userId } = request.user;
+    const { proof } = request.raw.files || {};
+    const { description, signedTransaction } = request.raw.body || {};
+
+    const response = await activityService.sendAddClaimTransaction({
+      taskId,
+      userId,
+      file: proof,
+      description,
+      approved,
+      signedTransaction
+    });
     reply.status(200).send(response);
   },
 

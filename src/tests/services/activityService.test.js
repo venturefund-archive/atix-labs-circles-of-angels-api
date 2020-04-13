@@ -15,6 +15,8 @@ const { injectMocks } = require('../../rest/util/injection');
 const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const originalActivityService = require('../../rest/services/activityService');
+const validateMtype = require('../../rest/services/helpers/validateMtype');
+const validatePhotoSize = require('../../rest/services/helpers/validatePhotoSize');
 
 let activityService = Object.assign({}, originalActivityService);
 const restoreActivityService = () => {
@@ -231,7 +233,15 @@ describe('Testing activityService', () => {
 
   beforeAll(() => {
     restoreActivityService();
+    files.validateAndSaveFile = jest.fn((type, file) => {
+      validateMtype(type, file);
+      validatePhotoSize(file);
+      return '/dir/path';
+    });
     files.saveFile = jest.fn(() => '/dir/path');
+    files.getSaveFilePath = jest.fn(() => '/dir/path');
+    coa.sendAddClaimTransaction = jest.fn();
+    coa.getAddClaimTransaction = jest.fn();
   });
 
   beforeEach(() => resetDb());
@@ -514,8 +524,8 @@ describe('Testing activityService', () => {
     });
   });
 
-  describe('Testing addClaim', () => {
-    let coaSigner;
+  describe('Testing sendAddClaimTransaction', () => {
+    const signedTransaction = '0x11122233548979870';
     beforeAll(() => {
       injectMocks(activityService, {
         activityDao,
@@ -531,34 +541,85 @@ describe('Testing activityService', () => {
         oracle: userEntrepreneur.id
       });
       dbMilestone.push(nonUpdatableMilestone);
-      ({ coaSigner } = await deployContracts());
-      const projectAddress = await run('create-project');
-      dbProject.push({ ...executingProject, address: projectAddress });
-    }, TEST_TIMEOUT_MS);
+      dbProject.push({
+        ...executingProject,
+        address: '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A'
+      });
+    });
 
     afterAll(() => restoreActivityService());
 
-    it('should add an approved claim and return the claim id', async () => {
-      const response = await activityService.addClaim({
-        taskId: nonUpdatableTask.id,
-        userId: userEntrepreneur.id,
-        file: evidenceFile,
-        description: mockedDescription,
-        approved: true,
-        userWallet: coaSigner
-      });
-      expect(response).toEqual({ taskId: nonUpdatableTask.id });
+    it(
+      'should send the signed tx to the contract, save the evidence ' +
+        'and return its id',
+      async () => {
+        coa.sendAddClaimTransaction.mockReturnValueOnce({
+          hash: '0x148Ea11233'
+        });
+        const response = await activityService.sendAddClaimTransaction({
+          taskId: nonUpdatableTask.id,
+          userId: userEntrepreneur.id,
+          file: evidenceFile,
+          description: mockedDescription,
+          approved: true,
+          signedTransaction
+        });
+        const createdEvidence = dbTaskEvidence.find(
+          evidence => evidence.task === nonUpdatableTask.id
+        );
+        expect(response).toEqual({ claimId: createdEvidence.id });
+      }
+    );
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        activityService.sendAddClaimTransaction({
+          taskId: nonUpdatableTask.id,
+          userId: userEntrepreneur.id,
+          file: evidenceFile
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('sendAddClaimTransaction')
+      );
     });
+    it('should throw an error if the task does not exist', async () => {
+      await expect(
+        activityService.sendAddClaimTransaction({
+          taskId: 0,
+          userId: userEntrepreneur.id,
+          file: evidenceFile,
+          description: mockedDescription,
+          approved: true,
+          signedTransaction
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
+    });
+    it('should throw an error if the project is not in executing status', async () => {
+      dbTask.push(updatableTask);
+      dbMilestone.push(updatableMilestone);
+      dbProject.push(newProject);
 
+      await expect(
+        activityService.sendAddClaimTransaction({
+          taskId: updatableTask.id,
+          userId: userEntrepreneur.id,
+          file: evidenceFile,
+          description: 'description',
+          approved: true,
+          signedTransaction
+        })
+      ).rejects.toThrow(
+        errors.project.InvalidStatusForEvidenceUpload(newProject.status)
+      );
+    });
     it('should throw an error if the user is not the oracle assigned', async () => {
       await expect(
-        activityService.addClaim({
+        activityService.sendAddClaimTransaction({
           taskId: nonUpdatableTask.id,
           userId: 0,
           file: evidenceFile,
           description: mockedDescription,
           approved: true,
-          userWallet: coaSigner
+          signedTransaction
         })
       ).rejects.toThrow(
         errors.task.OracleNotAssigned({
@@ -567,58 +628,115 @@ describe('Testing activityService', () => {
         })
       );
     });
-
-    it('should throw an error if the project is not in executing status', async () => {
-      dbTask.push(updatableTask);
-      dbMilestone.push(updatableMilestone);
-      dbProject.push(newProject);
-
-      await expect(
-        activityService.addClaim({
-          taskId: updatableTask.id,
-          userId: userEntrepreneur.id,
-          file: evidenceFile,
-          description: mockedDescription,
-          approved: true,
-          userWallet: coaSigner
-        })
-      ).rejects.toThrow(
-        errors.project.InvalidStatusForEvidenceUpload(newProject.status)
-      );
-    });
-
-    it('should throw an error if any required param is missing', async () => {
-      await expect(
-        activityService.addClaim({
-          taskId: nonUpdatableTask.id,
-          userId: userEntrepreneur.id,
-          file: evidenceFile
-        })
-      ).rejects.toThrow(errors.common.RequiredParamsMissing('addClaim'));
-    });
-
     it('should throw an error if the file mtype is invalid', async () => {
       await expect(
-        activityService.addClaim({
+        activityService.sendAddClaimTransaction({
           taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
           file: { name: 'invalidclaim.exe', size: 2000 },
           description: mockedDescription,
           approved: true,
-          userWallet: coaSigner
+          signedTransaction
         })
       ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
     });
 
     it('should throw an error if the file has an invalid size', async () => {
       await expect(
-        activityService.addClaim({
+        activityService.sendAddClaimTransaction({
           taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
           file: { name: 'imbig.jpg', size: 999999999999 },
           description: mockedDescription,
           approved: true,
-          userWallet: coaSigner
+          signedTransaction
+        })
+      ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
+    });
+  });
+
+  describe('Testing getAddClaimTransaction', () => {
+    const userWallet = {
+      address: '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D',
+      encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
+    };
+    beforeAll(() => {
+      injectMocks(activityService, {
+        activityDao,
+        taskEvidenceDao,
+        projectService
+      });
+    });
+
+    beforeEach(async () => {
+      dbUser.push(userEntrepreneur);
+      dbTask.push({
+        ...nonUpdatableTask,
+        oracle: userEntrepreneur.id
+      });
+      dbMilestone.push(nonUpdatableMilestone);
+      dbProject.push({
+        ...executingProject,
+        address: '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A'
+      });
+    });
+
+    afterAll(() => restoreActivityService());
+
+    it('should return the unsigned transaction and the encrypted user wallet', async () => {
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000
+      };
+      coa.getAddClaimTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await activityService.getAddClaimTransaction({
+        taskId: nonUpdatableTask.id,
+        file: evidenceFile,
+        approved: true,
+        userWallet
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        activityService.getAddClaimTransaction({
+          taskId: nonUpdatableTask.id,
+          approved: true,
+          userWallet
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('getAddClaimTransaction')
+      );
+    });
+    it('should throw an error if the task does not exist', async () => {
+      await expect(
+        activityService.getAddClaimTransaction({
+          taskId: 0,
+          file: evidenceFile,
+          approved: true,
+          userWallet
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
+    });
+    it('should throw an error if the file mtype is invalid', async () => {
+      await expect(
+        activityService.getAddClaimTransaction({
+          taskId: nonUpdatableTask.id,
+          file: { name: 'invalidclaim.exe', size: 2000 },
+          approved: true,
+          userWallet
+        })
+      ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
+    });
+    it('should throw an error if the file has an invalid size', async () => {
+      await expect(
+        activityService.getAddClaimTransaction({
+          taskId: nonUpdatableTask.id,
+          file: { name: 'imbig.jpg', size: 9999999999 },
+          approved: true,
+          userWallet
         })
       ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
     });

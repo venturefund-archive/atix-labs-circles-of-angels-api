@@ -37,7 +37,7 @@ module.exports = {
       required: true
     },
     blocked: { type: 'boolean', defaultsTo: false, required: false },
-    privKey: { type: 'string', required: true },
+    encryptedWallet: { type: 'json', required: true },
     projects: {
       collection: 'project',
       via: 'owner'
@@ -66,7 +66,7 @@ module.exports = {
     company: { type: 'string', required: false, allowNull: true }
   },
   customToJSON: function toJson() {
-    return omit(this, ['password', 'privKey']);
+    return omit(this, ['password']);
   },
   async findById(id) {
     return this.findOne(id);

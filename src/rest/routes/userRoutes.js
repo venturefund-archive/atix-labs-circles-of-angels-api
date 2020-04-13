@@ -229,7 +229,9 @@ const routes = {
             phoneNumber: { type: 'string' },
             country: { type: 'number' },
             answers: { type: 'string' },
-            company: { type: 'string' }
+            company: { type: 'string' },
+            address: { type: 'string' },
+            encryptedWallet: { type: 'string' }
           },
           required: [
             'firstName',
@@ -239,7 +241,9 @@ const routes = {
             'role',
             'phoneNumber',
             'country',
-            'answers'
+            'answers',
+            'address',
+            'encryptedWallet'
           ],
           additionalProperties: false,
           description: 'User on-boarding information'

@@ -167,6 +167,27 @@ const saveFile = async (type, file) => {
   return path.replace(configs.fileServer.filePath, '/files');
 };
 
+/**
+ * Returns the path where the file would be saved, but do not save it.
+ * Used to build unsigned transactions.
+ * @param {String} type
+ * @param {File} file
+ */
+const getSaveFilePath = async (type, file) => {
+  const saver = fileSaver[type];
+  const hash = file.md5;
+  const fileExtension = '.'.concat(
+    mime.extension(mime.lookup(file.name)) || saver.defaultFileExtension
+  );
+  const withFileExtension = hash.concat(fileExtension);
+  let path = saver
+    .getBasePath()
+    .concat(hash.charAt(0))
+    .concat('/');
+  path = path.concat(withFileExtension);
+  return path.replace(configs.fileServer.filePath, '/files');
+};
+
 const validateAndSaveFile = async (type, file) => {
   // TODO: should get fileSaver[type] with validator for type and max size
   validateMtype(type, file);
@@ -179,6 +200,7 @@ const validateAndSaveFile = async (type, file) => {
 
 module.exports = {
   getFileFromPath,
+  getSaveFilePath,
   fileExists,
   TYPES,
   saveFile,
