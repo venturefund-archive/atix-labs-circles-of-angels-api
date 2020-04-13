@@ -303,9 +303,11 @@ module.exports = class COA {
   async getUnsignedTransaction(contract, functionName, args) {
     const data = contract.interface.functions[functionName].encode(args);
     const estimateGas = await contract.estimate[functionName](...args);
+    const minimumGas = await this.env.ethers.provider.getGasPrice();
     return {
       to: contract.address,
       gasLimit: Number(estimateGas),
+      gasPrice: Number(minimumGas),
       data
     };
   }
