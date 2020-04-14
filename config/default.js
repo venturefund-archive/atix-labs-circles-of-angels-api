@@ -34,7 +34,8 @@ module.exports = {
     user: 'username',
     pass: 'password',
     apiKey: undefined, // sendgrid apikey, when undefined uses smtp
-    from: 'from@example.com'
+    from: 'from@example.com',
+    disabled: false
   },
 
   jwt: {
