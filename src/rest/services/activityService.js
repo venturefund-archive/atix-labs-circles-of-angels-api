@@ -634,7 +634,7 @@ module.exports = {
     // not sure if this is necessary
     if (!txResponse) {
       logger.info(
-        `[ProjectService] :: Project ${evidenceId} does not have blockchain information`
+        `[ActivityService] :: Evidence ${evidenceId} does not have blockchain information`
       );
       throw new COAError(
         errors.task.EvidenceBlockchainInfoNotFound(evidenceId)
@@ -642,7 +642,16 @@ module.exports = {
     }
     const { blockNumber, timestamp, from } = txResponse;
 
+    let oracleName;
+    try {
+      const oracle = await this.userService.getUserByAddress(from);
+      oracleName = `${oracle.firstName} ${oracle.lastName}`;
+    } catch (error) {
+      logger.error('[ActivityService] :: Oracle not found');
+    }
+
     return {
+      oracleName,
       oracleAddress: from,
       oracleAddressUrl: from ? buildAddressURL(from) : undefined,
       txHash,

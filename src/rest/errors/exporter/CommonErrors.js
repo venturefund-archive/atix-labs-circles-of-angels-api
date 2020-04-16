@@ -18,5 +18,9 @@ module.exports = {
   InvalidStatus: (model, status) => ({
     message: `Can't make this action when the ${model} is in ${status} status`,
     statusCode: 400
+  }),
+  CantFindModelWithAddress: (model, address) => ({
+    message: `Can't find ${model} with address ${address}`,
+    statusCode: 400
   })
 };
