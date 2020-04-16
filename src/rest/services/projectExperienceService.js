@@ -27,13 +27,15 @@ module.exports = {
   },
   canUpload(project, user) {
     const { status, owner } = project;
-    const allowedStatuses = [
+    const onlyOwnerStatuses = [
       projectStatuses.CONSENSUS,
       projectStatuses.FUNDING
     ];
-
-    if (allowedStatuses.includes(status)) {
+    if (onlyOwnerStatuses.includes(status)) {
       validateOwnership(owner, user.id);
+      return true;
+    }
+    if (status === projectStatuses.EXECUTING) {
       return true;
     }
     throw new COAError(errors.project.InvalidStatusForExperienceUpload(status));

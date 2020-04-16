@@ -2,6 +2,8 @@ const config = require('config');
 const nodemailer = require('nodemailer');
 const sendgrid = require('@sendgrid/mail');
 
+const logger = require('../../logger');
+
 let emailClient;
 const { host, port, user, pass, apiKey } = config.email;
 if (apiKey) {
@@ -21,6 +23,10 @@ if (apiKey) {
 
 module.exports = {
   sendMail(args) {
+    if (config.email.disabled) {
+      logger.warn('[EmailClient] :: Email client is disabled');
+      return {};
+    }
     // nodemailer uses sendMail(), sendgrid uses send()
     return !emailClient.transporter
       ? emailClient.send(args)
