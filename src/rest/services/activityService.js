@@ -20,7 +20,11 @@ const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
-const txExplorerHelper = require('./helpers/txExplorerHelper');
+const {
+  buildBlockURL,
+  buildTxURL,
+  buildAddressURL
+} = require('./helpers/txExplorerHelper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -566,9 +570,7 @@ module.exports = {
 
     const evidencesWithLink = evidences.map(evidence => ({
       ...evidence,
-      txLink: evidence.txHash
-        ? txExplorerHelper.buildTxURL(evidence.txHash)
-        : undefined
+      txLink: evidence.txHash ? buildTxURL(evidence.txHash) : undefined
     }));
     return evidencesWithLink;
   },
@@ -598,5 +600,56 @@ module.exports = {
       );
       return false;
     }
+  },
+
+  /**
+   * Returns the blockchain information for the specified evidence
+   * @param {number} evidenceId
+   */
+  async getEvidenceBlockchainData(evidenceId) {
+    logger.info(
+      '[ActivityService] :: Entering getEvidenceBlockchainData method'
+    );
+    const evidence = await checkExistence(
+      this.taskEvidenceDao,
+      evidenceId,
+      'task_evidence'
+    );
+
+    const { txHash } = evidence;
+
+    if (!txHash) {
+      logger.info(
+        `[ActivityService] :: Evidence ${evidenceId} does not have blockchain information`
+      );
+      throw new COAError(
+        errors.task.EvidenceBlockchainInfoNotFound(evidenceId)
+      );
+    }
+
+    logger.info(
+      `[ActivityService] :: Getting transaction response for ${txHash}`
+    );
+    const txResponse = await coa.getTransactionResponse(txHash);
+    // not sure if this is necessary
+    if (!txResponse) {
+      logger.info(
+        `[ProjectService] :: Project ${evidenceId} does not have blockchain information`
+      );
+      throw new COAError(
+        errors.task.EvidenceBlockchainInfoNotFound(evidenceId)
+      );
+    }
+    const { blockNumber, timestamp, from } = txResponse;
+
+    return {
+      oracleAddress: from,
+      oracleAddressUrl: from ? buildAddressURL(from) : undefined,
+      txHash,
+      txHashUrl: txHash ? buildTxURL(txHash) : undefined,
+      creationDate: timestamp ? new Date(timestamp) : undefined,
+      blockNumber,
+      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined
+    };
   }
 };

@@ -9,7 +9,6 @@
 const config = require('config');
 const path = require('path');
 const { uniqWith, unionBy } = require('lodash');
-const { utils } = require('ethers');
 const { coa } = require('@nomiclabs/buidler');
 const { sha3 } = require('../util/hash');
 const {
@@ -29,6 +28,11 @@ const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
 const validateOwnership = require('./helpers/validateOwnership');
+const {
+  buildTxURL,
+  buildAddressURL,
+  buildBlockURL
+} = require('./helpers/txExplorerHelper');
 const validateProjectStatusChange = require('./helpers/validateProjectStatusChange');
 const projectStatusChangeEmailHelper = require('./helpers/mail/projectStatusChange');
 const COAError = require('../errors/COAError');
@@ -1382,5 +1386,46 @@ module.exports = {
         0
       );
     return goalAmount;
+  },
+
+  /**
+   * Returns the blockchain information for the specified project
+   * @param {number} projectId
+   */
+  async getBlockchainData(projectId) {
+    logger.info('[ProjectService] :: Entering getBlockchainInfo method');
+    const project = await checkExistence(this.projectDao, projectId, 'project');
+
+    const { address, txHash } = project;
+
+    if (!txHash) {
+      logger.info(
+        `[ProjectService] :: Project ${projectId} does not have blockchain information`
+      );
+      throw new COAError(errors.project.BlockchainInfoNotFound(projectId));
+    }
+
+    logger.info(
+      `[ProjectService] :: Getting transaction response for ${txHash}`
+    );
+    const txResponse = await coa.getTransactionResponse(txHash);
+    // not sure if this is necessary
+    if (!txResponse) {
+      logger.info(
+        `[ProjectService] :: Project ${projectId} does not have blockchain information`
+      );
+      throw new COAError(errors.project.BlockchainInfoNotFound(projectId));
+    }
+    const { blockNumber, timestamp } = txResponse;
+
+    return {
+      txHash,
+      txHashUrl: txHash ? buildTxURL(txHash) : undefined,
+      address,
+      addressUrl: address ? buildAddressURL(address) : undefined,
+      creationDate: timestamp ? new Date(timestamp) : undefined,
+      blockNumber,
+      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined
+    };
   }
 };

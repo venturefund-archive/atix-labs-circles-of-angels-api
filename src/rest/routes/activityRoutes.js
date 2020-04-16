@@ -18,6 +18,7 @@ const {
 
 const taskIdParam = idParam('Task identification', 'taskId');
 const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
+const evidenceIdParam = idParam('Evidence identification', 'evidenceId');
 
 const taskProperties = {
   description: { type: 'string' },
@@ -263,6 +264,25 @@ const evidencesRoutes = {
       }
     },
     handler: handlers.getTasksEvidences
+  },
+  getBlockchainData: {
+    method: 'get',
+    path: '/evidences/:evidenceId/blockchain-data',
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.GET.name],
+        description:
+          'Returns the blockchain information related to the evidence',
+        summary: 'Returns blockchain information',
+        params: evidenceIdParam,
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getEvidenceBlockchainData
   }
 };
 

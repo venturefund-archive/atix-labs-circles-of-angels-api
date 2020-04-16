@@ -105,5 +105,11 @@ module.exports = {
       userWallet
     });
     reply.status(200).send(response);
+  },
+
+  getBlockchainData: () => async (request, reply) => {
+    const { transferId } = request.params;
+    const response = await transferService.getBlockchainData(transferId);
+    reply.status(200).send(response);
   }
 };

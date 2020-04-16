@@ -173,8 +173,7 @@ const transferRoutes = {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.GET.name],
-        description:
-          'Returns the current funded amount for a specific project',
+        description: 'Returns the current funded amount for a specific project',
         summary: 'Get the current funded amount by project',
         params: projectIdParam,
         response: {
@@ -185,6 +184,25 @@ const transferRoutes = {
       }
     },
     handler: handlers.getFundedAmount
+  },
+  getBlockchainData: {
+    method: 'get',
+    path: `${basePath}/:transferId/blockchain-data`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description:
+          'Returns the blockchain information related to the fund transfer',
+        summary: 'Returns blockchain information',
+        params: transferIdParam,
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getBlockchainData
   }
 };
 
