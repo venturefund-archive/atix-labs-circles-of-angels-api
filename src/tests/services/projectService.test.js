@@ -10,6 +10,7 @@ const {
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const validateMtype = require('../../rest/services/helpers/validateMtype');
 const validatePhotoSize = require('../../rest/services/helpers/validatePhotoSize');
+const txExplorerHelper = require('../../rest/services/helpers/txExplorerHelper');
 const validators = require('../../rest/services/helpers/projectStatusValidators/validators');
 
 const { injectMocks } = require('../../rest/util/injection');
@@ -156,7 +157,9 @@ const executingProject = {
   mission,
   status: projectStatuses.EXECUTING,
   milestones: [milestone],
-  milestonePath: 'path/to/milestone.xls'
+  milestonePath: 'path/to/milestone.xls',
+  txHash: '0x151515',
+  address: '0x151515'
 };
 
 const supporterUser = {
@@ -314,6 +317,7 @@ describe('Project Service Test', () => {
     Object.keys(validators).forEach(validator => {
       validators[validator] = jest.fn();
     });
+    coa.getTransactionResponse = jest.fn(() => null);
   });
 
   afterEach(() => {
@@ -2078,6 +2082,64 @@ describe('Project Service Test', () => {
     it('should return 0 when an empty array is passed', () => {
       const response = projectService.calculateGoalAmountFromMilestones([]);
       expect(response).toEqual(0);
+    });
+  });
+
+  describe('Testing getBlockchainData method', () => {
+    const txResponse = {
+      blockNumber: 10,
+      timestamp: 1587146117347
+    };
+    let dbProject = [];
+    beforeAll(() => {
+      injectMocks(projectService, {
+        projectDao: {
+          findById: id => dbProject.find(p => p.id === id)
+        }
+      });
+    });
+
+    beforeEach(() => {
+      dbProject = [];
+      dbProject.push(pendingProject, executingProject);
+    });
+
+    afterAll(() => restoreProjectService());
+    it('should return the transfer blockchain data', async () => {
+      coa.getTransactionResponse.mockReturnValueOnce(txResponse);
+      const response = await projectService.getBlockchainData(
+        executingProject.id
+      );
+      expect(response).toEqual({
+        txHash: executingProject.txHash,
+        txHashUrl: txExplorerHelper.buildTxURL(executingProject.txHash),
+        address: executingProject.address,
+        addressUrl: txExplorerHelper.buildAddressURL(executingProject.address),
+        creationDate: new Date(txResponse.timestamp),
+        blockNumber: txResponse.blockNumber,
+        blockNumberUrl: txExplorerHelper.buildBlockURL(txResponse.blockNumber),
+        agreement: undefined
+      });
+    });
+    it('should throw an error if the project does not exist', async () => {
+      await expect(projectService.getBlockchainData(0)).rejects.toThrow(
+        errors.common.CantFindModelWithId('project', 0)
+      );
+    });
+    it('should throw an error if the project does not have a txHash', async () => {
+      await expect(
+        projectService.getBlockchainData(pendingProject.id)
+      ).rejects.toThrow(
+        errors.project.BlockchainInfoNotFound(pendingProject.id)
+      );
+    });
+    it('should throw an error if the transaction does not exist', async () => {
+      coa.getTransactionResponse.mockReturnValueOnce(null);
+      await expect(
+        projectService.getBlockchainData(executingProject.id)
+      ).rejects.toThrow(
+        errors.project.BlockchainInfoNotFound(executingProject.id)
+      );
     });
   });
 });

@@ -102,11 +102,17 @@ module.exports = {
 
   getTasksEvidences: () => async (request, reply) => {
     const { taskId } = request.params;
-
     const response = await activityService.getTaskEvidences({
       taskId
     });
+    reply.status(200).send(response);
+  },
 
+  getEvidenceBlockchainData: () => async (request, reply) => {
+    const { evidenceId } = request.params;
+    const response = await activityService.getEvidenceBlockchainData(
+      evidenceId
+    );
     reply.status(200).send(response);
   }
 };

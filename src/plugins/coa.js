@@ -320,4 +320,9 @@ module.exports = class COA {
     const nonce = await this.env.ethers.provider.getTransactionCount(address);
     return nonce;
   }
+
+  async getTransactionResponse(txHash) {
+    const txInfo = await this.env.ethers.provider.getTransaction(txHash);
+    return txInfo;
+  }
 };

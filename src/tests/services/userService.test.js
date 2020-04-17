@@ -49,7 +49,8 @@ describe('Testing userService', () => {
     lastName: 'SupporterLastName',
     role: userRoles.PROJECT_SUPPORTER,
     email: 'supporter@test.com',
-    blocked: false
+    blocked: false,
+    address: '0x222'
   };
 
   const userAdmin = {
@@ -87,6 +88,7 @@ describe('Testing userService', () => {
 
   const userDao = {
     findById: id => dbUser.find(user => user.id === id),
+    findByAddress: address => dbUser.find(user => user.address === address),
     getFollowedProjects: id => {
       const userFound = dbUser.find(user => user.id === id);
       userFound.following = [newProject, executingProject];
@@ -417,5 +419,26 @@ describe('Testing userService', () => {
     });
   });
 
+  describe('Testing getUserByAddress method', () => {
+    beforeAll(() => {
+      injectMocks(userService, { userDao });
+    });
+    afterAll(() => restoreUserService());
+    beforeEach(() => {
+      dbUser.push(userSupporter);
+    });
+    it('should return the existing user', async () => {
+      const response = await userService.getUserByAddress(
+        userSupporter.address
+      );
+      expect(response).toEqual(userSupporter);
+    });
+
+    it('should throw an error if the user does not exist', async () => {
+      await expect(userService.getUserByAddress('0x')).rejects.toThrow(
+        errors.common.CantFindModelWithAddress('user', '0x')
+      );
+    });
+  });
   test.todo('getUserWallet');
 });

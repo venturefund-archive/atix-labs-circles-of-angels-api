@@ -18,6 +18,10 @@ module.exports = {
     return this.model.findOne({ id });
   },
 
+  async findByAddress(address) {
+    return this.model.findOne({ address });
+  },
+
   async getUserByEmail(email) {
     return this.model.findOne({ email: email.toLowerCase() });
   },

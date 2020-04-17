@@ -849,6 +849,25 @@ const commonProjectRoutes = {
       }
     },
     handler: handlers.isCandidate
+  },
+  getBlockchainData: {
+    method: 'get',
+    path: `${basePath}/:projectId/blockchain-data`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description:
+          'Returns the blockchain information related to the project',
+        summary: 'Returns blockchain information',
+        params: projectIdParam,
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getBlockchainData
   }
 };
 
