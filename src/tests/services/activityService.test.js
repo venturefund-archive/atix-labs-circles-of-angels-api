@@ -8,7 +8,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { coa, run } = require('@nomiclabs/buidler');
+const { coa } = require('@nomiclabs/buidler');
 const files = require('../../rest/util/files');
 const { projectStatuses, userRoles } = require('../../rest/util/constants');
 const { injectMocks } = require('../../rest/util/injection');
@@ -16,19 +16,12 @@ const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const originalActivityService = require('../../rest/services/activityService');
 const validateMtype = require('../../rest/services/helpers/validateMtype');
+const txExplorerHelper = require('../../rest/services/helpers/txExplorerHelper');
 const validatePhotoSize = require('../../rest/services/helpers/validatePhotoSize');
 
 let activityService = Object.assign({}, originalActivityService);
 const restoreActivityService = () => {
   activityService = Object.assign({}, originalActivityService);
-};
-const TEST_TIMEOUT_MS = 10000;
-const deployContracts = async () => {
-  await run('deploy', { reset: true });
-  const coaContract = await coa.getCOA();
-  const superDaoAddress = await coaContract.daos(0);
-  const coaSigner = await coa.getSigner();
-  return { coaContract, superDaoAddress, coaSigner };
 };
 
 describe('Testing activityService', () => {
@@ -66,6 +59,8 @@ describe('Testing activityService', () => {
 
   const userSupporter = {
     id: 2,
+    firstName: 'User',
+    lastName: 'Supporter',
     role: userRoles.PROJECT_SUPPORTER
   };
 
@@ -118,7 +113,8 @@ describe('Testing activityService', () => {
     description: mockedDescription,
     proof: '/file/taskEvidence',
     approved: true,
-    task: nonUpdatableTask.id
+    task: nonUpdatableTask.id,
+    txHash: '0x111'
   };
 
   const taskEvidenceNotApproved = {
@@ -127,7 +123,8 @@ describe('Testing activityService', () => {
     description: mockedDescription,
     proof: '/file/taskEvidence',
     approved: false,
-    task: nonUpdatableTask.id
+    task: nonUpdatableTask.id,
+    txHash: '0x222'
   };
 
   const activityDao = {
@@ -170,6 +167,7 @@ describe('Testing activityService', () => {
   };
 
   const taskEvidenceDao = {
+    findById: id => dbTaskEvidence.find(evidence => evidence.id === id),
     addTaskEvidence: ({ description, proof, approved, task }) => {
       const newTaskEvidenceId =
         dbTaskEvidence.length > 0
@@ -211,6 +209,14 @@ describe('Testing activityService', () => {
       if (!found)
         throw new COAError(errors.common.CantFindModelWithId('user', id));
       return found;
+    },
+    getUserByAddress: address => {
+      const found = dbUser.find(user => user.address === address);
+      if (!found)
+        throw new COAError(
+          errors.common.CantFindModelWithAddress('user', address)
+        );
+      return found;
     }
   };
 
@@ -243,6 +249,7 @@ describe('Testing activityService', () => {
     coa.sendAddClaimTransaction = jest.fn();
     coa.getAddClaimTransaction = jest.fn();
     coa.getTransactionNonce = jest.fn(() => 0);
+    coa.getTransactionResponse = jest.fn(() => null);
   });
 
   beforeEach(() => resetDb());
@@ -769,7 +776,12 @@ describe('Testing activityService', () => {
       });
 
       expect(response).toHaveLength(1);
-      expect(response).toEqual([{ ...taskEvidence }]);
+      expect(response).toEqual([
+        {
+          ...taskEvidence,
+          txLink: txExplorerHelper.buildTxURL(taskEvidence.txHash)
+        }
+      ]);
     });
   });
 
@@ -1012,6 +1024,71 @@ describe('Testing activityService', () => {
         throw new COAError(errors.common.CantFindModelWithId('task', taskId));
       });
       await expect(activityService.isTaskVerified(0)).resolves.toBe(false);
+    });
+  });
+
+  describe('Testing getEvidenceBlockchainData method', () => {
+    const oracleAddress = '0x123456789';
+    const txResponse = {
+      blockNumber: 10,
+      timestamp: 1587146117347,
+      from: oracleAddress
+    };
+
+    beforeAll(() => {
+      injectMocks(activityService, {
+        taskEvidenceDao,
+        userService
+      });
+    });
+    beforeEach(() => {
+      dbUser.push({ ...userSupporter, address: oracleAddress });
+      dbTaskEvidence.push(taskEvidence);
+    });
+    afterAll(() => restoreActivityService());
+
+    it('should return the blockchain data of the evidence', async () => {
+      coa.getTransactionResponse.mockReturnValueOnce(txResponse);
+      const response = await activityService.getEvidenceBlockchainData(
+        taskEvidence.id
+      );
+      expect(response).toEqual({
+        oracle: {
+          oracleName: `${userSupporter.firstName} ${userSupporter.lastName}`,
+          oracleAddress: txResponse.from,
+          oracleAddressUrl: txExplorerHelper.buildAddressURL(txResponse.from)
+        },
+        txHash: taskEvidence.txHash,
+        txHashUrl: txExplorerHelper.buildTxURL(taskEvidence.txHash),
+        creationDate: new Date(txResponse.timestamp),
+        blockNumber: txResponse.blockNumber,
+        blockNumberUrl: txExplorerHelper.buildBlockURL(txResponse.blockNumber),
+        proof: taskEvidence.proof
+      });
+    });
+
+    it('should throw an error if the evidence does not exist', async () => {
+      await expect(
+        activityService.getEvidenceBlockchainData(0)
+      ).rejects.toThrow(errors.common.CantFindModelWithId('task_evidence', 0));
+    });
+
+    it('should throw an error if the evidence does not have a txHash', async () => {
+      dbTaskEvidence = [{ ...taskEvidence, txHash: undefined }];
+      await expect(
+        activityService.getEvidenceBlockchainData(taskEvidence.id)
+      ).rejects.toThrow(
+        errors.task.EvidenceBlockchainInfoNotFound(taskEvidence.id)
+      );
+    });
+
+    it("should throw an error if the transaction doesn't exist", async () => {
+      coa.getTransactionResponse.mockReturnValueOnce(null);
+      await expect(
+        activityService.getEvidenceBlockchainData(taskEvidence.id)
+      ).rejects.toThrow(
+        errors.task.EvidenceBlockchainInfoNotFound(taskEvidence.id)
+      );
     });
   });
 });
