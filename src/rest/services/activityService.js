@@ -616,7 +616,7 @@ module.exports = {
       'task_evidence'
     );
 
-    const { txHash } = evidence;
+    const { txHash, proof } = evidence;
 
     if (!txHash) {
       logger.info(
@@ -651,14 +651,17 @@ module.exports = {
     }
 
     return {
-      oracleName,
-      oracleAddress: from,
-      oracleAddressUrl: from ? buildAddressURL(from) : undefined,
+      oracle: {
+        oracleName,
+        oracleAddress: from,
+        oracleAddressUrl: from ? buildAddressURL(from) : undefined
+      },
       txHash,
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
       creationDate: timestamp ? new Date(timestamp) : undefined,
       blockNumber,
-      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined
+      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
+      proof
     };
   }
 };

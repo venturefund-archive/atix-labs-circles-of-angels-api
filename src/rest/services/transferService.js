@@ -438,7 +438,7 @@ module.exports = {
       'fund_transfer'
     );
 
-    const { txHash } = transfer;
+    const { txHash, receiptPath } = transfer;
     if (!txHash) {
       logger.info(
         `[TransferService] :: Transfer ${transferId} does not have blockchain information`
@@ -466,7 +466,8 @@ module.exports = {
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
       creationDate: timestamp ? new Date(timestamp) : undefined,
       blockNumber,
-      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined
+      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
+      receipt: receiptPath
     };
   }
 };

@@ -1396,6 +1396,7 @@ module.exports = {
     logger.info('[ProjectService] :: Entering getBlockchainInfo method');
     const project = await checkExistence(this.projectDao, projectId, 'project');
 
+    // TODO: add agreement ipfs hash
     const { address, txHash } = project;
 
     if (!txHash) {
@@ -1425,7 +1426,8 @@ module.exports = {
       addressUrl: address ? buildAddressURL(address) : undefined,
       creationDate: timestamp ? new Date(timestamp) : undefined,
       blockNumber,
-      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined
+      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
+      agreement: undefined // TODO: add when ipfs is implemented
     };
   }
 };
