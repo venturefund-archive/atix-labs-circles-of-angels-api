@@ -104,12 +104,12 @@ describe('COA plugin tests', () => {
     });
   });
 
-  describe('Testing getTransactionNonce method', () => {
+  describe('Testing getTransactionCount method', () => {
     it('should return the transaction count for the address', async () => {
       const signer = await coa.getSigner();
-      const initialTxNonce = await coa.getTransactionNonce(signer._address);
+      const initialTxNonce = await coa.getTransactionCount(signer._address);
       await signer.sendTransaction({ to: address, value: 100 });
-      const finalTxNonce = await coa.getTransactionNonce(signer._address);
+      const finalTxNonce = await coa.getTransactionCount(signer._address);
       expect(finalTxNonce).toEqual(initialTxNonce + 1);
     });
   });

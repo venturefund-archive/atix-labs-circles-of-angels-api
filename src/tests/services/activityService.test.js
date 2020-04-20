@@ -237,6 +237,11 @@ describe('Testing activityService', () => {
     }
   };
 
+  const transactionService = {
+    getNextNonce: jest.fn(() => 0),
+    save: jest.fn()
+  };
+
   beforeAll(() => {
     restoreActivityService();
     files.validateAndSaveFile = jest.fn((type, file) => {
@@ -248,7 +253,6 @@ describe('Testing activityService', () => {
     files.getSaveFilePath = jest.fn(() => '/dir/path');
     coa.sendAddClaimTransaction = jest.fn();
     coa.getAddClaimTransaction = jest.fn();
-    coa.getTransactionNonce = jest.fn(() => 0);
     coa.getTransactionResponse = jest.fn(() => null);
   });
 
@@ -534,11 +538,13 @@ describe('Testing activityService', () => {
 
   describe('Testing sendAddClaimTransaction', () => {
     const signedTransaction = '0x11122233548979870';
+    const userAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';
     beforeAll(() => {
       injectMocks(activityService, {
         activityDao,
         taskEvidenceDao,
-        projectService
+        projectService,
+        transactionService
       });
     });
 
@@ -570,7 +576,8 @@ describe('Testing activityService', () => {
           file: evidenceFile,
           description: mockedDescription,
           approved: true,
-          signedTransaction
+          signedTransaction,
+          userAddress
         });
         const createdEvidence = dbTaskEvidence.find(
           evidence => evidence.task === nonUpdatableTask.id
@@ -597,7 +604,8 @@ describe('Testing activityService', () => {
           file: evidenceFile,
           description: mockedDescription,
           approved: true,
-          signedTransaction
+          signedTransaction,
+          userAddress
         })
       ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
     });
@@ -613,7 +621,8 @@ describe('Testing activityService', () => {
           file: evidenceFile,
           description: 'description',
           approved: true,
-          signedTransaction
+          signedTransaction,
+          userAddress
         })
       ).rejects.toThrow(
         errors.project.InvalidStatusForEvidenceUpload(newProject.status)
@@ -627,7 +636,8 @@ describe('Testing activityService', () => {
           file: evidenceFile,
           description: mockedDescription,
           approved: true,
-          signedTransaction
+          signedTransaction,
+          userAddress
         })
       ).rejects.toThrow(
         errors.task.OracleNotAssigned({
@@ -644,7 +654,8 @@ describe('Testing activityService', () => {
           file: { name: 'invalidclaim.exe', size: 2000 },
           description: mockedDescription,
           approved: true,
-          signedTransaction
+          signedTransaction,
+          userAddress
         })
       ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
     });
@@ -657,7 +668,8 @@ describe('Testing activityService', () => {
           file: { name: 'imbig.jpg', size: 999999999999 },
           description: mockedDescription,
           approved: true,
-          signedTransaction
+          signedTransaction,
+          userAddress
         })
       ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
     });
@@ -672,7 +684,8 @@ describe('Testing activityService', () => {
       injectMocks(activityService, {
         activityDao,
         taskEvidenceDao,
-        projectService
+        projectService,
+        transactionService
       });
     });
 
