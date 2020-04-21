@@ -92,7 +92,6 @@ describe('Testing transferService', () => {
     files.saveFile = jest.fn(() => '/dir/path');
     coa.sendAddClaimTransaction = jest.fn(() => ({ hash: '0x01' }));
     coa.getAddClaimTransaction = jest.fn();
-    coa.getTransactionNonce = jest.fn(() => 0);
     coa.getTransactionResponse = jest.fn(() => null);
   });
   afterAll(() => jest.clearAllMocks());
@@ -169,6 +168,11 @@ describe('Testing transferService', () => {
         throw new COAError(errors.common.CantFindModelWithId('user', id));
       return found;
     }
+  };
+
+  const transactionService = {
+    getNextNonce: jest.fn(() => 0),
+    save: jest.fn()
   };
 
   describe('Testing transferService createTransfer', () => {
@@ -421,9 +425,11 @@ describe('Testing transferService', () => {
   });
 
   describe('Testing sendAddTransferClaimTransaction method', () => {
+    const userAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';
     beforeAll(() => {
       injectMocks(transferService, {
-        transferDao
+        transferDao,
+        transactionService
       });
     });
 
@@ -446,7 +452,8 @@ describe('Testing transferService', () => {
           transferId: pendingTransfer.id,
           userId: bankOperatorUser.id,
           approved,
-          signedTransaction: '0x123'
+          signedTransaction: '0x123',
+          userAddress
         });
 
         const updated = dbTransfer.find(t => t.id === pendingTransfer.id);
@@ -475,7 +482,8 @@ describe('Testing transferService', () => {
           transferId: pendingTransfer.id,
           userId: userFunder.id,
           approved: true,
-          signedTransaction: '0x123'
+          signedTransaction: '0x123',
+          userAddress
         })
       ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));
     });
@@ -486,7 +494,8 @@ describe('Testing transferService', () => {
           transferId: 0,
           userId: bankOperatorUser.id,
           approved: true,
-          signedTransaction: '0x123'
+          signedTransaction: '0x123',
+          userAddress
         })
       ).rejects.toThrow(errors.common.CantFindModelWithId('fund_transfer', 0));
     });
@@ -497,7 +506,8 @@ describe('Testing transferService', () => {
           transferId: verifiedTransfer.id,
           userId: bankOperatorUser.id,
           approved: true,
-          signedTransaction: '0x123'
+          signedTransaction: '0x123',
+          userAddress
         })
       ).rejects.toThrow(errors.transfer.InvalidTransferTransition);
     });
@@ -511,7 +521,8 @@ describe('Testing transferService', () => {
     beforeAll(() => {
       injectMocks(transferService, {
         transferDao,
-        projectService
+        projectService,
+        transactionService
       });
     });
 

@@ -297,14 +297,15 @@ module.exports = {
     userId,
     approved,
     rejectionReason,
-    signedTransaction
+    signedTransaction,
+    userAddress
   }) {
     logger.info(
       '[TransferService] :: Entering sendAddTransferClaimTransaction method'
     );
     validateRequiredParams({
       method: 'sendAddTransferClaimTransaction',
-      params: { transferId, userId, approved, signedTransaction }
+      params: { transferId, userId, approved, signedTransaction, userAddress }
     });
     await this.validateAddTransferClaim({ transferId, userId, approved });
 
@@ -322,6 +323,11 @@ module.exports = {
     if (!approved && rejectionReason) fields.rejectionReason = rejectionReason;
 
     const updated = await this.transferDao.update(fields);
+    await this.transactionService.save({
+      sender: userAddress,
+      txHash: tx.hash,
+      nonce: tx.nonce
+    });
     logger.info('[TransferService] :: Claim added and status transfer updated');
     return { transferId: updated.id };
   },
@@ -372,7 +378,9 @@ module.exports = {
       approved,
       0 // 0 because it doesn't belong to a milestone
     );
-    const nonce = await coa.getTransactionNonce(userWallet.address);
+    const nonce = await this.transactionService.getNextNonce(
+      userWallet.address
+    );
     const txWithNonce = { ...unsignedTx, nonce };
 
     logger.info(

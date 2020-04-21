@@ -22,5 +22,9 @@ module.exports = {
   CantFindModelWithAddress: (model, address) => ({
     message: `Can't find ${model} with address ${address}`,
     statusCode: 400
+  }),
+  CantFindModelWithTxHash: (model, txHash) => ({
+    message: `Can't find ${model} with txHash ${txHash}`,
+    statusCode: 400
   })
 };

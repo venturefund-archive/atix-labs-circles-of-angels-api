@@ -1,75 +1,31 @@
-const { blockchainStatus } = require('../util/constants');
-
-const insertTransaction = transactionModel => async ({
-  sender,
-  receiver,
-  data,
-  transactionHash,
-  privKey,
-  activityId,
-  milestoneId,
-  projectId,
-  type,
-  status
-}) => {
-  const transaction = await transactionModel.findOne({ where: { data } });
-  if (!transaction)
-    return transactionModel.create({
-      sender,
-      receiver,
-      data,
-      transactionHash,
-      status: blockchainStatus.PENDING,
-      activityId,
-      milestoneId,
-      projectId,
-      privKey,
-      type
+module.exports = {
+  async findById(id) {
+    return this.model.findOne({ id });
+  },
+  async findOneByProps(filters, populate) {
+    return this.model.findOne(filters, populate);
+  },
+  async findAllByProps(filters, populate) {
+    return this.model.find(filters, populate);
+  },
+  async findByTxHash(txHash) {
+    return this.model.findOne({ txHash });
+  },
+  async findLastTxBySender(sender) {
+    const [tx] = await this.model.find({
+      where: { sender },
+      limit: 1,
+      sort: 'nonce DESC'
     });
-  const newStatus = status || blockchainStatus.PENDING;
-  return transactionModel.updateOne({ where: { id: transaction.id } }).set({
-    sender,
-    receiver,
-    data,
-    transactionHash,
-    privKey,
-    status: newStatus
-  });
+    return tx;
+  },
+  async findAllBySender(sender) {
+    return this.model.find({ sender });
+  },
+  async save(transaction) {
+    return this.model.create(transaction);
+  },
+  async delete(id) {
+    return this.model.destroyOne({ id });
+  }
 };
-
-const getUnconfirmedTransactions = transactionModel => async () =>
-  transactionModel.find({
-    status: blockchainStatus.SENT
-  });
-
-const getPoolTransactions = transactionModel => async () =>
-  transactionModel.find({
-    where: { status: blockchainStatus.PENDING },
-    sort: 'id DESC'
-  });
-
-const sendTransaction = transactionModel => async (
-  id,
-  transactionHash,
-  sender
-) =>
-  transactionModel
-    .updateOne(id)
-    .set({ status: blockchainStatus.SENT, transactionHash, sender });
-
-const confirmTransaction = transactionModel => async transactionHash =>
-  transactionModel
-    .updateOne({ where: { transactionHash } })
-    .set({ status: blockchainStatus.CONFIRMED });
-
-const abortTransaction = transactionModel => async id =>
-  transactionModel.updateOne(id).set({ status: blockchainStatus.ABORTED });
-
-module.exports = transactionModel => ({
-  insertTransaction: insertTransaction(transactionModel),
-  getUnconfirmedTransactions: getUnconfirmedTransactions(transactionModel),
-  confirmTransaction: confirmTransaction(transactionModel),
-  sendTransaction: sendTransaction(transactionModel),
-  getPoolTransactions: getPoolTransactions(transactionModel),
-  abortTransaction: abortTransaction(transactionModel)
-});

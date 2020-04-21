@@ -174,10 +174,13 @@ CREATE TABLE public.task_evidence (
 );
 
 CREATE TABLE public.transaction (
-    id SERIAL NOT NULL,
-    sender varchar(42) NOT NULL,
-    data text NOT NULL,
-    PRIMARY KEY (id)
+	id SERIAL NOT NULL,
+	sender varchar(42) NOT NULL,
+    "txHash" varchar(80) NOT NULL,
+    "createdAt" date DEFAULT now(),
+    nonce int4 NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY ("sender") REFERENCES public.user (address)
 );
 
 CREATE TABLE public.project_experience (
