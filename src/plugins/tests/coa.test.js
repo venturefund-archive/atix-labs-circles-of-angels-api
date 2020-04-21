@@ -12,6 +12,8 @@ const revertSnapshot = snapshot => ethereum.send('evm_revert', [snapshot]);
 
 describe('COA plugin tests', () => {
   const address = '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A';
+  const txHash =
+    '0xee079ea15a894cc95cca919812f490fdf5bc494ec69781d05cecda841d3c11a2';
   let evmSnapshot;
   beforeAll(async () => {
     evmSnapshot = await deployContracts();
@@ -109,6 +111,23 @@ describe('COA plugin tests', () => {
       await signer.sendTransaction({ to: address, value: 100 });
       const finalTxNonce = await coa.getTransactionNonce(signer._address);
       expect(finalTxNonce).toEqual(initialTxNonce + 1);
+    });
+  });
+
+  describe('Testing getTransactionResponse method', () => {
+    it('should return the transaction response for the transaction', async () => {
+      const signer = await coa.getSigner();
+      const { hash } = await signer.sendTransaction({
+        to: address,
+        value: 100
+      });
+      const response = await coa.getTransactionResponse(hash);
+      expect(response).toHaveProperty('hash', hash);
+      expect(response).toHaveProperty('blockNumber', expect.any(Number));
+    });
+    it('should return null if the transaction does not exist', async () => {
+      const response = await coa.getTransactionResponse(txHash);
+      expect(response).toEqual(null);
     });
   });
 

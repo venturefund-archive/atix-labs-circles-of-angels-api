@@ -112,5 +112,9 @@ module.exports = {
   AddressNotFound: projectId => ({
     message: `Project of id ${projectId} doesn't have an address`,
     statusCode: 400
+  }),
+  BlockchainInfoNotFound: projectId => ({
+    message: `Project ${projectId} doesn't have blockchain information`,
+    statusCode: 400
   })
 };

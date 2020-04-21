@@ -27,6 +27,21 @@ module.exports = {
   },
 
   /**
+   * Returns the user which the specified address belongs to
+   * @param {String} address
+   */
+  async getUserByAddress(address) {
+    logger.info('[UserService] :: Entering getUserByAddress method');
+    const user = await this.userDao.findByAddress(address);
+    if (user) {
+      logger.info('[UserService] :: User found');
+      return user;
+    }
+    logger.error(`[UserService] :: User with address ${address} not found`);
+    throw new COAError(errors.common.CantFindModelWithAddress('user', address));
+  },
+
+  /**
    * Receives the user's email and password and tries to authenticate
    *
    * @param {string} email user's email

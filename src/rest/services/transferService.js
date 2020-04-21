@@ -19,6 +19,11 @@ const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
+const {
+  buildBlockURL,
+  buildTxURL,
+  buildAddressURL
+} = require('./helpers/txExplorerHelper');
 const errors = require('../errors/exporter/ErrorExporter');
 const COAError = require('../errors/COAError');
 const logger = require('../logger');
@@ -419,5 +424,50 @@ module.exports = {
       throw new COAError(errors.transfer.InvalidTransferTransition);
     }
     return true;
+  },
+
+  /**
+   * Returns the blockchain information for the specified fund transfer
+   * @param {number} transferId
+   */
+  async getBlockchainData(transferId) {
+    logger.info('[TransferService] :: Entering getBlockchainData method');
+    const transfer = await checkExistence(
+      this.transferDao,
+      transferId,
+      'fund_transfer'
+    );
+
+    const { txHash, receiptPath } = transfer;
+    if (!txHash) {
+      logger.info(
+        `[TransferService] :: Transfer ${transferId} does not have blockchain information`
+      );
+      throw new COAError(errors.transfer.BlockchainInfoNotFound(transferId));
+    }
+
+    logger.info(
+      `[TransferService] :: Getting transaction response for ${txHash}`
+    );
+    const txResponse = await coa.getTransactionResponse(txHash);
+    // not sure if this is necessary
+    if (!txResponse) {
+      logger.info(
+        `[TransferService] :: Transfer ${transferId} does not have blockchain information`
+      );
+      throw new COAError(errors.transfer.BlockchainInfoNotFound(transferId));
+    }
+    const { blockNumber, timestamp, from } = txResponse;
+
+    return {
+      validatorAddress: from,
+      validatorAddressUrl: from ? buildAddressURL(from) : undefined,
+      txHash,
+      txHashUrl: txHash ? buildTxURL(txHash) : undefined,
+      creationDate: timestamp ? new Date(timestamp) : undefined,
+      blockNumber,
+      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
+      receipt: receiptPath
+    };
   }
 };

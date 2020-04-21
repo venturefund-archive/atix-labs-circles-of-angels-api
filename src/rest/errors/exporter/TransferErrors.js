@@ -21,5 +21,9 @@ module.exports = {
   },
   CantCreateTransfer: {
     message: "Couldn't create transfer"
-  }
+  },
+  BlockchainInfoNotFound: tansferId => ({
+    message: `Fund transfer ${tansferId} doesn't have blockchain information`,
+    statusCode: 400
+  })
 };
