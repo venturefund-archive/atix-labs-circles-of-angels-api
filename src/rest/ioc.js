@@ -20,6 +20,7 @@ const userProjectService = require('./services/userProjectService');
 const transferService = require('./services/transferService');
 const milestoneService = require('./services/milestoneService');
 const daoService = require('./services/daoService');
+const transactionService = require('./services/transactionService');
 
 const projectStatusValidators = require('./services/helpers/projectStatusValidators/validators');
 const cronjobService = require('./services/cronjob/cronjobService');
@@ -44,6 +45,7 @@ const passRecoveryDao = require('./dao/passRecoveryDao');
 const projectExperiencePhotoDao = require('./dao/projectExperiencePhotoDao');
 const featuredProjectDao = require('./dao/featuredProjectDao');
 const taskEvidenceDao = require('./dao/taskEvidenceDao');
+const transactionDao = require('./dao/transactionDao');
 
 const { injectDependencies } = require('./util/injection');
 
@@ -119,7 +121,8 @@ module.exports = fastify => {
       oracleActivityDao: undefined,
       userService,
       milestoneService,
-      projectService
+      projectService,
+      transactionService
     };
     injectDependencies(service, dependencies);
   }
@@ -136,7 +139,8 @@ module.exports = fastify => {
     const dependencies = {
       transferDao,
       projectService,
-      userService
+      userService,
+      transactionService
     };
 
     injectDependencies(service, dependencies);
@@ -199,6 +203,14 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
+  function configureTransactionService(service) {
+    const dependencies = {
+      userService,
+      transactionDao
+    };
+    injectDependencies(service, dependencies);
+  }
+
   function configureDAOs(models) {
     injectModel(userDao, models.user);
     injectModel(photoDao, models.photo);
@@ -218,6 +230,7 @@ module.exports = fastify => {
     // TODO: delete this when dao and model deleted
     injectModel(featuredProjectDao, models.featured_project);
     injectModel(taskEvidenceDao, models.task_evidence);
+    injectModel(transactionDao, models.transaction);
   }
 
   function configureServices() {
@@ -236,6 +249,7 @@ module.exports = fastify => {
     configureDaoService(daoService);
     configureProjectStatusValidators(projectStatusValidators);
     configureCronjobService(cronjobService);
+    configureTransactionService(transactionService);
   }
 
   function init({ models }) {

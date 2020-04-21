@@ -435,12 +435,21 @@ module.exports = {
     file,
     description,
     approved,
-    signedTransaction
+    signedTransaction,
+    userAddress
   }) {
     logger.info('[ActivityService] :: Entering sendAddClaimTransaction method');
     validateRequiredParams({
       method: 'sendAddClaimTransaction',
-      params: { taskId, userId, file, description, approved, signedTransaction }
+      params: {
+        taskId,
+        userId,
+        file,
+        description,
+        approved,
+        signedTransaction,
+        userAddress
+      }
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
@@ -484,6 +493,11 @@ module.exports = {
     };
     logger.info('[ActivityService] :: Saving evidence in database', evidence);
     const taskEvidence = await this.taskEvidenceDao.addTaskEvidence(evidence);
+    await this.transactionService.save({
+      sender: userAddress,
+      txHash: tx.hash,
+      nonce: tx.nonce
+    });
     return { claimId: taskEvidence.id };
   },
 
@@ -529,7 +543,9 @@ module.exports = {
       approved,
       milestoneId
     );
-    const nonce = await coa.getTransactionNonce(userWallet.address);
+    const nonce = await this.transactionService.getNextNonce(
+      userWallet.address
+    );
     const txWithNonce = { ...unsignedTx, nonce };
 
     logger.info(
