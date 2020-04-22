@@ -198,7 +198,9 @@ module.exports = fastify => {
 
   function configureCronjobService(service) {
     const dependencies = {
-      projectService
+      projectService,
+      transferService,
+      activityService
     };
     injectDependencies(service, dependencies);
   }

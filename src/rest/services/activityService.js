@@ -482,7 +482,7 @@ module.exports = {
       taskId
     );
     const tx = await coa.sendAddClaimTransaction(signedTransaction);
-    logger.info('[ActivityService] :: Add claim transaction sent');
+    logger.info('[ActivityService] :: Add claim transaction sent', tx);
 
     // TODO: we shouldn't save the file once we have the ipfs storage working
     logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
@@ -542,7 +542,6 @@ module.exports = {
 
     logger.info('[ActivityService] :: Getting add claim transaction');
     const unsignedTx = await coa.getAddClaimTransaction(
-      taskId,
       address,
       claim,
       proof,
@@ -693,18 +692,22 @@ module.exports = {
    * @param {number} id
    * @param {String} status
    */
-  async updateEvidenceStatus(id, status) {
+  async updateEvidenceStatusByTxHash(txHash, status) {
     logger.info('[ActivityService] :: Entering updateEvidenceStatus method');
     validateRequiredParams({
       method: 'updateEvidenceStatus',
-      params: { id, status }
+      params: { txHash, status }
     });
 
-    const evidence = await checkExistence(
-      this.taskEvidenceDao,
-      id,
-      'task_evidence'
-    );
+    const evidence = await this.taskEvidenceDao.findByTxHash(txHash);
+    if (!evidence) {
+      logger.info(
+        `[ActivityService] :: Evidence with txHash ${txHash} could not be found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithTxHash('task_evidence', txHash)
+      );
+    }
 
     if (!Object.values(txEvidenceStatus).includes(status)) {
       logger.error(
@@ -727,7 +730,61 @@ module.exports = {
       );
     }
 
-    const updated = await this.taskEvidenceDao.update({ id, status });
+    logger.info(
+      `[ActivityService] :: Updating evidence ${
+        evidence.id
+      } to status ${status}`
+    );
+    const updated = await this.taskEvidenceDao.updateTaskEvidence(evidence.id, {
+      status
+    });
     return { evidenceId: updated.id };
+  },
+  /**
+   * Checks all evidence transactions and
+   * updates their status to the ones that failed.
+   *
+   * Returns an array with all failed evidence ids
+   *
+   */
+  async updateFailedEvidenceTransactions() {
+    logger.info(
+      '[ActivityService] :: Entering updateFailedEvidenceTransactions method'
+    );
+    const sentTxs = await this.taskEvidenceDao.findAllSentTxs();
+    logger.info(
+      `[ActivityService] :: Found ${sentTxs.length} sent transactions`
+    );
+    const updated = await Promise.all(
+      sentTxs.map(async ({ id, txHash }) => {
+        const hasFailed = await this.transactionService.hasFailed(txHash);
+        if (hasFailed) {
+          try {
+            const { evidenceId } = await this.updateEvidenceStatus(
+              id,
+              txEvidenceStatus.FAILED
+            );
+            return evidenceId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              `[ActivityService] :: Couldn't update failed transaction status ${txHash}`,
+              error
+            );
+          }
+        }
+      })
+    );
+    const failed = updated.filter(tx => !!tx);
+    if (failed.length > 0) {
+      logger.info(
+        `[ActivityService] :: Updated status to ${
+          txEvidenceStatus.FAILED
+        } for evidences ${failed}`
+      );
+    } else {
+      logger.info('[ActivityService] :: No failed transactions found');
+    }
+    return failed;
   }
 };

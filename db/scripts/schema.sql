@@ -97,7 +97,8 @@ CREATE TABLE public.project (
     "lastUpdatedStatusAt" timestamp with time zone DEFAULT NOW(),
     "txHash" varchar(80) DEFAULT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY ("ownerId") REFERENCES public.user (id)
+    FOREIGN KEY ("ownerId") REFERENCES public.user (id),
+    UNIQUE ("txHash")
 );
 
 CREATE TABLE public."featured_project" (
@@ -180,7 +181,8 @@ CREATE TABLE public.task_evidence (
     "txHash" varchar(80) DEFAULT NULL,
     status tx_evidence_status DEFAULT 'notsent',
 	CONSTRAINT task_evidence_pkey PRIMARY KEY ("id"),
-	CONSTRAINT "task_evidence_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES task(id)
+	CONSTRAINT "task_evidence_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES task(id),
+    UNIQUE ("txHash")
 );
 
 CREATE TABLE public.transaction (
@@ -190,7 +192,8 @@ CREATE TABLE public.transaction (
     "createdAt" date DEFAULT now(),
     nonce int4 NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY ("sender") REFERENCES public.user (address)
+    FOREIGN KEY ("sender") REFERENCES public.user (address),
+    UNIQUE ("txHash")
 );
 
 CREATE TABLE public.project_experience (
@@ -228,7 +231,8 @@ CREATE TABLE public.fund_transfer (
     "txHash" varchar(80) DEFAULT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY ("projectId") REFERENCES public.project (id),
-    FOREIGN KEY ("senderId") REFERENCES public.user (id)
+    FOREIGN KEY ("senderId") REFERENCES public.user (id),
+    UNIQUE ("txHash")
 );
 
 CREATE TABLE public.pass_recovery (

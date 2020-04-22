@@ -91,6 +91,12 @@ module.exports = {
       disabled: false,
       runOnInit: false,
       timezone: undefined
+    },
+    checkFailedTransactionsJob: {
+      cronTime: cronExpressions.EVERY_HOUR,
+      disabled: false,
+      runOnInit: false,
+      timezone: undefined
     }
   },
 

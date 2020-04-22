@@ -24,10 +24,9 @@ module.exports = {
     txHash: { type: 'string', required: false, allowNull: true },
     status: {
       type: 'string',
-      required: true,
+      defaultsTo: txEvidenceStatus.NOT_SENT,
       validations: {
-        isIn: Object.values(txEvidenceStatus),
-        defaultsTo: txEvidenceStatus.NOT_SENT
+        isIn: Object.values(txEvidenceStatus)
       }
     }
   }

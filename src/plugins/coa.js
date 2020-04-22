@@ -95,7 +95,6 @@ module.exports = class COA {
   }
 
   async getAddClaimTransaction(
-    claimId,
     projectAddress,
     claim,
     proof,
@@ -106,7 +105,7 @@ module.exports = class COA {
     const unsignedTransaction = await this.getUnsignedTransaction(
       registry,
       'addClaim',
-      [claimId, projectAddress, claim, proof, valid, milestoneId]
+      [projectAddress, claim, proof, valid, milestoneId]
     );
     return unsignedTransaction;
   }
@@ -325,5 +324,12 @@ module.exports = class COA {
   async getTransactionResponse(txHash) {
     const txInfo = await this.env.ethers.provider.getTransaction(txHash);
     return txInfo;
+  }
+
+  async getTransactionReceipt(txHash) {
+    const receipt = await this.env.ethers.provider.getTransactionReceipt(
+      txHash
+    );
+    return receipt;
   }
 };

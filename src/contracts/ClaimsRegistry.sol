@@ -19,7 +19,6 @@ contract ClaimsRegistry {
     // mapping(address => address[]) public projectValidators;
 
     event ClaimApproved(
-        uint256 id,
         address indexed project,
         address indexed validator,
         bytes32 indexed claim,
@@ -31,14 +30,12 @@ contract ClaimsRegistry {
 
     /**
     * @dev Adds a claim into the registry.
-    * @param _id - claim identifier
     * @param _project - address of a project.
     * @param _claim - bytes32 of the claim's hash.
     * @param _proof - bytes32 of the proof's hash.
     * @param _approved - true if the claim is approved, false otherwise.
     */
     function addClaim(
-        uint256 _id,
         address _project,
         bytes32 _claim,
         bytes32 _proof,
@@ -52,7 +49,6 @@ contract ClaimsRegistry {
         });
 
         emit ClaimApproved(
-            _id,
             _project,
             validator,
             _claim,
