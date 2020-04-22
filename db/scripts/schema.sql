@@ -6,11 +6,13 @@ CREATE TYPE ROLE AS ENUM(
   'bankoperator'
 );
 
-CREATE TYPE TX_FUNDER_STATUS AS ENUM (
-    'reconciliation',
-    'pending',
-    'cancelled',
-    'verified'
+CREATE TYPE tx_funder_status AS ENUM(
+  'reconciliation',
+  'pending',
+  'sent',
+  'failed',
+  'cancelled',
+  'verified'
 );
 
 CREATE TABLE public.country (
@@ -61,6 +63,13 @@ CREATE TYPE ClaimStatus AS ENUM (
   'claimable',
   'claimed',
   'transferred'
+);
+
+CREATE TYPE tx_evidence_status AS ENUM(
+  'notsent',
+  'sent',
+  'confirmed',
+  'failed'
 );
 
 CREATE TABLE public.project (
@@ -169,6 +178,7 @@ CREATE TABLE public.task_evidence (
 	"approved" boolean DEFAULT NULL,
 	"taskId" int4 NOT NULL,
     "txHash" varchar(80) DEFAULT NULL,
+    status tx_evidence_status DEFAULT 'notsent',
 	CONSTRAINT task_evidence_pkey PRIMARY KEY ("id"),
 	CONSTRAINT "task_evidence_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES task(id)
 );

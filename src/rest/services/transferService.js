@@ -130,7 +130,7 @@ module.exports = {
    * @param {number} id - Transfer's `id` field
    * @param {Object} status - New status to update the transfer with
    * @param {string} status.status
-   * @returns {{ transferId: number }} transfer's `id` field
+   * @returns {Promise<{ transferId: number }>} transfer's `id` field
    */
   async updateTransfer(id, { status }) {
     logger.info('[TransferService] :: Entering updateTransfer method');
@@ -153,8 +153,12 @@ module.exports = {
     }
 
     // TODO: define what to do with RECONCILIATION status
-    if (transfer.status !== txFunderStatus.PENDING) {
-      logger.error('[TransferService] :: Transfer status is not pending', {
+    if (
+      [txFunderStatus.VERIFIED, txFunderStatus.CANCELLED].includes(
+        transfer.status
+      )
+    ) {
+      logger.error('[TransferService] :: Transfer status cannot be changed', {
         id: transfer.id,
         status: transfer.status
       });
@@ -316,10 +320,11 @@ module.exports = {
     const tx = await coa.sendAddClaimTransaction(signedTransaction);
     logger.info('[TransferService] :: Add claim transaction sent');
 
-    const status = approved
-      ? txFunderStatus.VERIFIED
-      : txFunderStatus.CANCELLED;
-    const fields = { id: transferId, status, txHash: tx.hash };
+    const fields = {
+      id: transferId,
+      status: txFunderStatus.SENT,
+      txHash: tx.hash
+    };
     if (!approved && rejectionReason) fields.rejectionReason = rejectionReason;
 
     const updated = await this.transferDao.update(fields);
@@ -372,6 +377,7 @@ module.exports = {
     }
 
     const unsignedTx = await coa.getAddClaimTransaction(
+      transferId,
       projectAddress,
       claim,
       proof,

@@ -41,7 +41,7 @@ module.exports = {
       required: true,
       validations: {
         isIn: Object.values(txFunderStatus),
-        defaultsTo: txFunderStatus.pending
+        defaultsTo: txFunderStatus.PENDING
       }
     },
     createdAt: { type: 'string', autoCreatedAt: true },

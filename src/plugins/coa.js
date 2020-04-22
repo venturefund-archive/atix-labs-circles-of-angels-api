@@ -95,6 +95,7 @@ module.exports = class COA {
   }
 
   async getAddClaimTransaction(
+    claimId,
     projectAddress,
     claim,
     proof,
@@ -105,7 +106,7 @@ module.exports = class COA {
     const unsignedTransaction = await this.getUnsignedTransaction(
       registry,
       'addClaim',
-      [projectAddress, claim, proof, valid, milestoneId]
+      [claimId, projectAddress, claim, proof, valid, milestoneId]
     );
     return unsignedTransaction;
   }

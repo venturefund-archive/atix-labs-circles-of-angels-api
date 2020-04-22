@@ -6,7 +6,8 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-// TODO delete this when rif storage service is developed
+const { txEvidenceStatus } = require('../../src/rest/util/constants');
+
 module.exports = {
   identity: 'task_evidence',
   primaryKey: 'id',
@@ -20,6 +21,14 @@ module.exports = {
       columnName: 'taskId',
       model: 'task'
     },
-    txHash: { type: 'string', required: false, allowNull: true }
+    txHash: { type: 'string', required: false, allowNull: true },
+    status: {
+      type: 'string',
+      required: true,
+      validations: {
+        isIn: Object.values(txEvidenceStatus),
+        defaultsTo: txEvidenceStatus.NOT_SENT
+      }
+    }
   }
 };
