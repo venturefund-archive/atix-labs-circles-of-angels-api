@@ -693,9 +693,11 @@ module.exports = {
    * @param {String} status
    */
   async updateEvidenceStatusByTxHash(txHash, status) {
-    logger.info('[ActivityService] :: Entering updateEvidenceStatus method');
+    logger.info(
+      '[ActivityService] :: Entering updateEvidenceStatusByTxHash method'
+    );
     validateRequiredParams({
-      method: 'updateEvidenceStatus',
+      method: 'updateEvidenceStatusByTxHash',
       params: { txHash, status }
     });
 
@@ -756,12 +758,12 @@ module.exports = {
       `[ActivityService] :: Found ${sentTxs.length} sent transactions`
     );
     const updated = await Promise.all(
-      sentTxs.map(async ({ id, txHash }) => {
+      sentTxs.map(async ({ txHash }) => {
         const hasFailed = await this.transactionService.hasFailed(txHash);
         if (hasFailed) {
           try {
-            const { evidenceId } = await this.updateEvidenceStatus(
-              id,
+            const { evidenceId } = await this.updateEvidenceStatusByTxHash(
+              txHash,
               txEvidenceStatus.FAILED
             );
             return evidenceId;
