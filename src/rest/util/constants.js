@@ -68,7 +68,9 @@ const txFunderStatus = {
   PENDING: 'pending',
   RECONCILIATION: 'reconciliation',
   CANCELLED: 'cancelled',
-  VERIFIED: 'verified'
+  VERIFIED: 'verified',
+  SENT: 'sent',
+  FAILED: 'failed'
 };
 
 const claimMilestoneStatus = {
@@ -161,6 +163,13 @@ const daoMemberRoleEnum = {
 };
 const daoMemberRoleNames = ['Normal', 'Bank Operator', 'Project Curator'];
 
+const txEvidenceStatus = {
+  NOT_SENT: 'notsent',
+  SENT: 'sent',
+  CONFIRMED: 'confirmed',
+  FAILED: 'failed'
+};
+
 module.exports = {
   evidenceFileTypes,
   txFunderStatus,
@@ -181,5 +190,6 @@ module.exports = {
   proposalTypeEnum,
   daoMemberRoleNames,
   daoMemberRoleEnum,
-  claimMilestoneStatus
+  claimMilestoneStatus,
+  txEvidenceStatus
 };

@@ -131,5 +131,23 @@ describe('COA plugin tests', () => {
     });
   });
 
+  describe('Testing getTransactionReceipt method', () => {
+    it('should return the transaction receipt for the transaction', async () => {
+      const signer = await coa.getSigner();
+      const { hash } = await signer.sendTransaction({
+        to: address,
+        value: 100
+      });
+      const response = await coa.getTransactionReceipt(hash);
+      expect(response).toHaveProperty('transactionHash', hash);
+      expect(response).toHaveProperty('blockNumber', expect.any(Number));
+      expect(response).toHaveProperty('status', 1);
+    });
+    it('should return null if the transaction does not exist', async () => {
+      const response = await coa.getTransactionReceipt(txHash);
+      expect(response).toEqual(null);
+    });
+  });
+
   test.todo('Write missing tests');
 });

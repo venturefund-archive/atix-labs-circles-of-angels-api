@@ -125,12 +125,38 @@ module.exports = {
   },
 
   /**
+   * Recieves a tx hash and updates the transfer status
+   *
+   * @param {string} txHash
+   * @param {string} status
+   */
+  async updateTransferStatusByTxHash(txHash, status) {
+    logger.info(
+      '[TransferService] :: Entering updateTransferStatusByTxHash method'
+    );
+    validateRequiredParams({
+      method: 'updateTransferStatusByTxHash',
+      params: { txHash, status }
+    });
+    const transfer = await this.transferDao.findByTxHash(txHash);
+    if (!transfer) {
+      logger.error(
+        `[TransferService] :: Transfer with txHash ${txHash} could not be found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithTxHash('fund_transfer', txHash)
+      );
+    }
+    return this.updateTransfer(transfer.id, { status });
+  },
+
+  /**
    * Updates an existing transfer status
    * Returns its `id` if successfully updated
    * @param {number} id - Transfer's `id` field
    * @param {Object} status - New status to update the transfer with
    * @param {string} status.status
-   * @returns {{ transferId: number }} transfer's `id` field
+   * @returns {Promise<{ transferId: number }>} transfer's `id` field
    */
   async updateTransfer(id, { status }) {
     logger.info('[TransferService] :: Entering updateTransfer method');
@@ -153,8 +179,12 @@ module.exports = {
     }
 
     // TODO: define what to do with RECONCILIATION status
-    if (transfer.status !== txFunderStatus.PENDING) {
-      logger.error('[TransferService] :: Transfer status is not pending', {
+    if (
+      [txFunderStatus.VERIFIED, txFunderStatus.CANCELLED].includes(
+        transfer.status
+      )
+    ) {
+      logger.error('[TransferService] :: Transfer status cannot be changed', {
         id: transfer.id,
         status: transfer.status
       });
@@ -316,10 +346,11 @@ module.exports = {
     const tx = await coa.sendAddClaimTransaction(signedTransaction);
     logger.info('[TransferService] :: Add claim transaction sent');
 
-    const status = approved
-      ? txFunderStatus.VERIFIED
-      : txFunderStatus.CANCELLED;
-    const fields = { id: transferId, status, txHash: tx.hash };
+    const fields = {
+      id: transferId,
+      status: txFunderStatus.SENT,
+      txHash: tx.hash
+    };
     if (!approved && rejectionReason) fields.rejectionReason = rejectionReason;
 
     const updated = await this.transferDao.update(fields);
@@ -477,5 +508,51 @@ module.exports = {
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       receipt: receiptPath
     };
+  },
+  /**
+   * Checks all transfer transactions and
+   * updates their status to the ones that failed.
+   *
+   * Returns an array with all failed transfer ids
+   *
+   */
+  async updateFailedTransactions() {
+    logger.info(
+      '[TransferService] :: Entering updateFailedTransactions method'
+    );
+    const sentTxs = await this.transferDao.findAllSentTxs();
+    logger.info(
+      `[TransferService] :: Found ${sentTxs.length} sent transactions`
+    );
+    const updated = await Promise.all(
+      sentTxs.map(async ({ id, txHash }) => {
+        const hasFailed = await this.transactionService.hasFailed(txHash);
+        if (hasFailed) {
+          try {
+            const { transferId } = await this.updateTransfer(id, {
+              status: txFunderStatus.FAILED
+            });
+            return transferId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              "[TransferService] :: Couldn't update failed transaction status",
+              txHash
+            );
+          }
+        }
+      })
+    );
+    const failed = updated.filter(tx => !!tx);
+    if (failed.length > 0) {
+      logger.info(
+        `[TransferService] :: Updated status to ${
+          txFunderStatus.FAILED
+        } for transfers ${failed}`
+      );
+    } else {
+      logger.info('[TransferService] :: No failed transactions found');
+    }
+    return failed;
   }
 };
