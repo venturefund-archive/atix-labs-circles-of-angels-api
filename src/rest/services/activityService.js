@@ -703,7 +703,7 @@ module.exports = {
 
     const evidence = await this.taskEvidenceDao.findByTxHash(txHash);
     if (!evidence) {
-      logger.info(
+      logger.error(
         `[ActivityService] :: Evidence with txHash ${txHash} could not be found`
       );
       throw new COAError(
