@@ -325,4 +325,11 @@ module.exports = class COA {
     const txInfo = await this.env.ethers.provider.getTransaction(txHash);
     return txInfo;
   }
+
+  async getTransactionReceipt(txHash) {
+    const receipt = await this.env.ethers.provider.getTransactionReceipt(
+      txHash
+    );
+    return receipt;
+  }
 };

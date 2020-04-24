@@ -77,5 +77,20 @@ module.exports = {
       return txCount;
     }
     return highestNonce + 1;
+  },
+  /**
+   * Checks if the transaction has failed or was removed from the mempool
+   *
+   * @param {string} txHash
+   */
+  async hasFailed(txHash) {
+    logger.info('[TransactionService] :: Entering hasFailed method');
+    validateRequiredParams({
+      method: 'hasFailed',
+      params: { txHash }
+    });
+    logger.info(`[TransactionService] :: Checking if ${txHash} has failed`);
+    const txReceipt = await coa.getTransactionReceipt(txHash);
+    return !txReceipt || txReceipt.status === 0;
   }
 };

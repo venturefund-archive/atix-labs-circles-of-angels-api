@@ -9,6 +9,7 @@
 
 module.exports = {
   EVERYDAY_AT_MIDNIGHT: '0 0 0 * * *',
-  EVERY_FIVE_MINUTES: '0 */5 * * * *',
-  EVERY_TEN_MINUTES: '0 */10 * * * *'
+  EVERY_HOUR: '0 0 */1 * * *',
+  EVERY_TEN_MINUTES: '0 */10 * * * *',
+  EVERY_FIVE_MINUTES: '0 */5 * * * *'
 };
