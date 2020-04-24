@@ -149,5 +149,38 @@ describe('COA plugin tests', () => {
     });
   });
 
+  describe('Testing getBlock method', () => {
+    it('should return the block of the transaction using the number as arg', async () => {
+      const signer = await coa.getSigner();
+      const { hash } = await signer.sendTransaction({
+        to: address,
+        value: 100
+      });
+      const receipt = await coa.getTransactionReceipt(hash);
+      expect(receipt).toHaveProperty('blockNumber', expect.any(Number));
+      const block = await coa.getBlock(receipt.blockNumber);
+      expect(block).toHaveProperty('hash', expect.any(String));
+      expect(block).toHaveProperty('number', receipt.blockNumber);
+      expect(block).toHaveProperty('timestamp', expect.any(Number));
+    });
+    it('should return the block of the transaction usign the hash as arg', async () => {
+      const signer = await coa.getSigner();
+      const { hash } = await signer.sendTransaction({
+        to: address,
+        value: 100
+      });
+      const receipt = await coa.getTransactionReceipt(hash);
+      expect(receipt).toHaveProperty('blockHash', expect.any(String));
+      const block = await coa.getBlock(receipt.blockHash);
+      expect(block).toHaveProperty('hash', receipt.blockHash);
+      expect(block).toHaveProperty('number', expect.any(Number));
+      expect(block).toHaveProperty('timestamp', expect.any(Number));
+    });
+    it('should return null if the block does not exist', async () => {
+      const response = await coa.getBlock(50);
+      expect(response).toEqual(null);
+    });
+  });
+
   test.todo('Write missing tests');
 });

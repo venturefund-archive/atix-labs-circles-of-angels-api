@@ -332,4 +332,15 @@ module.exports = class COA {
     );
     return receipt;
   }
+
+  /**
+   * Returns the block at blockHashOrNumber
+   * or the last one if none specified
+   *
+   * @param {string | number} blockHashOrNumber
+   */
+  async getBlock(blockHashOrNumber) {
+    const block = await this.env.ethers.provider.getBlock(blockHashOrNumber);
+    return block;
+  }
 };
