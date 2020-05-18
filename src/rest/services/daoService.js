@@ -169,7 +169,7 @@ module.exports = {
       const formattedDaos = daos.map(async dao => ({
         name: await dao.name(),
         address: await dao.address,
-        proposals_amount: await dao.getProposalQueueLength()
+        proposalsAmount: await dao.getProposalQueueLength()
         // TODO: add dao.getMembers() in COA plugin
       }));
 
