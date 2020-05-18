@@ -52,7 +52,7 @@ const responseProposalProperties = {
 const responseDaosProperties = {
   name: { type: 'string' },
   address: { type: 'string' },
-  proposals_amount: { type: 'number' }
+  proposalsAmount: { type: 'number' }
 };
 
 const submitProposalProperties = {
