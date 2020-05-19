@@ -93,18 +93,17 @@ module.exports = {
     }
     return { proposalId };
   },
-  async getProposalsByDaoId({ daoId, user }) {
+  async getProposalsByDaoId({ daoId }) {
     logger.info('[DAOService] :: Entering getAllProposalsByDaoId method');
     validateRequiredParams({
       method: 'getProposalsByDaoId',
-      params: { daoId, user }
+      params: { daoId }
     });
     logger.info('[DAOService] :: Getting all proposals', {
-      daoId,
-      userId: user.id
+      daoId
     });
     try {
-      const proposals = await coa.getAllProposalsByDaoId(daoId, user.wallet);
+      const proposals = await coa.getAllProposalsByDaoId(daoId);
 
       // TODO: should be able to filter by something?
       const formattedProposals = proposals.map(proposal => ({
@@ -166,10 +165,11 @@ module.exports = {
     });
     try {
       const daos = await coa.getDaos();
-      const formattedDaos = daos.map(async dao => ({
+      const formattedDaos = daos.map(async (dao, index) => ({
         name: await dao.name(),
         address: await dao.address,
-        proposalsAmount: await dao.getProposalQueueLength()
+        proposalsAmount: await dao.getProposalQueueLength(),
+        id: index
         // TODO: add dao.getMembers() in COA plugin
       }));
 
