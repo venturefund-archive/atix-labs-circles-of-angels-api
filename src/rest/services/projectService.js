@@ -1429,7 +1429,7 @@ module.exports = {
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
       address,
       addressUrl: address ? buildAddressURL(address) : undefined,
-      creationDate: timestamp ? new Date(timestamp * 1000) : undefined,
+      creationDate: timestamp ? new Date(timestamp * secondsConversion) : undefined,
       blockNumber,
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       agreement: undefined // TODO: add when ipfs is implemented
