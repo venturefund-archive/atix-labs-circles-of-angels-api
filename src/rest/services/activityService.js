@@ -686,7 +686,7 @@ module.exports = {
       },
       txHash,
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
-      creationDate: timestamp ? new Date(timestamp * 1000) : undefined,
+      creationDate: timestamp ? new Date(timestamp * secondsConversion) : undefined,
       blockNumber,
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       proof
