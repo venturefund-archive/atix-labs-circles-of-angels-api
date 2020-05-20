@@ -308,8 +308,7 @@ describe('Testing daoService', () => {
         applicant: secondMemberAddress
       });
       const response = await daoService.getProposalsByDaoId({
-        daoId: 0,
-        user: defaultUser
+        daoId: 0
       });
       expect(response).toHaveLength(2);
       expect(response[firstCreatedProposalIndex].applicant).toEqual(
@@ -334,14 +333,6 @@ describe('Testing daoService', () => {
         errors.common.RequiredParamsMissing('getProposalsByDaoId')
       );
     });
-    it('should throw an error if the user address is invalid', async () => {
-      await expect(
-        daoService.getProposalsByDaoId({
-          daoId: 0,
-          user: { ...defaultUser, wallet: { address: '0x123' } }
-        })
-      ).rejects.toThrow(errors.dao.ErrorGettingProposals(0));
-    });
     it('should throw an error if the DAO does not exist', async () => {
       await expect(
         daoService.getProposalsByDaoId({
@@ -349,6 +340,33 @@ describe('Testing daoService', () => {
           user: defaultUser
         })
       ).rejects.toThrow(errors.dao.ErrorGettingProposals(1));
+    });
+  });
+  describe('Testing getDaos method', () => {
+    it('should return a list of all daos in the contract (3 including the COA)', async () => {
+      const firstDao = await run('create-dao');
+      const secondDao = await run('create-dao');
+      const response = await daoService.getDaos({
+        // The user is not used yet on the getDaos
+        user: defaultUser
+      });
+      expect(response).toHaveLength(3);
+    });
+    it('should have 1 proposal length when adding a proposal to a DAO', async () => {
+      const superDaoIndex = 0;
+      const firstMemberAddress = await run('create-member');
+      const firstCreatedProposalIndex = await run('propose-member-to-dao', {
+        daoaddress: superDaoAddress,
+        applicant: firstMemberAddress
+      });
+      const response = await daoService.getDaos({
+        // The user is not used yet on the getDaos
+        user: defaultUser
+      });
+      const proposalAmounts = Number(response[superDaoIndex].proposalsAmount);
+      expect(response).toHaveLength(1);
+      expect(proposalAmounts).toEqual(1);
+      expect(response[superDaoIndex].id).toEqual(0);
     });
   });
 });
