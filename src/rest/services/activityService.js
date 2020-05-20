@@ -672,6 +672,7 @@ module.exports = {
     }
 
     let timestamp;
+    const secondsConversion = 1000;
     if (blockNumber) {
       const block = await coa.getBlock(blockNumber);
       ({ timestamp } = block);
