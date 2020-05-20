@@ -342,4 +342,31 @@ describe('Testing daoService', () => {
       ).rejects.toThrow(errors.dao.ErrorGettingProposals(1));
     });
   });
+  describe('Testing getDaos method', () => {
+    it('should return a list of all daos in the contract (3 including the COA)', async () => {
+      const firstDao = await run('create-dao');
+      const secondDao = await run('create-dao');
+      const response = await daoService.getDaos({
+        // The user is not used yet on the getDaos
+        user: defaultUser
+      });
+      expect(response).toHaveLength(3);
+    });
+    it('should have 1 proposal length when adding a proposal to a DAO', async () => {
+      const superDaoIndex = 0;
+      const firstMemberAddress = await run('create-member');
+      const firstCreatedProposalIndex = await run('propose-member-to-dao', {
+        daoaddress: superDaoAddress,
+        applicant: firstMemberAddress
+      });
+      const response = await daoService.getDaos({
+        // The user is not used yet on the getDaos
+        user: defaultUser
+      });
+      const proposalAmounts = Number(response[superDaoIndex].proposalsAmount);
+      expect(response).toHaveLength(1);
+      expect(proposalAmounts).toEqual(1);
+      expect(response[superDaoIndex].id).toEqual(0);
+    });
+  });
 });
