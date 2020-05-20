@@ -9,7 +9,7 @@ const {
   proposalTypeEnum
 } = require('../util/constants');
 
-module.exports = {   
+module.exports = {
   async voteProposal({ daoId, proposalId, vote, user }) {
     logger.info('[DAOService] :: Entering voteProposal method');
     validateRequiredParams({
@@ -45,7 +45,9 @@ module.exports = {
       params: { daoId, type, description, applicant, user }
     });
     if (!Object.values(proposalTypeEnum).includes(type)) {
-      logger.error(`[DAOService] :: Proposal type of value ${type} is not valid`);
+      logger.error(
+        `[DAOService] :: Proposal type of value ${type} is not valid`
+      );
       throw new COAError(errors.dao.InvalidProposalType);
     }
 
@@ -151,6 +153,30 @@ module.exports = {
       logger.error('[DAOService] :: Error getting member', error);
       if (error instanceof COAError) throw error;
       throw new COAError(errors.dao.ErrorGettingMember(memberAddress, daoId));
+    }
+  },
+  async getDaos({ user }) {
+    logger.info('[DAOService] :: Entering getDaos method');
+    validateRequiredParams({
+      method: 'getDaos',
+      params: { user }
+    });
+    logger.info('[DAOService] :: Getting all DAOS', {
+      userId: user.id
+    });
+    try {
+      const daos = await coa.getDaos();
+      const formattedDaos = daos.map(async dao => ({
+        name: await dao.name(),
+        address: await dao.address,
+        proposalsAmount: await dao.getProposalQueueLength()
+        // TODO: add dao.getMembers() in COA plugin
+      }));
+
+      return Promise.all(formattedDaos);
+    } catch (error) {
+      logger.error('[DAOService] :: Error getting Daos', error);
+      throw new COAError(errors.dao.ErrorGettingProposals());
     }
   }
 };

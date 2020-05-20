@@ -49,6 +49,12 @@ const responseProposalProperties = {
   processed: { type: 'boolean' }
 };
 
+const responseDaosProperties = {
+  name: { type: 'string' },
+  address: { type: 'string' },
+  proposalsAmount: { type: 'number' }
+};
+
 const submitProposalProperties = {
   description: { type: 'string' },
   applicant: { type: 'string' }
@@ -67,6 +73,15 @@ const successWithProposalsArray = {
     properties: responseProposalProperties
   },
   description: 'Returns an array of proposals for a DAO'
+};
+
+const successWithDaosArray = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: responseDaosProperties
+  },
+  description: 'Returns an array of DAOS'
 };
 
 const successWithMemberResponse = {
@@ -238,6 +253,24 @@ const daoRoutes = {
       }
     },
     handler: handlers.getProposals
+  },
+  getDaos: {
+    method: 'GET',
+    path: `${basePath}`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.GET.name],
+        description: 'Returns all DAOS',
+        summary: 'Returns all DAOS',
+        response: {
+          ...successResponse(successWithDaosArray),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getDaos
   },
   getMember: {
     method: 'GET',

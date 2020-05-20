@@ -84,6 +84,11 @@ module.exports = {
     const response = await daoService.getProposalsByDaoId({ daoId, user });
     reply.status(200).send(response);
   },
+  getDaos: () => async (request, reply) => {
+    const { user } = request;
+    const response = await daoService.getDaos({ user });
+    reply.status(200).send(response);
+  },
   getMember: () => async (request, reply) => {
     const { daoId, memberAddress } = request.params;
     const { user } = request;
