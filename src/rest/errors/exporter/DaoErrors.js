@@ -11,6 +11,9 @@ module.exports = {
   ErrorGettingProposals: daoId => ({
     message: `An error has occurred while getting the proposals of ${daoId}`
   }),
+  ErrorGettingDaos: () => ({
+    message: 'An error has occurred while getting the Daos'
+  }),
   ErrorGettingMember: (address, daoId) => ({
     message: `An error has occurred while getting the member of address ${address} in DAO ${daoId}`
   }),

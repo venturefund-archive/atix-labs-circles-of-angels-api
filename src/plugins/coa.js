@@ -225,7 +225,9 @@ module.exports = class COA {
     const daosLength = await coa.getDaosLength();
     const daos = [];
     for (let i = 0; i < daosLength; i++) {
-      daos.push(coa.daos(i));
+      const daoAddress = coa.daos(i);
+      const dao = this.getDaoContract(daoAddress);
+      daos.push(dao);
     }
     return Promise.all(daos);
   }
