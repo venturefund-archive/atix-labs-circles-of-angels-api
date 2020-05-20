@@ -103,6 +103,7 @@ describe('Testing transferService', () => {
     coa.sendAddClaimTransaction = jest.fn(() => ({ hash: '0x01' }));
     coa.getAddClaimTransaction = jest.fn();
     coa.getTransactionResponse = jest.fn(() => null);
+    coa.getBlock = jest.fn();
   });
   afterAll(() => jest.clearAllMocks());
 
@@ -706,9 +707,11 @@ describe('Testing transferService', () => {
 
   describe('Testing getBlockchainData method', () => {
     const bankopAddress = '0x123456789';
+    const blockResponse = {
+      timestamp: 1587146117347
+    };
     const txResponse = {
       blockNumber: 10,
-      timestamp: 1587146117347,
       from: bankopAddress
     };
     beforeAll(() => {
@@ -723,6 +726,7 @@ describe('Testing transferService', () => {
     });
     it('should return the transfer blockchain data', async () => {
       coa.getTransactionResponse.mockReturnValueOnce(txResponse);
+      coa.getBlock.mockReturnValueOnce(blockResponse);
       const response = await transferService.getBlockchainData(
         verifiedTransfer.id
       );
@@ -731,7 +735,7 @@ describe('Testing transferService', () => {
         validatorAddressUrl: txExplorerHelper.buildAddressURL(txResponse.from),
         txHash: verifiedTransfer.txHash,
         txHashUrl: txExplorerHelper.buildTxURL(verifiedTransfer.txHash),
-        creationDate: new Date(txResponse.timestamp),
+        creationDate: new Date(blockResponse.timestamp * 1000),
         blockNumber: txResponse.blockNumber,
         blockNumberUrl: txExplorerHelper.buildBlockURL(txResponse.blockNumber),
         receipt: verifiedTransfer.receiptPath

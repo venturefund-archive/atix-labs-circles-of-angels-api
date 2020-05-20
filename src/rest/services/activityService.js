@@ -661,7 +661,7 @@ module.exports = {
         errors.task.EvidenceBlockchainInfoNotFound(evidenceId)
       );
     }
-    const { blockNumber, timestamp, from } = txResponse;
+    const { blockNumber, from } = txResponse;
 
     let oracleName;
     try {
@@ -669,6 +669,13 @@ module.exports = {
       oracleName = `${oracle.firstName} ${oracle.lastName}`;
     } catch (error) {
       logger.error('[ActivityService] :: Oracle not found');
+    }
+
+    let timestamp;
+    const secondsConversion = 1000;
+    if (blockNumber) {
+      const block = await coa.getBlock(blockNumber);
+      ({ timestamp } = block);
     }
 
     return {
@@ -679,7 +686,7 @@ module.exports = {
       },
       txHash,
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
-      creationDate: timestamp ? new Date(timestamp) : undefined,
+      creationDate: timestamp ? new Date(timestamp * secondsConversion) : undefined,
       blockNumber,
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       proof

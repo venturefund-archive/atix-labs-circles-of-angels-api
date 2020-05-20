@@ -273,6 +273,7 @@ describe('Testing activityService', () => {
     coa.sendAddClaimTransaction = jest.fn();
     coa.getAddClaimTransaction = jest.fn();
     coa.getTransactionResponse = jest.fn(() => null);
+    coa.getBlock = jest.fn();
   });
 
   beforeEach(() => resetDb());
@@ -1061,9 +1062,11 @@ describe('Testing activityService', () => {
 
   describe('Testing getEvidenceBlockchainData method', () => {
     const oracleAddress = '0x123456789';
+    const blockResponse = {
+      timestamp: 1587146117347
+    };
     const txResponse = {
       blockNumber: 10,
-      timestamp: 1587146117347,
       from: oracleAddress
     };
 
@@ -1080,6 +1083,7 @@ describe('Testing activityService', () => {
     afterAll(() => restoreActivityService());
 
     it('should return the blockchain data of the evidence', async () => {
+      coa.getBlock.mockReturnValueOnce(blockResponse);
       coa.getTransactionResponse.mockReturnValueOnce(txResponse);
       const response = await activityService.getEvidenceBlockchainData(
         taskEvidence.id
@@ -1092,7 +1096,7 @@ describe('Testing activityService', () => {
         },
         txHash: taskEvidence.txHash,
         txHashUrl: txExplorerHelper.buildTxURL(taskEvidence.txHash),
-        creationDate: new Date(txResponse.timestamp),
+        creationDate: new Date(blockResponse.timestamp * 1000),
         blockNumber: txResponse.blockNumber,
         blockNumberUrl: txExplorerHelper.buildBlockURL(txResponse.blockNumber),
         proof: taskEvidence.proof

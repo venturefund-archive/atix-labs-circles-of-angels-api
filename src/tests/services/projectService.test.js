@@ -318,6 +318,7 @@ describe('Project Service Test', () => {
       validators[validator] = jest.fn();
     });
     coa.getTransactionResponse = jest.fn(() => null);
+    coa.getBlock = jest.fn();
   });
 
   afterEach(() => {
@@ -2086,9 +2087,11 @@ describe('Project Service Test', () => {
   });
 
   describe('Testing getBlockchainData method', () => {
-    const txResponse = {
-      blockNumber: 10,
+    const blockResponse = {
       timestamp: 1587146117347
+    };
+    const txResponse = {
+      blockNumber: 10
     };
     let dbProject = [];
     beforeAll(() => {
@@ -2106,6 +2109,7 @@ describe('Project Service Test', () => {
 
     afterAll(() => restoreProjectService());
     it('should return the transfer blockchain data', async () => {
+      coa.getBlock.mockReturnValueOnce(blockResponse);
       coa.getTransactionResponse.mockReturnValueOnce(txResponse);
       const response = await projectService.getBlockchainData(
         executingProject.id
@@ -2115,7 +2119,7 @@ describe('Project Service Test', () => {
         txHashUrl: txExplorerHelper.buildTxURL(executingProject.txHash),
         address: executingProject.address,
         addressUrl: txExplorerHelper.buildAddressURL(executingProject.address),
-        creationDate: new Date(txResponse.timestamp),
+        creationDate: new Date(blockResponse.timestamp * 1000),
         blockNumber: txResponse.blockNumber,
         blockNumberUrl: txExplorerHelper.buildBlockURL(txResponse.blockNumber),
         agreement: undefined

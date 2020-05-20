@@ -1417,14 +1417,19 @@ module.exports = {
       );
       throw new COAError(errors.project.BlockchainInfoNotFound(projectId));
     }
-    const { blockNumber, timestamp } = txResponse;
-
+    const { blockNumber } = txResponse;
+    let timestamp;
+    const secondsConversion = 1000;
+    if (blockNumber) {
+      const block = await coa.getBlock(blockNumber);
+      ({ timestamp } = block);
+    }
     return {
       txHash,
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
       address,
       addressUrl: address ? buildAddressURL(address) : undefined,
-      creationDate: timestamp ? new Date(timestamp) : undefined,
+      creationDate: timestamp ? new Date(timestamp * secondsConversion) : undefined,
       blockNumber,
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       agreement: undefined // TODO: add when ipfs is implemented

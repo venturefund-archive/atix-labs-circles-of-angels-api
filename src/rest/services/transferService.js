@@ -496,14 +496,19 @@ module.exports = {
       );
       throw new COAError(errors.transfer.BlockchainInfoNotFound(transferId));
     }
-    const { blockNumber, timestamp, from } = txResponse;
+    const { blockNumber, from } = txResponse;
+    let timestamp;
+    if (blockNumber) {
+      const block = await coa.getBlock(blockNumber);
+      ({ timestamp } = block);
+    }
 
     return {
       validatorAddress: from,
       validatorAddressUrl: from ? buildAddressURL(from) : undefined,
       txHash,
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
-      creationDate: timestamp ? new Date(timestamp) : undefined,
+      creationDate: timestamp ? new Date(timestamp * 1000) : undefined,
       blockNumber,
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       receipt: receiptPath
