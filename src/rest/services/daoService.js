@@ -165,6 +165,8 @@ module.exports = {
     });
     try {
       const daos = await coa.getDaos();
+      const filteredDaos = [];
+      const userAddress = user.wallet.address;
       const formattedDaos = daos.map(async (dao, index) => ({
         name: await dao.name(),
         address: await dao.address,
@@ -172,8 +174,12 @@ module.exports = {
         id: index
         // TODO: add dao.getMembers() in COA plugin
       }));
-
-      return Promise.all(formattedDaos);
+      const results = await Promise.all(formattedDaos);
+      for (let i = 0; i < results.length; i++) {
+        const isMember = await coa.getDaoMember(i, userAddress);
+        if (isMember.exists) filteredDaos.push(results[i]);
+      }
+      return filteredDaos;
     } catch (error) {
       logger.error('[DAOService] :: Error getting Daos', error);
       throw new COAError(errors.dao.ErrorGettingProposals());
