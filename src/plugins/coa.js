@@ -182,7 +182,7 @@ module.exports = class COA {
     // TODO: check if this is necessary
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
-    const dao = await this.getDaoContract(daoAddress, signer);
+    const dao = await this.getDaoContract(daoAddress);
     await dao.submitProposal(applicantAddress, type, description);
   }
 
