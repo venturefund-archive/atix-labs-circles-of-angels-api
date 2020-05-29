@@ -9,53 +9,115 @@
 const basePath = '/transfers';
 const handlers = require('./handlers/transferHandlers');
 const routeTags = require('../util/routeTags');
+const {
+  successResponse,
+  clientErrorResponse,
+  serverErrorResponse
+} = require('../util/responses');
 
-const routes = {
-  sendToVerification: {
+const idParam = description => ({
+  type: 'object',
+  properties: {
+    projectId: {
+      type: 'integer',
+      description
+    }
+  }
+});
+
+const transferIdParam = idParam('Transfer unique id');
+const projectIdParam = idParam('Project unique id');
+
+const transferProperties = {
+  transferId: { type: 'string' },
+  senderId: { type: 'integer' },
+  destinationAccount: { type: 'string' },
+  amount: { type: 'number' },
+  currency: { type: 'string' },
+  receiptPath: { type: 'string' }
+};
+
+const transferStatusProperties = {
+  status: { type: 'string' }
+};
+
+const successWithTransferIdResponse = {
+  type: 'object',
+  properties: {
+    transferId: { type: 'integer' }
+  },
+  description: 'Returns the id of the created transfer'
+};
+
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    email: { type: 'string' },
+    address: { type: 'string' },
+    createdAt: { type: 'string' },
+    id: { type: 'integer' },
+    role: { type: 'string' },
+    blocked: { type: 'boolean' }
+  },
+  description: "User's information"
+};
+
+const fundedAmountResponse = {
+  type: 'object',
+  properties: {
+    fundedAmount: { type: 'integer' }
+  },
+  description: 'Current funded amount'
+};
+
+const successWithTransfersArray = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      transferId: { type: 'string' },
+      destinationAccount: { type: 'string' },
+      amount: { type: 'number' },
+      currency: { type: 'string' },
+      status: { type: 'string' },
+      createdAt: { type: 'string' },
+      id: { type: 'integer' },
+      sender: userResponse,
+      project: { type: 'integer' },
+      receiptPath: { type: 'string' }
+    }
+  }
+};
+
+const transferRoutes = {
+  createTransfer: {
     method: 'post',
-    path: `${basePath}`,
+    path: `/projects/:projectId${basePath}`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.POST.name],
+        params: projectIdParam,
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
-        body: {
-          type: 'object',
-          properties: {
-            amount: { type: 'number' },
-            currency: { type: 'string' },
-            senderId: { type: 'string' },
-            projectId: { type: 'integer' },
-            destinationAccount: { type: 'string' },
-            transferId: { type: 'string' }
-          },
-          required: [
-            'amount',
-            'currency',
-            'senderId',
-            'projectId',
-            'destinationAccount',
-            'transferId'
-          ]
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: transferProperties,
+            required: ['amount', 'currency', 'destinationAccount', 'transferId']
+          }
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              sucess: { type: 'string' }
-            }
-          },
-          409: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
+          ...successResponse(successWithTransferIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.sendToVerification
+    handler: handlers.createTransfer
   },
 
   updateTransfer: {
@@ -65,44 +127,180 @@ const routes = {
       beforeHandler: ['adminAuth'],
       schema: {
         tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
-        description: 'Updates the state of an existing transfer',
+        description: 'Updates the status of an existing transfer',
         summary: 'Update transfer',
-        params: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'integer',
-              description: 'Transfer to update'
-            }
-          }
-        },
+        params: transferIdParam,
         body: {
           type: 'object',
-          properties: {
-            state: { type: 'integer' }
-          },
-          required: ['state'],
+          properties: transferStatusProperties,
+          required: ['status'],
           additionalProperties: false
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              sucess: { type: 'string' }
-            }
-          },
-          409: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
+          ...successResponse(successWithTransferIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
     handler: handlers.updateTransfer
   },
 
+  getTransfers: {
+    method: 'get',
+    path: `/projects/:projectId${basePath}`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description: 'Returns all the transfers related to a project',
+        summary: 'Get all transfers by project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithTransfersArray),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getTransfers
+  },
+
+  getFundedAmount: {
+    method: 'get',
+    path: `/projects/:projectId${basePath}/funded-amount`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description: 'Returns the current funded amount for a specific project',
+        summary: 'Get the current funded amount by project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(fundedAmountResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getFundedAmount
+  },
+  getBlockchainData: {
+    method: 'get',
+    path: `${basePath}/:transferId/blockchain-data`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description:
+          'Returns the blockchain information related to the fund transfer',
+        summary: 'Returns blockchain information',
+        params: transferIdParam,
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getBlockchainData
+  }
+};
+
+const claimsRoutes = {
+  sendApprovedTransferClaim: {
+    method: 'put',
+    path: `${basePath}/:transferId/claim/approved/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
+        description: 'Add an approved transfer claim of an existing project',
+        summary: 'Add an approved transfer claim',
+        params: { transferIdParam },
+        body: {
+          type: 'object',
+          properties: {
+            signedTransaction: { type: 'string' }
+          }
+        },
+        response: {
+          ...successResponse(successWithTransferIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendApprovedTransferClaim
+  },
+
+  sendDisapprovedTransferClaim: {
+    method: 'put',
+    path: `${basePath}/:transferId/claim/disapproved/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.PUT.name],
+        description: 'Add an disapproved transfer claim of an existing project',
+        summary: 'Add an disapproved transfer claim',
+        params: { transferIdParam },
+        body: {
+          type: 'object',
+          properties: {
+            rejectionReason: { type: 'string' },
+            signedTransaction: { type: 'string' }
+          }
+        },
+        response: {
+          ...successResponse(successWithTransferIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendDisapprovedTransferClaim
+  },
+
+  getAddApprovedTransferClaimTx: {
+    method: 'get',
+    path: `${basePath}/:transferId/claim/approved/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description:
+          'Returns unsigned tx to add an approved transfer claim of an existing project',
+        summary: 'Returns unsigned tx to add an approved transfer claim',
+        params: { transferIdParam },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.getAddTransferClaimTransaction(true)
+  },
+  getAddDisaprovedTransferClaimTx: {
+    method: 'get',
+    path: `${basePath}/:transferId/claim/disapproved/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
+        description:
+          'Returns unsigned tx to add a disapproved transfer claim of an existing project',
+        summary: 'Returns unsigned tx to add a disapproved transfer claim',
+        params: { transferIdParam },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.getAddTransferClaimTransaction(true)
+  }
+};
+
+const routes = {
   getState: {
     method: 'get',
     path: `${basePath}/user/:userId/project/:projectId/state`,
@@ -146,45 +344,8 @@ const routes = {
     handler: handlers.getState
   },
 
-  getTransfers: {
-    method: 'get',
-    path: `/projects/:projectId${basePath}`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.TRANSFER.name, routeTags.GET.name],
-        description: 'Returns all the transfers related to a project',
-        summary: 'Get all transfers by project',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: { type: 'integer' }
-          }
-        },
-        response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                transferId: { type: 'string' },
-                destinationAccount: { type: 'string' },
-                amount: { type: 'number' },
-                currency: { type: 'string' },
-                state: { type: 'integer' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                id: { type: 'integer' },
-                sender: { type: 'integer' },
-                project: { type: 'integer' }
-              }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.getTransfers
-  }
+  ...transferRoutes,
+  ...claimsRoutes
 };
 
 module.exports = routes;

@@ -16,8 +16,8 @@ module.exports = {
   primaryKey: 'id',
   attributes: {
     activity: {
-      columnName: 'activityId',
-      model: 'activity'
+      columnName: 'taskId',
+      model: 'task'
     },
     photo: {
       columnName: 'photoId',

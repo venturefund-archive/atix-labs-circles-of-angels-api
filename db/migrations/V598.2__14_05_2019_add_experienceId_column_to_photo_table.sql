@@ -1,2 +1,0 @@
-ALTER TABLE public."photo" ADD COLUMN "projectExperienceId" int4 NULL;
-ALTER TABLE public."photo" ADD CONSTRAINT "photo_projectExperienceId_fk" FOREIGN KEY ("projectExperienceId") REFERENCES project_experience (id);

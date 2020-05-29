@@ -25,46 +25,68 @@
  *@attribute `projectAgreement`: project consensus file
  */
 
+const config = require('config');
+const { projectStatuses } = require('../../src/rest/util/constants');
+
 module.exports = {
   identity: 'project',
   primaryKey: 'id',
   attributes: {
-    projectName: { type: 'string', required: true },
-    mission: { type: 'string', required: true },
-    problemAddressed: { type: 'string', required: true },
-    location: { type: 'string', required: true },
-    timeframe: { type: 'string', required: true },
-    pitchProposal: { type: 'string', required: false },
-    faqLink: { type: 'string', required: false },
-    coverPhoto: {
-      columnName: 'coverPhoto',
-      model: 'photo'
+    projectName: { type: 'string', required: false, allowNull: true },
+    mission: { type: 'string', required: false, allowNull: true },
+    problemAddressed: { type: 'string', required: false, allowNull: true },
+    location: { type: 'string', required: false, allowNull: true },
+    timeframe: { type: 'string', required: false, allowNull: true },
+    proposal: { type: 'string', required: false, allowNull: true },
+    faqLink: { type: 'string', required: false, allowNull: true },
+    agreementJson: { type: 'string', required: false, allowNull: true },
+    coverPhotoPath: { type: 'string', required: false, allowNull: true },
+    cardPhotoPath: { type: 'string', required: false, allowNull: true },
+    milestonePath: { type: 'string', required: false, allowNull: true },
+    proposalFilePath: { type: 'string', required: false, allowNull: true },
+    agreementFilePath: { type: 'string', required: false, allowNull: true },
+    // ref type is needed because number doesn't support floats apparently
+    goalAmount: { type: 'ref', required: false, defaultsTo: 0 },
+    status: { type: 'string', defaultsTo: projectStatuses.NEW },
+    owner: {
+      columnName: 'ownerId',
+      model: 'user'
     },
-    milestonesFile: { type: 'string', required: false },
-    cardPhoto: {
-      columnName: 'cardPhoto',
-      model: 'photo'
-    },
-    goalAmount: { type: 'number', required: true },
-    status: { type: 'number', defaultsTo: 0 },
-    ownerId: { type: 'number', required: true },
-    projectAgreement: { type: 'string', required: false },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
-    transactionHash: { type: 'string', required: false },
-    creationTransactionHash: { type: 'string', required: false },
+    address: { type: 'string', required: false, allowNull: true },
     milestones: {
       collection: 'milestone',
       via: 'project'
     },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } },
-    blockchainStatus: {
-      columnName: 'blockchainStatus',
-      model: 'blockchain_status'
+    funders: {
+      collection: 'user',
+      via: 'project',
+      through: 'project_funder'
     },
-    startBlockchainStatus: {
+    oracles: {
+      collection: 'user',
+      via: 'project',
+      through: 'project_oracle'
+    },
+    followers: {
+      collection: 'user',
+      via: 'project',
+      through: 'project_follower'
+    },
+    consensusSeconds: {
       type: 'number',
-      defaultsTo: 1
-    }
+      defaultsTo: config.defaultProjectTimes.consensusSeconds
+    },
+    fundingSeconds: {
+      type: 'number',
+      defaultsTo: config.defaultProjectTimes.fundingSeconds
+    },
+    lastUpdatedStatusAt: {
+      type: 'string',
+      autoCreatedAt: true,
+      required: false
+    },
+    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    txHash: { type: 'string', required: false, allowNull: true }
   }
 };
