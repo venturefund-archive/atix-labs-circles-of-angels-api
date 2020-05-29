@@ -65,7 +65,8 @@ module.exports = {
         type,
         description,
         applicant,
-        user.wallet
+        undefined
+        // user.wallet.address
       );
     } catch (error) {
       logger.error('[DAOService] :: Error submitting proposal', error);
@@ -173,7 +174,6 @@ module.exports = {
         const isMember = await coa.getDaoMember(i, userAddress);
         if (isMember.exists) filteredDaos.push(daos[i]);
       }
-
       const formattedDaos = filteredDaos.map(async (dao, index) => ({
         name: await dao.name(),
         address: await dao.address,
