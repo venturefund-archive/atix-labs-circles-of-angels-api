@@ -31,7 +31,10 @@ module.exports = {
     });
 
     try {
-      await coa.submitProposalVote(daoId, proposalId, userVote, user.wallet);
+      await coa.submitProposalVote(daoId, proposalId, userVote, undefined);
+      // await coa.submitProposalVote(daoId, proposalId, userVote, user.wallet.address);
+      // Temporally this will stay commented until signer
+      // is implemented on this service: user.wallet.address
     } catch (error) {
       logger.error('[DAOService] :: Error voting proposal', error);
       throw new COAError(errors.dao.ErrorVotingProposal(proposalId, daoId));
@@ -67,6 +70,8 @@ module.exports = {
         applicant,
         undefined
         // user.wallet.address
+        // Temporally this will stay commented until signer
+        // is implemented on this service.
       );
     } catch (error) {
       logger.error('[DAOService] :: Error submitting proposal', error);
@@ -107,7 +112,7 @@ module.exports = {
       const proposals = await coa.getAllProposalsByDaoId(daoId);
 
       // TODO: should be able to filter by something?
-      const formattedProposals = proposals.map(proposal => ({
+      const formattedProposals = proposals.map((proposal, index) => ({
         proposer: proposal.proposer,
         applicant: proposal.applicant,
         proposalType: proposal.proposalType,
@@ -116,9 +121,9 @@ module.exports = {
         didPass: proposal.didPass,
         description: proposal.description,
         startingPeriod: Number(proposal.startingPeriod),
-        processed: proposal.processed
+        processed: proposal.processed,
+        id: index
       }));
-
       return formattedProposals;
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);
