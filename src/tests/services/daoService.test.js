@@ -1,6 +1,8 @@
 const { run, coa, ethereum } = require('@nomiclabs/buidler');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const daoService = require('../../rest/services/daoService');
+const { injectMocks } = require('../../rest/util/injection');
+
 const {
   proposalTypeEnum,
   voteEnum,

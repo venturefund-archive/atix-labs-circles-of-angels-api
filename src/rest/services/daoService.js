@@ -3,6 +3,7 @@ const COAError = require('../errors/COAError');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
+const transactionService = require('./transactionService');
 const {
   voteEnum,
   daoMemberRoleNames,
@@ -10,6 +11,40 @@ const {
 } = require('../util/constants');
 
 module.exports = {
+  async getNewProposalTransaction({
+    daoId,
+    userWallet,
+    user,
+    applicant,
+    description,
+    type
+  }) {
+    logger.info('[DAOService] :: Entering getNewProposalTransaction method');
+    validateRequiredParams({
+      method: 'getNewProposalTransaction',
+      params: { daoId, userWallet, user, applicant, description }
+    });
+
+    logger.info('[ActivityService] :: Getting new proposal transaction');
+    const unsignedTx = await coa.getNewProposalTransaction(
+      daoId,
+      applicant,
+      type,
+      description
+    );
+
+    const nonce = await transactionService.getNextNonce(userWallet.address);
+    const txWithNonce = { ...unsignedTx, nonce };
+
+    logger.info(
+      '[ActivityService] :: Sending unsigned transaction to client',
+      txWithNonce
+    );
+    return {
+      tx: txWithNonce,
+      encryptedWallet: userWallet.encryptedWallet
+    };
+  },
   async voteProposal({ daoId, proposalId, vote, user }) {
     logger.info('[DAOService] :: Entering voteProposal method');
     validateRequiredParams({

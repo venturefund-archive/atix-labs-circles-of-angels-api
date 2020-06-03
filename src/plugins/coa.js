@@ -143,6 +143,19 @@ module.exports = class COA {
     await coa.addClaim(project, claim, proof, valid);
   }
 
+  async getNewProposalTransaction(daoId, applicant, proposalType, description) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const daoContract = await this.getDaoContract(daoAddress);
+    const unsignedTransaction = await this.getUnsignedTransaction(
+      daoContract,
+      'submitProposal',
+      [applicant, proposalType, description]
+    );
+    return unsignedTransaction;
+  }
+
   async getMember(address) {
     const coa = await this.getCOA();
     return coa.members(address);

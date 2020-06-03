@@ -2,6 +2,24 @@ const daoService = require('../../services/daoService');
 const { proposalTypeEnum } = require('../../util/constants');
 
 module.exports = {
+  getNewProposalTransaction: () => async (request, reply) => {
+    const { daoId } = request.params;
+    const { user } = request;
+    const { wallet: userWallet } = request.user;
+    const { description, applicant } = request.body || {};
+
+    const response = await daoService.getNewProposalTransaction({
+      daoId,
+      user,
+      userWallet,
+      applicant,
+      description,
+      type: proposalTypeEnum.NEW_MEMBER
+      // TODO: if all submitProposals are the same
+      // only one handler could be used and receive type in args
+    });
+    reply.status(200).send(response);
+  },
   voteProposal: () => async (request, reply) => {
     const { proposalId, daoId } = request.params;
     const { vote } = request.body || {};
@@ -15,7 +33,7 @@ module.exports = {
     reply.status(200).send(response);
   },
   // TODO: if all submitProposals are the same
-  //       only one handler could be used and receive type in args
+  // only one handler could be used and receive type in args
   submitNewMemberProposal: () => async (request, reply) => {
     const { daoId } = request.params;
     const { description, applicant } = request.body || {};

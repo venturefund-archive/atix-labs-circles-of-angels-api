@@ -93,6 +93,30 @@ const successWithMemberResponse = {
 };
 
 const daoRoutes = {
+  createProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Get unsigned tx for a new proposal an existing DAO',
+        summary: 'Get unsigned tx for new proposal',
+        params: { daoIdParam },
+        body: {
+          type: 'object',
+          properties: submitProposalProperties,
+          required: ['description', 'applicant'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getNewProposalTransaction
+  },
   voteProposal: {
     method: 'PUT',
     path: `${basePath}/:daoId/proposals/:proposalId/vote`,
