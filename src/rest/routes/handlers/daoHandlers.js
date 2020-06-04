@@ -20,6 +20,18 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+  sendNewProposalTransaction: () => async (request, reply) => {
+    const { daoId } = request.params;
+    const { wallet: userWallet } = request.user;
+    const { signedTransaction } = request.body || {};
+
+    const response = await daoService.sendNewProposalTransaction({
+      daoId,
+      signedTransaction,
+      userWallet
+    });
+    reply.status(200).send(response);
+  },
   voteProposal: () => async (request, reply) => {
     const { proposalId, daoId } = request.params;
     const { vote } = request.body || {};

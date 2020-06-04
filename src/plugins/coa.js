@@ -156,6 +156,13 @@ module.exports = class COA {
     return unsignedTransaction;
   }
 
+  async sendNewProposalTransaction(signedTransaction) {
+    const txResponse = await this.env.ethers.provider.sendTransaction(
+      signedTransaction
+    );
+    return txResponse;
+  }
+
   async getMember(address) {
     const coa = await this.getCOA();
     return coa.members(address);

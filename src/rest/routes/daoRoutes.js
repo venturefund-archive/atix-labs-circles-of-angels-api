@@ -62,6 +62,10 @@ const submitProposalProperties = {
   applicant: { type: 'string' }
 };
 
+const sendTransactionProperties = {
+  signedTransaction: { type: 'string' },
+};
+
 const responseMemberProperties = {
   role: { type: 'string' },
   exists: { type: 'boolean' },
@@ -93,7 +97,7 @@ const successWithMemberResponse = {
 };
 
 const daoRoutes = {
-  createProposalTransaction: {
+  getProposalTransaction: {
     method: 'post',
     path: `${basePath}/:daoId/get-transaction`,
     options: {
@@ -116,6 +120,30 @@ const daoRoutes = {
       }
     },
     handler: handlers.getNewProposalTransaction
+  },
+  sendProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Send approved signed proposal tx to the blockchain',
+        summary: 'Get unsigned tx to the blockchain',
+        params: { daoIdParam },
+        body: {
+          type: 'object',
+          properties: sendTransactionProperties,
+          required: ['signedTransaction'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendNewProposalTransaction
   },
   voteProposal: {
     method: 'PUT',
