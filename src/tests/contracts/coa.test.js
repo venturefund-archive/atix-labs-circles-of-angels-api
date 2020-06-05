@@ -62,6 +62,7 @@ async function moveForwardPeriods(periods) {
 async function addMemberToDAO(memberAddress, dao) {
   await dao.submitProposal(memberAddress, 0, 'carlos');
   const proposalIndex = (await dao.getProposalQueueLength()) - 1;
+  await moveForwardPeriods(1);
   await dao.submitVote(proposalIndex, 1);
   await moveForwardPeriods(35 + 35);
   await dao.processProposal(proposalIndex);
@@ -73,7 +74,7 @@ contract(
   'COA application',
   ([creator, social, funder, oracle, ...otherAccounts]) => {
     beforeEach('deploy contracts', async () => {
-      await run('deploy', { reset: 'true' });
+      await run('deploy', { reset: true });
       [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
       [coa] = await deployments.getDeployedContracts('COA');
     });
@@ -130,19 +131,8 @@ contract(
     });
 
     describe('claims registry', () => {
-      // before(async () => {
-      //   // await run('deploy');
-      //   [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
-      //   [coa] = await deployments.getDeployedContracts('COA');
-
-      //   const project = {
-      //     name: 'a good project',
-      //     agreementHash: 'an IPFS/RIF Storage hash'
-      //   };
-      //   await coa.createProject(project.name, project.agreementHash);
-      // });
-
       it('should add a claim', async () => {
+        await coa.createProject(1, 'a project');
         const project = await coa.projects(0);
         const claimHash = utils.id('a very useful task');
         const proof = utils.id('an authentic proof');
@@ -155,6 +145,7 @@ contract(
       });
 
       it('should check if claims are approved correctly', async () => {
+        await coa.createProject(1, 'a project');
         const project = await coa.projects(0);
         const claimHash1 = utils.id('a very useful task 1');
         const claimHash2 = utils.id('a very useful task 2');
@@ -170,6 +161,7 @@ contract(
         assert.equal(approved, true);
       });
       it('should check non-approved claims are approved correctly', async () => {
+        await coa.createProject(1, 'a project');
         const project = await coa.projects(0);
         const claimHash1 = utils.id('a very useful task 1');
         const claimHash2 = utils.id('a very useful task 2');
@@ -218,11 +210,7 @@ contract(
     });
 
     describe('DAO', () => {
-      before('deploy contracts', async () => {
-        // await run('deploy');
-        [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
-        [coa] = await deployments.getDeployedContracts('COA');
-
+      beforeEach('deploy contracts', async () => {
         const project = {
           id: 1,
           name: 'a good project',
@@ -253,6 +241,7 @@ contract(
           const superDAOAddress = await coa.daos(0);
           const superDAO = await getSuperDAO(superDAOAddress);
           await superDAO.submitProposal(funder, 0, 'carlos');
+          await moveForwardPeriods(35);
           const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
           await superDAO.submitVote(proposalIndex, 1);
           const proposal = await superDAO.proposalQueue(proposalIndex);
@@ -264,6 +253,7 @@ contract(
           const superDAOAddress = await coa.daos(0);
           const superDAO = await getSuperDAO(superDAOAddress);
           await superDAO.submitProposal(funder, 0, 'carlos');
+          await moveForwardPeriods(35);
           const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
           await superDAO.submitVote(proposalIndex, 2);
           const proposal = await superDAO.proposalQueue(proposalIndex);
@@ -275,6 +265,7 @@ contract(
           const superDAOAddress = await coa.daos(0);
           const superDAO = await getSuperDAO(superDAOAddress);
           await superDAO.submitProposal(funder, 0, 'carlos');
+          await moveForwardPeriods(35);
           const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
           await assertThrowsAsync(
             async () => superDAO.submitVote(proposalIndex, 3),
@@ -285,6 +276,7 @@ contract(
           const superDAOAddress = await coa.daos(0);
           const superDAO = await getSuperDAO(superDAOAddress);
           await superDAO.submitProposal(funder, 0, 'carlos');
+          await moveForwardPeriods(35);
           const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
           await superDAO.submitVote(proposalIndex, 2);
           await assertThrowsAsync(
@@ -294,20 +286,17 @@ contract(
         });
       });
       describe('moving through time', async () => {
-        beforeEach(async () => {
-          await run('deploy', { reset: 'true' });
-          [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
-          [coa] = await deployments.getDeployedContracts('COA');
-        });
         it('should process a new member proposal', async () => {
           const superDAOAddress = await coa.daos(0);
           const superDAO = await getSuperDAO(superDAOAddress);
           await superDAO.submitProposal(funder, 0, 'carlos');
           const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
+          await moveForwardPeriods(35);
+          await moveForwardPeriods(35);
           await superDAO.submitVote(proposalIndex, 1);
-          await moveForwardPeriods(35 + 35);
           let member = await superDAO.members(funder);
           assert.equal(member.exists, false);
+          await moveForwardPeriods(1);
           await superDAO.processProposal(proposalIndex);
           const proposal = await superDAO.proposalQueue(proposalIndex);
           assert.equal(proposal.didPass, true);
@@ -320,6 +309,7 @@ contract(
           const superDAO = await getSuperDAO(superDAOAddress);
           await superDAO.submitProposal(funder, 1, 'carlos');
           const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
+          await moveForwardPeriods(1);
           await superDAO.submitVote(proposalIndex, 1);
           let proposal = await superDAO.proposalQueue(proposalIndex);
           assert.equal(proposal.yesVotes, 1);
@@ -342,13 +332,14 @@ contract(
           await addMemberToDAO(funder, superDAO);
           await superDAO.submitProposal(funder, 2, 'carlos');
           const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
+          await moveForwardPeriods(1);
           await superDAO.submitVote(proposalIndex, 1);
-          await moveForwardPeriods(35 + 35);
+          await moveForwardPeriods(35);
+          await moveForwardPeriods(35);
           let member = await superDAO.members(funder);
           assert.equal(member.exists, true);
           assert.equal(member.role, 0);
           await superDAO.processProposal(proposalIndex);
-          proposal = await superDAO.proposalQueue(proposalIndex);
           member = await superDAO.members(funder);
           assert.equal(member.exists, true);
           assert.equal(member.role, 1);
@@ -360,30 +351,14 @@ contract(
           await addMemberToDAO(funder, superDAO);
           await superDAO.submitProposal(funder, 3, 'carlos');
           const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
+          await moveForwardPeriods(1);
           await superDAO.submitVote(proposalIndex, 1);
-          await moveForwardPeriods(35 + 35);
+          await moveForwardPeriods(35);
+          await moveForwardPeriods(35);
           let member = await superDAO.members(funder);
           assert.equal(member.exists, true);
           assert.equal(member.role, 0);
           await superDAO.processProposal(proposalIndex);
-          proposal = await superDAO.proposalQueue(proposalIndex);
-          member = await superDAO.members(funder);
-          assert.equal(member.role, 2);
-        });
-
-        it('process assign role curator', async () => {
-          const superDAOAddress = await coa.daos(0);
-          const superDAO = await getSuperDAO(superDAOAddress);
-          await addMemberToDAO(funder, superDAO);
-          await superDAO.submitProposal(funder, 3, 'carlos');
-          const proposalIndex = (await superDAO.getProposalQueueLength()) - 1;
-          await superDAO.submitVote(proposalIndex, 1);
-          await moveForwardPeriods(35 + 35);
-          let member = await superDAO.members(funder);
-          assert.equal(member.exists, true);
-          assert.equal(member.role, 0);
-          await superDAO.processProposal(proposalIndex);
-          proposal = await superDAO.proposalQueue(proposalIndex);
           member = await superDAO.members(funder);
           assert.equal(member.role, 2);
         });
