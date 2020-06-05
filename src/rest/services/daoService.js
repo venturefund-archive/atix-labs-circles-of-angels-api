@@ -3,8 +3,6 @@ const COAError = require('../errors/COAError');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
-// dont require this
-const transactionService = require('./transactionService');
 const {
   voteEnum,
   daoMemberRoleNames,
@@ -41,7 +39,7 @@ module.exports = {
       description
     );
 
-    const nonce = await transactionService.getNextNonce(userWallet.address);
+    const nonce = await this.transactionService.getNextNonce(userWallet.address);
     const txWithNonce = { ...unsignedTx, nonce };
 
     logger.info(
@@ -77,7 +75,7 @@ module.exports = {
     logger.info('[DAOService] :: New proposal transaction sent', tx);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
-    await transactionService.save({
+    await this.transactionService.save({
       sender: userAddress,
       txHash: tx.hash,
       nonce: tx.nonce
