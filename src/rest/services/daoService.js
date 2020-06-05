@@ -77,7 +77,7 @@ module.exports = {
     logger.info('[DAOService] :: New proposal transaction sent', tx);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
-    await this.transactionService.save({
+    await transactionService.save({
       sender: userAddress,
       txHash: tx.hash,
       nonce: tx.nonce
@@ -264,7 +264,7 @@ module.exports = {
       return await Promise.all(formattedDaos);
     } catch (error) {
       logger.error('[DAOService] :: Error getting Daos', error);
-      throw new COAError(errors.dao.ErrorGettingProposals());
+      throw new COAError(errors.dao.ErrorGettingDaos());
     }
   }
 };
