@@ -9,3 +9,4 @@ artifacts/*
 #flyway
 flyway*
 state.json
+coverage.json
