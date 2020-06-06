@@ -1,4 +1,4 @@
-const { run, deployments, web3 } = require('@nomiclabs/buidler');
+const { run, deployments } = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
 const { throwsAsync, waitForEvent } = require('./testHelpers');
 
@@ -31,7 +31,7 @@ const addClaim = async (
   };
 };
 
-contract('ClaimsRegistry.sol', ([creator]) => {
+contract('ClaimsRegistry.sol', ([creator, founder]) => {
   let coa;
   let registry;
   let project;
@@ -147,13 +147,14 @@ contract('ClaimsRegistry.sol', ([creator]) => {
     assert.equal(approved, true);
   });
   it('It should revert when sending a tx to the contract', async () => {
-    await throwsAsync(
-      web3.eth.sendTransaction({
-        from: creator,
-        to: registry.address,
-        value: '0x16345785d8a0000'
-      }),
-      'Returned error: VM Exception while processing transaction: revert'
+    const exceptionThrown = await throwsAsync(
+      () =>
+        creator.sendTransaction({
+          to: registry.address,
+          value: '0x16345785d8a0000'
+        }),
+      'VM Exception while processing transaction: revert'
     );
+    assert.equal(exceptionThrown, false);
   });
 });

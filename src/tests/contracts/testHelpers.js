@@ -1,29 +1,19 @@
-const env = require('@nomiclabs/buidler');
-
 /**
  * Executes an async function and checks if an error is thrown.
  *
- * @param {Promise} Promise to be waited for
+ * @param {Function} fn function to be invoked
  * @param {String} errorMsg error message the exception should have
  * @returns {Boolean} true if exception was thrown with proper message, false otherwise
  */
-const throwsAsync = async (promise, errMsg) => {
+const throwsAsync = async (fn, errMsg) => {
   try {
-    await promise;
+    await fn();
+    return false;
   } catch (err) {
-    if (env.network.name === 'coverage') return; // coverage vm does not return the error msg 🤦
-    assert.equal(err.message, errMsg, 'Expected exception failed');
-    return;
+    return err.message === errMsg;
   }
-  assert.fail(`Expected ${errMsg} to have been thrown`);
 };
 
-/**
- * Waits for a solidity event to be emitted
- * @param {Contract} contract contract
- * @param {string} eventName event name or '*' to watch them all
- * @param {number} timeout max amount of ms to wait for the event to happen
- */
 const waitForEvent = (contract, eventName, timeout = 2000) =>
   new Promise((resolve, reject) => {
     contract.on(eventName, function callback() {
