@@ -70,7 +70,7 @@ module.exports = class COA {
     const coa = await this.getCOA();
     const projectAddress = await coa.projects(projectId);
     const tx = await coa.registry(projectAddress, validator, claim);
-    console.log(tx);
+    // console.log(tx);
   }
 
   // TODO: delete if not needed
@@ -143,11 +143,31 @@ module.exports = class COA {
     await coa.addClaim(project, claim, proof, valid);
   }
 
-  async getNewProposalTransaction(daoId, applicant, proposalType, description) {
+  async getNewVoteTransaction(daoId, proposalId, vote, memberAddress) {
     const coa = await this.getCOA();
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
-    const daoContract = await this.getDaoContract(daoAddress);
+    const daoContract = await this.getDaoContract(daoAddress, memberAddress);
+    await this.checkProposalExistence(proposalId, daoContract);
+    const unsignedTransaction = await this.getUnsignedTransaction(
+      daoContract,
+      'submitVote',
+      [proposalId, vote]
+    );
+    return unsignedTransaction;
+  }
+
+  async getNewProposalTransaction(
+    daoId,
+    applicant,
+    proposalType,
+    description,
+    memberAddress
+  ) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const daoContract = await this.getDaoContract(daoAddress, memberAddress);
     const unsignedTransaction = await this.getUnsignedTransaction(
       daoContract,
       'submitProposal',

@@ -97,6 +97,53 @@ const successWithMemberResponse = {
 };
 
 const daoRoutes = {
+  getVoteTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/proposal/:proposalId/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Get unsigned tx for a new vote on an existing proposal',
+        summary: 'Get unsigned tx for new vote',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: { vote: { type: 'boolean' } },
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getNewVoteTransaction
+  },
+  sendVoteTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/proposal/:proposalId/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Send aproved signed vote tx to the blockchain',
+        summary: 'send signed tx for new vote',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: sendTransactionProperties,
+          required: ['signedTransaction'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendNewVoteTransaction
+  },
   getProposalTransaction: {
     method: 'post',
     path: `${basePath}/:daoId/get-transaction`,
@@ -106,7 +153,7 @@ const daoRoutes = {
         tags: [routeTags.DAO.name, routeTags.POST.name],
         description: 'Get unsigned tx for a new proposal an existing DAO',
         summary: 'Get unsigned tx for new proposal',
-        params: { daoIdParam },
+        params: { daoIdParam, proposalIdParam },
         body: {
           type: 'object',
           properties: submitProposalProperties,
@@ -129,7 +176,7 @@ const daoRoutes = {
       schema: {
         tags: [routeTags.DAO.name, routeTags.POST.name],
         description: 'Send approved signed proposal tx to the blockchain',
-        summary: 'Get unsigned tx to the blockchain',
+        summary: 'Send aproved signed proposal tx to the blockchain',
         params: { daoIdParam },
         body: {
           type: 'object',

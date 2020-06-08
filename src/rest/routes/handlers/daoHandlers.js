@@ -32,6 +32,31 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
+  getNewVoteTransaction: () => async (request, reply) => {
+    const { daoId, proposalId } = request.params;
+    const { wallet: userWallet } = request.user;
+    const { vote } = request.body || {};
+    const response = await daoService.getNewVoteTransaction({
+      daoId,
+      proposalId,
+      userWallet,
+      vote
+    });
+    reply.status(200).send(response);
+  },
+  sendNewVoteTransaction: () => async (request, reply) => {
+    const { daoId, proposalId } = request.params;
+    const { wallet: userWallet } = request.user;
+    const { signedTransaction } = request.body || {};
+
+    const response = await daoService.sendNewVoteTransaction({
+      daoId,
+      proposalId,
+      signedTransaction,
+      userWallet
+    });
+    reply.status(200).send(response);
+  },
   voteProposal: () => async (request, reply) => {
     const { proposalId, daoId } = request.params;
     const { vote } = request.body || {};
