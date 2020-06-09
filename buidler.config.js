@@ -8,16 +8,16 @@ const { lazyObject } = require('@nomiclabs/buidler/plugins');
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
-const buidlerTasks = require('./src/rest/services/helpers/buidlerTasks');
+require('./src/rest/services/helpers/buidlerTasks');
 const COA = require('./src/plugins/coa');
 
 const INFURA_API_KEY = '';
 const ROPSTEN_PRIVATE_KEY = '';
-const MAINNET_PRIVATE_KEY = '';
 
 // const Deployments = require("./scripts/deployments");
 
 task('deploy', 'Deploys COA contracts')
+  // eslint-disable-next-line no-undef
   .addOptionalParam('reset', 'force deploy', false, types.boolean)
   .setAction(async ({ reset }, env) => {
     // Make sure everything is compiled
@@ -30,7 +30,7 @@ task('deploy', 'Deploys COA contracts')
       'ClaimsRegistry'
     );
     if (registry === undefined || reset === true) {
-      [registry, receipt] = await env.deployments.deploy('ClaimsRegistry', []);
+      [registry] = await env.deployments.deploy('ClaimsRegistry', []);
       await env.deployments.saveDeployedContract('ClaimsRegistry', registry);
       // console.log('ClaimsRegistry deployed. Address:', registry.address);
     }
@@ -63,10 +63,11 @@ task('deploy2').setAction(async (args, env) => {
   await setup.deploy();
 });
 
+// eslint-disable-next-line no-undef
 extendEnvironment(env => {
-  // console.log(createChainIdGetter);
-  const chainIdGetter = createChainIdGetter(env.ethereum);
+  // eslint-disable-next-line no-param-reassign
   env.coa = new COA(env);
+  // eslint-disable-next-line no-param-reassign
   env.deployments = lazyObject(() => require('./src/plugins/deployments'));
 });
 
@@ -89,6 +90,10 @@ module.exports = {
     },
     coverage: {
       url: 'http://localhost:8555'
+    },
+    buidlerevm: {
+      loggingEnabled: true,
+      throwOnTransactionFailures: true
     }
   },
   solc: {
