@@ -1,5 +1,6 @@
 pragma solidity ^0.5.8;
 
+
 /**
  * @title This contract holds information about claims made buy COA members
  * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
@@ -26,12 +27,12 @@ contract ClaimsRegistry {
     );
 
     /**
-    * @notice Adds a claim into the registry.
-    * @param _project - address of a project.
-    * @param _claim - bytes32 of the claim's hash.
-    * @param _proof - bytes32 of the proof's hash.
-    * @param _approved - true if the claim is approved, false otherwise.
-    */
+     * @notice Adds a claim into the registry.
+     * @param _project - address of a project.
+     * @param _claim - bytes32 of the claim's hash.
+     * @param _proof - bytes32 of the proof's hash.
+     * @param _approved - true if the claim is approved, false otherwise.
+     */
     function addClaim(
         address _project,
         bytes32 _claim,
@@ -57,22 +58,24 @@ contract ClaimsRegistry {
     }
 
     /**
-    * @notice Checks whether the tasks from a project's milestone are approved).
-    * @param _project - address of a project.
-    * @param _validators - array of addresses of the validators.
-    * @param _claims - array of bytes32 hashes of the claims.
-    */
+     * @notice Checks whether the tasks from a project's milestone are approved).
+     * @param _project - address of a project.
+     * @param _validators - array of addresses of the validators.
+     * @param _claims - array of bytes32 hashes of the claims.
+     */
     function areApproved(
         address _project,
-        address[] memory _validators,
-        bytes32[] memory _claims
-    ) public view returns (bool) {
-        require(_validators.length == _claims.length, "arrays must be equal size");
-        bool approved = true;
-        for (uint i = 0; i < _claims.length; i++) {
+        address[] calldata _validators,
+        bytes32[] calldata _claims
+    ) external view returns (bool) {
+        require(
+            _validators.length == _claims.length,
+            'arrays must be equal size'
+        );
+        for (uint256 i = 0; i < _claims.length; i++) {
             Claim memory claim = registry[_project][_validators[i]][_claims[i]];
-            approved = approved && claim.approved;
+            if (!claim.approved) return false;
         }
-        return approved;
+        return true;
     }
 }
