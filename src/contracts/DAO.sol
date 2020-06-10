@@ -139,8 +139,11 @@ contract DAO {
         );
         Proposal storage proposal = proposalQueue[_proposalIndex];
 
-        require(_vote < 3, '_vote must be less than 3');
         Vote vote = Vote(_vote);
+        require(
+            vote == Vote.Yes || vote == Vote.No,
+            'vote must be either Yes or No'
+        );
         require(
             getCurrentPeriod() >= proposal.startingPeriod,
             'voting period has not started'
@@ -152,10 +155,7 @@ contract DAO {
             proposal.votesByMember[memberAddress] == Vote.Null,
             'member has already voted on this proposal'
         );
-        require(
-            vote == Vote.Yes || vote == Vote.No,
-            'vote must be either Yes or No'
-        );
+        
 
         // store user vote
         proposal.votesByMember[memberAddress] = vote;
