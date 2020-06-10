@@ -9,14 +9,8 @@ import "./SuperDAO.sol";
 /// @title COA main contract to store projects related information
 contract COA is Ownable {
 
-    enum Role {
-        Funder,
-        Activist
-    }
-
     struct Member {
         string profile;
-        // Role role;
     }
 
     /// Projects list
