@@ -70,7 +70,7 @@ module.exports = class COA {
     const coa = await this.getCOA();
     const projectAddress = await coa.projects(projectId);
     const tx = await coa.registry(projectAddress, validator, claim);
-    // console.log(tx);
+    console.log(tx);
   }
 
   // TODO: delete if not needed
