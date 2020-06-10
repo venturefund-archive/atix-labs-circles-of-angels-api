@@ -30,6 +30,8 @@ contract DAO {
     uint256 public periodDuration = 17280; /// seconds
     uint256 public votingPeriodLength = 35; /// periods
     uint256 public gracePeriodLength = 35;
+    uint256 public processingPeriodLength = votingPeriodLength +
+        gracePeriodLength;
 
     /// Emitted then a proposal was successfuly submitted
     event SubmitProposal(
@@ -245,9 +247,7 @@ contract DAO {
 
         require(
             getCurrentPeriod() >=
-                proposal.startingPeriod.add(votingPeriodLength).add(
-                    gracePeriodLength
-                ),
+                proposal.startingPeriod.add(processingPeriodLength),
             'proposal is not ready to be processed'
         );
         require(
