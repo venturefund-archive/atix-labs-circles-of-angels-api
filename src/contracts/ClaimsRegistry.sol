@@ -1,9 +1,8 @@
 pragma solidity ^0.5.8;
 
 /**
-   @dev loosely based on ERC780 Ethereum Claims Registry
-        https://github.com/ethereum/EIPs/issues/780
-        now it has been heavily changed.
+ * @title This contract holds information about claims made buy COA members
+ * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
  */
 contract ClaimsRegistry {
     struct Claim {
@@ -15,9 +14,7 @@ contract ClaimsRegistry {
     // Claim by project address => validator address => claim's hash => claim.
     mapping(address => mapping(address => mapping(bytes32 => Claim))) public registry;
 
-    // project => validators[]
-    // mapping(address => address[]) public projectValidators;
-
+    // Emitted when a claim is added
     event ClaimApproved(
         address indexed project,
         address indexed validator,
@@ -29,7 +26,7 @@ contract ClaimsRegistry {
     );
 
     /**
-    * @dev Adds a claim into the registry.
+    * @notice Adds a claim into the registry.
     * @param _project - address of a project.
     * @param _claim - bytes32 of the claim's hash.
     * @param _proof - bytes32 of the proof's hash.
@@ -60,7 +57,7 @@ contract ClaimsRegistry {
     }
 
     /**
-    * @dev Checks whether the tasks from a project's milestone are approved).
+    * @notice Checks whether the tasks from a project's milestone are approved).
     * @param _project - address of a project.
     * @param _validators - array of addresses of the validators.
     * @param _claims - array of bytes32 hashes of the claims.

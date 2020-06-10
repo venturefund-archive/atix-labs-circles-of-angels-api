@@ -5,6 +5,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 import './COA.sol';
 import './DAO.sol';
 
+/// @title This contracts is a DAO but will also process new dao creation proposals
 contract SuperDAO is DAO {
 
     using SafeMath for uint256;
