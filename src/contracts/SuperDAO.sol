@@ -8,8 +8,6 @@ import './DAO.sol';
 /// @title This contracts is a DAO but will also process new dao creation proposals
 contract SuperDAO is DAO {
 
-    using SafeMath for uint256;
-
     COA coa;
 
     constructor(string memory _name, address _creator, address _coaAddress) DAO(_name, _creator) public {
