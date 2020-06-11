@@ -163,7 +163,7 @@ describe('COA plugin tests', () => {
       expect(block).toHaveProperty('number', receipt.blockNumber);
       expect(block).toHaveProperty('timestamp', expect.any(Number));
     });
-    it('should return the block of the transaction usign the hash as arg', async () => {
+    it('should return the block of the transaction using the hash as arg', async () => {
       const signer = await coa.getSigner();
       const { hash } = await signer.sendTransaction({
         to: address,
