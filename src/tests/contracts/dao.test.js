@@ -168,7 +168,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       await throwsAsync(
         dao.submitVote(0, 4),
-        'VM Exception while processing transaction: revert _vote must be less than 3'
+        'VM Exception while processing transaction: invalid opcode'
       );
     });
 

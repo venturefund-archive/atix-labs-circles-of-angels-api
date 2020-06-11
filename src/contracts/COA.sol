@@ -6,26 +6,27 @@ import "./ClaimsRegistry.sol";
 import "./DAO.sol";
 import "./SuperDAO.sol";
 
+/// @title COA main contract to store projects related information
 contract COA is Ownable {
-
-    enum Role {
-        Funder,
-        Activist
-    }
 
     struct Member {
         string profile;
-        // Role role;
     }
 
+    /// Projects list
     Project[] public projects;
+    /// COA members
     mapping (address => Member) public members;
+    /// COA owned daos
     DAO[] public daos;
+    /// FIXME: Where is this used
     ClaimsRegistry public registry;
     // Agreements by project address => agreementHash
     mapping (address => string) public agreements;
 
+    /// Emitted when a new DAO is created
     event DAOCreated(address addr);
+    /// Emitted when a new Project is created
     event ProjectCreated(uint256 id, address addr);
 
     constructor(address _registryAddress) Ownable() public {
@@ -33,11 +34,11 @@ contract COA is Ownable {
         createSuperDAO();
     }
 
-    // the profile can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
-    // we could strip the first two bytes but for now it seems unnecessary
     /**
-    * @dev Adds a new member in COA.
+    * @notice Adds a new member in COA.
     * @param _profile - string of the member's profile.
+    *
+    * @dev the profile can be bytes32 but IPFS hashes are 34 bytes long due to multihash. We could strip the first two bytes but for now it seems unnecessary.
     */
     function createMember(string memory _profile) public {
             // role: Role.Activist,
