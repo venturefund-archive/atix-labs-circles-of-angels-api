@@ -7,6 +7,12 @@
     "node": true,
     "jest": true
   },
+  "globals": {
+    "assert": true,
+    "contract": true,
+    "usePlugin": true,
+    "task": true
+  },
   "rules": {
     "func-names": "error",
     "new-cap": "off",
