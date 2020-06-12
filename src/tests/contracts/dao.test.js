@@ -90,7 +90,7 @@ const checkNewSubmittedProposal = async (
   return proposal;
 };
 
-contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
+contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
   let coa;
   let dao;
   let superDao;
@@ -137,7 +137,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
 
     it('Sending two proposals in a row', async () => {
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
-      await dao.submitProposal(curator, ProposalType.AssignCurator, 'luis');
+      await dao.submitProposal(curator, ProposalType.NewMember, 'luis');
 
       const proposalsLength = await dao.getProposalQueueLength();
 
@@ -145,7 +145,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
       const proposal = await checkNewSubmittedProposal(
         dao,
         creator,
-        ProposalType.AssignCurator,
+        ProposalType.NewMember,
         'luis',
         curator
       );
@@ -294,7 +294,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
 
     it("Should fail if previous proposal hasn't been processed", async () => {
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
-      await dao.submitProposal(founder, ProposalType.AssignBank, 'carlos');
+      await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       const proposalIndex = (await dao.getProposalQueueLength()) - 1;
       const proposal = await dao.proposalQueue(proposalIndex);
       await moveForwardPeriodsUntilProcessingEnabled(dao, proposal);
@@ -305,7 +305,16 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
       );
     });
 
-    it.skip("Should fail if trying to assign a role to a member that does't belong to the DAO", async () => {});
+    it("Should fail if trying to assign a role to a member that doesn't belong to the DAO", async () => {
+      await throwsAsync(
+        dao.submitProposal(notMember, ProposalType.AssignBank, 'carlos'),
+        'VM Exception while processing transaction: revert not a DAO member'
+      );
+      await throwsAsync(
+        dao.submitProposal(notMember, ProposalType.AssignCurator, 'carlos'),
+        'VM Exception while processing transaction: revert not a DAO member'
+      );
+    });
 
     it('Should process a new member proposal', async () => {
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
