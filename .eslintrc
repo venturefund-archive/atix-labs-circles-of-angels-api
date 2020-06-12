@@ -4,7 +4,14 @@
   "env": {
     "browser": true,
     "mocha": true,
-    "node": true
+    "node": true,
+    "jest": true
+  },
+  "globals": {
+    "assert": true,
+    "contract": true,
+    "usePlugin": true,
+    "task": true
   },
   "rules": {
     "func-names": "error",

@@ -19,10 +19,42 @@ const transferStatus = {
 };
 
 const projectStatus = {
-  REJECTED: 1,
-  PENDING_APPROVAL: 0,
-  PUBLISHED: 2,
-  IN_PROGRESS: 3
+  // TODO delete this one
+  REJECTED: 2,
+  DRAFT: 0,
+  PENDING_APPROVAL: 1,
+  PUBLISHED: 3,
+  IN_PROGRESS: 4
+};
+
+const publicProjectStatuses = {
+  PUBLISHED: 'published',
+  CONSENSUS: 'consensus',
+  FUNDING: 'funding',
+  EXECUTING: 'executing',
+  CHANGING_SCOPE: 'changingscope',
+  FINISHED: 'finished',
+  ABORTED: 'aborted'
+};
+
+const privateProjectStatuses = {
+  NEW: 'new',
+  TO_REVIEW: 'toreview',
+  REJECTED: 'rejected'
+};
+
+const inactiveProjectStatuses = {
+  DELETED: 'deleted',
+  ARCHIVED: 'archived',
+  CANCELLED: 'cancelled'
+  // TODO this status might be a boolean field in project table
+  // SUSPENDED: 'suspended'
+};
+
+const projectStatuses = {
+  ...privateProjectStatuses,
+  ...publicProjectStatuses,
+  ...inactiveProjectStatuses
 };
 
 const activityStatus = {
@@ -32,11 +64,33 @@ const activityStatus = {
   COMPLETED: 4
 };
 
+const txFunderStatus = {
+  PENDING: 'pending',
+  RECONCILIATION: 'reconciliation',
+  CANCELLED: 'cancelled',
+  VERIFIED: 'verified',
+  SENT: 'sent',
+  FAILED: 'failed'
+};
+
+const claimMilestoneStatus = {
+  PENDING: 'pending',
+  CLAIMABLE: 'claimable',
+  CLAIMED: 'claimed',
+  TRANSFERRED: 'transferred'
+};
+
 const userRoles = {
-  BO_ADMIN: 1,
-  SOCIAL_ENTREPRENEUR: 2,
-  IMPACT_FUNDER: 3,
-  ORACLE: 4
+  COA_ADMIN: 'admin',
+  ENTREPRENEUR: 'entrepreneur',
+  PROJECT_SUPPORTER: 'supporter',
+  PROJECT_CURATOR: 'curator',
+  BANK_OPERATOR: 'bankoperator'
+};
+
+const supporterRoles = {
+  ORACLES: 'oracles',
+  FUNDERS: 'funders'
 };
 
 const milestoneBudgetStatus = {
@@ -44,12 +98,6 @@ const milestoneBudgetStatus = {
   CLAIMED: 2,
   FUNDED: 3,
   BLOCKED: 4
-};
-
-const userRegistrationStatus = {
-  PENDING_APPROVAL: 1,
-  APPROVED: 2,
-  REJECTED: 3
 };
 
 const blockchainStatus = {
@@ -91,21 +139,57 @@ const transactionTypes = {
   milestoneCreation: 'milestoneCreation',
   activityCreation: 'activityCreation',
   milestoneClaimed: 'milestoneClaimed',
-  projectStarted:'projectStarted',
+  projectStarted: 'projectStarted',
   milestoneFunded: 'milestoneFunded',
   validateActivity: 'validateActivity',
   updateEvidence: 'updateEvidence'
-}
+};
+
+const voteEnum = {
+  NULL: 0,
+  YES: 1,
+  NO: 2
+};
+const proposalTypeEnum = {
+  NEW_MEMBER: 0,
+  NEW_DAO: 1,
+  ASSIGN_BANK: 2,
+  ASSIGN_CURATOR: 3
+};
+const daoMemberRoleEnum = {
+  NORMAL: 0,
+  BANK: 1,
+  CURATOR: 2
+};
+const daoMemberRoleNames = ['Normal', 'Bank Operator', 'Project Curator'];
+
+const txEvidenceStatus = {
+  NOT_SENT: 'notsent',
+  SENT: 'sent',
+  CONFIRMED: 'confirmed',
+  FAILED: 'failed'
+};
 
 module.exports = {
   evidenceFileTypes,
+  txFunderStatus,
   transferStatus,
   projectStatus,
+  projectStatuses,
+  publicProjectStatuses,
+  privateProjectStatuses,
+  inactiveProjectStatuses,
   activityStatus,
   userRoles,
+  supporterRoles,
   milestoneBudgetStatus,
-  userRegistrationStatus,
   blockchainStatus,
   xlsxConfigs,
-  transactionTypes
+  transactionTypes,
+  voteEnum,
+  proposalTypeEnum,
+  daoMemberRoleNames,
+  daoMemberRoleEnum,
+  claimMilestoneStatus,
+  txEvidenceStatus
 };

@@ -7,6 +7,11 @@
  */
 
 const routeTags = require('../src/rest/util/routeTags');
+const cronExpressions = require('../src/rest/services/cronjob/cronExpressions');
+
+const SECONDS_IN_A_DAY = 86400;
+
+require('dotenv').config();
 
 module.exports = {
   server: {
@@ -17,20 +22,25 @@ module.exports = {
       'Access-Control-Allow-Headers': [
         'Origin, X-Requested-With, Content-Type, Accept'
       ]
-    }
+    },
+    isHttps: false,
+    domain: 'localhost'
   },
-
   frontendUrl: 'http://localhost:3000',
-
-  support: {
-    service: 'Gmail',
-    email: 'circlesofangelshelp@gmail.com',
-    password: 'coasupport1',
-    recoveryTime: 1 // in hours
+  email: {
+    recoveryTime: 1, // in hours
+    host: 'smtp.example.com',
+    port: 587,
+    user: 'username',
+    pass: 'password',
+    apiKey: undefined, // sendgrid apikey, when undefined uses smtp
+    from: 'from@example.com',
+    disabled: false
   },
 
   jwt: {
-    secret: 'atix2018'
+    secret: 'atix2018',
+    expirationTime: 3 // in months
   },
 
   database: {
@@ -53,7 +63,8 @@ module.exports = {
   },
 
   fileServer: {
-    filePath: '/home/atixlabs/files/server'
+    filePath: '/home/atixlabs/files/server/files',
+    maxFileSize: 5000000
   },
 
   swagger: {
@@ -71,5 +82,32 @@ module.exports = {
       produces: ['application/json'],
       tags: Object.values(routeTags)
     }
-  }
+  },
+
+  crons: {
+    disableAll: false,
+    transitionProjectStatusJob: {
+      cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT,
+      disabled: false,
+      runOnInit: false,
+      timezone: undefined
+    },
+    checkFailedTransactionsJob: {
+      cronTime: cronExpressions.EVERY_HOUR,
+      disabled: false,
+      runOnInit: false,
+      timezone: undefined
+    }
+  },
+
+  defaultProjectTimes: {
+    minimumUnit: 'days',
+    consensusSeconds: 10 * SECONDS_IN_A_DAY, // TODO: define this
+    fundingSeconds: 10 * SECONDS_IN_A_DAY // TODO: define this
+  },
+
+  buidler: {
+    defaultNetwork: 'develop'
+  },
+  explorerLink: 'https://explorer.testnet.rsk.co'
 };
