@@ -1,7 +1,12 @@
 const daoService = require('../../services/daoService');
+const userService = require('../../services/userService');
 const { proposalTypeEnum } = require('../../util/constants');
 
 module.exports = {
+  getDaoUsers: () => async (request, reply) => {
+    const users = await userService.getUsers();
+    reply.status(200).send({ users });
+  },
   getNewProposalTransaction: () => async (request, reply) => {
     const { daoId } = request.params;
     const { user } = request;

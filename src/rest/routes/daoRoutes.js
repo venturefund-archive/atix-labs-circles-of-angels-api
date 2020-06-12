@@ -63,7 +63,7 @@ const submitProposalProperties = {
 };
 
 const sendTransactionProperties = {
-  signedTransaction: { type: 'string' },
+  signedTransaction: { type: 'string' }
 };
 
 const responseMemberProperties = {
@@ -96,7 +96,46 @@ const successWithMemberResponse = {
   description: 'Return the information of a member of a DAO'
 };
 
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    address: { type: 'string' },
+    role: { type: 'string' }
+  }
+};
+
+const successWithUserResponse = {
+  type: 'object',
+  properties: {
+    users: {
+      type: 'array',
+      items: userResponse
+    }
+  },
+  description: 'Returns an array of objects with the users information'
+};
+
 const daoRoutes = {
+  getDaoUsers: {
+    method: 'get',
+    path: `${basePath}/users`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns relevant info of dao users',
+        summary: 'Get all existing users',
+        response: {
+          ...successResponse(successWithUserResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getDaoUsers
+  },
   getVoteTransaction: {
     method: 'post',
     path: `${basePath}/:daoId/proposal/:proposalId/get-transaction`,
