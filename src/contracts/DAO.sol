@@ -4,7 +4,6 @@ import '@openzeppelin/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import './COA.sol';
 
-
 /// @title A DAO contract based on MolochDAO ideas
 contract DAO {
     using SafeMath for uint256;
@@ -98,7 +97,7 @@ contract DAO {
         address _applicant,
         uint8 _proposalType,
         string memory _description
-    ) public {
+    ) public onlyMembers() {
         /// require msg.sender is a member.
         address memberAddress = msg.sender;
         uint256 startingPeriod = max(
@@ -129,10 +128,8 @@ contract DAO {
      * @param _proposalIndex Proposal to be voted to. It will revert if proposal doesn't exist at _propsoalIndex.
      * @param _vote The vote, Vote.Yes or Vote.No
      */
-    function submitVote(uint256 _proposalIndex, uint8 _vote) public {
+    function submitVote(uint256 _proposalIndex, uint8 _vote) public onlyMembers() {
         address memberAddress = msg.sender;
-        Member storage member = members[memberAddress];
-        require(member.shares > 0, 'no voting power');
         require(
             _proposalIndex < proposalQueue.length,
             'Moloch::submitVote - proposal does not exist'
@@ -155,12 +152,12 @@ contract DAO {
             proposal.votesByMember[memberAddress] == Vote.Null,
             'member has already voted on this proposal'
         );
-        
 
         // store user vote
         proposal.votesByMember[memberAddress] = vote;
 
         // count the vote in the corresponding proposal vote accumulator
+        Member storage member = members[memberAddress];
         if (vote == Vote.Yes) {
             proposal.yesVotes = proposal.yesVotes.add(member.shares);
         } else if (vote == Vote.No) {
@@ -258,6 +255,16 @@ contract DAO {
             proposalIndex == 0 || proposalQueue[proposalIndex.sub(1)].processed,
             'previous proposal must be processed'
         );
+        _;
+    }
+
+    /**
+     * @notice This modifier checks if the `msg.sender` corresponds to a member of the dao with voting power
+     */
+    modifier onlyMembers() {
+        address memberAddress = msg.sender;
+        Member storage member = members[memberAddress];
+        require(member.exists == true, 'not a DAO member');
         _;
     }
 

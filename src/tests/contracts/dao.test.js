@@ -1,5 +1,11 @@
 /* eslint-disable no-restricted-syntax */
-const { ethereum, run, deployments, web3 } = require('@nomiclabs/buidler');
+const {
+  ethereum,
+  run,
+  deployments,
+  web3,
+  ethers
+} = require('@nomiclabs/buidler');
 
 const { throwsAsync, waitForEvent } = require('./testHelpers');
 
@@ -147,12 +153,24 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
       assert.equal(proposal.startingPeriod, 2);
     });
 
-    it.skip('It should fail when a non member is voting', async () => {
-      // FIXME: we need to setup the signer here
+    it('It should fail when a non member is sending a proposal', async () => {
+      const signers = await ethers.signers();
+      await throwsAsync(
+        // We are using the first few signers
+        dao
+          .connect(signers[signers.length - 1])
+          .submitProposal(founder, ProposalType.NewMember, 'carlos'),
+        'VM Exception while processing transaction: revert not a DAO member'
+      );
+    });
+
+    it('It should fail when a non member is voting', async () => {
+      const signers = await ethers.signers();
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       await throwsAsync(
-        dao.submitVote(0, VoteType.Yes),
-        'revert Moloch::submitVote - proposal does not exist'
+        // We are using the first few signers
+        dao.connect(signers[signers.length - 1]).submitVote(0, VoteType.Yes),
+        'VM Exception while processing transaction: revert not a DAO member'
       );
     });
 
@@ -375,6 +393,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
       });
     });
   });
+
   describe('transaction', () => {
     it('should revert when sending a tx to the contract', async () => {
       await throwsAsync(
