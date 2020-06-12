@@ -100,7 +100,7 @@ describe('Testing transferService', () => {
 
   beforeAll(() => {
     files.saveFile = jest.fn(() => '/dir/path');
-    coa.sendAddClaimTransaction = jest.fn(() => ({ hash: '0x01' }));
+    coa.sendNewTransaction = jest.fn(() => ({ hash: '0x01' }));
     coa.getAddClaimTransaction = jest.fn();
     coa.getTransactionResponse = jest.fn(() => null);
     coa.getBlock = jest.fn();
@@ -483,7 +483,7 @@ describe('Testing transferService', () => {
         const updated = dbTransfer.find(t => t.id === pendingTransfer.id);
         expect(updated.status).toEqual(txFunderStatus.SENT);
         expect(updated.txHash).toEqual('0x01');
-        expect(coa.sendAddClaimTransaction).toHaveBeenCalled();
+        expect(coa.sendNewTransaction).toHaveBeenCalled();
         expect(response).toEqual({ transferId: pendingTransfer.id });
       }
     );

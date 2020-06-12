@@ -72,7 +72,7 @@ module.exports = {
       daoId
     );
 
-    const tx = await coa.sendNewProposalTransaction(signedTransaction);
+    const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[DAOService] :: New proposal transaction sent', tx);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
@@ -149,7 +149,7 @@ module.exports = {
       proposalId
     );
 
-    const tx = await coa.sendNewProposalTransaction(signedTransaction);
+    const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[DAOService] :: New vote transaction sent', tx);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);

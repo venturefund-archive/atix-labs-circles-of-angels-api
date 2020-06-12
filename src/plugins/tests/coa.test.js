@@ -78,7 +78,7 @@ describe('COA plugin tests', () => {
       'should send the signed tx to the contract and ' +
         'return the transaction response',
       async () => {
-        const response = await coa.sendAddClaimTransaction(signedTx);
+        const response = await coa.sendNewTransaction(signedTx);
         expect(response).toHaveProperty('hash', expect.any(String));
         expect(response.to).toEqual(unsignedTx.to);
         expect(response.data).toEqual(unsignedTx.data);

@@ -70,7 +70,6 @@ module.exports = class COA {
     const coa = await this.getCOA();
     const projectAddress = await coa.projects(projectId);
     const tx = await coa.registry(projectAddress, validator, claim);
-    // console.log(tx);
   }
 
   // TODO: delete if not needed
@@ -85,13 +84,6 @@ module.exports = class COA {
       milestoneId
     );
     return txReceipt;
-  }
-
-  async sendAddClaimTransaction(signedTransaction) {
-    const txResponse = await this.env.ethers.provider.sendTransaction(
-      signedTransaction
-    );
-    return txResponse;
   }
 
   async getAddClaimTransaction(
@@ -176,7 +168,7 @@ module.exports = class COA {
     return unsignedTransaction;
   }
 
-  async sendNewProposalTransaction(signedTransaction) {
+  async sendNewTransaction(signedTransaction) {
     const txResponse = await this.env.ethers.provider.sendTransaction(
       signedTransaction
     );
