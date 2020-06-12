@@ -18,7 +18,7 @@ contract COA is Ownable {
     /// COA members
     mapping (address => Member) public members;
     /// COA owned daos
-    DAO[] public daos;
+    AbstractDAO[] public daos;
     /// FIXME: Where is this used
     ClaimsRegistry public registry;
     // Agreements by project address => agreementHash
@@ -90,7 +90,7 @@ contract COA is Ownable {
     *      It's the DAO that can be used to create other DAOs.
     */
     function createSuperDAO() internal {
-        DAO dao = new SuperDAO("Super DAO", msg.sender, address(this));
+        SuperDAO dao = new SuperDAO("Super DAO", msg.sender, address(this));
         daos.push(dao);
         emit DAOCreated(address(dao));
 

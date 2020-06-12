@@ -3,58 +3,33 @@ pragma solidity ^0.5.8;
 import '@openzeppelin/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import './COA.sol';
-import './DAO.sol';
+import './AbstractDAO.sol';
 
 /// @title This contracts is a DAO but will also process new dao creation proposals
-contract SuperDAO is DAO {
-
+contract SuperDAO is AbstractDAO {
     COA coa;
 
-    constructor(string memory _name, address _creator, address _coaAddress) DAO(_name, _creator) public {
+    constructor(
+        string memory _name,
+        address _creator,
+        address _coaAddress
+    ) public AbstractDAO(_name, _creator) {
         coa = COA(_coaAddress);
     }
 
-    // overrides DAO's processProposal
-    function processProposal(uint256 proposalIndex) public canProcess(proposalIndex) {
-        Proposal storage proposal = proposalQueue[proposalIndex];
+    function processNewDaoProposal(string memory _name, address _applicant)
+        internal
+    {
+        coa.createDAO(_name, _applicant);
+    }
 
-        // TODO : this require is needed!
-        // require(proposal.proposalType == ProposalType.NewMember, "only new members proposal");
-
-        proposal.processed = true;
-
-        bool didPass = proposal.yesVotes > proposal.noVotes;
-
-        if (didPass) {
-            // PROPOSAL PASSED
-            proposal.didPass = true;
-            if (proposal.proposalType == ProposalType.NewMember) {
-                processNewMemberProposal(proposalIndex);
-            } else if (proposal.proposalType == ProposalType.AssignBank) {
-                processAssignBankProposal(proposalIndex);
-            } else if (proposal.proposalType == ProposalType.AssignCurator) {
-                processAssignCuratorProposal(proposalIndex);
-            } else if (proposal.proposalType == ProposalType.NewDAO) {
-                processNewDAOProposal(proposalIndex);
-            }
-        } else {
-            // PROPOSAL FAILED
-        }
-
-        emit ProcessProposal(
-            proposalIndex,
-            proposal.applicant,
-            proposal.proposer,
-            proposal.proposalType,
-            didPass
+    function requireProposalTypeIsValid(ProposalType _proposalType) internal {
+        require(
+            _proposalType == ProposalType.NewMember ||
+                _proposalType == ProposalType.AssignBank ||
+                _proposalType == ProposalType.AssignCurator ||
+                _proposalType == ProposalType.NewDAO,
+            'Invalid Proposal Type'
         );
     }
-
-    function processNewDAOProposal(uint256 proposalIndex) private {
-        Proposal storage proposal = proposalQueue[proposalIndex];
-        require(proposal.proposalType == ProposalType.NewDAO, "only new dao proposals");
-
-        coa.createDAO("A DAO", proposal.applicant);
-    }
-
 }

@@ -347,9 +347,16 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator]) => {
         daosAfterProposal.toNumber(),
         daosBeforeProposal.add(1).toNumber()
       );
-      assert.equal(await newDao.name(), 'A DAO');
+      assert.equal(await newDao.name(), 'new dao');
       // applicant was added as member
       assert.notEqual(await new dao.members(founder), undefined);
+    });
+
+    it('Should fail when sending a NewDao proposal to a DAO and not a SuperDAO', async () => {
+      await throwsAsync(
+        dao.submitProposal(founder, ProposalType.NewDAO, 'carlos'),
+        'VM Exception while processing transaction: revert Invalid Proposal Type'
+      );
     });
 
     const assignRoleTests = [
