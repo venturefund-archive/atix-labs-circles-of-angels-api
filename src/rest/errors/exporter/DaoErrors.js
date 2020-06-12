@@ -21,8 +21,8 @@ module.exports = {
     message: `Member of address ${address} in DAO ${daoId} not found`,
     statusCode: 403
   }),
-  InvalidProposalType: {
+  InvalidProposalType: () => ({
     message: 'Proposal type is not valid',
     statusCode: 403
-  }
+  })
 };

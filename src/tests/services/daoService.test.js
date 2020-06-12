@@ -1,6 +1,8 @@
 const { run, coa, ethereum } = require('@nomiclabs/buidler');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const daoService = require('../../rest/services/daoService');
+const { injectMocks } = require('../../rest/util/injection');
+
 const {
   proposalTypeEnum,
   voteEnum,
@@ -343,30 +345,45 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing getDaos method', () => {
-    it('should return a list of all daos in the contract (3 including the COA)', async () => {
-      const firstDao = await run('create-dao');
-      const secondDao = await run('create-dao');
+    it('should have a list of 2 daos when getDaos is applied', async () => {
+      const firstMemberAddress = await run('create-member');
+      await run('create-dao', { account: firstMemberAddress });
+      await run('create-dao', { account: firstMemberAddress });
       const response = await daoService.getDaos({
-        // The user is not used yet on the getDaos
-        user: defaultUser
+        user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
-      expect(response).toHaveLength(3);
+      expect(response).toHaveLength(2);
     });
     it('should have 1 proposal length when adding a proposal to a DAO', async () => {
-      const superDaoIndex = 0;
+      // Its the only DAO for the user, thats why is unique
+      const uniqueDaoIndex = 0;
       const firstMemberAddress = await run('create-member');
-      const firstCreatedProposalIndex = await run('propose-member-to-dao', {
-        daoaddress: superDaoAddress,
-        applicant: firstMemberAddress
+      const secondMemberAddress = await run('create-member');
+      const daoAddress = await run('create-dao', {
+        account: firstMemberAddress
+      });
+      await run('propose-member-to-dao', {
+        daoaddress: daoAddress,
+        applicant: secondMemberAddress
       });
       const response = await daoService.getDaos({
-        // The user is not used yet on the getDaos
-        user: defaultUser
+        user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
-      const proposalAmounts = Number(response[superDaoIndex].proposalsAmount);
+      const proposalAmounts = Number(response[uniqueDaoIndex].proposalsAmount);
       expect(response).toHaveLength(1);
       expect(proposalAmounts).toEqual(1);
-      expect(response[superDaoIndex].id).toEqual(0);
+    });
+    it('should have an empty list of DAOs if the userdoesnt belong to anyone', async () => {
+      const firstMemberAddress = await run('create-member');
+      const response = await daoService.getDaos({
+        user: { ...defaultUser, wallet: { address: firstMemberAddress } }
+      });
+      expect(response).toHaveLength(0);
+    });
+    it('should throw an error if method dont receive any user', async () => {
+      await expect(daoService.getDaos({})).rejects.toThrow(
+        errors.common.RequiredParamsMissing('getDaos')
+      );
     });
   });
 });

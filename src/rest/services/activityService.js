@@ -1,7 +1,8 @@
 /**
  * AGPL License
  * Circle of Angels aims to democratize social impact financing.
- * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ * It facilitate the investment process by utilizing smart contracts to develop
+ * impact milestones agreed upon by funders and the social entrepenuers.
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
@@ -481,7 +482,7 @@ module.exports = {
       '[ActivityService] :: Sending signed tx to the blockchain for task',
       taskId
     );
-    const tx = await coa.sendAddClaimTransaction(signedTransaction);
+    const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[ActivityService] :: Add claim transaction sent', tx);
 
     // TODO: we shouldn't save the file once we have the ipfs storage working

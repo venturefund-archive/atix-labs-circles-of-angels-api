@@ -78,6 +78,7 @@ task('create-dao', 'Create DAO')
     const daoIndex = (await coa.getDaosLength()) - 1;
     const daoAddress = await coa.daos(daoIndex);
     console.log(`New DAO Address: ${daoAddress} index: ${daoIndex}`);
+    return daoAddress;
   });
 
 task('create-project', 'Create Project')
