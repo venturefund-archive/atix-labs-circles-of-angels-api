@@ -98,7 +98,15 @@ contract AbstractDAO {
         string memory _description
     ) public onlyMembers() {
         ProposalType proposalType = ProposalType(_proposalType);
+        require(_proposalType < 4, 'invalid type');
         requireProposalTypeIsValid(proposalType);
+
+        if (
+            proposalType == ProposalType.AssignBank ||
+            proposalType == ProposalType.AssignCurator
+        ) {
+            requireIsMember(_applicant);
+        }
 
         address memberAddress = msg.sender;
         uint256 startingPeriod = max(
@@ -108,7 +116,6 @@ contract AbstractDAO {
                 : proposalQueue[proposalQueue.length.sub(1)].startingPeriod
         )
             .add(1);
-        require(_proposalType < 4, 'invalid type');
         Proposal memory proposal = Proposal({
             proposer: memberAddress,
             description: _description,
@@ -269,10 +276,17 @@ contract AbstractDAO {
      * @notice This modifier checks if the `msg.sender` corresponds to a member of the dao with voting power
      */
     modifier onlyMembers() {
-        address memberAddress = msg.sender;
-        Member storage member = members[memberAddress];
-        require(member.exists == true, 'not a DAO member');
+        requireIsMember(msg.sender);
         _;
+    }
+
+    /**
+     * @dev Checks if the given address belongs to a member. It reverts otherwise.
+     * @param _address to be checked
+     */
+    function requireIsMember(address _address) private view {
+        Member storage member = members[_address];
+        require(member.exists == true, 'not a DAO member');
     }
 
     function addMember(address memberAddress) private {
