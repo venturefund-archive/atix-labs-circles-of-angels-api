@@ -270,7 +270,7 @@ describe('Testing activityService', () => {
     });
     files.saveFile = jest.fn(() => '/dir/path');
     files.getSaveFilePath = jest.fn(() => '/dir/path');
-    coa.sendAddClaimTransaction = jest.fn();
+    coa.sendNewTransaction = jest.fn();
     coa.getAddClaimTransaction = jest.fn();
     coa.getTransactionResponse = jest.fn(() => null);
     coa.getBlock = jest.fn();
@@ -587,7 +587,7 @@ describe('Testing activityService', () => {
       'should send the signed tx to the contract, save the evidence ' +
         'and return its id',
       async () => {
-        coa.sendAddClaimTransaction.mockReturnValueOnce({
+        coa.sendNewTransaction.mockReturnValueOnce({
           hash: '0x148Ea11233'
         });
         const response = await activityService.sendAddClaimTransaction({

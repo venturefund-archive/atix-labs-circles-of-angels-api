@@ -10,6 +10,156 @@ const {
 } = require('../util/constants');
 
 module.exports = {
+  async getNewProposalTransaction({
+    daoId,
+    userWallet,
+    user,
+    applicant,
+    description,
+    type
+  }) {
+    logger.info('[DAOService] :: Entering getNewProposalTransaction method');
+    validateRequiredParams({
+      method: 'getNewProposalTransaction',
+      params: { daoId, userWallet, user, applicant, description, type }
+    });
+
+    if (!Object.values(proposalTypeEnum).includes(type)) {
+      logger.error(
+        `[DAOService] :: Proposal type of value ${type} is not valid`
+      );
+      throw new COAError(errors.dao.InvalidProposalType);
+    }
+
+    logger.info('[DAOService] :: Getting new proposal transaction');
+    const unsignedTx = await coa.getNewProposalTransaction(
+      daoId,
+      applicant,
+      type,
+      description,
+      userWallet.address
+    );
+
+    const nonce = await this.transactionService.getNextNonce(userWallet.address);
+    const txWithNonce = { ...unsignedTx, nonce };
+
+    logger.info(
+      '[DAOService] :: Sending unsigned transaction to client',
+      txWithNonce
+    );
+    return {
+      tx: txWithNonce,
+      encryptedWallet: userWallet.encryptedWallet
+    };
+  },
+  /*
+   * Sends the signed transaction to the blockchain
+   */
+  async sendNewProposalTransaction({ daoId, signedTransaction, userWallet }) {
+    logger.info('[DAOService] :: Entering sendNewProposalTransaction method');
+    validateRequiredParams({
+      method: 'sendNewProposalTransaction',
+      params: {
+        daoId,
+        signedTransaction,
+        userWallet
+      }
+    });
+
+    const userAddress = userWallet.address;
+    logger.info(
+      '[DAOService] :: Sending signed tx to the blockchain for proposal of DAO: ',
+      daoId
+    );
+
+    const tx = await coa.sendNewTransaction(signedTransaction);
+    logger.info('[DAOService] :: New proposal transaction sent', tx);
+
+    logger.info('[DAOService] :: Saving transaction in database', tx);
+    await this.transactionService.save({
+      sender: userAddress,
+      txHash: tx.hash,
+      nonce: tx.nonce
+    });
+    return daoId;
+  },
+  /*
+   * Gets the unsigned transaction of a vote
+   */
+  async getNewVoteTransaction({ daoId, proposalId, userWallet, vote }) {
+    logger.info('[DAOService] :: Entering getNewVoteTransaction method');
+    validateRequiredParams({
+      method: 'getNewVoteTransaction',
+      params: { daoId, proposalId, userWallet, vote }
+    });
+
+    let userVote = voteEnum.NULL;
+    if (vote !== null && vote !== undefined) {
+      userVote = vote ? voteEnum.YES : voteEnum.NO;
+    }
+
+    logger.info('[DAOService] :: Getting new vote transaction');
+    try {
+      const unsignedTx = await coa.getNewVoteTransaction(
+        daoId,
+        proposalId,
+        userVote,
+        userWallet.address
+      );
+
+      const nonce = await this.transactionService.getNextNonce(
+        userWallet.address
+      );
+      const txWithNonce = { ...unsignedTx, nonce };
+      logger.info(
+        '[DAOService] :: Sending unsigned transaction to client',
+        txWithNonce
+      );
+      return {
+        tx: txWithNonce,
+        encryptedWallet: userWallet.encryptedWallet
+      };
+    } catch (error) {
+      logger.error('[DAOService] :: Error voting proposal', error);
+      throw new COAError(errors.dao.ErrorVotingProposal(proposalId, daoId));
+    }
+  },
+  async sendNewVoteTransaction({
+    daoId,
+    proposalId,
+    signedTransaction,
+    userWallet
+  }) {
+    logger.info('[DAOService] :: Entering sendNewVoteTransaction method');
+    validateRequiredParams({
+      method: 'sendNewVoteTransaction',
+      params: {
+        daoId,
+        proposalId,
+        signedTransaction,
+        userWallet
+      }
+    });
+
+    const userAddress = userWallet.address;
+    logger.info(
+      '[DAOService] :: Sending signed tx to the blockchain for vote of DAO: ',
+      daoId,
+      'Proposal: ',
+      proposalId
+    );
+
+    const tx = await coa.sendNewTransaction(signedTransaction);
+    logger.info('[DAOService] :: New vote transaction sent', tx);
+
+    logger.info('[DAOService] :: Saving transaction in database', tx);
+    await this.transactionService.save({
+      sender: userAddress,
+      txHash: tx.hash,
+      nonce: tx.nonce
+    });
+    return daoId;
+  },
   async voteProposal({ daoId, proposalId, vote, user }) {
     logger.info('[DAOService] :: Entering voteProposal method');
     validateRequiredParams({
@@ -110,7 +260,6 @@ module.exports = {
     });
     try {
       const proposals = await coa.getAllProposalsByDaoId(daoId);
-
       // TODO: should be able to filter by something?
       const formattedProposals = proposals.map((proposal, index) => ({
         proposer: proposal.proposer,
@@ -190,7 +339,7 @@ module.exports = {
       return await Promise.all(formattedDaos);
     } catch (error) {
       logger.error('[DAOService] :: Error getting Daos', error);
-      throw new COAError(errors.dao.ErrorGettingProposals());
+      throw new COAError(errors.dao.ErrorGettingDaos());
     }
   }
 };

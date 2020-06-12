@@ -70,7 +70,6 @@ module.exports = class COA {
     const coa = await this.getCOA();
     const projectAddress = await coa.projects(projectId);
     const tx = await coa.registry(projectAddress, validator, claim);
-    console.log(tx);
   }
 
   // TODO: delete if not needed
@@ -85,13 +84,6 @@ module.exports = class COA {
       milestoneId
     );
     return txReceipt;
-  }
-
-  async sendAddClaimTransaction(signedTransaction) {
-    const txResponse = await this.env.ethers.provider.sendTransaction(
-      signedTransaction
-    );
-    return txResponse;
   }
 
   async getAddClaimTransaction(
@@ -141,6 +133,46 @@ module.exports = class COA {
     // TODO : connect Contract instance to a signer (similar to web3's `from` argument)
     // coa.connect(validator);
     await coa.addClaim(project, claim, proof, valid);
+  }
+
+  async getNewVoteTransaction(daoId, proposalId, vote, memberAddress) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const daoContract = await this.getDaoContract(daoAddress, memberAddress);
+    await this.checkProposalExistence(proposalId, daoContract);
+    const unsignedTransaction = await this.getUnsignedTransaction(
+      daoContract,
+      'submitVote',
+      [proposalId, vote]
+    );
+    return unsignedTransaction;
+  }
+
+  async getNewProposalTransaction(
+    daoId,
+    applicant,
+    proposalType,
+    description,
+    memberAddress
+  ) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const daoContract = await this.getDaoContract(daoAddress, memberAddress);
+    const unsignedTransaction = await this.getUnsignedTransaction(
+      daoContract,
+      'submitProposal',
+      [applicant, proposalType, description]
+    );
+    return unsignedTransaction;
+  }
+
+  async sendNewTransaction(signedTransaction) {
+    const txResponse = await this.env.ethers.provider.sendTransaction(
+      signedTransaction
+    );
+    return txResponse;
   }
 
   async getMember(address) {

@@ -183,7 +183,8 @@ module.exports = fastify => {
 
   function configureDaoService(service) {
     const dependencies = {
-      userService
+      userService,
+      transactionService
     };
     injectDependencies(service, dependencies);
   }
