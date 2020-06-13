@@ -153,7 +153,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       assert.equal(proposal.startingPeriod, 2);
     });
 
-    it('It should fail when a non member is sending a proposal', async () => {
+    it('Should fail when a non member is sending a proposal', async () => {
       const signers = await ethers.signers();
       await throwsAsync(
         // We are using the first few signers
@@ -164,7 +164,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       );
     });
 
-    it('It should fail when a non member is voting', async () => {
+    it('Should fail when a non member is voting', async () => {
       const signers = await ethers.signers();
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       await throwsAsync(
@@ -219,6 +219,21 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       await throwsAsync(
         dao.submitVote(0, VoteType.Null),
         'VM Exception while processing transaction: revert vote must be either Yes or No'
+      );
+    });
+
+    it('Should fail to vote when voting period is over', async () => {
+      await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
+      const proposalIndex = (await dao.getProposalQueueLength()) - 1;
+      const proposal = await dao.proposalQueue(proposalIndex);
+      await moveForwardPeriodsUntilProcessingEnabled(
+        dao,
+        proposal,
+        -1 * GRACE_PERIOD_LENGTH // just up to when voting finished
+      );
+      await throwsAsync(
+        dao.submitVote(proposalIndex, VoteType.Yes),
+        'VM Exception while processing transaction: revert proposal voting period has expired'
       );
     });
 
@@ -319,14 +334,14 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
     it('Should process a new member proposal', async () => {
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       const proposalIndex = (await dao.getProposalQueueLength()) - 1;
-      await moveForwardPeriods(35);
-      await moveForwardPeriods(35);
-      await dao.submitVote(proposalIndex, 1);
+      await moveForwardPeriods(1);
+      await dao.submitVote(proposalIndex, VoteType.Yes);
       let member = await dao.members(founder);
       assert.equal(member.exists, false);
-      await moveForwardPeriods(1);
+      let proposal = await dao.proposalQueue(proposalIndex);
+      await moveForwardPeriodsUntilProcessingEnabled(dao, proposal);
       await dao.processProposal(proposalIndex);
-      const proposal = await dao.proposalQueue(proposalIndex);
+      proposal = await dao.proposalQueue(proposalIndex);
       assert.equal(proposal.didPass, true);
       member = await dao.members(founder);
       assert.equal(member.exists, true);
@@ -335,14 +350,12 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
     it('Should process a new dao proposal', async () => {
       await superDao.submitProposal(founder, ProposalType.NewDAO, 'new dao');
       const proposalIndex = (await superDao.getProposalQueueLength()) - 1;
-      await moveForwardPeriods(35);
-      await moveForwardPeriods(35);
-      await superDao.submitVote(proposalIndex, 1);
       await moveForwardPeriods(1);
-
+      await superDao.submitVote(proposalIndex, VoteType.Yes);
       const daosBeforeProposal = await coa.getDaosLength();
+      let proposal = await superDao.proposalQueue(proposalIndex);
+      await moveForwardPeriodsUntilProcessingEnabled(dao, proposal);
       await superDao.processProposal(proposalIndex);
-      const proposal = await superDao.proposalQueue(proposalIndex);
 
       const daosAfterProposal = await coa.getDaosLength();
       const newDaoAddress = await coa.daos(daosAfterProposal - 1);
@@ -350,6 +363,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
         'DAO',
         newDaoAddress
       );
+      proposal = await superDao.proposalQueue(proposalIndex);
 
       assert.equal(proposal.didPass, true);
       assert.equal(
