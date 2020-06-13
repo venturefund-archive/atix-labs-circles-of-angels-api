@@ -1,4 +1,4 @@
-const { web3, run, deployments } = require('@nomiclabs/buidler');
+const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
 
 const { throwsAsync } = require('./testHelpers');
 
@@ -45,11 +45,21 @@ contract('COA.sol', ([creator, founder]) => {
       const instance = await getProjectAt(await coa.projects(0));
       assert.equal(await instance.name(), project.name);
     });
-    it('Should add an agreement to an address', async () => {
+    it('Should allow the owner to add an agreement to a project', async () => {
       const agreementHash = 'an IPFS/RIF Storage hash';
       await coa.addAgreement(coa.address, agreementHash);
       const agreementAdded = await coa.agreements(coa.address);
       assert.equal(agreementAdded, agreementHash);
+    });
+    it('Should fail when trying to add an agreement if not owner', async () => {
+      const signers = await ethers.signers();
+      const agreementHash = 'an IPFS/RIF Storage hash';
+      await throwsAsync(
+        coa
+          .connect(signers[signers.length - 1])
+          .addAgreement(coa.address, agreementHash),
+        'VM Exception while processing transaction: revert Ownable: caller is not the owner'
+      );
     });
   });
 
