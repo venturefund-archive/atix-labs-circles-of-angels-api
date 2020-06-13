@@ -119,6 +119,12 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       const proposalsBeforeSubmitting = await dao.getProposalQueueLength();
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       const proposalsAfterSubmitting = await dao.getProposalQueueLength();
+      const [
+        proposalIndex,
+        memberAddress,
+        applicant,
+        proposalType
+      ] = await waitForEvent(dao, 'SubmitProposal');
 
       assert.equal(
         proposalsAfterSubmitting.toNumber(),
@@ -133,6 +139,15 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
         founder
       );
       assert.equal(proposal.startingPeriod.toNumber(), 1);
+
+      // Event was properly emitted
+      assert.equal(
+        proposalIndex.toNumber(),
+        proposalsAfterSubmitting.sub(1).toNumber()
+      );
+      assert.equal(memberAddress, creator);
+      assert.equal(applicant, founder);
+      assert.equal(proposalType, ProposalType.NewMember);
     });
 
     it('Sending two proposals in a row', async () => {

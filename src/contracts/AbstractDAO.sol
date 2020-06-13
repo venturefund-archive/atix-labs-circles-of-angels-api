@@ -36,8 +36,7 @@ contract AbstractDAO {
         uint256 proposalIndex,
         address indexed memberAddress,
         address indexed applicant,
-        uint256 tokenTribute,
-        uint256 sharesRequested
+        ProposalType indexed proposalType
     );
     /// Emitted when a vote was succesfuly received
     event SubmitVote(
@@ -129,6 +128,13 @@ contract AbstractDAO {
         });
 
         proposalQueue.push(proposal);
+
+        emit SubmitProposal(
+            proposalQueue.length.sub(1),
+            memberAddress,
+            _applicant,
+            proposalType
+        );
     }
 
     /**
@@ -157,7 +163,10 @@ contract AbstractDAO {
             'voting period has not started'
         );
 
-        require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
+        require(
+            !hasVotingPeriodExpired(proposal.startingPeriod),
+            'proposal voting period has expired'
+        );
         require(
             proposal.votesByMember[memberAddress] == Vote.Null,
             'member has already voted on this proposal'
