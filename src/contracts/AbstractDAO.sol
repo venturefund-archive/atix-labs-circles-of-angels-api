@@ -157,8 +157,7 @@ contract AbstractDAO {
             'voting period has not started'
         );
 
-        // FIXME: uncomment this
-        // require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
+        require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
         require(
             proposal.votesByMember[memberAddress] == Vote.Null,
             'member has already voted on this proposal'
