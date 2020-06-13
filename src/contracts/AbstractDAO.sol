@@ -26,10 +26,10 @@ contract AbstractDAO {
 
     /// TODO: actually define these numbers
     uint256 public periodDuration = 17280; /// seconds
-    uint256 public votingPeriodLength = 35; /// periods
-    uint256 public gracePeriodLength = 35;
-    uint256 public processingPeriodLength = votingPeriodLength +
-        gracePeriodLength;
+    uint256 public votingPeriodLength = 70; /// periods
+    uint256 public procesingPeriodLength = 35; // TODO: Set this value
+    uint256 public expirationPeriodLength = votingPeriodLength +
+        procesingPeriodLength;
 
     /// Emitted then a proposal was successfuly submitted
     event SubmitProposal(
@@ -247,6 +247,14 @@ contract AbstractDAO {
         return getCurrentPeriod() >= startingPeriod.add(votingPeriodLength);
     }
 
+    function hasProposalExpired(uint256 startingPeriod)
+        public
+        view
+        returns (bool)
+    {
+        return getCurrentPeriod() >= startingPeriod.add(expirationPeriodLength);
+    }
+
     /**
      * @notice Returns the proposals array length
      */
@@ -266,17 +274,29 @@ contract AbstractDAO {
 
         require(
             getCurrentPeriod() >=
-                proposal.startingPeriod.add(processingPeriodLength),
+                proposal.startingPeriod.add(votingPeriodLength),
             'proposal is not ready to be processed'
         );
         require(
             proposal.processed == false,
             'proposal has already been processed'
         );
+
         require(
-            proposalIndex == 0 || proposalQueue[proposalIndex.sub(1)].processed,
-            'previous proposal must be processed'
+            !hasProposalExpired(proposal.startingPeriod),
+            'proposal has expired'
         );
+
+        if (proposalIndex != 0) {
+            Proposal storage previousProposal = proposalQueue[proposalIndex.sub(
+                1
+            )];
+            require(
+                previousProposal.processed ||
+                    hasProposalExpired(previousProposal.startingPeriod),
+                'previous proposal must be processed or expired'
+            );
+        }
         _;
     }
 

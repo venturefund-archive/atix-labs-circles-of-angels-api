@@ -22,8 +22,8 @@ const VoteType = {
   No: 2
 };
 
-const VOTING_PERIOD_LENGTH = 35;
-const GRACE_PERIOD_LENGTH = 35;
+const VOTING_PERIOD_LENGTH = 70;
+const PROCESSING_PERIOD_LENGTH = 35;
 
 async function blockTime() {
   // eslint-disable-next-line no-undef
@@ -39,19 +39,23 @@ const moveForwardPeriods = async periods => {
   return true;
 };
 
-const moveForwardPeriodsUntilProcessingEnabled = async (
-  dao,
-  proposal,
-  offset = 0
-) => {
-  const canProcessPeriod =
-    proposal.startingPeriod.toNumber() +
-    VOTING_PERIOD_LENGTH +
-    GRACE_PERIOD_LENGTH;
+const moveForwardPeriodsUntil = async (dao, proposal, amount, offset = 0) => {
+  const canProcessPeriod = proposal.startingPeriod.toNumber() + amount;
   const moveTo = canProcessPeriod + offset;
   const currentPeriod = await dao.getCurrentPeriod();
   if (currentPeriod < moveTo) await moveForwardPeriods(moveTo - currentPeriod);
 };
+
+const moveForwardPeriodsUntilProcessingEnabled = (dao, proposal, offset) =>
+  moveForwardPeriodsUntil(dao, proposal, VOTING_PERIOD_LENGTH, offset);
+
+const moveForwardPeriodsUntilProcessingExpired = (dao, proposal, offset) =>
+  moveForwardPeriodsUntil(
+    dao,
+    proposal,
+    VOTING_PERIOD_LENGTH + PROCESSING_PERIOD_LENGTH,
+    offset
+  );
 
 /**
  * Fetches the latest proposal and checks if it was created properly, i.e., runs
@@ -241,11 +245,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       const proposalIndex = (await dao.getProposalQueueLength()) - 1;
       const proposal = await dao.proposalQueue(proposalIndex);
-      await moveForwardPeriodsUntilProcessingEnabled(
-        dao,
-        proposal,
-        -1 * GRACE_PERIOD_LENGTH // just up to when voting finished
-      );
+      await moveForwardPeriodsUntilProcessingEnabled(dao, proposal);
       await throwsAsync(
         dao.submitVote(proposalIndex, VoteType.Yes),
         'VM Exception while processing transaction: revert proposal voting period has expired'
@@ -322,7 +322,19 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       );
     });
 
-    it("Should fail if previous proposal hasn't been processed", async () => {
+    it('Should revert if proposal has expired', async () => {
+      await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
+      const proposalIndex = (await dao.getProposalQueueLength()) - 1;
+      const proposal = await dao.proposalQueue(proposalIndex);
+      await moveForwardPeriodsUntilProcessingExpired(dao, proposal);
+
+      await throwsAsync(
+        dao.processProposal(proposalIndex),
+        'VM Exception while processing transaction: revert proposal has expired'
+      );
+    });
+
+    it("Should fail if previous proposal hasn't been processed but allow it once it's expired", async () => {
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       const proposalIndex = (await dao.getProposalQueueLength()) - 1;
@@ -331,8 +343,15 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
 
       await throwsAsync(
         dao.processProposal(proposalIndex),
-        'VM Exception while processing transaction: revert previous proposal must be processed'
+        'VM Exception while processing transaction: revert previous proposal must be processed or expired'
       );
+
+      const previousProposal = await dao.proposalQueue(proposalIndex - 1);
+      await moveForwardPeriodsUntilProcessingExpired(dao, previousProposal);
+      await dao.processProposal(proposalIndex);
+      const [index] = await waitForEvent(dao, 'ProcessProposal');
+      // Proposal has been processed as an event has been emitted with the proper index
+      assert.equal(index, proposalIndex);
     });
 
     it("Should fail if trying to assign a role to a member that doesn't belong to the DAO", async () => {
