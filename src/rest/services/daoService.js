@@ -10,6 +10,82 @@ const {
 } = require('../util/constants');
 
 module.exports = {
+  /*
+   * Gets the unsigned transaction to process a proposal
+   */
+  async getProcessProposalTransaction({ daoId, proposalId, userWallet }) {
+    logger.info(
+      '[DAOService] :: Entering getProcessProposalTransaction method'
+    );
+    validateRequiredParams({
+      method: 'getProcessProposalTransaction',
+      params: { daoId, proposalId, userWallet }
+    });
+
+    logger.info('[DAOService] :: Getting new process proposal transaction');
+    try {
+      const unsignedTx = await coa.getProcessProposalTransaction(
+        daoId,
+        proposalId,
+        userWallet.address
+      );
+
+      const nonce = await this.transactionService.getNextNonce(
+        userWallet.address
+      );
+
+      const txWithNonce = { ...unsignedTx, nonce };
+      logger.info(
+        '[DAOService] :: Sending unsigned transaction to client',
+        txWithNonce
+      );
+      return {
+        tx: txWithNonce,
+        encryptedWallet: userWallet.encryptedWallet
+      };
+    } catch (error) {
+      logger.error('[DAOService] :: Error processing the proposal', error);
+      throw new COAError(errors.dao.ErrorProcessingProposal(proposalId, daoId));
+    }
+  },
+  /*
+   * Sends the signed transaction to the blockchain
+   */
+  async sendProcessProposalTransaction({
+    daoId,
+    proposalId,
+    signedTransaction,
+    userWallet
+  }) {
+    logger.info(
+      '[DAOService] :: Entering sendProcessProposalTransaction method'
+    );
+    validateRequiredParams({
+      method: 'sendProcessProposalTransaction',
+      params: {
+        daoId,
+        signedTransaction,
+        userWallet
+      }
+    });
+
+    const userAddress = userWallet.address;
+    logger.info(
+      '[DAOService] :: Sending signed tx to the blockchain for process proposal of DAO: ',
+      daoId
+    );
+
+    const tx = await coa.sendNewTransaction(signedTransaction);
+    logger.info('[DAOService] :: Process proposal transaction sent', tx);
+
+    logger.info('[DAOService] :: Saving transaction in database', tx);
+    await this.transactionService.save({
+      sender: userAddress,
+      txHash: tx.hash,
+      nonce: tx.nonce
+    });
+    return proposalId;
+  },
   async getNewProposalTransaction({
     daoId,
     userWallet,
@@ -40,7 +116,9 @@ module.exports = {
       userWallet.address
     );
 
-    const nonce = await this.transactionService.getNextNonce(userWallet.address);
+    const nonce = await this.transactionService.getNextNonce(
+      userWallet.address
+    );
     const txWithNonce = { ...unsignedTx, nonce };
 
     logger.info(

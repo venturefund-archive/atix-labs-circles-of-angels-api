@@ -7,6 +7,30 @@ module.exports = {
     const users = await userService.getUsers();
     reply.status(200).send({ users });
   },
+  getProcessProposalTransaction: () => async (request, reply) => {
+    const { daoId, proposalId } = request.params;
+    const { wallet: userWallet } = request.user;
+
+    const response = await daoService.getProcessProposalTransaction({
+      daoId,
+      proposalId,
+      userWallet
+    });
+    reply.status(200).send(response);
+  },
+  sendProcessProposalTransaction: () => async (request, reply) => {
+    const { daoId, proposalId } = request.params;
+    const { wallet: userWallet } = request.user;
+    const { signedTransaction } = request.body || {};
+
+    const response = await daoService.sendProcessProposalTransaction({
+      daoId,
+      proposalId,
+      signedTransaction,
+      userWallet
+    });
+    reply.status(200).send(response);
+  },
   getNewProposalTransaction: () => async (request, reply) => {
     const { daoId } = request.params;
     const { user } = request;

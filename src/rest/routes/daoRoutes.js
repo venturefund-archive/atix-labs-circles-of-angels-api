@@ -136,6 +136,48 @@ const daoRoutes = {
     },
     handler: handlers.getDaoUsers
   },
+  getProcessProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/process-proposal/:proposalId/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Get unsigned tx for process an existing proposal',
+        summary: 'Get unsigned tx for process a proposal',
+        params: { daoIdParam, proposalIdParam },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getProcessProposalTransaction
+  },
+  sendProcessProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/process-proposal/:proposalId/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Send signed process proposal tx to the blockchain',
+        summary: 'send signed tx for process a proposal',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: sendTransactionProperties,
+          required: ['signedTransaction'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendProcessProposalTransaction
+  },
   getVoteTransaction: {
     method: 'post',
     path: `${basePath}/:daoId/proposal/:proposalId/get-transaction`,
