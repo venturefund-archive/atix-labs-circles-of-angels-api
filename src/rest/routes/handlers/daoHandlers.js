@@ -164,7 +164,8 @@ module.exports = {
   },
   getProposals: () => async (request, reply) => {
     const { daoId } = request.params;
-    const response = await daoService.getProposalsByDaoId({ daoId });
+    const { user } = request;
+    const response = await daoService.getProposalsByDaoId({ daoId, user });
     reply.status(200).send(response);
   },
   getDaos: () => async (request, reply) => {

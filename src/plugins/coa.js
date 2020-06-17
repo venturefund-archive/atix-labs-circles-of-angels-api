@@ -256,6 +256,15 @@ module.exports = class COA {
     return Promise.all(proposals);
   }
 
+  async getCurrentPeriod(daoId, signer) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    const currentPeriod = await dao.getCurrentPeriod();
+    return currentPeriod;
+  }
+
   async getDaoMember(daoId, memberAddress, signer) {
     const coa = await this.getCOA();
     // TODO: check if this is necessary
@@ -295,6 +304,18 @@ module.exports = class COA {
   async checkProposalExistence(proposalId, dao) {
     if (proposalId >= (await this.getProposalQueueLength(dao)))
       throw new Error('Proposal does not exist');
+  }
+
+  async votingPeriodExpired(daoId, proposalId) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress);
+    await this.checkProposalExistence(proposalId, dao);
+    const proposal = await dao.proposalQueue(proposalId);
+    const startingPeriod = Number(proposal.startingPeriod);
+    const votingPeriodExpired = dao.hasVotingPeriodExpired(startingPeriod);
+    return votingPeriodExpired;
   }
 
   async getCOA() {

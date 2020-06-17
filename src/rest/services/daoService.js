@@ -327,7 +327,7 @@ module.exports = {
     }
     return { proposalId };
   },
-  async getProposalsByDaoId({ daoId }) {
+  async getProposalsByDaoId({ daoId, user }) {
     logger.info('[DAOService] :: Entering getAllProposalsByDaoId method');
     validateRequiredParams({
       method: 'getProposalsByDaoId',
@@ -338,8 +338,13 @@ module.exports = {
     });
     try {
       const proposals = await coa.getAllProposalsByDaoId(daoId);
+      const daoCurrentPeriod = await coa.getCurrentPeriod(
+        daoId,
+        user.wallet.address
+      );
+      console.log(Number(daoCurrentPeriod));
       // TODO: should be able to filter by something?
-      const formattedProposals = proposals.map((proposal, index) => ({
+      const formattedProposals = proposals.map(async (proposal, index) => ({
         proposer: proposal.proposer,
         applicant: proposal.applicant,
         proposalType: proposal.proposalType,
@@ -348,10 +353,13 @@ module.exports = {
         didPass: proposal.didPass,
         description: proposal.description,
         startingPeriod: Number(proposal.startingPeriod),
+        currentPeriod: Number(daoCurrentPeriod),
+        votingPeriodExpired: await coa.votingPeriodExpired(daoId, index),
         processed: proposal.processed,
         id: index
       }));
-      return formattedProposals;
+      // return formattedProposals;
+      return await Promise.all(formattedProposals);
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);
       throw new COAError(errors.dao.ErrorGettingProposals(daoId));

@@ -46,6 +46,8 @@ const responseProposalProperties = {
   didPass: { type: 'boolean' },
   description: { type: 'string' },
   startingPeriod: { type: 'number' },
+  currentPeriod: { type: 'number' },
+  votingPeriodExpired: { type: 'boolean' },
   processed: { type: 'boolean' },
   id: { type: 'integer' }
 };
