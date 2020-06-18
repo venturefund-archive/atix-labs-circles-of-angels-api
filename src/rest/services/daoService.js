@@ -342,7 +342,6 @@ module.exports = {
         daoId,
         user.wallet.address
       );
-      console.log(Number(daoCurrentPeriod));
       // TODO: should be able to filter by something?
       const formattedProposals = proposals.map(async (proposal, index) => ({
         proposer: proposal.proposer,
@@ -358,7 +357,6 @@ module.exports = {
         processed: proposal.processed,
         id: index
       }));
-      // return formattedProposals;
       return await Promise.all(formattedProposals);
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);

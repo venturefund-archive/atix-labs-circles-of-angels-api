@@ -10,6 +10,10 @@ const deployContracts = async () => {
 };
 const revertSnapshot = snapshot => ethereum.send('evm_revert', [snapshot]);
 
+const periodSeconds = 17280;
+const moveForwardAPeriod = async () =>
+  ethereum.send('evm_increaseTime', [periodSeconds]);
+
 describe('COA plugin tests', () => {
   const address = '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A';
   const txHash =
@@ -179,6 +183,29 @@ describe('COA plugin tests', () => {
     it('should return null if the block does not exist', async () => {
       const response = await coa.getBlock(50);
       expect(response).toEqual(null);
+    });
+  });
+
+  describe('Testing getCurrentPeriod method', () => {
+    it('should return the initial period [0] number for the superDao [0]', async () => {
+      const superDaoId = 0;
+      const initialPeriod = 0;
+      const signer = await coa.getSigner();
+      const period = await coa.getCurrentPeriod(superDaoId, signer);
+      expect(Number(period)).toEqual(initialPeriod);
+    });
+    it('should return period 1 after moving forward one period', async () => {
+      const superDaoId = 0;
+      const initialPeriod = 0;
+      const expectedPeriod = 1;
+      const signer = await coa.getSigner();
+      const period = Number(await coa.getCurrentPeriod(superDaoId, signer));
+      expect(period).toEqual(initialPeriod);
+      await moveForwardAPeriod();
+      const currentPeriod = Number(
+        await coa.getCurrentPeriod(superDaoId, signer)
+      );
+      expect(currentPeriod).toEqual(expectedPeriod);
     });
   });
 
