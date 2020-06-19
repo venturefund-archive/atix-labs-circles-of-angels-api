@@ -89,7 +89,6 @@ module.exports = {
   async getNewProposalTransaction({
     daoId,
     userWallet,
-    user,
     applicant,
     description,
     type
@@ -97,7 +96,7 @@ module.exports = {
     logger.info('[DAOService] :: Entering getNewProposalTransaction method');
     validateRequiredParams({
       method: 'getNewProposalTransaction',
-      params: { daoId, userWallet, user, applicant, description, type }
+      params: { daoId, userWallet, applicant, description, type }
     });
 
     if (!Object.values(proposalTypeEnum).includes(type)) {

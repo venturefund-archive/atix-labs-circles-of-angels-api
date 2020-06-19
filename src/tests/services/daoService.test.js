@@ -10,6 +10,11 @@ const {
   daoMemberRoleNames
 } = require('../../rest/util/constants');
 
+let mockedDaoService = Object.assign({}, daoService);
+const restoreMockedDaoService = () => {
+  mockedDaoService = Object.assign({}, daoService);
+};
+
 const TEST_TIMEOUT_MS = 10000;
 const PERIOD_DURATION_SEC = 17280;
 const VOTING_PERIOD_LENGTH = 35; // periods
@@ -35,6 +40,7 @@ describe('Testing daoService', () => {
   let coaContract;
   let superDaoAddress;
   let superUserAddress;
+
   beforeEach(async () => {
     ({
       coaContract,
@@ -42,6 +48,22 @@ describe('Testing daoService', () => {
       superUserAddress
     } = await redeployContracts());
   }, TEST_TIMEOUT_MS);
+
+  beforeAll(() => {
+    coa.sendNewTransaction = jest.fn();
+    coa.getNewProposalTransaction = jest.fn();
+    coa.getProcessProposalTransaction = jest.fn();
+    coa.getNewVoteTransaction = jest.fn();
+    coa.getTransactionResponse = jest.fn(() => null);
+    coa.getBlock = jest.fn();
+  });
+
+  const transactionService = {
+    getNextNonce: jest.fn(() => 0),
+    save: jest.fn(),
+    hasFailed: jest.fn(() => false)
+  };
+
   describe('Testing submitProposal method', () => {
     it(
       'should create a new proposal in the specified DAO ' +
@@ -383,6 +405,93 @@ describe('Testing daoService', () => {
     it('should throw an error if method dont receive any user', async () => {
       await expect(daoService.getDaos({})).rejects.toThrow(
         errors.common.RequiredParamsMissing('getDaos')
+      );
+    });
+  });
+  describe('Testing getNewProposalTransaction', () => {
+    const userWallet = {
+      address: '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D',
+      encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
+    };
+
+    const superDaoId = 0;
+    const description = 'a description';
+
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService
+      });
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should return the unsigned transaction and the encrypted user wallet', async () => {
+      const applicant = await run('create-member');
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getNewProposalTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await mockedDaoService.getNewProposalTransaction({
+        daoId: superDaoId,
+        userWallet,
+        applicant,
+        description,
+        type: proposalTypeEnum.NEW_MEMBER
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      const applicant = await run('create-member');
+      await expect(
+        mockedDaoService.getNewProposalTransaction({
+          daoId: superDaoId,
+          userWallet,
+          applicant
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('getNewProposalTransaction')
+      );
+    });
+  });
+  describe('Testing sendNewProposalTransaction', () => {
+    const superDaoId = 0;
+    const signedTransaction = '0x11122233548979870';
+    const userWallet = {
+      address: '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D',
+      encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
+    };
+
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService
+      });
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should send the signed tx to the contract, save it and return the daoId', async () => {
+      coa.sendNewTransaction.mockReturnValueOnce({
+        hash: '0x148Ea11233'
+      });
+      const response = await mockedDaoService.sendNewProposalTransaction({
+        daoId: superDaoId,
+        signedTransaction,
+        userWallet
+      });
+      expect(response).toEqual(superDaoId);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        mockedDaoService.sendNewProposalTransaction({
+          daoId: superDaoId,
+          userWallet
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('sendNewProposalTransaction')
       );
     });
   });
