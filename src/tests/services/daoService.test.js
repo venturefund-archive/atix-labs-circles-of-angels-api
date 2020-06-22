@@ -1,7 +1,9 @@
 const { run, coa, ethereum } = require('@nomiclabs/buidler');
+const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const daoService = require('../../rest/services/daoService');
 const { injectMocks } = require('../../rest/util/injection');
+const { userRoles } = require('../../rest/util/constants');
 
 const {
   proposalTypeEnum,
@@ -36,6 +38,14 @@ describe('Testing daoService', () => {
     id: 1,
     wallet: undefined // uses member 0
   };
+  const userEntrepreneur = {
+    id: 1,
+    role: userRoles.ENTREPRENEUR,
+    firstName: 'John',
+    lastName: 'Doe',
+    address: '0x0000000000000000000000000000000000000000'
+  };
+
   const ALL_ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
   let coaContract;
   let superDaoAddress;
@@ -62,6 +72,15 @@ describe('Testing daoService', () => {
     getNextNonce: jest.fn(() => 0),
     save: jest.fn(),
     hasFailed: jest.fn(() => false)
+  };
+
+  let dbUser = [];
+  const resetDb = () => {
+    dbUser = [];
+  };
+
+  const userService = {
+    getUsers: () => dbUser
   };
 
   describe('Testing submitProposal method', () => {
@@ -406,6 +425,45 @@ describe('Testing daoService', () => {
       await expect(daoService.getDaos({})).rejects.toThrow(
         errors.common.RequiredParamsMissing('getDaos')
       );
+    });
+  });
+  describe('Testing getUsers method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        userService
+      });
+    });
+
+    beforeEach(() => {
+      dbUser.push(userEntrepreneur);
+    });
+
+    it('should have an empty list superDao when no Users are added', async () => {
+      const superDaoId = 0;
+      const response = await mockedDaoService.getUsers({ daoId: superDaoId });
+      expect(response).toHaveLength(0);
+    });
+    it('should throw an error when no daoId is provided to the method', async () => {
+      await expect(mockedDaoService.getUsers({})).rejects.toThrow(
+        errors.common.RequiredParamsMissing('getUsers')
+      );
+    });
+    it('should throw an error when the id of the dao is non existent', async () => {
+      const nonExistentDaoId = 1;
+      await expect(
+        mockedDaoService.getUsers({ daoId: nonExistentDaoId })
+      ).rejects.toThrow(errors.dao.ErrorGettingDaoUsers(nonExistentDaoId));
+    });
+    it('should have 1 member when Dao has one user', async () => {
+      const firstMemberAddress = await run('create-member');
+      const secondMemberAddress = await run('create-member');
+      const firstUser = { ...userEntrepreneur, address: firstMemberAddress };
+      const secondUser = { ...userEntrepreneur, address: secondMemberAddress };
+      dbUser.push(firstUser);
+      dbUser.push(secondUser);
+      await run('create-dao', { account: firstMemberAddress });
+      const response = await mockedDaoService.getUsers({ daoId: 1 });
+      expect(response).toHaveLength(1);
     });
   });
   describe('Testing getNewProposalTransaction', () => {
