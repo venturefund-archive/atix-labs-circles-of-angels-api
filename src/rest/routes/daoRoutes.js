@@ -120,7 +120,7 @@ const successWithUserResponse = {
 };
 
 const daoRoutes = {
-  getDaoUsers: {
+  getAllDaoUsers: {
     method: 'get',
     path: `${basePath}/users`,
     options: {
@@ -129,6 +129,25 @@ const daoRoutes = {
         tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns relevant info of dao users',
         summary: 'Get all existing users',
+        response: {
+          ...successResponse(successWithUserResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getAllUsers
+  },
+  getDaoUsers: {
+    method: 'get',
+    path: `${basePath}/users/:daoId`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns relevant info of dao users',
+        summary: 'Get all existing users',
+        params: { daoIdParam },
         response: {
           ...successResponse(successWithUserResponse),
           ...clientErrorResponse(),
