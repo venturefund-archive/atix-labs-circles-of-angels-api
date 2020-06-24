@@ -274,6 +274,15 @@ module.exports = class COA {
     return currentPeriod;
   }
 
+  async getCreationTime(daoId, signer) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    const daoCreationTime = await dao.creationTime();
+    return daoCreationTime;
+  }
+
   async getDaoMember(daoId, memberAddress, signer) {
     const coa = await this.getCOA();
     // TODO: check if this is necessary

@@ -359,10 +359,8 @@ module.exports = {
     });
     try {
       const proposals = await coa.getAllProposalsByDaoId(daoId);
-      const daoCurrentPeriod = await coa.getCurrentPeriod(
-        daoId,
-        user.wallet.address
-      );
+      const daoCurrentPeriod = await coa.getCurrentPeriod(daoId, user.wallet.address);
+      const daoCreationTime = await coa.getCreationTime(daoId, user.wallet.address);
       // TODO: should be able to filter by something?
       const formattedProposals = proposals.map(async (proposal, index) => ({
         proposer: proposal.proposer,
@@ -372,6 +370,7 @@ module.exports = {
         noVotes: Number(proposal.noVotes),
         didPass: proposal.didPass,
         description: proposal.description,
+        daoCreationTime: Number(daoCreationTime),
         startingPeriod: Number(proposal.startingPeriod),
         currentPeriod: Number(daoCurrentPeriod),
         votingPeriodExpired: await coa.votingPeriodExpired(daoId, index),
