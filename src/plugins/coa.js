@@ -256,6 +256,15 @@ module.exports = class COA {
     return Promise.all(proposals);
   }
 
+  async getCreationTime(daoId, signer) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    const creationTime = await dao.creationTime();
+    return creationTime;
+  }
+
   async getCurrentPeriod(daoId, signer) {
     const coa = await this.getCOA();
     await this.checkDaoExistence(daoId);
@@ -314,7 +323,9 @@ module.exports = class COA {
     await this.checkProposalExistence(proposalId, dao);
     const proposal = await dao.proposalQueue(proposalId);
     const startingPeriod = Number(proposal.startingPeriod);
-    const votingPeriodExpired = dao.hasVotingPeriodExpired(startingPeriod);
+    const votingPeriodExpired = await dao.hasVotingPeriodExpired(
+      startingPeriod
+    );
     return votingPeriodExpired;
   }
 
