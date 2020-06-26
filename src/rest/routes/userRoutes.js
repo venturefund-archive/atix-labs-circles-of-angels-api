@@ -33,8 +33,9 @@ const userResponse = {
     email: { type: 'string' },
     address: { type: 'string' },
     createdAt: { type: 'string' },
-    id: { type: 'integer' },
     role: { type: 'string' },
+    id: { type: 'integer' },
+    hasDaos: { type: 'boolean' },
     blocked: { type: 'boolean' },
     phoneNumber: { type: 'string' },
     country: {

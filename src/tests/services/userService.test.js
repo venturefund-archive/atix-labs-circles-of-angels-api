@@ -26,6 +26,10 @@ const mailService = {
   sendSignUpMail: jest.fn()
 };
 
+const daoService = {
+  getDaos: jest.fn(() => [])
+};
+
 describe('Testing userService', () => {
   let dbProject = [];
   let dbUser = [];
@@ -150,7 +154,10 @@ describe('Testing userService', () => {
 
   describe('Testing login', () => {
     beforeAll(() => {
-      injectMocks(userService, { userDao });
+      injectMocks(userService, {
+        userDao,
+        daoService
+      });
       bcrypt.compare = jest.fn();
     });
     afterAll(() => restoreUserService());
@@ -173,6 +180,7 @@ describe('Testing userService', () => {
         expect(response).toHaveProperty('role', userSupporter.role);
         expect(response).toHaveProperty('firstName', userSupporter.firstName);
         expect(response).toHaveProperty('lastName', userSupporter.lastName);
+        expect(response).toHaveProperty('hasDao', userSupporter.hasDao);
       }
     );
 

@@ -285,9 +285,10 @@ module.exports = class COA {
   }
 
   async getDaos() {
-    const coa = await this.getCOA();
-    const daosLength = await coa.getDaosLength();
     const daos = [];
+    const coa = await this.getCOA();
+    if (!coa) return daos;
+    const daosLength = await coa.getDaosLength();
     for (let i = 0; i < daosLength; i++) {
       const daoAddress = coa.daos(i);
       const dao = this.getDaoContract(daoAddress);
