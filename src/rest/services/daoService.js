@@ -10,6 +10,28 @@ const {
 } = require('../util/constants');
 
 module.exports = {
+  async getUsers({ daoId }) {
+    logger.info('[DAOService] :: Entering getUsers method');
+    validateRequiredParams({
+      method: 'getUsers',
+      params: { daoId }
+    });
+
+    logger.info('[DAOService] :: Getting users of DAO');
+    try {
+      const users = await this.userService.getUsers();
+      const filteredUsers = [];
+      for (let i = 0; i < users.length; i++) {
+        const userAddress = users[i].address;
+        const isMember = await coa.getDaoMember(daoId, userAddress);
+        if (isMember.exists) filteredUsers.push(users[i]);
+      }
+      return await Promise.all(filteredUsers);
+    } catch (error) {
+      logger.error('[DAOService] :: Error getting DAO Users', error);
+      throw new COAError(errors.dao.ErrorGettingDaoUsers(daoId));
+    }
+  },
   /*
    * Gets the unsigned transaction to process a proposal
    */
