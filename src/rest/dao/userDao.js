@@ -8,49 +8,60 @@
 
 const { userRoles } = require('../util/constants');
 
-const UserDao = ({ userModel }) => ({
+module.exports = {
   async getUserById(id) {
-    return userModel.findOne({ id }).populate('role');
+    // TODO delete this
+    return this.model.findOne({ id });
+  },
+
+  async findById(id) {
+    return this.model.findOne({ id });
+  },
+
+  async findByAddress(address) {
+    return this.model.findOne({ address });
   },
 
   async getUserByEmail(email) {
-    return userModel.findOne({ email: email.toLowerCase() }).populate('role');
+    return this.model.findOne({ email: email.toLowerCase() });
   },
 
   async createUser(user) {
-    const createdUser = await userModel.create(user);
+    const createdUser = await this.model.create(user);
     return createdUser;
   },
 
-  async getOracles() {
-    return userModel.find({ role: 4 }).populate('role');
+  async getFollowedProjects(id) {
+    return this.model.findOne({ id }).populate('following');
+  },
+
+  async getAppliedProjects(id) {
+    return this.model
+      .findOne({ id })
+      .populate('funding')
+      .populate('monitoring');
   },
 
   async updateUser(id, user) {
-    const updatedUser = await userModel.updateOne({ id }).set({ ...user });
+    const updatedUser = await this.model.updateOne({ id }).set({ ...user });
     return updatedUser;
   },
 
   async getUsers() {
-    return userModel
-      .find({
-        where: { role: { '!=': userRoles.BO_ADMIN } }
-      })
-      .populate('role')
-      .populate('registrationStatus');
+    return this.model
+      .find({ where: { role: { '!=': userRoles.COA_ADMIN } } })
+      .sort('createdAt ASC');
   },
 
   async updatePasswordByMail(email, pwd) {
-    return userModel
+    return this.model
       .updateOne({ where: { email: email.toLowerCase() } })
       .set({ pwd });
   },
 
   async updateTransferBlockchainStatus(userId, status) {
-    return userModel
+    return this.model
       .updateOne({ id: userId })
       .set({ transferBlockchainStatus: status });
   }
-});
-
-module.exports = UserDao;
+};

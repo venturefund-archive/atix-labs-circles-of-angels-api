@@ -9,272 +9,125 @@
 const basePath = '/milestones';
 const handlers = require('./handlers/milestoneHandlers');
 const routeTags = require('../util/routeTags');
+const {
+  successResponse,
+  clientErrorResponse,
+  serverErrorResponse
+} = require('../util/responses');
 
-const routes = {
-  getMilestones: {
-    method: 'get',
-    path: `${basePath}`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.GET.name],
-        description: 'Returns all existing milestones',
-        summary: 'Get all milestones'
+const idParam = (description, param) => ({
+  type: 'object',
+  properties: {
+    [param]: {
+      type: 'integer',
+      description
+    }
+  }
+});
+
+const projectIdParam = idParam('Project identification', 'projectId');
+const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
+
+const projectResponse = {
+  type: 'object',
+  properties: {
+    projectName: { type: 'string' },
+    mission: { type: 'string' },
+    problemAddressed: { type: 'string' },
+    location: { type: 'string' },
+    timeframe: { type: 'string' },
+    proposal: { type: 'string' },
+    faqLink: { type: 'string' },
+    coverPhotoPath: { type: 'string' },
+    cardPhotoPath: { type: 'string' },
+    milestonePath: { type: 'string' },
+    goalAmount: { type: 'integer' },
+    status: { type: 'string' },
+    createdAt: { type: 'string', autoCreatedAt: true, required: false },
+    transactionHash: { type: 'string', required: false },
+    id: { type: 'integer' }
+  }
+};
+
+const taskResponse = {
+  type: 'object',
+  properties: {
+    taskHash: { type: 'string' },
+    description: { type: 'string' },
+    reviewCriteria: { type: 'string' },
+    category: { type: 'string' },
+    keyPersonnel: { type: 'string' },
+    budget: { type: 'string' },
+    createdAt: { type: 'string' },
+    oracle: { type: ['integer', 'null'] },
+    id: { type: 'number' }
+  }
+};
+
+const milestonesFiltersProperties = {
+  claimStatus: {
+    anyOf: [
+      {
+        type: 'array',
+        items: { type: 'string' }
       },
-      response: {
-        200: {
-          type: 'object',
-          description:
-            'Returns an array with all milestones and their project information',
-          properties: {
-            milestones: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  tasks: { type: 'string' },
-                  impact: { type: 'string' },
-                  impactCriterion: { type: 'string' },
-                  signsOfSuccess: { type: 'string' },
-                  signsOfSuccessCriterion: { type: 'string' },
-                  category: { type: 'string' },
-                  keyPersonnel: { type: 'string' },
-                  budget: { type: 'string' },
-                  quarter: { type: 'string' },
-                  createdAt: { type: 'string' },
-                  updatedAt: { type: 'string' },
-                  transactionHash: { type: 'string' },
-                  id: { type: 'integer' },
-                  project: {
-                    type: 'object',
-                    properties: {
-                      projectName: { type: 'string' },
-                      mission: { type: 'string' },
-                      problemAddressed: { type: 'string' },
-                      location: { type: 'string' },
-                      timeframe: { type: 'string' },
-                      pitchProposal: { type: 'string' },
-                      faqLink: { type: 'string' },
-                      milestonesFile: { type: 'string' },
-                      goalAmount: { type: 'integer' },
-                      status: { type: 'integer' },
-                      ownerId: { type: 'integer' },
-                      projectAgreement: { type: 'string' },
-                      createdAt: { type: 'string' },
-                      updatedAt: { type: 'string' },
-                      transactionHash: { type: 'string' },
-                      creationTransactionHash: { type: 'string' },
-                      id: { type: 'integer' },
-                      startBlockchainStatus: { type: 'integer' },
-                      coverPhoto: { type: 'integer' },
-                      cardPhoto: { type: 'integer' },
-                      blockchainStatus: { type: 'integer' }
-                    }
-                  },
-                  status: {
-                    type: 'object',
-                    properties: {
-                      status: { type: 'integer' },
-                      name: { type: 'string' }
-                    }
-                  },
-                  budgetStatus: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'integer' },
-                      name: { type: 'string' }
-                    }
-                  },
-                  blockchainStatus: { type: 'integer' }
-                }
-              }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
+      {
+        type: 'string'
       }
-    },
-    handler: handlers.getMilestones
-  },
+    ]
+  }
+};
 
-  getBudgetStatus: {
-    method: 'get',
-    path: `${basePath}/budgetStatus`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.GET.name],
-        description: 'Returns all valid budget status',
-        summary: 'Get valid budget status',
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              budgetStatus: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' }
-                  }
-                }
-              }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.getBudgetStatus
-  },
+const milestoneProperties = {
+  description: { type: 'string' },
+  category: { type: 'string' }
+};
 
-  deleteMilestone: {
-    method: 'delete',
-    path: `${basePath}/:milestoneId`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.MILESTONE.name, routeTags.DELETE.name],
-        description: 'Deletes an existing milestone',
-        summary: 'Delete milestone',
-        params: {
-          type: 'object',
-          properties: {
-            milestoneId: { type: 'integer', description: 'Milestone to delete' }
-          }
-        },
-        response: {
-          200: {
-            type: 'array',
-            description: 'Returns an object with the deleted milestone',
-            items: {
-              type: 'object',
-              properties: {
-                tasks: { type: 'string' },
-                impact: { type: 'string' },
-                impactCriterion: { type: 'string' },
-                signsOfSuccess: { type: 'string' },
-                signsOfSuccessCriterion: { type: 'string' },
-                category: { type: 'string' },
-                keyPersonnel: { type: 'string' },
-                budget: { type: 'string' },
-                quarter: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                transactionHash: { type: 'string' },
-                id: { type: 'integer' },
-                project: { type: 'integer' },
-                status: { type: 'integer' },
-                budgetStatus: { type: 'integer' },
-                blockchainStatus: { type: 'integer' }
-              }
-            }
-          },
-          500: {
-            type: 'string',
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
+const milestonesResponse = {
+  type: 'object',
+  properties: {
+    id: { type: 'integer' },
+    createdAt: { type: 'string' },
+    description: { type: 'string' },
+    category: { type: 'string' },
+    tasks: {
+      type: 'array',
+      items: taskResponse
     },
-    handler: handlers.deleteMilestone
+    project: projectResponse
   },
+  description: 'Returns milestones'
+};
 
+const successWithMilestoneIdResponse = {
+  type: 'object',
+  properties: {
+    milestoneId: { type: 'integer' }
+  },
+  description: 'Returns the id of the milestone'
+};
+
+const milestoneRoutes = {
   createMilestone: {
     method: 'post',
-    path: `${basePath}`,
+    path: `/projects/:projectId${basePath}`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.MILESTONE.name, routeTags.POST.name],
-        description:
-          'Creates a new milestone for an existing project specified in the body request',
+        description: 'Creates a new milestone for an existing project',
         summary: 'Create new milestone',
-        type: 'object',
+        params: { projectIdParam },
         body: {
           type: 'object',
-          properties: {
-            milestone: {
-              type: 'object',
-              properties: {
-                quarter: { type: 'string' },
-                tasks: { type: 'string' },
-                impact: { type: 'string' },
-                impactCriterion: { type: 'string' },
-                signsOfSuccess: { type: 'string' },
-                signsOfSuccessCriterion: { type: 'string' },
-                category: { type: 'string' },
-                keyPersonnel: { type: 'string' },
-                budget: { type: 'string' }
-              },
-              description: 'New milestone object'
-            },
-            projectId: {
-              type: 'integer',
-              description: 'Project to which the new milestone belongs to'
-            }
-          },
-          required: ['milestone', 'projectId']
+          properties: milestoneProperties,
+          required: ['description', 'category'],
+          additionalProperties: false
         },
         response: {
-          200: {
-            type: 'object',
-            description: 'Success message if the milestone was created',
-            properties: {
-              success: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
@@ -288,65 +141,110 @@ const routes = {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
-        description: 'Modifies an existing milestone',
-        summary: 'Update milestone',
-        type: 'object',
-        params: {
-          type: 'object',
-          properties: {
-            milestoneId: { type: 'integer', description: 'Milestone to update' }
-          }
-        },
+        description: 'Edits the information of an existing milestone',
+        summary: 'Edits milestone information',
+        params: { milestoneIdParam },
         body: {
           type: 'object',
-          properties: {
-            milestone: {
-              type: 'object',
-              properties: {
-                quarter: { type: 'string' },
-                tasks: { type: 'string' },
-                impact: { type: 'string' },
-                impactCriterion: { type: 'string' },
-                signsOfSuccess: { type: 'string' },
-                signsOfSuccessCriterion: { type: 'string' },
-                category: { type: 'string' },
-                keyPersonnel: { type: 'string' },
-                budget: { type: 'string' },
-                budgetStatus: { type: 'integer' }
-              },
-              additionalProperties: false,
-              description: 'Fields to modify'
-            }
-          },
-          required: ['milestone']
+          properties: milestoneProperties,
+          additionalProperties: false
         },
         response: {
-          200: {
-            type: 'object',
-            description: 'Success message if the milestone was updated',
-            properties: {
-              success: { type: 'string' }
-            }
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
     handler: handlers.updateMilestone
+  },
+
+  deleteMilestone: {
+    method: 'delete',
+    path: `${basePath}/:milestoneId`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.DELETE.name],
+        description:
+          'Deletes an existing milestone for an existing project and all its tasks',
+        summary: 'Delete milestone',
+        params: milestoneIdParam,
+        response: {
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.deleteMilestone
+  },
+
+  claimMilestone: {
+    method: 'post',
+    path: `${basePath}/:milestoneId/claim`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.POST.name],
+        description: 'Milestone claim',
+        summary: 'Milestone claim',
+        params: milestoneIdParam,
+        response: {
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.claimMilestone
+  },
+
+  transferredMilestone: {
+    method: 'put',
+    path: `${basePath}/:milestoneId/transferred`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.PUT.name],
+        description: 'Milestone transferred',
+        summary: 'Milestone transferred',
+        params: milestoneIdParam,
+        type: 'multipart/form-data',
+        raw: {
+          files: { type: 'object' }
+        },
+        response: {
+          ...successResponse(successWithMilestoneIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.transferredMilestone
+  }
+};
+
+const routes = {
+  ...milestoneRoutes,
+  getMilestones: {
+    method: 'get',
+    path: `${basePath}`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.MILESTONE.name, routeTags.GET.name],
+        description: 'Returns milestones that match with the params',
+        summary: 'Get milestones',
+        querystring: milestonesFiltersProperties
+      },
+      response: {
+        ...successResponse(milestonesResponse),
+        ...clientErrorResponse(),
+        ...serverErrorResponse()
+      }
+    },
+    handler: handlers.getMilestones
   }
 };
 

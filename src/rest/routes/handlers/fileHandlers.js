@@ -6,11 +6,10 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const apiHelper = require('../../services/helper');
+const fileService = require('../../services/fileService');
 
 module.exports = {
   deleteFile: fastify => async (request, reply) => {
-    const { fileService } = apiHelper.helper.services;
     const { fileId } = request.params;
     fastify.log.info(`[File Routes] :: Deleting file ID ${fileId}`);
 
@@ -35,5 +34,13 @@ module.exports = {
       );
       reply.status(500).send({ error: 'Error deleting file' });
     }
+  },
+
+  getMilestonesTemplateFile: () => async (_request, reply) => {
+    const response = await fileService.getMilestonesTemplateFile();
+
+    reply.header('file', response.filename);
+    reply.header('Access-Control-Expose-Headers', 'file');
+    reply.status(200).send(response.filestream);
   }
 };

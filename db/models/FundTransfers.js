@@ -15,25 +15,37 @@
  * @attribute `amount`: amount of money transferred
  * @attribute `currency`: currency in which the transfer was made
  */
+
+const { txFunderStatus } = require('../../src/rest/util/constants');
+
 module.exports = {
   identity: 'fund_transfer',
   primaryKey: 'id',
   attributes: {
     transferId: { type: 'string', required: true },
+    destinationAccount: { type: 'string', required: true },
+    amount: { type: 'number', required: true },
+    currency: { type: 'string', required: true },
+    rejectionReason: { type: 'string', required: false, allowNull: true },
+    receiptPath: { type: 'string', required: true },
     sender: {
       columnName: 'senderId',
       model: 'user'
     },
-    destinationAccount: { type: 'string', required: true },
-    amount: { type: 'number', required: true },
-    currency: { type: 'string', required: true },
     project: {
       columnName: 'projectId',
       model: 'project'
     },
-    state: { type: 'number', defaultsTo: 0 },
+    status: {
+      type: 'string',
+      required: true,
+      validations: {
+        isIn: Object.values(txFunderStatus),
+        defaultsTo: txFunderStatus.pending
+      }
+    },
     createdAt: { type: 'string', autoCreatedAt: true },
-    updatedAt: { type: 'string', autoUpdatedAt: true },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } }
+    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    txHash: { type: 'string', required: false, allowNull: true }
   }
 };

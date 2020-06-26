@@ -9,574 +9,514 @@
 const basePath = '/projects';
 const handlers = require('./handlers/projectHandlers');
 const routeTags = require('../util/routeTags');
+const {
+  successResponse,
+  serverErrorResponse,
+  clientErrorResponse
+} = require('../util/responses');
+const { projectStatuses } = require('../util/constants');
+const { idParam } = require('../util/params');
 
-const routes = {
-  createProject: {
+const projectThumbnailProperties = {
+  projectName: { type: 'string' },
+  location: { type: 'string' },
+  timeframe: { type: 'string' },
+  goalAmount: { type: 'number' }
+};
+
+const imgPathProperty = {
+  imgPath: { type: 'string' }
+};
+
+const cardPhotoPathProperty = {
+  cardPhotoPath: { type: 'string' }
+};
+
+const featuredProjectsResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: Object.assign(
+      {},
+      {
+        id: { type: 'integer' }
+      },
+      projectThumbnailProperties,
+      cardPhotoPathProperty
+    ),
+    description: 'Returns the project description'
+  },
+  description: 'List of all featured projects'
+};
+
+const projectDetailProperties = {
+  mission: { type: 'string' },
+  problemAddressed: { type: 'string' }
+};
+
+const projectProposalProperties = {
+  proposal: { type: 'string' }
+};
+
+const milestonesResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      id: { type: 'integer' },
+      category: { type: 'string' },
+      description: { type: 'string' },
+      claimStatus: { type: 'string' },
+      tasks: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            taskHash: { type: 'string' },
+            description: { type: 'string' },
+            reviewCriteria: { type: 'string' },
+            category: { type: 'string' },
+            keyPersonnel: { type: 'string' },
+            oracle: { type: ['integer', 'null'] },
+            budget: { type: 'string' },
+            verified: { type: 'boolean' }
+          }
+        }
+      }
+    }
+  },
+  description: 'Returns all milestones of a project'
+};
+
+const projectIdParam = idParam('Project identification', 'projectId');
+
+const successWithProjectIdResponse = {
+  type: 'object',
+  properties: {
+    projectId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project'
+};
+
+const successWithProjectExperienceIdResponse = {
+  type: 'object',
+  properties: {
+    projectExperienceId: { type: 'integer' }
+  },
+  description: 'Returns the id of the project experience'
+};
+
+const successWithCandidateIdResponse = {
+  type: 'object',
+  properties: {
+    candidateId: { type: 'integer' }
+  },
+  description: 'Returns the id of the candidate'
+};
+
+const successWithBooleanResponse = {
+  type: 'boolean',
+  description: 'Returns the boolean result'
+};
+
+const successWithApplyingResponse = {
+  type: 'object',
+  properties: {
+    oracles: { type: 'boolean' },
+    funders: { type: 'boolean' }
+  },
+  description: 'Returns if user already apply to project'
+};
+
+const userProperties = {
+  id: { type: 'integer' },
+  firstName: { type: 'string' },
+  lastName: { type: 'string' },
+  role: { type: 'string' },
+  email: { type: 'string' }
+};
+
+const experiencePhotoProperties = {
+  id: { type: 'integer' },
+  path: { type: 'string' }
+};
+
+const experienceProperties = {
+  id: { type: 'integer' },
+  project: { type: 'integer' },
+  comment: { type: 'string' },
+  user: { type: 'object', properties: userProperties },
+  photos: {
+    type: 'array',
+    items: { type: 'object', properties: experiencePhotoProperties }
+  }
+};
+
+const successWithExperiencesResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: experienceProperties
+  }
+};
+
+// FIXME: I don't think this is the best way to do this but ¯\_(ツ)_/¯
+const responseWithMilestoneErrors = {
+  type: 'object',
+  properties: {
+    errors: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          rowNumber: { type: 'number' },
+          msg: { type: 'string' }
+        }
+      }
+    },
+    projectId: { type: 'integer' }
+  },
+  description:
+    'Returns an array with all errors while processing the milestone file or the project id if successful'
+};
+
+const userResponse = {
+  type: 'object',
+  properties: userProperties,
+  description: 'Returns and object with the user information'
+};
+
+const usersResponse = {
+  type: 'object',
+  properties: {
+    owner: userResponse,
+    followers: { type: 'array', items: userResponse },
+    funders: { type: 'array', items: userResponse },
+    oracles: { type: 'array', items: userResponse }
+  }
+};
+
+const projectsResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: {
+      projectName: { type: 'string' },
+      mission: { type: 'string' },
+      problemAddressed: { type: 'string' },
+      location: { type: 'string' },
+      timeframe: { type: 'string' },
+      proposal: { type: 'string' },
+      faqLink: { type: 'string' },
+      coverPhotoPath: { type: 'string' },
+      cardPhotoPath: { type: 'string' },
+      milestonePath: { type: 'string' },
+      goalAmount: { type: 'number' },
+      status: { type: 'string' },
+      owner: userResponse,
+      createdAt: { type: 'string' },
+      // address: { type: 'string' },
+      proposalFilePath: { type: 'string' },
+      agreementFilePath: { type: 'string' },
+      id: { type: 'number' }
+    }
+  },
+  description: 'Returns all projects'
+};
+
+const projectThumbnailRoutes = {
+  createProjectThumbnail: {
     method: 'post',
-    path: `${basePath}`,
+    path: `${basePath}/description`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Creates an new project in COA pending for approval',
-        summary: 'Create new project',
+        description: 'Creates new project and adds project thumbnail to it.',
+        summary: 'Create new project and project thumbnail',
         type: 'multipart/form-data',
         raw: {
           files: { type: 'object' },
-          body: { type: 'object' }
+          body: {
+            type: 'object',
+            properties: projectThumbnailProperties
+          }
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              sucess: { type: 'string' }
-            },
-            description: 'Returns a success message if the project was created'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' },
-              errors: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    rowNumber: { type: 'integer' },
-                    msg: { type: 'string' }
-                  }
-                },
-                description: 'Array of objects of errors in the milestone file'
-              }
-            },
-            description:
-              'Returns a message describing the error ' +
-              'and an array of errors if the milestone files had any'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.createProject
+    handler: handlers.createProjectThumbnail
   },
 
-  getProjects: {
-    method: 'get',
-    path: `${basePath}`,
+  updateProjectThumbnail: {
+    method: 'put',
+    path: `${basePath}/:projectId/description`,
     options: {
-      beforeHandler: ['adminAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns all existing projects in COA',
-        summary: 'Get all projects',
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Updates the thumbnail of an existing draft project',
+        summary: 'Updates an existing project thumbnail',
+        type: 'multipart/form-data',
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: projectThumbnailProperties
+          }
+        },
+        params: projectIdParam,
         response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                projectName: { type: 'string' },
-                mission: { type: 'string' },
-                problemAddressed: { type: 'string' },
-                location: { type: 'string' },
-                timeframe: { type: 'string' },
-                pitchProposal: { type: 'string' },
-                faqLink: { type: 'string' },
-                milestonesFile: { type: 'string' },
-                goalAmount: { type: 'number' },
-                status: { type: 'integer' },
-                ownerId: { type: 'integer' },
-                projectAgreement: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                transactionHash: { type: 'string' },
-                creationTransactionHash: { type: 'string' },
-                id: { type: 'integer' },
-                startBlockchainStatus: { type: 'integer' },
-                coverPhoto: { type: ['integer', 'null'] },
-                cardPhoto: { type: ['integer', 'null'] },
-                blockchainStatus: { type: 'integer' },
-                ownerName: { type: 'string' },
-                ownerEmail: { type: 'string' }
-              }
-            },
-            description:
-              'Returns an array of objects with the information of the projects'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.getProjects
+    handler: handlers.updateProjectThumbnail
   },
 
-  getActiveProjects: {
+  getThumbnail: {
     method: 'get',
-    path: `${basePath}/active`,
+    path: `${basePath}/:projectId/description`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns all existing active COA projects',
-        summary: 'Get all active projects',
+        description: 'Gets the thumbnail information of an existing project',
+        summary: 'Gets a project thumbnail info',
+        params: projectIdParam,
         response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                projectName: { type: 'string' },
-                mission: { type: 'string' },
-                problemAddressed: { type: 'string' },
-                location: { type: 'string' },
-                timeframe: { type: 'string' },
-                pitchProposal: { type: 'string' },
-                faqLink: { type: 'string' },
-                milestonesFile: { type: 'string' },
-                goalAmount: { type: 'number' },
-                status: { type: 'integer' },
-                ownerId: { type: 'integer' },
-                projectAgreement: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                transactionHash: { type: 'string' },
-                creationTransactionHash: { type: 'string' },
-                id: { type: 'integer' },
-                startBlockchainStatus: { type: 'integer' },
-                coverPhoto: { type: ['integer', 'null'] },
-                cardPhoto: { type: ['integer', 'null'] },
-                blockchainStatus: { type: 'integer' },
-                ownerName: { type: 'string' },
-                ownerEmail: { type: 'string' }
-              }
-            },
-            description:
-              'Returns an array of objects with the information of the projects'
-          },
-          '4xx': {
+          ...successResponse({
             type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+            properties: Object.assign(
+              {},
+              projectThumbnailProperties,
+              imgPathProperty
+            ),
+            description: 'Returns the project description'
+          }),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.getActiveProjects
-  },
+    handler: handlers.getProjectThumbnail
+  }
+};
 
-  getProjectsPreview: {
-    method: 'get',
-    path: `${basePath}/preview`,
+const projectDetailRoutes = {
+  createProjectDetail: {
+    method: 'post',
+    path: `${basePath}/:projectId/detail`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns preview info of all existing active COA projects',
-        summary: 'Get all active projects',
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Creates new project and adds project detail to it.',
+        summary: 'Create new project and project detail',
+        params: projectIdParam,
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: projectDetailProperties
+          }
+        },
         response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                projectName: { type: 'string' },
-                location: { type: 'string' },
-                timeframe: { type: 'string' },
-                goalAmount: { type: 'number' },
-                status: { type: 'integer' },
-                ownerId: { type: 'integer' },
-                milestoneProgress: { type: 'number' },
-                id: { type: 'integer' }
-              }
-            },
-            description:
-              'Returns an array of objects with the preview information of projects'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.getProjectsPreview
+    handler: handlers.createProjectDetail
   },
-
-  getProject: {
-    method: 'get',
-    path: `${basePath}/:projectId`,
+  updateProjectDetail: {
+    method: 'put',
+    path: `${basePath}/:projectId/detail`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Updates the detail of an existing project.',
+        summary: 'Updates a project detail',
+        raw: {
+          files: { type: 'object' },
+          body: {
+            type: 'object',
+            properties: projectDetailProperties
+          }
+        },
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateProjectDetail
+  },
+  getProjectDetail: {
+    method: 'get',
+    path: `${basePath}/:projectId/detail`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Returns the detail of an existing project',
+        summary: 'Get project detail',
+        params: projectIdParam,
+        response: {
+          ...successResponse({
+            type: 'object',
+            properties: Object.assign(
+              {},
+              projectDetailProperties,
+              imgPathProperty
+            ),
+            description: 'Returns the project detail'
+          }),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getProjectDetail
+  }
+};
+
+const projectProposalRoutes = {
+  updateProjectProposal: {
+    method: 'put',
+    path: `${basePath}/:projectId/proposal`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description:
+          'Adds or modifies the project proposal of an existing project.',
+        summary: 'Adds or modifies project proposal',
+        body: {
+          type: 'object',
+          properties: projectProposalProperties
+        },
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateProjectProposal
+  },
+  getProjectProposal: {
+    method: 'get',
+    path: `${basePath}/:projectId/proposal`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns the specified project',
-        summary: 'Get a project',
-        params: {
+        description: 'Returns the project proposal of a project',
+        summary: 'Gets project proposal',
+        params: projectIdParam,
+        response: {
+          ...successResponse({
+            type: 'object',
+            properties: projectProposalProperties,
+            description: 'Returns the project proposal'
+          }),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getProjectProposal
+  }
+};
+
+const projectMilestonesRoute = {
+  getMilestonesTemplate: {
+    // this endpoint should be in any other place and serve the static file
+    method: 'get',
+    path: '/templates/milestones',
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'descriptionHard',
+        summary: 'summaryHard',
+        params: projectIdParam,
+        response: {
+          ...successResponse({
+            type: 'string',
+            description: 'Returns the project milestone template stream'
+          }),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getTemplateOfProjectMilestone
+  },
+  processMilestonesFile: {
+    method: 'put',
+    path: `${basePath}/:projectId/milestones`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description:
+          'Process excel file and creates the milestones of a project',
+        summary: 'Creates milestones from file',
+        type: 'multipart/form-data',
+        raw: {
           type: 'object',
           properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to get the details'
-            }
+            files: { type: 'object' }
           }
         },
+        params: projectIdParam,
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              projectName: { type: 'string' },
-              mission: { type: 'string' },
-              problemAddressed: { type: 'string' },
-              location: { type: 'string' },
-              timeframe: { type: 'string' },
-              pitchProposal: { type: 'string' },
-              faqLink: { type: 'string' },
-              milestonesFile: { type: 'string' },
-              goalAmount: { type: 'number' },
-              status: { type: 'integer' },
-              ownerId: { type: 'integer' },
-              projectAgreement: { type: 'string' },
-              createdAt: { type: 'string' },
-              updatedAt: { type: 'string' },
-              transactionHash: { type: 'string' },
-              creationTransactionHash: { type: 'string' },
-              id: { type: 'integer' },
-              startBlockchainStatus: { type: 'integer' },
-              coverPhoto: { type: ['integer', 'null'] },
-              cardPhoto: { type: ['integer', 'null'] },
-              blockchainStatus: { type: 'integer' },
-              ownerName: { type: 'string' },
-              ownerEmail: { type: 'string' },
-              totalFunded: { type: 'number' }
-            },
-            description: 'Returns an object with the information of the project'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(responseWithMilestoneErrors),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.getProject
+    handler: handlers.processMilestonesFile
   },
-
-  deleteProject: {
-    method: 'delete',
-    path: `${basePath}/:projectId`,
-    options: {
-      beforeHandler: ['adminAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.DELETE.name],
-        description: 'Deletes the specified project',
-        summary: 'Delete project',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to delete'
-            }
-          }
-        },
-        response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                projectName: { type: 'string' },
-                mission: { type: 'string' },
-                problemAddressed: { type: 'string' },
-                location: { type: 'string' },
-                timeframe: { type: 'string' },
-                pitchProposal: { type: 'string' },
-                faqLink: { type: 'string' },
-                milestonesFile: { type: 'string' },
-                goalAmount: { type: 'number' },
-                status: { type: 'integer' },
-                ownerId: { type: 'integer' },
-                projectAgreement: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                transactionHash: { type: 'string' },
-                creationTransactionHash: { type: 'string' },
-                id: { type: 'integer' },
-                startBlockchainStatus: { type: 'integer' },
-                coverPhoto: { type: ['integer', 'null'] },
-                cardPhoto: { type: ['integer', 'null'] },
-                blockchainStatus: { type: 'integer' },
-                ownerName: { type: 'string' },
-                ownerEmail: { type: 'string' }
-              }
-            },
-            description:
-              'Returns an array of an object with the information of the deleted project'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.deleteProject
-  },
-
-  getProjectMilestones: {
+  getMilestones: {
     method: 'get',
     path: `${basePath}/:projectId/milestones`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
-        tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns the milestones of the specified project',
-        summary: 'Get project milestones',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to get the milestones from'
-            }
-          }
-        },
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Returns the milestones of an existing project',
+        summary: 'Gets milestones of a project',
+        params: projectIdParam,
         response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                activities: {
-                  type: 'array',
-                  description: "Array of the milestone's activities",
-                  items: {
-                    type: 'object',
-                    description: 'Activity object',
-                    properties: {
-                      tasks: { type: 'string' },
-                      impact: { type: 'string' },
-                      impactCriterion: { type: 'string' },
-                      signsOfSuccess: { type: 'string' },
-                      signsOfSuccessCriterion: { type: 'string' },
-                      category: { type: 'string' },
-                      keyPersonnel: { type: 'string' },
-                      budget: { type: 'string' },
-                      createdAt: { type: 'string' },
-                      updatedAt: { type: 'string' },
-                      transactionHash: { type: 'string' },
-                      id: { type: 'integer' },
-                      milestone: { type: 'integer' },
-                      status: { type: 'integer' },
-                      blockchainStatus: { type: 'integer' },
-                      type: { type: 'string' },
-                      quarter: { type: 'string' },
-                      oracle: {
-                        type: 'object',
-                        properties: {
-                          username: { type: 'string' },
-                          email: { type: 'string' },
-                          address: { type: 'string' },
-                          createdAt: { type: 'string' },
-                          updatedAt: { type: 'string' },
-                          id: { type: 'integer' },
-                          role: { type: 'integer' },
-                          registrationStatus: { type: 'integer' }
-                        }
-                      }
-                    }
-                  }
-                },
-                tasks: { type: 'string' },
-                impact: { type: 'string' },
-                impactCriterion: { type: 'string' },
-                signsOfSuccess: { type: 'string' },
-                signsOfSuccessCriterion: { type: 'string' },
-                category: { type: 'string' },
-                keyPersonnel: { type: 'string' },
-                budget: { type: 'string' },
-                quarter: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                transactionHash: { type: 'string' },
-                id: { type: 'integer' },
-                project: { type: 'integer' },
-                status: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'integer' },
-                    name: { type: 'string' }
-                  }
-                },
-                budgetStatus: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'integer' },
-                    name: { type: 'string' }
-                  }
-                },
-                blockchainStatus: { type: 'integer' },
-                type: { type: 'string' }
-              },
-              description: 'Milestone information'
-            },
-            description:
-              'Returns an array of objects with each milestone information'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(milestonesResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
     handler: handlers.getProjectMilestones
   },
-
-  downloadMilestonesTemplate: {
-    method: 'get',
-    path: `${basePath}/templates/milestones`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns the project milestones template file',
-        summary: 'Get milestones template file',
-        response: {
-          200: { type: 'string', description: 'Template file stream' },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.downloadMilestonesTemplate
-  },
-
-  downloadProposalTemplate: {
-    method: 'get',
-    path: `${basePath}/templates/proposal`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns the project proposal template file',
-        summary: 'Get proposal template file',
-        response: {
-          200: { type: 'string', description: 'Template file stream' },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.downloadProposalTemplate
-  },
-
   getMilestonesFile: {
     method: 'get',
     path: `${basePath}/:projectId/milestonesFile`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.GET.name],
         description: "Returns the specified project's milestones file",
@@ -591,458 +531,466 @@ const routes = {
           }
         },
         response: {
-          200: { type: 'string', description: 'Milestone file stream' },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
     handler: handlers.getMilestonesFile
-  },
+  }
+};
 
-  uploadAgreement: {
-    method: 'post',
-    path: `${basePath}/:projectId/agreement`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Uploads agreement file to the specified project',
-        summary: 'Upload agreement file',
-        type: 'multipart/form-data',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to upload the agreement file to'
-            }
-          }
-        },
-        raw: {
-          files: { type: 'object' }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'string' }
-            },
-            description: 'Returns a success message if the file was uploaded'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'integer' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.uploadAgreement
-  },
-
-  downloadAgreement: {
-    method: 'get',
-    path: `${basePath}/:projectId/agreement`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Downloads the agreement file of the specified project',
-        summary: 'Download agreement',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to download the agreement file from'
-            }
-          }
-        },
-        response: {
-          200: { type: 'string', description: 'Agreement file stream' },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.downloadAgreement
-  },
-
-  downloadProposal: {
-    method: 'get',
-    path: `${basePath}/:projectId/proposal`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns the pitch proposal file of the specified project',
-        summary: 'Download project pitch proposal',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'integer',
-              description: 'Project to download the pitch proposal file from'
-            }
-          }
-        },
-        response: {
-          200: { type: 'string', description: 'Pitch proposal file stream' },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
-        }
-      }
-    },
-    handler: handlers.downloadProposal
-  },
-
-  updateProject: {
+const projectStatusRoutes = {
+  sendToReview: {
     method: 'put',
-    path: `${basePath}/:projectId`,
+    path: `${basePath}/:projectId/to-review`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.PUT.name],
-        description: 'Modifies the specified project information',
-        summary: 'Update project information',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: { type: 'number' }
-          }
-        },
-        raw: {
-          type: 'object',
-          properties: {
-            files: {
-              type: 'object',
-              properties: {
-                projectCoverPhoto: { type: 'object' },
-                projectCardPhoto: { type: 'object' }
-              },
-              additionalProperties: false
-            },
-            body: {
-              type: 'object',
-              properties: {
-                project: {
-                  type: 'object',
-                  properties: {
-                    projectName: { type: 'string' },
-                    mission: { type: 'string' },
-                    problemAddressed: { type: 'string' },
-                    location: { type: 'string' },
-                    timeframe: { type: 'string' },
-                    goalAmount: { type: 'number' },
-                    faqLink: { type: 'string' },
-                    status: {
-                      type: 'integer',
-                      minimum: 0,
-                      maximum: 3,
-                      description: 'Status ID [0-3] to set the project as'
-                    }
-                  },
-                  additionalProperties: false
-                }
-              }
-            }
-          }
-        },
+        description: 'Send a project to be reviewed',
+        summary: 'Send a project to be reviewed',
+        params: projectIdParam,
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              projectName: { type: 'string' },
-              mission: { type: 'string' },
-              problemAddressed: { type: 'string' },
-              location: { type: 'string' },
-              timeframe: { type: 'string' },
-              pitchProposal: { type: 'string' },
-              faqLink: { type: 'string' },
-              milestonesFile: { type: 'string' },
-              goalAmount: { type: 'number' },
-              status: { type: 'integer' },
-              ownerId: { type: 'integer' },
-              projectAgreement: { type: 'string' },
-              createdAt: { type: 'string' },
-              updatedAt: { type: 'string' },
-              transactionHash: { type: 'string' },
-              creationTransactionHash: { type: 'string' },
-              id: { type: 'integer' },
-              startBlockchainStatus: { type: 'integer' },
-              coverPhoto: { type: ['integer', 'null'] },
-              cardPhoto: { type: ['integer', 'null'] },
-              blockchainStatus: { type: 'integer' },
-              ownerName: { type: 'string' },
-              ownerEmail: { type: 'string' }
-            },
-            description:
-              'Returns an object with the information of the updated project'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.updateProject
+    handler: handlers.sendToReview
   },
 
-  getProjectsByOracle: {
+  publishProject: {
+    method: 'put',
+    path: `${basePath}/:projectId/publish`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Publish a project',
+        summary: 'Publish a project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.publishProject
+  },
+
+  deleteProject: {
+    method: 'delete',
+    path: `${basePath}/:projectId`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.DELETE.name],
+        description: 'Deletes a project',
+        summary: 'Deletes a project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.deleteProject
+  },
+
+  // TODO: make one endpoint for each possible status change
+  updateProjectStatus: {
+    method: 'put',
+    path: `${basePath}/:projectId/status`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Update project status',
+        summary: 'Update project status',
+        body: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: Object.values(projectStatuses)
+            }
+          },
+          required: ['status'],
+          description: 'New project status'
+        },
+        type: 'object',
+        params: projectIdParam,
+        response: {
+          // TODO send project updated to update on front too
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.updateProjectStatus
+  }
+};
+
+const commonProjectRoutes = {
+  getProjects: {
     method: 'get',
-    path: `/oracles/:userId${basePath}`,
+    path: `${basePath}`,
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets all projects.',
+        summary: 'Gets all project',
+        response: {
+          ...successResponse(projectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getProjects
+  },
+
+  getFundingProjects: {
+    method: 'get',
+    path: `${basePath}/funding`,
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets all projects in funding phase.',
+        summary: 'Gets all projects in funding phase',
+        response: {
+          ...successResponse(projectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.getProjects({ status: projectStatuses.FUNDING })
+  },
+
+  getProject: {
+    method: 'get',
+    path: `${basePath}/:projectId`,
+    handler: handlers.getProject,
+    options: {
+      beforeHandler: []
+    }
+  },
+
+  getProjectFull: {
+    method: 'get',
+    path: `${basePath}/:projectId/full`,
+    handler: handlers.getProjectFull,
+    options: {
+      beforeHandler: []
+    }
+  },
+
+  getPublicProjects: {
+    method: 'get',
+    path: `${basePath}/public`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Get all public projects.',
+        summary: 'Get all public project',
+        response: {
+          ...successResponse(projectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getPublicProjects
+  },
+
+  getProjectUsers: {
+    method: 'get',
+    path: `${basePath}/:projectId/users`,
+    options: {
+      beforeHandler: ['generalAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Returns the users related to an existing project',
+        summary: 'Gets users of a project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(usersResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getProjectUsers
+  },
+
+  followProject: {
+    method: 'post',
+    path: `${basePath}/:projectId/follow`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Follow project',
+        summary: 'Follow project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.followProject
+  },
+
+  unfollowProject: {
+    method: 'post',
+    path: `${basePath}/:projectId/unfollow`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Unfollow project',
+        summary: 'Unfollow project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.unfollowProject
+  },
+
+  isFollower: {
+    method: 'get',
+    path: `${basePath}/:projectId/follower`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Analize if user is following the project',
+        summary: 'Check project following',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithBooleanResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.isFollower
+  },
+
+  applyAsOracle: {
+    method: 'post',
+    path: `${basePath}/:projectId/oracles`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Apply as a possible oracle for a project',
+        summary: 'Apply as oracle',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithCandidateIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.applyAsOracle
+  },
+
+  applyAsFunder: {
+    method: 'post',
+    path: `${basePath}/:projectId/funders`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Apply as a possible funder for a project',
+        summary: 'Apply as funder',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithCandidateIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.applyAsFunder
+  },
+
+  isCandidate: {
+    method: 'get',
+    path: `${basePath}/:projectId/candidate`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.POST.name],
+        description: 'Analize if user already applied to the project',
+        summary: 'Check project applying',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithApplyingResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.isCandidate
+  },
+  getBlockchainData: {
+    method: 'get',
+    path: `${basePath}/:projectId/blockchain-data`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.GET.name],
         description:
-          'Returns a list of all projects that the specified oracle has activities assigned to',
-        summary: 'Get all projects of an oracle',
-        params: {
-          type: 'object',
-          properties: {
-            userId: {
-              type: 'integer',
-              description: 'Oracle to get the projects from'
-            }
-          }
-        },
+          'Returns the blockchain information related to the project',
+        summary: 'Returns blockchain information',
+        params: projectIdParam,
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              projects: {
-                type: 'array',
-                items: { type: 'integer' }
-              },
-              oracle: { type: 'integer' }
-            },
-            description:
-              'Returns an object with the oracle id and an array of their project ids'
-          },
-          '4xx': {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' },
-              status: { type: 'integer' }
-            }
-          },
-          500: {
-            type: 'object',
-            description: 'Returns a message describing the error',
-            properties: {
-              error: { type: 'string' }
-            }
-          }
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.getProjectsByOracle
-  },
+    handler: handlers.getBlockchainData
+  }
+};
 
-  uploadExperience: {
+const projectExperienceRoutes = {
+  addExperience: {
     method: 'post',
     path: `${basePath}/:projectId/experiences`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.POST.name],
-        description: 'Uploads an experience to the specified project',
-        summary: 'Upload experience to project',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'number',
-              description: 'Project to upload the experience to'
-            }
-          }
+        description: 'Adds a new experience to an existing project',
+        summary: 'Adds a new experience to project',
+        params: projectIdParam,
+        raw: {
+          body: {
+            type: 'object',
+            properties: experienceProperties
+          },
+          files: { type: 'array', items: { type: 'object' } }
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'string' },
-              errors: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    error: { type: 'string' },
-                    file: { type: 'string' }
-                  }
-                }
-              }
-            },
-            description:
-              'Returns a success message if the experience was uploaded ' +
-              'and an array of errors if any files failed'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithProjectExperienceIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.uploadExperience
+    handler: handlers.addExperienceToProject
   },
-
-  getExperiences: {
+  getExperiencesOfProject: {
     method: 'get',
     path: `${basePath}/:projectId/experiences`,
     options: {
       beforeHandler: ['generalAuth'],
       schema: {
         tags: [routeTags.PROJECT.name, routeTags.GET.name],
-        description: 'Returns all the experiences of the specified project',
-        summary: 'Get project experiences',
-        params: {
-          type: 'object',
-          properties: {
-            projectId: {
-              type: 'number',
-              description: 'Project to get the experiences from'
-            }
-          }
-        },
+        description: 'Gets all experiences of an existing project.',
+        summary: 'Gets all experiences of a project.',
+        params: projectIdParam,
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              experiences: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    project: { type: 'number' },
-                    user: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'number' },
-                        username: { type: 'string' },
-                        email: { type: 'string' },
-                        role: { type: 'number' }
-                      }
-                    },
-                    photos: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          id: { type: 'number' },
-                          createdAt: { type: 'string' },
-                          updatedAt: { type: 'string' }
-                        }
-                      }
-                    },
-                    comment: { type: 'string' },
-                    createdAt: { type: 'string' },
-                    updatedAt: { type: 'string' }
-                  }
-                }
-              }
-            },
-            description: "Returns an array of the project's experiences"
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithExperiencesResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.getExperiences
+    handler: handlers.getExperiencesOfProject
   }
+};
+
+const featuredProjectsRoutes = {
+  getFeaturedProjects: {
+    method: 'get',
+    path: `${basePath}/featured`,
+    options: {
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.GET.name],
+        description: 'Gets all featured projects.',
+        summary: 'Gets all featured projects.',
+        response: {
+          ...successResponse(featuredProjectsResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getFeaturedProjects
+  }
+};
+
+const adminRoutes = {
+  setProjectAsExecuting: {
+    method: 'put',
+    path: `${basePath}/:projectId/status/executing`,
+    options: {
+      beforeHandler: ['adminAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Set project as executing as an admin',
+        summary: 'Set project as executing',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.setProjectAsExecuting
+  },
+
+  setProjectAsFunding: {
+    method: 'put',
+    path: `${basePath}/:projectId/status/funding`,
+    options: {
+      beforeHandler: ['adminAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Set project as funding as an admin',
+        summary: 'Set project as executing',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.setProjectAsFunding
+  }
+};
+
+const routes = {
+  ...projectThumbnailRoutes,
+  ...projectDetailRoutes,
+  ...projectProposalRoutes,
+  ...projectMilestonesRoute,
+  ...commonProjectRoutes,
+  ...projectExperienceRoutes,
+  ...projectStatusRoutes,
+  ...featuredProjectsRoutes,
+  ...adminRoutes
 };
 
 module.exports = routes;
