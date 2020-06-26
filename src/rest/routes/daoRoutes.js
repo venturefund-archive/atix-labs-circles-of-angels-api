@@ -45,6 +45,7 @@ const responseProposalProperties = {
   noVotes: { type: 'number' },
   didPass: { type: 'boolean' },
   description: { type: 'string' },
+  daoCreationTime: { type: 'number' },
   startingPeriod: { type: 'number' },
   currentPeriod: { type: 'number' },
   votingPeriodExpired: { type: 'boolean' },
