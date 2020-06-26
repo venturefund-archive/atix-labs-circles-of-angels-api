@@ -33,13 +33,11 @@ module.exports = {
   },
   getNewProposalTransaction: () => async (request, reply) => {
     const { daoId } = request.params;
-    const { user } = request;
     const { wallet: userWallet } = request.user;
     const { description, applicant } = request.body || {};
 
     const response = await daoService.getNewProposalTransaction({
       daoId,
-      user,
       userWallet,
       applicant,
       description,
