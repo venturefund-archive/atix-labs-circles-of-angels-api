@@ -12,8 +12,8 @@ const revertSnapshot = snapshot => ethereum.send('evm_revert', [snapshot]);
 
 const periodSeconds = 17280;
 const moveForwardAPeriod = async () => {
-  ethereum.send('evm_increaseTime', [periodSeconds]);
-  ethereum.send('evm_mine', []);
+  await ethereum.send('evm_increaseTime', [periodSeconds]);
+  await ethereum.send('evm_mine', []);
 };
 
 describe('COA plugin tests', () => {
