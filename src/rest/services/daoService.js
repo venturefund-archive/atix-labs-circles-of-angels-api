@@ -10,6 +10,82 @@ const {
 } = require('../util/constants');
 
 module.exports = {
+  /*
+   * Gets the unsigned transaction to process a proposal
+   */
+  async getProcessProposalTransaction({ daoId, proposalId, userWallet }) {
+    logger.info(
+      '[DAOService] :: Entering getProcessProposalTransaction method'
+    );
+    validateRequiredParams({
+      method: 'getProcessProposalTransaction',
+      params: { daoId, proposalId, userWallet }
+    });
+
+    logger.info('[DAOService] :: Getting new process proposal transaction');
+    try {
+      const unsignedTx = await coa.getProcessProposalTransaction(
+        daoId,
+        proposalId,
+        userWallet.address
+      );
+
+      const nonce = await this.transactionService.getNextNonce(
+        userWallet.address
+      );
+
+      const txWithNonce = { ...unsignedTx, nonce };
+      logger.info(
+        '[DAOService] :: Sending unsigned transaction to client',
+        txWithNonce
+      );
+      return {
+        tx: txWithNonce,
+        encryptedWallet: userWallet.encryptedWallet
+      };
+    } catch (error) {
+      logger.error('[DAOService] :: Error processing the proposal', error);
+      throw new COAError(errors.dao.ErrorProcessingProposal(proposalId, daoId));
+    }
+  },
+  /*
+   * Sends the signed transaction to the blockchain
+   */
+  async sendProcessProposalTransaction({
+    daoId,
+    proposalId,
+    signedTransaction,
+    userWallet
+  }) {
+    logger.info(
+      '[DAOService] :: Entering sendProcessProposalTransaction method'
+    );
+    validateRequiredParams({
+      method: 'sendProcessProposalTransaction',
+      params: {
+        daoId,
+        signedTransaction,
+        userWallet
+      }
+    });
+
+    const userAddress = userWallet.address;
+    logger.info(
+      '[DAOService] :: Sending signed tx to the blockchain for process proposal of DAO: ',
+      daoId
+    );
+
+    const tx = await coa.sendNewTransaction(signedTransaction);
+    logger.info('[DAOService] :: Process proposal transaction sent', tx);
+
+    logger.info('[DAOService] :: Saving transaction in database', tx);
+    await this.transactionService.save({
+      sender: userAddress,
+      txHash: tx.hash,
+      nonce: tx.nonce
+    });
+    return proposalId;
+  },
   async getNewProposalTransaction({
     daoId,
     userWallet,
@@ -40,7 +116,9 @@ module.exports = {
       userWallet.address
     );
 
-    const nonce = await this.transactionService.getNextNonce(userWallet.address);
+    const nonce = await this.transactionService.getNextNonce(
+      userWallet.address
+    );
     const txWithNonce = { ...unsignedTx, nonce };
 
     logger.info(
@@ -249,7 +327,7 @@ module.exports = {
     }
     return { proposalId };
   },
-  async getProposalsByDaoId({ daoId }) {
+  async getProposalsByDaoId({ daoId, user }) {
     logger.info('[DAOService] :: Entering getAllProposalsByDaoId method');
     validateRequiredParams({
       method: 'getProposalsByDaoId',
@@ -260,8 +338,12 @@ module.exports = {
     });
     try {
       const proposals = await coa.getAllProposalsByDaoId(daoId);
+      const daoCurrentPeriod = await coa.getCurrentPeriod(
+        daoId,
+        user.wallet.address
+      );
       // TODO: should be able to filter by something?
-      const formattedProposals = proposals.map((proposal, index) => ({
+      const formattedProposals = proposals.map(async (proposal, index) => ({
         proposer: proposal.proposer,
         applicant: proposal.applicant,
         proposalType: proposal.proposalType,
@@ -270,10 +352,12 @@ module.exports = {
         didPass: proposal.didPass,
         description: proposal.description,
         startingPeriod: Number(proposal.startingPeriod),
+        currentPeriod: Number(daoCurrentPeriod),
+        votingPeriodExpired: await coa.votingPeriodExpired(daoId, index),
         processed: proposal.processed,
         id: index
       }));
-      return formattedProposals;
+      return await Promise.all(formattedProposals);
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);
       throw new COAError(errors.dao.ErrorGettingProposals(daoId));

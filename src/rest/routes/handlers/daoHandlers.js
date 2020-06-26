@@ -7,6 +7,30 @@ module.exports = {
     const users = await userService.getUsers();
     reply.status(200).send({ users });
   },
+  getProcessProposalTransaction: () => async (request, reply) => {
+    const { daoId, proposalId } = request.params;
+    const { wallet: userWallet } = request.user;
+
+    const response = await daoService.getProcessProposalTransaction({
+      daoId,
+      proposalId,
+      userWallet
+    });
+    reply.status(200).send(response);
+  },
+  sendProcessProposalTransaction: () => async (request, reply) => {
+    const { daoId, proposalId } = request.params;
+    const { wallet: userWallet } = request.user;
+    const { signedTransaction } = request.body || {};
+
+    const response = await daoService.sendProcessProposalTransaction({
+      daoId,
+      proposalId,
+      signedTransaction,
+      userWallet
+    });
+    reply.status(200).send(response);
+  },
   getNewProposalTransaction: () => async (request, reply) => {
     const { daoId } = request.params;
     const { user } = request;
@@ -140,7 +164,8 @@ module.exports = {
   },
   getProposals: () => async (request, reply) => {
     const { daoId } = request.params;
-    const response = await daoService.getProposalsByDaoId({ daoId });
+    const { user } = request;
+    const response = await daoService.getProposalsByDaoId({ daoId, user });
     reply.status(200).send(response);
   },
   getDaos: () => async (request, reply) => {
