@@ -39,16 +39,14 @@ module.exports = {
   getNewProposalTransaction: () => async (request, reply) => {
     const { daoId } = request.params;
     const { wallet: userWallet } = request.user;
-    const { description, applicant } = request.body || {};
+    const { description, applicant, proposalType } = request.body || {};
 
     const response = await daoService.getNewProposalTransaction({
       daoId,
       userWallet,
       applicant,
       description,
-      type: proposalTypeEnum.NEW_MEMBER
-      // TODO: if all submitProposals are the same
-      // only one handler could be used and receive type in args
+      type: proposalType
     });
     reply.status(200).send(response);
   },

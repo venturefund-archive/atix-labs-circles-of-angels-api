@@ -62,7 +62,8 @@ const responseDaosProperties = {
 
 const submitProposalProperties = {
   description: { type: 'string' },
-  applicant: { type: 'string' }
+  applicant: { type: 'string' },
+  proposalType: { type: 'number' }
 };
 
 const sendTransactionProperties = {
@@ -102,6 +103,7 @@ const successWithMemberResponse = {
 const userResponse = {
   type: 'object',
   properties: {
+    id: { type: 'integer' },
     firstName: { type: 'string' },
     lastName: { type: 'string' },
     address: { type: 'string' },
@@ -260,7 +262,7 @@ const daoRoutes = {
         body: {
           type: 'object',
           properties: submitProposalProperties,
-          required: ['description', 'applicant'],
+          required: ['description', 'applicant', 'proposalType'],
           additionalProperties: false
         },
         response: {
