@@ -36,17 +36,17 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
-  getNewProposalTransaction: () => async (request, reply) => {
+  getNewProposalTransaction: type => async (request, reply) => {
     const { daoId } = request.params;
     const { wallet: userWallet } = request.user;
-    const { description, applicant, proposalType } = request.body || {};
+    const { description, applicant } = request.body || {};
 
     const response = await daoService.getNewProposalTransaction({
       daoId,
       userWallet,
       applicant,
       description,
-      type: proposalType
+      type
     });
     reply.status(200).send(response);
   },
