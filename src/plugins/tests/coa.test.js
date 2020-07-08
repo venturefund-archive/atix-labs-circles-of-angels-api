@@ -16,6 +16,12 @@ const moveForwardAPeriod = async () => {
   await ethereum.send('evm_mine', []);
 };
 
+const votingPeriodSeconds = 604800;
+const moveForwardVotingPeriod = async () => {
+  await ethereum.send('evm_increaseTime', [votingPeriodSeconds]);
+  await ethereum.send('evm_mine', []);
+};
+
 describe('COA plugin tests', () => {
   const address = '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A';
   const txHash =
@@ -208,6 +214,42 @@ describe('COA plugin tests', () => {
         await coa.getCurrentPeriod(superDaoId, signer)
       );
       expect(currentPeriod).toEqual(expectedPeriod);
+    });
+  });
+  describe('Testing votingPeriodExpired method', () => {
+    const superDaoId = 0;
+    const userWallet = {
+      address: '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D'
+    };
+
+    it('should return false when the proposal has just been created', async () => {
+      const coaContract = await coa.getCOA();
+      const superDaoAddress = await coaContract.daos(superDaoId);
+      const firstProposalIndex = await run('propose-member-to-dao', {
+        daoaddress: superDaoAddress,
+        applicant: userWallet.address
+      });
+      const votingPeriodExpired = await coa.votingPeriodExpired(
+        superDaoId,
+        firstProposalIndex
+      );
+      expect(votingPeriodExpired).toBe(false);
+    });
+    it('should return true when the voting period finishes', async () => {
+      const newDaoAddress = await run('create-dao');
+      const firstProposalIndex = await run('propose-member-to-dao', {
+        daoaddress: newDaoAddress,
+        applicant: userWallet.address
+      });
+
+      await moveForwardAPeriod();
+      await moveForwardVotingPeriod();
+
+      const votingPeriodExpired = await coa.votingPeriodExpired(
+        superDaoId,
+        firstProposalIndex
+      );
+      expect(votingPeriodExpired).toBe(true);
     });
   });
 
