@@ -36,7 +36,7 @@ module.exports = {
     });
     reply.status(200).send(response);
   },
-  getNewProposalTransaction: () => async (request, reply) => {
+  getNewProposalTransaction: type => async (request, reply) => {
     const { daoId } = request.params;
     const { wallet: userWallet } = request.user;
     const { description, applicant } = request.body || {};
@@ -46,9 +46,7 @@ module.exports = {
       userWallet,
       applicant,
       description,
-      type: proposalTypeEnum.NEW_MEMBER
-      // TODO: if all submitProposals are the same
-      // only one handler could be used and receive type in args
+      type
     });
     reply.status(200).send(response);
   },

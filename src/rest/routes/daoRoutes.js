@@ -7,6 +7,7 @@ const {
   clientErrorResponse
 } = require('../util/responses');
 const { idParam } = require('../util/params');
+const { proposalTypeEnum } = require('../util/constants');
 
 const proposalIdParam = idParam('Proposal identification', 'proposalId');
 const daoIdParam = idParam('DAO identification', 'daoId');
@@ -102,6 +103,7 @@ const successWithMemberResponse = {
 const userResponse = {
   type: 'object',
   properties: {
+    id: { type: 'integer' },
     firstName: { type: 'string' },
     lastName: { type: 'string' },
     address: { type: 'string' },
@@ -247,14 +249,14 @@ const daoRoutes = {
     },
     handler: handlers.sendNewVoteTransaction
   },
-  getProposalTransaction: {
+  getNewMemberProposalTransaction: {
     method: 'post',
-    path: `${basePath}/:daoId/get-transaction`,
+    path: `${basePath}/:daoId/proposal/new-member/get-transaction`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.DAO.name, routeTags.POST.name],
-        description: 'Get unsigned tx for a new proposal an existing DAO',
+        description: 'Get unsigned tx new member proposal of an existing DAO',
         summary: 'Get unsigned tx for new proposal',
         params: { daoIdParam, proposalIdParam },
         body: {
@@ -269,11 +271,36 @@ const daoRoutes = {
         }
       }
     },
-    handler: handlers.getNewProposalTransaction
+    handler: () =>
+      handlers.getNewProposalTransaction(proposalTypeEnum.NEW_MEMBER)
   },
-  sendProposalTransaction: {
+  getNewDaoProposalTransaction: {
     method: 'post',
-    path: `${basePath}/:daoId/send-transaction`,
+    path: `${basePath}/:daoId/proposal/new-dao/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Get unsigned tx for new dao proposal on SuperDAO',
+        summary: 'Get unsigned tx for new proposal',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: submitProposalProperties,
+          required: ['description', 'applicant'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.getNewProposalTransaction(proposalTypeEnum.NEW_DAO)
+  },
+  sendNewProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/proposal/send-transaction`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
