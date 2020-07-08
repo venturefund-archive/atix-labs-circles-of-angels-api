@@ -488,7 +488,7 @@ describe('Testing daoService', () => {
 
     afterAll(() => restoreMockedDaoService());
 
-    it('should return the unsigned transaction and the encrypted user wallet', async () => {
+    it('should return the unsigned transaction when proposal is new member and the encrypted user wallet', async () => {
       const applicant = await run('create-member');
       const unsignedTx = {
         to: 'address',
@@ -503,6 +503,25 @@ describe('Testing daoService', () => {
         applicant,
         description,
         type: proposalTypeEnum.NEW_MEMBER
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should return the unsigned transaction when proposal is new dao and the encrypted user wallet', async () => {
+      const applicant = await run('create-member');
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getNewProposalTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await mockedDaoService.getNewProposalTransaction({
+        daoId: superDaoId,
+        userWallet,
+        applicant,
+        description,
+        type: proposalTypeEnum.NEW_DAO
       });
       expect(response.tx).toEqual(unsignedTx);
       expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
