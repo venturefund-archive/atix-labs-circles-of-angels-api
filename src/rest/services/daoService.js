@@ -6,7 +6,8 @@ const logger = require('../logger');
 const {
   voteEnum,
   daoMemberRoleNames,
-  proposalTypeEnum
+  proposalTypeEnum,
+  txProposalStatus
 } = require('../util/constants');
 
 module.exports = {
@@ -99,6 +100,9 @@ module.exports = {
 
     const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[DAOService] :: Process proposal transaction sent', tx);
+
+    // Saving
+    logger.info('[DAOService] :: Saving proposalTransaction in database', tx);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
     await this.transactionService.save({
@@ -445,5 +449,44 @@ module.exports = {
       logger.error('[DAOService] :: Error getting Daos', error);
       throw new COAError(errors.dao.ErrorGettingDaos());
     }
+  },
+  async updateFailedProposalsTransactions() {
+    logger.info(
+      '[TransferService] :: Entering updateFailedProposalTransactions method'
+    );
+    const sentTxs = await this.proposalDao.findAllSentTxs();
+    logger.info(
+      `[TransferService] :: Found ${sentTxs.length} sent transactions`
+    );
+    const updated = await Promise.all(
+      sentTxs.map(async ({ id, txHash }) => {
+        const hasFailed = await this.transactionService.hasFailed(txHash);
+        if (hasFailed) {
+          try {
+            const { proposalId } = await this.updateProposal(id, {
+              status: txProposalStatus.FAILED
+            });
+            return proposalId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              "[DaoService] :: Couldn't update failed transaction status",
+              txHash
+            );
+          }
+        }
+      })
+    );
+    const failed = updated.filter(tx => !!tx);
+    if (failed.length > 0) {
+      logger.info(
+        `[DaoService] :: Updated status to ${
+          txProposalStatus.FAILED
+        } for transfers ${failed}`
+      );
+    } else {
+      logger.info('[DaoService] :: No failed transactions found');
+    }
+    return failed;
   }
 };
