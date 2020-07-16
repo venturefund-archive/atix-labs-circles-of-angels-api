@@ -196,8 +196,8 @@ module.exports = {
       status: txProposalStatus.SENT
     };
 
-    logger.info('[DAOService] :: Saving proposal in database', proposal);
-    await this.proposalDao.addProposal(proposal);
+    // logger.info('[DAOService] :: Saving proposal in database', proposal);
+    // await this.proposalDao.addProposal(proposal);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
     await this.transactionService.save({

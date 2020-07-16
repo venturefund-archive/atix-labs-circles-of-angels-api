@@ -13,7 +13,7 @@ module.exports = {
   primaryKey: 'id',
   attributes: {
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
-    proposalId: { type: 'number', required: true, allowNull: false },
+    proposalId: { type: 'number', required: false, allowNull: true },
     daoId: { type: 'number', required: true, allowNull: false },
     applicant: { type: 'string', required: true },
     proposer: { type: 'string', required: true },
