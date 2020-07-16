@@ -1,6 +1,7 @@
 const daoService = require('../../services/daoService');
 const userService = require('../../services/userService');
-const { proposalTypeEnum } = require('../../util/constants');
+const { proposalTypeEnum, txProposalStatus } = require('../../util/constants');
+const logger = require('../../logger');
 
 module.exports = {
   getAllUsers: () => async (request, reply) => {
@@ -53,10 +54,13 @@ module.exports = {
   sendNewProposalTransaction: () => async (request, reply) => {
     const { daoId } = request.params;
     const { wallet: userWallet } = request.user;
-    const { signedTransaction } = request.body || {};
+    const { signedTransaction, applicant, description, type } = request.body || {};
 
     const response = await daoService.sendNewProposalTransaction({
       daoId,
+      applicant,
+      description,
+      type,
       signedTransaction,
       userWallet
     });
@@ -86,6 +90,34 @@ module.exports = {
       userWallet
     });
     reply.status(200).send(response);
+  },
+  SubmitProposal: async (
+    proposalIndex,
+    memberAddress,
+    applicant,
+    proposalType,
+    tx
+  ) => {
+    const { transactionHash } = tx;
+    const proposalId = proposalIndex.toNumber();
+
+    logger.info('[COA] :: Incoming event SubmitProposal');
+    const updated = await daoService.updateProposalByTxHash(
+      transactionHash,
+      txProposalStatus.CONFIRMED,
+      proposalId
+    );
+    if (updated) {
+      logger.info(
+        `[DaoHandler] :: Proposal ${updated.proposalId} status updated to ${
+          txProposalStatus.CONFIRMED
+        }`
+      );
+    } else {
+      logger.info(
+        `[DaoHandler] :: Couldn't update proposal with txHash ${transactionHash}`
+      );
+    }
   },
   voteProposal: () => async (request, reply) => {
     const { proposalId, daoId } = request.params;

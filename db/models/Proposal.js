@@ -15,6 +15,10 @@ module.exports = {
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
     proposalId: { type: 'number', required: true, allowNull: false },
     daoId: { type: 'number', required: true, allowNull: false },
+    applicant: { type: 'string', required: true },
+    proposer: { type: 'string', required: true },
+    description: { type: 'string', required: true },
+    type: { type: 'number', required: true },
     txHash: { type: 'string', required: false, allowNull: true },
     createdAt: { type: 'string', autoCreatedAt: true },
     status: {

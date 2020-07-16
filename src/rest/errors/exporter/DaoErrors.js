@@ -27,5 +27,13 @@ module.exports = {
   InvalidProposalType: () => ({
     message: 'Proposal type is not valid',
     statusCode: 403
+  }),
+  ProposalStatusNotValid: status => ({
+    message: `Proposal status '${status}' is not a valid value`,
+    statusCode: 400
+  }),
+  ProposalStatusCannotChange: status => ({
+    message: `Status ${status} of a proposal cannot be updated`,
+    statusCode: 400
   })
 };
