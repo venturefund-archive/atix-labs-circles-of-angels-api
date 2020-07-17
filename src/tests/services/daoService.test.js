@@ -882,29 +882,31 @@ describe('Testing daoService', () => {
     });
   });
 
-  // describe('Testing updateFailedEvidenceTransactions method', () => {
-  //   beforeAll(() => {
-  //     injectMocks(activityService, {
-  //       transactionService,
-  //       taskEvidenceDao
-  //     });
-  //   });
-  //   beforeEach(() => {
-  //     resetDb();
-  //     dbTaskEvidence.push(taskEvidence);
-  //   });
-  //   afterAll(() => restoreActivityService());
-  //   it('should update all failed evidences and return an array with their ids', async () => {
-  //     transactionService.hasFailed.mockReturnValueOnce(true);
-  //     const response = await activityService.updateFailedEvidenceTransactions();
-  //     expect(response).toEqual([taskEvidence.id]);
-  //     const updated = dbTaskEvidence.find(ev => ev.id === taskEvidence.id);
-  //     expect(updated.status).toEqual(txEvidenceStatus.FAILED);
-  //   });
-  //   it('should return an empty array if no txs failed', async () => {
-  //     transactionService.hasFailed.mockReturnValueOnce(false);
-  //     const response = await activityService.updateFailedEvidenceTransactions();
-  //     expect(response).toEqual([]);
-  //   });
-  // });
+  describe('Testing updateFailedProposalTransactions method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProposal.push(newProposalTx);
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should update all failed evidences and return an array with their ids', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(true);
+      await mockedDaoService.updateFailedProposalTransactions();
+      const updated = dbProposal.find(p => p.id === newProposalTx.id);
+      expect(updated.status).toEqual(txProposalStatus.FAILED);
+    });
+    it('should return an empty array if no txs failed', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(false);
+      const response = await mockedDaoService.updateFailedProposalTransactions();
+      expect(response).toEqual([]);
+    });
+  });
 });

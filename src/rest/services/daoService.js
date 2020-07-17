@@ -471,7 +471,7 @@ module.exports = {
       throw new COAError(errors.dao.ErrorGettingDaos());
     }
   },
-  async updateFailedProposalsTransactions() {
+  async updateFailedProposalTransactions() {
     logger.info(
       '[DAOService] :: Entering updateFailedProposalTransactions method'
     );
@@ -482,9 +482,11 @@ module.exports = {
         const hasFailed = await this.transactionService.hasFailed(txHash);
         if (hasFailed) {
           try {
-            const { proposalId } = await this.updateProposalByTxHash(txHash, {
-              status: txProposalStatus.FAILED
-            });
+            const { proposalId } = await this.updateProposalByTxHash(
+              txHash,
+              txProposalStatus.FAILED,
+              null
+            );
             return proposalId;
           } catch (error) {
             // if fails proceed to the next one
@@ -501,7 +503,7 @@ module.exports = {
       logger.info(
         `[DAOService] :: Updated status to ${
           txProposalStatus.FAILED
-        } for transfers ${failed}`
+        } for proposals ${failed}`
       );
     } else {
       logger.info('[DAOService] :: No failed transactions found');
