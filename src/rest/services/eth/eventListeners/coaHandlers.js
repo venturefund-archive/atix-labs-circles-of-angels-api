@@ -10,7 +10,7 @@ const { projectStatuses } = require('../../../util/constants');
 module.exports = {
   DAOCreated: async address => {
     logger.info('[COA] :: Incoming event DAOCreated', address);
-    const dao = await coa.getDao(address);
+    const dao = await coa.getDaoContract(address);
     registerHandlers(dao, daoHandlers);
   },
   ProjectCreated: async (id, address) => {
