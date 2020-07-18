@@ -72,6 +72,13 @@ CREATE TYPE tx_evidence_status AS ENUM(
   'failed'
 );
 
+CREATE TYPE tx_proposal_status AS ENUM(
+  'notsent',
+  'sent',
+  'confirmed',
+  'failed'
+);
+
 CREATE TABLE public.project (
     id SERIAL NOT NULL,
     "projectName" varchar(50) NOT NULL,
@@ -182,6 +189,24 @@ CREATE TABLE public.task_evidence (
     status tx_evidence_status DEFAULT 'notsent',
 	CONSTRAINT task_evidence_pkey PRIMARY KEY ("id"),
 	CONSTRAINT "task_evidence_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES task(id),
+    UNIQUE ("txHash")
+);
+
+CREATE TABLE public.proposal (
+    -- this id is needed because the ORM can't handle composite pks
+	"id" serial NOT NULL,
+	"proposalId" int4 DEFAULT NULL,
+    "daoId" int4 NOT NULL,
+    "applicant" varchar(42) NOT NULL,
+    "proposer" varchar(42) NOT NULL,
+    "description" text,
+    "type" int4 NOT NULL,
+    "txHash" varchar(80) NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    status tx_proposal_status DEFAULT 'notsent',
+	CONSTRAINT proposal_pkey PRIMARY KEY ("id"),
+    FOREIGN KEY ("applicant") REFERENCES public.user (address),
+    FOREIGN KEY ("proposer") REFERENCES public.user (address),
     UNIQUE ("txHash")
 );
 

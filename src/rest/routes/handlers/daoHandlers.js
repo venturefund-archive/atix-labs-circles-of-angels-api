@@ -53,10 +53,13 @@ module.exports = {
   sendNewProposalTransaction: () => async (request, reply) => {
     const { daoId } = request.params;
     const { wallet: userWallet } = request.user;
-    const { signedTransaction } = request.body || {};
+    const { signedTransaction, applicant, description, type } = request.body || {};
 
     const response = await daoService.sendNewProposalTransaction({
       daoId,
+      applicant,
+      description,
+      type,
       signedTransaction,
       userWallet
     });

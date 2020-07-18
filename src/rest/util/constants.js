@@ -170,6 +170,13 @@ const txEvidenceStatus = {
   FAILED: 'failed'
 };
 
+const txProposalStatus = {
+  NOT_SENT: 'notsent',
+  SENT: 'sent',
+  CONFIRMED: 'confirmed',
+  FAILED: 'failed'
+};
+
 module.exports = {
   evidenceFileTypes,
   txFunderStatus,
@@ -191,5 +198,6 @@ module.exports = {
   daoMemberRoleNames,
   daoMemberRoleEnum,
   claimMilestoneStatus,
-  txEvidenceStatus
+  txEvidenceStatus,
+  txProposalStatus
 };
