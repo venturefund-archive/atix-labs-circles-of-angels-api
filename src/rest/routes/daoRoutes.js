@@ -70,6 +70,11 @@ const sendTransactionProperties = {
   signedTransaction: { type: 'string' }
 };
 
+const sendVoteProperties = {
+  signedTransaction: { type: 'string' },
+  vote: { type: 'number' }
+};
+
 const sendProposalTransactionProperties = {
   signedTransaction: { type: 'string' },
   description: { type: 'string' },
@@ -244,8 +249,8 @@ const daoRoutes = {
         params: { daoIdParam, proposalIdParam },
         body: {
           type: 'object',
-          properties: sendTransactionProperties,
-          required: ['signedTransaction'],
+          properties: sendVoteProperties,
+          required: ['signedTransaction', 'vote'],
           additionalProperties: false
         },
         response: {

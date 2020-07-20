@@ -210,6 +210,21 @@ CREATE TABLE public.proposal (
     UNIQUE ("txHash")
 );
 
+CREATE TABLE public.vote (
+    -- this id is needed because the ORM can't handle composite pks
+	"id" serial NOT NULL,
+    "daoId" int4 NOT NULL,
+	"proposalId" int4 NOT NULL,
+    "vote" int4 NOT NULL,
+    "voter" varchar(42) NOT NULL,
+    "txHash" varchar(80) NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    status tx_proposal_status DEFAULT 'notsent',
+	CONSTRAINT proposal_pkey PRIMARY KEY ("id"),
+    FOREIGN KEY ("voter") REFERENCES public.user (address),
+    UNIQUE ("txHash")
+);
+
 CREATE TABLE public.transaction (
 	id SERIAL NOT NULL,
 	sender varchar(42) NOT NULL,
