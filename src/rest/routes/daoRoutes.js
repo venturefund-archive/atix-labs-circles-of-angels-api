@@ -70,6 +70,13 @@ const sendTransactionProperties = {
   signedTransaction: { type: 'string' }
 };
 
+const sendProposalTransactionProperties = {
+  signedTransaction: { type: 'string' },
+  description: { type: 'string' },
+  applicant: { type: 'string' },
+  type: { type: 'number' }
+};
+
 const responseMemberProperties = {
   role: { type: 'string' },
   exists: { type: 'boolean' },
@@ -310,8 +317,8 @@ const daoRoutes = {
         params: { daoIdParam },
         body: {
           type: 'object',
-          properties: sendTransactionProperties,
-          required: ['signedTransaction'],
+          properties: sendProposalTransactionProperties,
+          required: ['signedTransaction', 'description', 'applicant', 'type'],
           additionalProperties: false
         },
         response: {

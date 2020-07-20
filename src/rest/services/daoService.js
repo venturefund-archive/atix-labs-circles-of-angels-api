@@ -6,7 +6,8 @@ const logger = require('../logger');
 const {
   voteEnum,
   daoMemberRoleNames,
-  proposalTypeEnum
+  proposalTypeEnum,
+  txProposalStatus
 } = require('../util/constants');
 
 module.exports = {
@@ -154,12 +155,22 @@ module.exports = {
   /*
    * Sends the signed transaction to the blockchain
    */
-  async sendNewProposalTransaction({ daoId, signedTransaction, userWallet }) {
+  async sendNewProposalTransaction({
+    daoId,
+    applicant,
+    description,
+    type,
+    signedTransaction,
+    userWallet
+  }) {
     logger.info('[DAOService] :: Entering sendNewProposalTransaction method');
     validateRequiredParams({
       method: 'sendNewProposalTransaction',
       params: {
         daoId,
+        applicant,
+        description,
+        type,
         signedTransaction,
         userWallet
       }
@@ -173,6 +184,20 @@ module.exports = {
 
     const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[DAOService] :: New proposal transaction sent', tx);
+
+    // Saving the tx on the DB
+    const proposal = {
+      daoId,
+      applicant,
+      proposer: userAddress,
+      description,
+      type,
+      txHash: tx.hash,
+      status: txProposalStatus.SENT
+    };
+
+    logger.info('[DAOService] :: Saving proposal in database', proposal);
+    await this.proposalDao.addProposal(proposal);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
     await this.transactionService.save({
@@ -445,5 +470,89 @@ module.exports = {
       logger.error('[DAOService] :: Error getting Daos', error);
       throw new COAError(errors.dao.ErrorGettingDaos());
     }
+  },
+  async updateFailedProposalTransactions() {
+    logger.info(
+      '[DAOService] :: Entering updateFailedProposalTransactions method'
+    );
+    const sentTxs = await this.proposalDao.findAllSentTxs();
+    logger.info(`[DAOService] :: Found ${sentTxs.length} sent transactions`);
+    const updated = await Promise.all(
+      sentTxs.map(async ({ txHash }) => {
+        const hasFailed = await this.transactionService.hasFailed(txHash);
+        if (hasFailed) {
+          try {
+            const { proposalId } = await this.updateProposalByTxHash(
+              txHash,
+              txProposalStatus.FAILED,
+              null
+            );
+            return proposalId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              "[DAOService] :: Couldn't update failed transaction status",
+              txHash
+            );
+          }
+        }
+      })
+    );
+    const failed = updated.filter(tx => !!tx);
+    if (failed.length > 0) {
+      logger.info(
+        `[DAOService] :: Updated status to ${
+          txProposalStatus.FAILED
+        } for proposals ${failed}`
+      );
+    } else {
+      logger.info('[DAOService] :: No failed transactions found');
+    }
+    return failed;
+  },
+  async updateProposalByTxHash(txHash, status, proposalId) {
+    logger.info('[DAOService] :: Entering updateProposalByTxHash method');
+    validateRequiredParams({
+      method: 'updateProposalByTxHash',
+      params: { txHash, status, proposalId }
+    });
+
+    const proposal = await this.proposalDao.findByTxHash(txHash);
+    if (!proposal) {
+      logger.error(
+        `[DAOService] :: Proposal with txHash ${txHash} could not be found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithTxHash('proposal', txHash)
+      );
+    }
+
+    if (!Object.values(txProposalStatus).includes(status)) {
+      logger.error(`[DAOService] :: Proposal status '${status}' is not valid`);
+      throw new COAError(errors.dao.ProposalStatusNotValid(status));
+    }
+
+    if (
+      [txProposalStatus.CONFIRMED, txProposalStatus.FAILED].includes(
+        proposal.status
+      )
+    ) {
+      logger.error('[DAOService] :: Proposal status cannot be changed', {
+        id: proposal.id,
+        status: proposal.status
+      });
+      throw new COAError(
+        errors.dao.ProposalStatusCannotChange(proposal.status)
+      );
+    }
+
+    logger.info(
+      `[DAOService] :: Updating Proposal to status ${status} and id ${proposalId}`
+    );
+    const updated = await this.proposalDao.updateProposalByTxHash(txHash, {
+      proposalId,
+      status
+    });
+    return { proposalId: updated.proposalId };
   }
 };
