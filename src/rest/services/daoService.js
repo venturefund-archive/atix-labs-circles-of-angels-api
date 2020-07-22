@@ -383,9 +383,17 @@ module.exports = {
       daoId
     });
     try {
+      const { address } = user.wallet;
       const proposals = await coa.getAllProposalsByDaoId(daoId);
-      const daoCurrentPeriod = await coa.getCurrentPeriod(daoId, user.wallet.address);
-      const daoCreationTime = await coa.getCreationTime(daoId, user.wallet.address);
+      const daoCurrentPeriod = await coa.getCurrentPeriod(daoId, address);
+      const daoCreationTime = await coa.getCreationTime(daoId, address);
+      const {
+        periodDuration,
+        votingPeriodLength,
+        gracePeriodLength,
+        processingPeriodLength
+      } = await coa.getDaoPeriodLengths(daoId, address);
+
       // TODO: should be able to filter by something?
       const formattedProposals = proposals.map(async (proposal, index) => ({
         proposer: proposal.proposer,
@@ -398,6 +406,10 @@ module.exports = {
         daoCreationTime: Number(daoCreationTime),
         startingPeriod: Number(proposal.startingPeriod),
         currentPeriod: Number(daoCurrentPeriod),
+        periodDuration: Number(periodDuration),
+        votingPeriodLength: Number(votingPeriodLength),
+        gracePeriodLength: Number(gracePeriodLength),
+        processingPeriodLength: Number(processingPeriodLength),
         votingPeriodExpired: await coa.votingPeriodExpired(daoId, index),
         processed: proposal.processed,
         id: index

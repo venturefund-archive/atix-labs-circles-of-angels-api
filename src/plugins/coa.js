@@ -302,6 +302,23 @@ module.exports = class COA {
     return coa.getDaosLength();
   }
 
+  async getDaoPeriodLengths(daoId, signer) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    const periodDuration = await dao.periodDuration();
+    const votingPeriodLength = await dao.votingPeriodLength();
+    const gracePeriodLength = await dao.gracePeriodLength();
+    const processingPeriodLength = await dao.processingPeriodLength();
+    return {
+      periodDuration,
+      votingPeriodLength,
+      gracePeriodLength,
+      processingPeriodLength
+    };
+  }
+
   async getProposalQueueLength(dao) {
     return dao.getProposalQueueLength();
   }

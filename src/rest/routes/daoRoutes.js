@@ -50,6 +50,10 @@ const responseProposalProperties = {
   startingPeriod: { type: 'number' },
   currentPeriod: { type: 'number' },
   votingPeriodExpired: { type: 'boolean' },
+  periodDuration: { type: 'number' },
+  votingPeriodLength: { type: 'number' },
+  gracePeriodLength: { type: 'number' },
+  processingPeriodLength: { type: 'number' },
   processed: { type: 'boolean' },
   id: { type: 'integer' }
 };
