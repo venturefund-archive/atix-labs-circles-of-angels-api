@@ -452,16 +452,17 @@ module.exports = {
       const filteredDaos = [];
       const userAddress = user.wallet.address;
 
-      // FIXME: when getMembers() is implemented, change this for
       for (let i = 0; i < daos.length; i++) {
         daos[i].id = i;
         const isMember = await coa.getDaoMember(i, userAddress);
         if (isMember.exists) filteredDaos.push(daos[i]);
       }
+
       const formattedDaos = filteredDaos.map(async dao => ({
         name: await dao.name(),
         address: await dao.address,
         proposalsAmount: await dao.getProposalQueueLength(),
+        proposalsOpen: await coa.getOpenProposalsFromDao(dao.id, userAddress),
         id: dao.id
         // TODO: add dao.getMembers() in COA plugin
       }));
