@@ -253,6 +253,10 @@ describe('COA plugin tests', () => {
     });
   });
   describe('Testing getOpenProposalsFromDao method', () => {
+    beforeAll(async () => {
+      evmSnapshot = await deployContracts();
+    }, TEST_TIMEOUT_MS);
+
     const superDaoId = 0;
     const userAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';
     const anotherUserAddress = '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A';
