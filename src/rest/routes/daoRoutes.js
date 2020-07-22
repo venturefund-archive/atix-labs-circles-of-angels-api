@@ -58,7 +58,6 @@ const responseDaosProperties = {
   name: { type: 'string' },
   address: { type: 'string' },
   proposalsAmount: { type: 'number' },
-  proposalsOpen: { type: 'number' },
   id: { type: 'integer' }
 };
 
