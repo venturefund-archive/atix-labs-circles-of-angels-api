@@ -387,7 +387,11 @@ module.exports = {
       const notConfirmedProposals = await this.getSentProposals(daoId);
       const confirmedProposals = await coa.getAllProposalsByDaoId(daoId);
       const proposals = [...confirmedProposals, ...notConfirmedProposals];
-      const formattedProposals = await this.formatProposals(daoId, proposals, signer);
+      const formattedProposals = await this.formatProposals(
+        daoId,
+        proposals,
+        signer
+      );
       return formattedProposals;
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);
@@ -567,7 +571,9 @@ module.exports = {
     const daoCreationTime = await coa.getCreationTime(daoId, signer);
 
     const formattedProposals = proposals.map(async (proposal, index) => ({
-      proposalType: proposal.proposalType,
+      proposalType: proposal.status !== txProposalStatus.SENT
+          ? proposal.proposalType
+          : proposal.type,
       proposer: proposal.proposer,
       applicant: proposal.applicant,
       description: proposal.description,
