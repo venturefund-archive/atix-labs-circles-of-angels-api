@@ -317,6 +317,11 @@ module.exports = class COA {
       gracePeriodLength,
       processingPeriodLength
     };
+
+  async getOpenProposalsFromDao(daoId, signer) {
+    const proposals = await this.getAllProposalsByDaoId(daoId, signer);
+    const open = proposals.filter(proposal => !proposal.processed).length;
+    return open;
   }
 
   async getProposalQueueLength(dao) {
