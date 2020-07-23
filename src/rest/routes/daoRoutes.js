@@ -51,6 +51,7 @@ const responseProposalProperties = {
   currentPeriod: { type: 'number' },
   votingPeriodExpired: { type: 'boolean' },
   processed: { type: 'boolean' },
+  txStatus: { type: 'string' },
   id: { type: 'integer' }
 };
 
