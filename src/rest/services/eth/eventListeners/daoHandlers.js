@@ -3,9 +3,25 @@ const daoService = require('../../daoService');
 const { txProposalStatus } = require('../../../util/constants');
 
 module.exports = {
-  SubmitVote: args => {
-    // TODO: do this or remove if not needed
-    logger.info('DAO.SubmitVote', args);
+  SubmitVote: async (_proposalIndex, memberAddress, vote, tx) => {
+    const { transactionHash } = tx;
+
+    logger.info('[COA] :: Incoming event SubmitVote');
+    const updated = await daoService.updateVoteByTxHash(
+      transactionHash,
+      txProposalStatus.CONFIRMED
+    );
+    if (updated) {
+      logger.info(
+        `[DaoHandler] :: Vote for Proposal ${
+          updated.proposalId
+        } status updated to ${txProposalStatus.CONFIRMED}`
+      );
+    } else {
+      logger.info(
+        `[DaoHandler] :: Couldn't update vote with txHash ${transactionHash}`
+      );
+    }
   },
   ProcessProposal: args => {
     // TODO: do this or remove if not needed
@@ -38,5 +54,5 @@ module.exports = {
         `[DaoHandler] :: Couldn't update proposal with txHash ${transactionHash}`
       );
     }
-  },
+  }
 };
