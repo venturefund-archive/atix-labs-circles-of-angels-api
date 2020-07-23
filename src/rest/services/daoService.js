@@ -462,6 +462,7 @@ module.exports = {
         name: await dao.name(),
         address: await dao.address,
         proposalsAmount: await dao.getProposalQueueLength(),
+        proposalsOpen: await coa.getOpenProposalsFromDao(dao.id, userAddress),
         id: dao.id
         // TODO: add dao.getMembers() in COA plugin
       }));

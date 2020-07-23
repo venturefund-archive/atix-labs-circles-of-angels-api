@@ -302,6 +302,12 @@ module.exports = class COA {
     return coa.getDaosLength();
   }
 
+  async getOpenProposalsFromDao(daoId, signer) {
+    const proposals = await this.getAllProposalsByDaoId(daoId, signer);
+    const open = proposals.filter(proposal => !proposal.processed).length;
+    return open;
+  }
+
   async getProposalQueueLength(dao) {
     return dao.getProposalQueueLength();
   }
