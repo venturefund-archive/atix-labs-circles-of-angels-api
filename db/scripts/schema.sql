@@ -222,6 +222,7 @@ CREATE TABLE public.vote (
     status tx_proposal_status DEFAULT 'notsent',
 	CONSTRAINT proposal_pkey PRIMARY KEY ("id"),
     FOREIGN KEY ("voter") REFERENCES public.user (address),
+    FOREIGN KEY ("proposalId") REFERENCES public.proposal("proposalId"),
     UNIQUE ("txHash")
 );
 
