@@ -105,8 +105,15 @@ describe('Testing daoService', () => {
   const proposalDao = {
     findById: id => dbProposal.find(proposal => proposal.id === id),
     findByTxHash: hash => dbProposal.find(proposal => proposal.txHash === hash),
-    addProposal: ({ daoId, applicant, proposer, type, description, txHash, status }) => {
-
+    addProposal: ({
+      daoId,
+      applicant,
+      proposer,
+      type,
+      description,
+      txHash,
+      status
+    }) => {
       const newProposalId =
         dbProposal.length > 0 ? dbProposal[dbProposal.length - 1].id + 1 : 1;
 
@@ -125,16 +132,21 @@ describe('Testing daoService', () => {
       return newProposal;
     },
     updateProposalByTxHash: (hash, { proposalId, status }) => {
-      const found = dbProposal.find(e => e.txHash === hash);
+      const found = dbProposal.find(p => p.txHash === hash);
       if (!found) return;
       const updated = { ...found, proposalId, status };
       dbProposal[dbProposal.indexOf(found)] = updated;
       return updated;
     },
-    findAllSentTxs: () =>
+    findAllSentTxs: () => {
       dbProposal
-        .filter(ev => ev.status === txProposalStatus.SENT)
-        .map(({ id, txHash }) => ({ id, txHash }))
+        .filter(p => p.status === txProposalStatus.SENT)
+        .map(({ id, txHash }) => ({ id, txHash }));
+    },
+    findAllSentTxsByDaoId: daoId =>
+      dbProposal.filter(
+        p => p.status === txProposalStatus.SENT && p.daoId === daoId
+      )
   };
   describe('Testing submitProposal method', () => {
     it(
@@ -907,6 +919,48 @@ describe('Testing daoService', () => {
       transactionService.hasFailed.mockReturnValueOnce(false);
       const response = await mockedDaoService.updateFailedProposalTransactions();
       expect(response).toEqual([]);
+    });
+  });
+
+  describe('Testing getSentProposals method', () => {
+    const superDaoId = 0;
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should return an empty array if no txs where sent', async () => {
+      const sentProposals = await mockedDaoService.getSentProposals(superDaoId);
+      expect(sentProposals.length).toEqual(0);
+    });
+    it('should return a size of 2 proposals after adding two proposals to the DAO', async () => {
+      dbProposal.push(newProposalTx);
+      dbProposal.push(newProposalTx);
+      const sentProposals = await mockedDaoService.getSentProposals(superDaoId);
+      expect(sentProposals.length).toEqual(2);
+    });
+    it('should return a size of 1 proposal after adding one proposal to one DAO, and 1 to another DAO', async () => {
+      const anotherProposalTx = {
+        daoId: 1,
+        description: 'A description',
+        applicant: applicantAddress,
+        proposer: proposerAddress,
+        type: proposalTypeEnum.NEW_MEMBER,
+        txHash: '0x111',
+        status: txProposalStatus.SENT
+      };
+      dbProposal.push(newProposalTx);
+      dbProposal.push(anotherProposalTx);
+      const sentProposals = await mockedDaoService.getSentProposals(superDaoId);
+      expect(sentProposals.length).toEqual(1);
     });
   });
 });

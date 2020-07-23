@@ -571,7 +571,8 @@ module.exports = {
     const daoCreationTime = await coa.getCreationTime(daoId, signer);
 
     const formattedProposals = proposals.map(async (proposal, index) => ({
-      proposalType: proposal.status !== txProposalStatus.SENT
+      proposalType:
+        proposal.status !== txProposalStatus.SENT
           ? proposal.proposalType
           : proposal.type,
       proposer: proposal.proposer,
