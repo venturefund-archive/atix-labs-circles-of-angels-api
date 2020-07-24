@@ -24,7 +24,7 @@ module.exports = {
   },
 
   async getByDaoAndProposalId(daoId, proposalId) {
-    return this.model.find({ dao: daoId, proposal: proposalId });
+    return this.model.find({ daoId, proposalId });
   },
 
   async updateProposal(proposalId, data) {
@@ -37,6 +37,11 @@ module.exports = {
   async updateProposalByTxHash(txHash, data) {
     const updatedProposal = await this.model.updateOne({ txHash }).set(data);
     return updatedProposal;
+  },
+
+  async findAllSentTxsByDaoId(daoId) {
+    const txs = await this.model.find({ status: txProposalStatus.SENT, daoId });
+    return txs;
   },
 
   async findAllSentTxs() {

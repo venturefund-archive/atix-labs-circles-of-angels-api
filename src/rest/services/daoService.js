@@ -398,38 +398,16 @@ module.exports = {
       daoId
     });
     try {
-      const { address } = user.wallet;
-      const proposals = await coa.getAllProposalsByDaoId(daoId);
-      const daoCurrentPeriod = await coa.getCurrentPeriod(daoId, address);
-      const daoCreationTime = await coa.getCreationTime(daoId, address);
-      const {
-        periodDuration,
-        votingPeriodLength,
-        gracePeriodLength,
-        processingPeriodLength
-      } = await coa.getDaoPeriodLengths(daoId, address);
-
-      // TODO: should be able to filter by something?
-      const formattedProposals = proposals.map(async (proposal, index) => ({
-        proposer: proposal.proposer,
-        applicant: proposal.applicant,
-        proposalType: proposal.proposalType,
-        yesVotes: Number(proposal.yesVotes),
-        noVotes: Number(proposal.noVotes),
-        didPass: proposal.didPass,
-        description: proposal.description,
-        daoCreationTime: Number(daoCreationTime),
-        startingPeriod: Number(proposal.startingPeriod),
-        currentPeriod: Number(daoCurrentPeriod),
-        periodDuration: Number(periodDuration),
-        votingPeriodLength: Number(votingPeriodLength),
-        gracePeriodLength: Number(gracePeriodLength),
-        processingPeriodLength: Number(processingPeriodLength),
-        votingPeriodExpired: await coa.votingPeriodExpired(daoId, index),
-        processed: proposal.processed,
-        id: index
-      }));
-      return await Promise.all(formattedProposals);
+      const signer = user.wallet.address;
+      const notConfirmedProposals = await this.getSentProposals(daoId);
+      const confirmedProposals = await coa.getAllProposalsByDaoId(daoId);
+      const proposals = [...confirmedProposals, ...notConfirmedProposals];
+      const formattedProposals = await this.formatProposals(
+        daoId,
+        proposals,
+        signer
+      );
+      return formattedProposals;
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);
       throw new COAError(errors.dao.ErrorGettingProposals(daoId));
@@ -498,6 +476,68 @@ module.exports = {
       logger.error('[DAOService] :: Error getting Daos', error);
       throw new COAError(errors.dao.ErrorGettingDaos());
     }
+  },
+  async getSentProposals(daoId) {
+    logger.info('[DAOService] :: Entering getSentProposals method');
+    validateRequiredParams({
+      method: 'getSentProposals',
+      params: { daoId }
+    });
+
+    const proposals = await this.proposalDao.findAllSentTxsByDaoId(daoId);
+    if (!proposals) {
+      logger.error(
+        `[DAOService] :: Proposals with daoId ${daoId} could not be found`
+      );
+      throw new COAError(errors.dao.ErrorGettingDaos());
+    }
+    return proposals;
+  },
+  async formatProposals(daoId, proposals, signer) {
+    logger.info('[DAOService] :: Entering formatProposals method');
+    validateRequiredParams({
+      method: 'formatProposals',
+      params: { proposals, signer, daoId }
+    });
+    const daoCurrentPeriod = await coa.getCurrentPeriod(daoId, signer);
+    const daoCreationTime = await coa.getCreationTime(daoId, signer);
+    const {
+      periodDuration,
+      votingPeriodLength,
+      gracePeriodLength,
+      processingPeriodLength
+    } = await coa.getDaoPeriodLengths(daoId, signer);
+
+    const formattedProposals = proposals.map(async (proposal, index) => ({
+      proposalType:
+        proposal.status !== txProposalStatus.SENT
+          ? proposal.proposalType
+          : proposal.type,
+      proposer: proposal.proposer,
+      applicant: proposal.applicant,
+      description: proposal.description,
+      yesVotes: proposal.yesVotes ? Number(proposal.yesVotes) : 0,
+      noVotes: proposal.noVotes ? Number(proposal.noVotes) : 0,
+      didPass: proposal.didPass,
+      processed: proposal.processed,
+      daoCreationTime: Number(daoCreationTime),
+      startingPeriod: proposal.startingPeriod
+        ? Number(proposal.startingPeriod)
+        : 0,
+      currentPeriod: Number(daoCurrentPeriod),
+      periodDuration: Number(periodDuration),
+      votingPeriodLength: Number(votingPeriodLength),
+      gracePeriodLength: Number(gracePeriodLength),
+      processingPeriodLength: Number(processingPeriodLength),
+      votingPeriodExpired:
+        proposal.status !== txProposalStatus.SENT
+          ? await coa.votingPeriodExpired(daoId, index)
+          : null,
+      txStatus: proposal.status ? proposal.status : txProposalStatus.CONFIRMED,
+      id: proposal.status ? null : index
+    }));
+
+    return Promise.all(formattedProposals);
   },
   async updateFailedProposalTransactions() {
     logger.info(

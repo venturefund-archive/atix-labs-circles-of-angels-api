@@ -55,6 +55,7 @@ const responseProposalProperties = {
   gracePeriodLength: { type: 'number' },
   processingPeriodLength: { type: 'number' },
   processed: { type: 'boolean' },
+  txStatus: { type: 'string' },
   id: { type: 'integer' }
 };
 

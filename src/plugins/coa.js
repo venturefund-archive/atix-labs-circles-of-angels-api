@@ -317,6 +317,7 @@ module.exports = class COA {
       gracePeriodLength,
       processingPeriodLength
     };
+  }
 
   async getOpenProposalsFromDao(daoId, signer) {
     const proposals = await this.getAllProposalsByDaoId(daoId, signer);
