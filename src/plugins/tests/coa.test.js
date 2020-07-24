@@ -317,6 +317,33 @@ describe('COA plugin tests', () => {
       );
       expect(openProposals).toEqual(1);
     });
+    describe('Testing getDaoPeriodLengths method', () => {
+    const superDaoId = 0;
+    const userAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';
+    const votingPeriodCurrentLength = 35;
+    const gracePeriodCurrentLength = 35;
+    const processingPeriodCurrentLength =
+      votingPeriodCurrentLength + gracePeriodCurrentLength;
+
+    it('should return different periods with its length when called', async () => {
+      const votingPeriodExpired = await coa.getDaoPeriodLengths(
+        superDaoId,
+        userAddress
+      );
+      const {
+        periodDuration,
+        votingPeriodLength,
+        gracePeriodLength,
+        processingPeriodLength
+      } = votingPeriodExpired;
+      expect(Number(periodDuration)).toEqual(periodSeconds);
+      expect(Number(votingPeriodLength)).toEqual(votingPeriodCurrentLength);
+      expect(Number(gracePeriodLength)).toEqual(gracePeriodCurrentLength);
+      expect(Number(processingPeriodLength)).toEqual(
+        processingPeriodCurrentLength
+      );
+    });
+  });
   });
 
   test.todo('Write missing tests');
