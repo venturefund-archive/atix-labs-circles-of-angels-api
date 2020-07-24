@@ -35,5 +35,13 @@ module.exports = {
   ProposalStatusCannotChange: status => ({
     message: `Status ${status} of a proposal cannot be updated`,
     statusCode: 400
+  }),
+  VoteStatusNotValid: status => ({
+    message: `Vote status '${status}' is not a valid value`,
+    statusCode: 400
+  }),
+  VoteStatusCannotChange: status => ({
+    message: `Status ${status} of a vote cannot be updated`,
+    statusCode: 400
   })
 };

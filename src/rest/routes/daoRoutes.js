@@ -50,6 +50,10 @@ const responseProposalProperties = {
   startingPeriod: { type: 'number' },
   currentPeriod: { type: 'number' },
   votingPeriodExpired: { type: 'boolean' },
+  periodDuration: { type: 'number' },
+  votingPeriodLength: { type: 'number' },
+  gracePeriodLength: { type: 'number' },
+  processingPeriodLength: { type: 'number' },
   processed: { type: 'boolean' },
   txStatus: { type: 'string' },
   id: { type: 'integer' }
@@ -59,6 +63,7 @@ const responseDaosProperties = {
   name: { type: 'string' },
   address: { type: 'string' },
   proposalsAmount: { type: 'number' },
+  proposalsOpen: { type: 'number' },
   id: { type: 'integer' }
 };
 
@@ -69,6 +74,11 @@ const submitProposalProperties = {
 
 const sendTransactionProperties = {
   signedTransaction: { type: 'string' }
+};
+
+const sendVoteProperties = {
+  signedTransaction: { type: 'string' },
+  vote: { type: 'number' }
 };
 
 const sendProposalTransactionProperties = {
@@ -245,8 +255,8 @@ const daoRoutes = {
         params: { daoIdParam, proposalIdParam },
         body: {
           type: 'object',
-          properties: sendTransactionProperties,
-          required: ['signedTransaction'],
+          properties: sendVoteProperties,
+          required: ['signedTransaction', 'vote'],
           additionalProperties: false
         },
         response: {

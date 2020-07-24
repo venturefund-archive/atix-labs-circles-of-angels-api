@@ -252,6 +252,99 @@ describe('COA plugin tests', () => {
       expect(votingPeriodExpired).toBe(true);
     });
   });
+  describe('Testing getOpenProposalsFromDao method', () => {
+    beforeAll(async () => {
+      evmSnapshot = await deployContracts();
+    }, TEST_TIMEOUT_MS);
+
+    const superDaoId = 0;
+    const userAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';
+    const anotherUserAddress = '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A';
+
+    it('should return 0 when there arent proposals created in the DAO', async () => {
+      const openProposals = await coa.getOpenProposalsFromDao(
+        superDaoId,
+        userAddress
+      );
+      expect(openProposals).toEqual(0);
+    });
+    it('should return 1 when a new proposal has just been created', async () => {
+      const coaContract = await coa.getCOA();
+      const superDaoAddress = await coaContract.daos(superDaoId);
+      await run('propose-member-to-dao', {
+        daoaddress: superDaoAddress,
+        applicant: userAddress
+      });
+
+      const openProposals = await coa.getOpenProposalsFromDao(
+        superDaoId,
+        userAddress
+      );
+      expect(openProposals).toEqual(1);
+    });
+    it('should return 1 when two proposals were added but one was processed', async () => {
+      const newDaoAddress = await run('create-dao');
+
+      await run('propose-member-to-dao', {
+        daoaddress: newDaoAddress,
+        applicant: userAddress
+      });
+
+      await run('propose-member-to-dao', {
+        daoaddress: newDaoAddress,
+        applicant: anotherUserAddress
+      });
+
+      await moveForwardAPeriod();
+
+      await run('vote-proposal', {
+        daoaddress: newDaoAddress,
+        proposal: 0,
+        vote: true
+      });
+
+      await moveForwardVotingPeriod();
+      await moveForwardVotingPeriod();
+
+      await run('process-proposal', {
+        daoaddress: newDaoAddress,
+        proposal: 0
+      });
+
+      const openProposals = await coa.getOpenProposalsFromDao(
+        superDaoId,
+        userAddress
+      );
+      expect(openProposals).toEqual(1);
+    });
+    describe('Testing getDaoPeriodLengths method', () => {
+    const superDaoId = 0;
+    const userAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';
+    const votingPeriodCurrentLength = 35;
+    const gracePeriodCurrentLength = 35;
+    const processingPeriodCurrentLength =
+      votingPeriodCurrentLength + gracePeriodCurrentLength;
+
+    it('should return different periods with its length when called', async () => {
+      const votingPeriodExpired = await coa.getDaoPeriodLengths(
+        superDaoId,
+        userAddress
+      );
+      const {
+        periodDuration,
+        votingPeriodLength,
+        gracePeriodLength,
+        processingPeriodLength
+      } = votingPeriodExpired;
+      expect(Number(periodDuration)).toEqual(periodSeconds);
+      expect(Number(votingPeriodLength)).toEqual(votingPeriodCurrentLength);
+      expect(Number(gracePeriodLength)).toEqual(gracePeriodCurrentLength);
+      expect(Number(processingPeriodLength)).toEqual(
+        processingPeriodCurrentLength
+      );
+    });
+  });
+  });
 
   test.todo('Write missing tests');
 });

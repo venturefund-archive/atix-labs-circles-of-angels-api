@@ -46,6 +46,7 @@ const projectExperiencePhotoDao = require('./dao/projectExperiencePhotoDao');
 const featuredProjectDao = require('./dao/featuredProjectDao');
 const taskEvidenceDao = require('./dao/taskEvidenceDao');
 const proposalDao = require('./dao/proposalDao');
+const voteDao = require('./dao/voteDao');
 const transactionDao = require('./dao/transactionDao');
 
 const { injectDependencies } = require('./util/injection');
@@ -187,7 +188,8 @@ module.exports = fastify => {
     const dependencies = {
       userService,
       transactionService,
-      proposalDao
+      proposalDao,
+      voteDao
     };
     injectDependencies(service, dependencies);
   }
@@ -239,6 +241,7 @@ module.exports = fastify => {
     injectModel(taskEvidenceDao, models.task_evidence);
     injectModel(transactionDao, models.transaction);
     injectModel(proposalDao, models.proposal);
+    injectModel(voteDao, models.vote);
   }
 
   function configureServices() {
