@@ -251,6 +251,7 @@ module.exports = {
   async sendNewVoteTransaction({
     daoId,
     proposalId,
+    vote,
     signedTransaction,
     userWallet
   }) {
@@ -260,6 +261,7 @@ module.exports = {
       params: {
         daoId,
         proposalId,
+        vote,
         signedTransaction,
         userWallet
       }
@@ -275,6 +277,19 @@ module.exports = {
 
     const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[DAOService] :: New vote transaction sent', tx);
+
+    // Saving the tx on the DB
+    const newVote = {
+      daoId,
+      proposalId,
+      vote,
+      voter: userAddress,
+      txHash: tx.hash,
+      status: txProposalStatus.SENT
+    };
+
+    logger.info('[DAOService] :: Saving vote in database', newVote);
+    await this.voteDao.addVote(newVote);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
     await this.transactionService.save({
@@ -384,8 +399,14 @@ module.exports = {
     });
     try {
       const proposals = await coa.getAllProposalsByDaoId(daoId);
-      const daoCurrentPeriod = await coa.getCurrentPeriod(daoId, user.wallet.address);
-      const daoCreationTime = await coa.getCreationTime(daoId, user.wallet.address);
+      const daoCurrentPeriod = await coa.getCurrentPeriod(
+        daoId,
+        user.wallet.address
+      );
+      const daoCreationTime = await coa.getCreationTime(
+        daoId,
+        user.wallet.address
+      );
       // TODO: should be able to filter by something?
       const formattedProposals = proposals.map(async (proposal, index) => ({
         proposer: proposal.proposer,
@@ -552,6 +573,80 @@ module.exports = {
     );
     const updated = await this.proposalDao.updateProposalByTxHash(txHash, {
       proposalId,
+      status
+    });
+    return { proposalId: updated.proposalId };
+  },
+  async updateFailedVoteTransactions() {
+    logger.info('[DAOService] :: Entering updateFailedVoteTransactions method');
+    const sentTxs = await this.voteDao.findAllSentTxs();
+    logger.info(`[DAOService] :: Found ${sentTxs.length} sent transactions`);
+    const updated = await Promise.all(
+      sentTxs.map(async ({ txHash }) => {
+        const hasFailed = await this.transactionService.hasFailed(txHash);
+        if (hasFailed) {
+          try {
+            const { proposalId } = await this.updateVoteByTxHash(
+              txHash,
+              txProposalStatus.FAILED
+            );
+            return proposalId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              "[DAOService] :: Couldn't update failed transaction status",
+              txHash
+            );
+          }
+        }
+      })
+    );
+    const failed = updated.filter(tx => !!tx);
+    if (failed.length > 0) {
+      logger.info(
+        `[DAOService] :: Updated status to ${
+          txProposalStatus.FAILED
+        } for proposals ${failed}`
+      );
+    } else {
+      logger.info('[DAOService] :: No failed transactions found');
+    }
+    return failed;
+  },
+  async updateVoteByTxHash(txHash, status) {
+    logger.info('[DAOService] :: Entering updateVoteByTxHash method');
+    validateRequiredParams({
+      method: 'updateVoteByTxHash',
+      params: { txHash, status }
+    });
+
+    const vote = await this.voteDao.findByTxHash(txHash);
+    if (!vote) {
+      logger.error(
+        `[DAOService] :: Vote with txHash ${txHash} could not be found`
+      );
+      throw new COAError(errors.common.CantFindModelWithTxHash('vote', txHash));
+    }
+
+    if (!Object.values(txProposalStatus).includes(status)) {
+      logger.error(`[DAOService] :: Vote status '${status}' is not valid`);
+      throw new COAError(errors.dao.VoteStatusNotValid(status));
+    }
+
+    if (
+      [txProposalStatus.CONFIRMED, txProposalStatus.FAILED].includes(
+        vote.status
+      )
+    ) {
+      logger.error('[DAOService] :: Vote status cannot be changed', {
+        id: vote.id,
+        status: vote.status
+      });
+      throw new COAError(errors.dao.VoteStatusCannotChange(vote.status));
+    }
+
+    logger.info(`[DAOService] :: Updating Vote to status ${status}`);
+    const updated = await this.voteDao.updateVoteByTxHash(txHash, {
       status
     });
     return { proposalId: updated.proposalId };
