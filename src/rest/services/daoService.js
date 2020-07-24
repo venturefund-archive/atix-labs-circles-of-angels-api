@@ -578,12 +578,14 @@ module.exports = {
       proposer: proposal.proposer,
       applicant: proposal.applicant,
       description: proposal.description,
-      yesVotes: Number(proposal.yesVotes),
-      noVotes: Number(proposal.noVotes),
+      yesVotes: proposal.yesVotes ? Number(proposal.yesVotes) : 0,
+      noVotes: proposal.noVotes ? Number(proposal.noVotes) : 0,
       didPass: proposal.didPass,
       processed: proposal.processed,
       daoCreationTime: Number(daoCreationTime),
-      startingPeriod: Number(proposal.startingPeriod),
+      startingPeriod: proposal.startingPeriod
+        ? Number(proposal.startingPeriod)
+        : 0,
       currentPeriod: Number(daoCurrentPeriod),
       votingPeriodExpired:
         proposal.status !== txProposalStatus.SENT
