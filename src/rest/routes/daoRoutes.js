@@ -56,6 +56,12 @@ const responseProposalProperties = {
   processingPeriodLength: { type: 'number' },
   processed: { type: 'boolean' },
   txStatus: { type: 'string' },
+  voters: {
+    type: 'array',
+    items: {
+      type: 'string'
+    }
+  },
   id: { type: 'integer' }
 };
 

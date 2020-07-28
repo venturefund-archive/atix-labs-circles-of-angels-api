@@ -1,10 +1,3 @@
-CREATE TYPE tx_proposal_status AS ENUM(
-  'notsent',
-  'sent',
-  'confirmed',
-  'failed'
-);
-
 DROP TABLE public.vote;
 CREATE TABLE public.vote (
   "id" serial NOT NULL,
@@ -17,6 +10,5 @@ CREATE TABLE public.vote (
   status tx_proposal_status DEFAULT 'notsent',
   PRIMARY KEY (id),
   FOREIGN KEY ("voter") REFERENCES public.user (address),
-  FOREIGN KEY ("proposalId") REFERENCES public.proposal("proposalId"),
   UNIQUE ("txHash")
 );
