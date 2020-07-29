@@ -496,11 +496,20 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing getDaos method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao
+      });
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
     it('should have a list of 2 daos when getDaos is applied', async () => {
       const firstMemberAddress = await run('create-member');
       await run('create-dao', { account: firstMemberAddress });
       await run('create-dao', { account: firstMemberAddress });
-      const response = await daoService.getDaos({
+      const response = await mockedDaoService.getDaos({
         user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
       expect(response).toHaveLength(2);
@@ -517,22 +526,21 @@ describe('Testing daoService', () => {
         daoaddress: daoAddress,
         applicant: secondMemberAddress
       });
-      const response = await daoService.getDaos({
-        user: { ...defaultUser, wallet: { address: firstMemberAddress } }
-      });
+      const user = { ...defaultUser, wallet: { address: firstMemberAddress } };
+      const response = await mockedDaoService.getDaos({ user });
       const proposalAmounts = Number(response[uniqueDaoIndex].proposalsAmount);
       expect(response).toHaveLength(1);
       expect(proposalAmounts).toEqual(1);
     });
     it('should have an empty list of DAOs if the userdoesnt belong to anyone', async () => {
       const firstMemberAddress = await run('create-member');
-      const response = await daoService.getDaos({
+      const response = await mockedDaoService.getDaos({
         user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
       expect(response).toHaveLength(0);
     });
     it('should throw an error if method dont receive any user', async () => {
-      await expect(daoService.getDaos({})).rejects.toThrow(
+      await expect(mockedDaoService.getDaos({})).rejects.toThrow(
         errors.common.RequiredParamsMissing('getDaos')
       );
     });
