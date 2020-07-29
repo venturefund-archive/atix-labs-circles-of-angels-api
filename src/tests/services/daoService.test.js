@@ -183,9 +183,10 @@ describe('Testing daoService', () => {
       return updated;
     },
     findAllSentTxs: () => {
-      dbProposal
+      const found = dbProposal
         .filter(p => p.status === txProposalStatus.SENT)
         .map(({ id, txHash }) => ({ id, txHash }));
+      return found;
     },
     findAllSentTxsByDaoId: daoId =>
       dbProposal.filter(
