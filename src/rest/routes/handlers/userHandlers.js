@@ -110,6 +110,13 @@ module.exports = {
     }
   },
 
+  changePassword: () => async (request, reply) => {
+    const { id } = request.user;
+    const { encryptedWallet, password } = request.body || {};
+    await userService.updatePassword(id, password, encryptedWallet);
+    reply.status(200).send({ success: 'Password updated successfully' });
+  },
+
   getMyProjects: () => async (request, reply) => {
     const userId = request.user.id;
     const projects = await userService.getProjectsOfUser(userId);

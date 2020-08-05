@@ -74,6 +74,14 @@ const successWithUserResponse = {
   description: 'Returns an array of objects with the users information'
 };
 
+const successPasswordUpdated = {
+  type: 'object',
+  properties: {
+    success: { type: 'string' }
+  },
+  description: 'Returns a success message if the password was changed'
+};
+
 const projectResponse = {
   projectName: { type: 'string' },
   mission: { type: 'string' },
@@ -147,7 +155,7 @@ const routes = {
                   name: { type: 'string' }
                 }
               },
-              registrationStatus: { type: 'integer' }
+              encryptedWallet: { type: 'string' }
             },
             description: 'Returns and object with the user information'
           },
@@ -356,6 +364,34 @@ const routes = {
       }
     },
     handler: handlers.updatePassword
+  },
+
+  changePassword: {
+    method: 'put',
+    path: `${basePath}/me/password`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.PUT.name],
+        description: 'Modifies the password and wallet of an existing user',
+        summary: 'Update user password',
+        body: {
+          type: 'object',
+          properties: {
+            password: { type: 'string' },
+            encryptedWallet: { type: 'string' }
+          },
+          required: ['password', 'encryptedWallet'],
+          description: 'New password and new encrypted wallet'
+        },
+        response: {
+          ...successResponse(successPasswordUpdated),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.changePassword
   },
 
   getMyProjects: {
