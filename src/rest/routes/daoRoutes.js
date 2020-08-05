@@ -322,6 +322,58 @@ const daoRoutes = {
     },
     handler: () => handlers.getNewProposalTransaction(proposalTypeEnum.NEW_DAO)
   },
+  getNewBankRoleProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/proposal/new-bank/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description:
+          'Get unsigned tx for new bank role proposal of an existing DAO',
+        summary: 'Get unsigned tx for new proposal',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: submitProposalProperties,
+          required: ['description', 'applicant'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () =>
+      handlers.getNewProposalTransaction(proposalTypeEnum.ASSIGN_BANK)
+  },
+  getNewCuratorRoleProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/proposal/new-curator/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description:
+          'Get unsigned tx for new curator role proposal of an existing DAO',
+        summary: 'Get unsigned tx for new proposal',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: submitProposalProperties,
+          required: ['description', 'applicant'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () =>
+      handlers.getNewProposalTransaction(proposalTypeEnum.ASSIGN_CURATOR)
+  },
   sendNewProposalTransaction: {
     method: 'post',
     path: `${basePath}/:daoId/proposal/send-transaction`,
