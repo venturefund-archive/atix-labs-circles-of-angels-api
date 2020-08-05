@@ -18,6 +18,15 @@ module.exports = {
     return this.model.findOne({ txHash });
   },
 
+  async findByDaoAndProposalId(daoId, proposalId) {
+    const votes = await this.model.find({
+      select: ['voter'],
+      where: { status: { '!=': txProposalStatus.SENT }, daoId, proposalId }
+    });
+    const voters = votes.map(vote => vote.voter);
+    return voters;
+  },
+
   async addVote(data) {
     const voteCreated = await this.model.create(data);
     return voteCreated;
