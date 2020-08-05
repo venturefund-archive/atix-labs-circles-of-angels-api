@@ -36,6 +36,7 @@ const userResponse = {
     role: { type: 'string' },
     id: { type: 'integer' },
     hasDaos: { type: 'boolean' },
+    forcePasswordChange: { type: 'boolean' },
     blocked: { type: 'boolean' },
     phoneNumber: { type: 'string' },
     country: {

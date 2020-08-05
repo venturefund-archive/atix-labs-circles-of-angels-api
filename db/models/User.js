@@ -63,7 +63,8 @@ module.exports = {
     },
     phoneNumber: { type: 'string', required: true },
     answers: { type: 'string', required: true },
-    company: { type: 'string', required: false, allowNull: true }
+    company: { type: 'string', required: false, allowNull: true },
+    forcePasswordChange: { type: 'boolean', defaultsTo: false, required: false }
   },
   customToJSON: function toJson() {
     return omit(this, ['password']);

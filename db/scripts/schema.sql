@@ -36,6 +36,7 @@ CREATE TABLE public.user (
     address varchar(42) NOT NULL,
     "encryptedWallet" json NOT NULL,
     blocked BOOLEAN NOT NULL DEFAULT FALSE,
+    "forcePasswordChange" BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     UNIQUE (email),
     UNIQUE (address),

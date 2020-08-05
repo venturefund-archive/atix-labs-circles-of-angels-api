@@ -67,6 +67,7 @@ module.exports = {
       throw new COAError(errors.user.InvalidUserOrPassword);
     }
     logger.info('[User Service] :: User has matched user and password');
+    const { firstName, lastName, id, role, forcePasswordChange } = user;
 
     logger.info('[User Service] :: Trying to see if user belongs to a Dao');
     user.wallet = await this.getUserWallet(user.id);
@@ -75,13 +76,20 @@ module.exports = {
     logger.info(`[User Service] :: User belongs to any DAO? ${hasDaos}`);
 
     const authenticatedUser = {
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName,
+      lastName,
       email: user.email,
-      id: user.id,
-      role: user.role,
-      hasDaos
+      id,
+      role,
+      hasDaos,
+      forcePasswordChange
     };
+
+    logger.info(
+      `[User Service] :: User ID ${
+        user.id
+      } should be forced to change its password`
+    );
 
     if (user.blocked) {
       logger.error(`[User Service] :: User ID ${user.id} is blocked`);

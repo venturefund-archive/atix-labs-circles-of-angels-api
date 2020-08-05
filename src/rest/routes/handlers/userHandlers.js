@@ -15,6 +15,7 @@ module.exports = {
   getUser: fastify => async (request, reply) => {
     fastify.log.info('[User Routes] :: Getting user info');
     const user = await userService.getUserById(request.params.userId);
+    console.log('User', user);
     if (!user)
       reply.status(404).send({
         error: `Cannot find user with id: ${request.params.userId}`
