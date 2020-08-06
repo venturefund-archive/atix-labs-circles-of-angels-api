@@ -114,8 +114,24 @@ describe('Testing daoService', () => {
   };
 
   const voteDao = {
-    findById: id => dbVote.find(proposal => proposal.id === id),
-    findByTxHash: hash => dbVote.find(proposal => proposal.txHash === hash),
+    findById: id => {
+      const found = dbVote.find(proposal => proposal.id === id);
+      if (!found) return [];
+      return found;
+    },
+    findByTxHash: hash => {
+      const found = dbVote.find(proposal => proposal.txHash === hash);
+      if (!found) return [];
+      return found;
+    },
+    findByDaoAndProposalId: (daoId, proposalId) => {
+      const found = dbVote.find(
+        proposal =>
+          proposal.daoId === daoId && proposal.proposalId === proposalId
+      );
+      if (!found) return [];
+      return found;
+    },
     addVote: ({ daoId, proposalId, vote, voter, txHash, status }) => {
       const newVoteId =
         dbVote.length > 0 ? dbVote[dbVote.length - 1].id + 1 : 1;
@@ -183,14 +199,17 @@ describe('Testing daoService', () => {
       return updated;
     },
     findAllSentTxs: () => {
-      dbProposal
+      const found = dbProposal
         .filter(p => p.status === txProposalStatus.SENT)
         .map(({ id, txHash }) => ({ id, txHash }));
+      return found;
     },
-    findAllSentTxsByDaoId: daoId =>
-      dbProposal.filter(
+    findAllSentTxsByDaoId: daoId => {
+      const filtered = dbProposal.filter(
         p => p.status === txProposalStatus.SENT && p.daoId === daoId
-      )
+      );
+      return filtered;
+    }
   };
   describe('Testing submitProposal method', () => {
     it(
@@ -448,7 +467,19 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing getProposalsByDaoId method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao,
+        voteDao
+      });
+    });
+    beforeEach(() => {
+      resetDb();
+    });
+
     it('should return a list of all proposals in a dao', async () => {
+      const daoId = 0;
       const firstMemberAddress = await run('create-member');
       const secondMemberAddress = await run('create-member');
       const firstCreatedProposalIndex = await run('propose-member-to-dao', {
@@ -459,8 +490,9 @@ describe('Testing daoService', () => {
         daoaddress: superDaoAddress,
         applicant: secondMemberAddress
       });
-      const response = await daoService.getProposalsByDaoId({
-        daoId: 0
+      const response = await mockedDaoService.getProposalsByDaoId({
+        daoId,
+        user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
       expect(response).toHaveLength(2);
       expect(response[firstCreatedProposalIndex].applicant).toEqual(
@@ -475,10 +507,12 @@ describe('Testing daoService', () => {
       expect(response[secondCreatedProposalIndex].proposalType).toEqual(
         proposalTypeEnum.NEW_MEMBER
       );
+      expect(response[firstCreatedProposalIndex].voters.length).toEqual(0);
+      expect(response[secondCreatedProposalIndex].voters.length).toEqual(0);
     });
     it('should throw an error if any required parameters are missing', async () => {
       await expect(
-        daoService.getProposalsByDaoId({
+        mockedDaoService.getProposalsByDaoId({
           user: defaultUser
         })
       ).rejects.toThrow(
@@ -487,7 +521,7 @@ describe('Testing daoService', () => {
     });
     it('should throw an error if the DAO does not exist', async () => {
       await expect(
-        daoService.getProposalsByDaoId({
+        mockedDaoService.getProposalsByDaoId({
           daoId: 1,
           user: defaultUser
         })
@@ -495,11 +529,20 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing getDaos method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao
+      });
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
     it('should have a list of 2 daos when getDaos is applied', async () => {
       const firstMemberAddress = await run('create-member');
       await run('create-dao', { account: firstMemberAddress });
       await run('create-dao', { account: firstMemberAddress });
-      const response = await daoService.getDaos({
+      const response = await mockedDaoService.getDaos({
         user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
       expect(response).toHaveLength(2);
@@ -516,22 +559,21 @@ describe('Testing daoService', () => {
         daoaddress: daoAddress,
         applicant: secondMemberAddress
       });
-      const response = await daoService.getDaos({
-        user: { ...defaultUser, wallet: { address: firstMemberAddress } }
-      });
+      const user = { ...defaultUser, wallet: { address: firstMemberAddress } };
+      const response = await mockedDaoService.getDaos({ user });
       const proposalAmounts = Number(response[uniqueDaoIndex].proposalsAmount);
       expect(response).toHaveLength(1);
       expect(proposalAmounts).toEqual(1);
     });
     it('should have an empty list of DAOs if the userdoesnt belong to anyone', async () => {
       const firstMemberAddress = await run('create-member');
-      const response = await daoService.getDaos({
+      const response = await mockedDaoService.getDaos({
         user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
       expect(response).toHaveLength(0);
     });
     it('should throw an error if method dont receive any user', async () => {
-      await expect(daoService.getDaos({})).rejects.toThrow(
+      await expect(mockedDaoService.getDaos({})).rejects.toThrow(
         errors.common.RequiredParamsMissing('getDaos')
       );
     });
@@ -626,6 +668,44 @@ describe('Testing daoService', () => {
         applicant,
         description,
         type: proposalTypeEnum.NEW_DAO
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should return the unsigned transaction when proposal is new banker and the encrypted user wallet', async () => {
+      const applicant = await run('create-member');
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getNewProposalTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await mockedDaoService.getNewProposalTransaction({
+        daoId: superDaoId,
+        userWallet,
+        applicant,
+        description,
+        type: proposalTypeEnum.ASSIGN_BANK
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should return the unsigned transaction when proposal is new curator and the encrypted user wallet', async () => {
+      const applicant = await run('create-member');
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getNewProposalTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await mockedDaoService.getNewProposalTransaction({
+        daoId: superDaoId,
+        userWallet,
+        applicant,
+        description,
+        type: proposalTypeEnum.ASSIGN_CURATOR
       });
       expect(response.tx).toEqual(unsignedTx);
       expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);

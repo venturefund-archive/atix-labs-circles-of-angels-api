@@ -1,10 +1,3 @@
-CREATE TYPE tx_proposal_status AS ENUM(
-  'notsent',
-  'sent',
-  'confirmed',
-  'failed'
-);
-
 DROP TABLE public.proposal;
 CREATE TABLE public.proposal (
   "id" serial NOT NULL,
