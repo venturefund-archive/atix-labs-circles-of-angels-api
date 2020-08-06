@@ -82,6 +82,11 @@ const successPasswordUpdated = {
   description: 'Returns a success message if the password was changed'
 };
 
+const successWithWalletResponse = {
+  type: 'string',
+  description: 'Returns the string of the encrypted wallet'
+};
+
 const projectResponse = {
   projectName: { type: 'string' },
   mission: { type: 'string' },
@@ -392,6 +397,25 @@ const routes = {
       }
     },
     handler: handlers.changePassword
+  },
+
+  getWallet: {
+    method: 'get',
+    path: `${basePath}/me/wallet`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns the encrypted wallet to an existing user',
+        summary: 'Get the encrpyted wallet by user',
+        response: {
+          ...successResponse(successWithWalletResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getWallet
   },
 
   getMyProjects: {
