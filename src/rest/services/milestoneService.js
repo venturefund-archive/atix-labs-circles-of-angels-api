@@ -885,6 +885,20 @@ module.exports = {
       logger.info(
         `[MilestoneService] :: Milestone ${currentMilestoneId} is the last milestone of the project`
       );
+      const project = await this.getProjectFromMilestone(currentMilestoneId);
+      if (!project) {
+        logger.info(
+          `[MilestoneService] :: No project found for milestone ${currentMilestoneId}`
+        );
+        throw new COAError(
+          errors.milestone.ProjectNotFound(currentMilestoneId)
+        );
+      }
+      await this.projectService.updateProjectStatus(
+        project.owner,
+        project.id,
+        projectStatuses.FINISHED
+      );
       return;
     }
     return this.setClaimable(nextMilestoneId);

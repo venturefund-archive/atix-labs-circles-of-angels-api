@@ -5,7 +5,8 @@ const validateOwnership = require('../validateOwnership');
 const {
   projectStatuses,
   userRoles,
-  txFunderStatus
+  txFunderStatus,
+  claimMilestoneStatus
 } = require('../../../util/constants');
 
 const isOwner = (user, ownerId) => validateOwnership(ownerId, user.id);
@@ -116,10 +117,25 @@ module.exports = {
     ) {
       return isOwner(user, project.owner);
     }
-
     if (newStatus === projectStatuses.FINISHED) {
-      // TODO check that project has each milestone in done
-      throw new COAError(errors.project.ChangingStatus);
+      const projectMilestones = await this.projectService.getProjectMilestones(
+        project.id
+      );
+      const isTransferred = milestone =>
+        milestone.claimStatus === claimMilestoneStatus.TRANSFERRED;
+      const allTransferred = projectMilestones.every(isTransferred);
+      const milestonesCompleted = await Promise.all(
+        projectMilestones.map(async milestone => {
+          const completed = await this.milestoneService.isMilestoneCompleted(
+            milestone.id
+          );
+          return completed;
+        })
+      );
+      const allTasksCompleted = milestonesCompleted.every(
+        milestone => milestone
+      );
+      return allTransferred && allTasksCompleted;
     }
   },
 
