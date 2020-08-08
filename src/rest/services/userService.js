@@ -314,10 +314,6 @@ module.exports = {
     };
     const updated = await this.userDao.updateUser(id, user);
 
-    if (!user) {
-      logger.error('[User Service] :: User was not found');
-      throw new COAError(errors.user.InvalidUserOrPassword);
-    }
     if (!updated) {
       logger.error(
         '[UserService] :: Error updating password in database for user: ',
