@@ -85,11 +85,13 @@ module.exports = {
       forcePasswordChange
     };
 
-    logger.info(
-      `[User Service] :: User ID ${
-        user.id
-      } should be forced to change its password`
-    );
+    if (forcePasswordChange) {
+      logger.info(
+        `[User Service] :: User ID ${
+          user.id
+        } should be forced to change its password`
+      );
+    }
 
     if (user.blocked) {
       logger.error(`[User Service] :: User ID ${user.id} is blocked`);
@@ -294,40 +296,35 @@ module.exports = {
   },
 
   async updatePassword(id, password, encryptedWallet) {
-    try {
-      logger.info('[UserService] :: Entering updatePassword method');
-      let user = await this.userDao.getUserById(id);
-      if (!user) {
-        logger.info(
-          '[UserService] :: There is no user associated with that email',
-          id
-        );
-        return {
-          status: 401,
-          error: 'There is no user associated with that email'
-        };
-      }
-
-      const hashedPwd = await bcrypt.hash(password, 10);
-      user = {
-        ...user,
-        password: hashedPwd,
-        encryptedWallet,
-        forcePasswordChange: false
-      };
-      const updated = await this.userDao.updateUser(id, user);
-
-      if (!updated) {
-        logger.error(
-          '[UserService] :: Error updating password in database for user: ',
-          id
-        );
-        return { status: 500, error: 'Error updating password' };
-      }
-      return updated;
-    } catch (error) {
-      logger.error('[UserService] :: Error updating password');
-      throw Error('Error updating password');
+    logger.info('[UserService] :: Entering updatePassword method');
+    let user = await this.userDao.getUserById(id);
+    if (!user) {
+      logger.info(
+        '[UserService] :: There is no user associated with that email',
+        id
+      );
+      throw new COAError(errors.user.UserNotFound);
     }
+
+    const hashedPwd = await bcrypt.hash(password, 10);
+    user = {
+      password: hashedPwd,
+      encryptedWallet,
+      forcePasswordChange: false
+    };
+    const updated = await this.userDao.updateUser(id, user);
+
+    if (!user) {
+      logger.error('[User Service] :: User was not found');
+      throw new COAError(errors.user.InvalidUserOrPassword);
+    }
+    if (!updated) {
+      logger.error(
+        '[UserService] :: Error updating password in database for user: ',
+        id
+      );
+      throw new COAError(errors.user.UserUpdateError);
+    }
+    return updated;
   }
 };
