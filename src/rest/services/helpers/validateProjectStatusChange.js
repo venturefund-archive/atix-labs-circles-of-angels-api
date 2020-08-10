@@ -113,7 +113,6 @@ module.exports = async ({ user, newStatus, project }) => {
   const [transition] = allowedTransitions[project.status].filter(
     ({ nextSteps }) => nextSteps.includes(newStatus)
   );
-
   if (!transition || !transition.validator) {
     logger.error(
       `[Project Service] :: Project status transition from ${
@@ -122,7 +121,6 @@ module.exports = async ({ user, newStatus, project }) => {
     );
     throw new COAError(errors.project.InvalidProjectTransition);
   }
-
   await transition.validator({ user, newStatus, project });
   return newStatus;
 };
