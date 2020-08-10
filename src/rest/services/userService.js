@@ -67,6 +67,7 @@ module.exports = {
       throw new COAError(errors.user.InvalidUserOrPassword);
     }
     logger.info('[User Service] :: User has matched user and password');
+    const { firstName, lastName, id, role, forcePasswordChange } = user;
 
     logger.info('[User Service] :: Trying to see if user belongs to a Dao');
     user.wallet = await this.getUserWallet(user.id);
@@ -75,13 +76,22 @@ module.exports = {
     logger.info(`[User Service] :: User belongs to any DAO? ${hasDaos}`);
 
     const authenticatedUser = {
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName,
+      lastName,
       email: user.email,
-      id: user.id,
-      role: user.role,
-      hasDaos
+      id,
+      role,
+      hasDaos,
+      forcePasswordChange
     };
+
+    if (forcePasswordChange) {
+      logger.info(
+        `[User Service] :: User ID ${
+          user.id
+        } should be forced to change its password`
+      );
+    }
 
     if (user.blocked) {
       logger.error(`[User Service] :: User ID ${user.id} is blocked`);
@@ -283,5 +293,34 @@ module.exports = {
     const { encryptedWallet, address } = user;
     // const wallet = new Wallet(privKey, ethers.provider);
     return { address, encryptedWallet };
+  },
+
+  async updatePassword(id, password, encryptedWallet) {
+    logger.info('[UserService] :: Entering updatePassword method');
+    let user = await this.userDao.getUserById(id);
+    if (!user) {
+      logger.info(
+        '[UserService] :: There is no user associated with that email',
+        id
+      );
+      throw new COAError(errors.user.UserNotFound);
+    }
+
+    const hashedPwd = await bcrypt.hash(password, 10);
+    user = {
+      password: hashedPwd,
+      encryptedWallet,
+      forcePasswordChange: false
+    };
+    const updated = await this.userDao.updateUser(id, user);
+
+    if (!updated) {
+      logger.error(
+        '[UserService] :: Error updating password in database for user: ',
+        id
+      );
+      throw new COAError(errors.user.UserUpdateError);
+    }
+    return updated;
   }
 };

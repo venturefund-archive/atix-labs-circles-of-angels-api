@@ -36,6 +36,7 @@ const userResponse = {
     role: { type: 'string' },
     id: { type: 'integer' },
     hasDaos: { type: 'boolean' },
+    forcePasswordChange: { type: 'boolean' },
     blocked: { type: 'boolean' },
     phoneNumber: { type: 'string' },
     country: {
@@ -71,6 +72,19 @@ const successWithUserResponse = {
     }
   },
   description: 'Returns an array of objects with the users information'
+};
+
+const successPasswordUpdated = {
+  type: 'object',
+  properties: {
+    success: { type: 'string' }
+  },
+  description: 'Returns a success message if the password was changed'
+};
+
+const successWithWalletResponse = {
+  type: 'string',
+  description: 'Returns the string of the encrypted wallet'
 };
 
 const projectResponse = {
@@ -146,7 +160,7 @@ const routes = {
                   name: { type: 'string' }
                 }
               },
-              registrationStatus: { type: 'integer' }
+              encryptedWallet: { type: 'string' }
             },
             description: 'Returns and object with the user information'
           },
@@ -355,6 +369,53 @@ const routes = {
       }
     },
     handler: handlers.updatePassword
+  },
+
+  changePassword: {
+    method: 'put',
+    path: `${basePath}/me/password`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.PUT.name],
+        description: 'Modifies the password and wallet of an existing user',
+        summary: 'Update user password',
+        body: {
+          type: 'object',
+          properties: {
+            password: { type: 'string' },
+            encryptedWallet: { type: 'string' }
+          },
+          required: ['password', 'encryptedWallet'],
+          description: 'New password and new encrypted wallet'
+        },
+        response: {
+          ...successResponse(successPasswordUpdated),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.changePassword
+  },
+
+  getWallet: {
+    method: 'get',
+    path: `${basePath}/me/wallet`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns the encrypted wallet to an existing user',
+        summary: 'Get the encrpyted wallet by user',
+        response: {
+          ...successResponse(successWithWalletResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getWallet
   },
 
   getMyProjects: {
