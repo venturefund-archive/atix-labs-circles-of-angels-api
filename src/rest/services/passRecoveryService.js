@@ -10,13 +10,11 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
 const { frontendUrl, support } = require('config');
-
-// TODO : replace with a logger;
-const logger = {
-  log: () => {},
-  error: () => {},
-  info: () => {}
-};
+const { link } = require('fs');
+const { encrypt } = require('ethers/utils/secret-storage');
+const COAError = require('../errors/COAError');
+const errors = require('../errors/exporter/ErrorExporter');
+const logger = require('../logger');
 
 module.exports = {
   async startPassRecoveryProcess(email) {
@@ -31,44 +29,45 @@ module.exports = {
           '[PassRecovery Service] :: There is no user associated with that email',
           email
         );
-        return {
-          status: 401,
-          error: 'There is no user associated with that email'
-        };
+        throw new COAError(errors.user.InvalidEmail);
       }
 
       const hash = await crypto.randomBytes(25);
       const token = hash.toString('hex');
-
+      // console.log('token', token);
       const recovery = await this.passRecoveryDao.createRecovery(email, token);
+      // console.log('recovery', recovery);
 
       if (!recovery) {
         logger.info(
           '[PassRecovery Service]:: Can not create recovery with email',
           email
         );
-        return { status: 402, error: 'Cant create recovery' };
+        throw new COAError(errors.user.InvalidRecovery());
       }
 
-      const info = await this.mailService.sendMail({
-        from: '"Circles of Angels Support" <coa@support.com>',
-        to: email,
-        subject: 'Circles of Angels - Recovery Password',
-        text: 'Password recovery',
-        html: `<p>Recovery password proccess started for your Circles Of Angels account </br></p>
-          <p>Enter to the follow link to set a new password: </br></p>
-          <a href='${frontendUrl}/passwordRecovery?token=${token}'>Recovery Link</a>`
-      });
+      // const info = await this.mailService.sendMail({
+      //   from: '"Circles of Angels Support" <coa@support.com>',
+      //   to: email,
+      //   subject: 'Circles of Angels - Recovery Password',
+      //   text: 'Password recovery',
+      //   html: `<p>Recovery password proccess started for your Circles Of Angels account </br></p>
+      //     <p>Enter to the follow link to set a new password: </br></p>
+      //     <a href='${frontendUrl}/forgot-password?token=${token}'>Recovery Link</a>`
+      // });
 
-      if (!isEmpty(info.rejected)) {
-        logger.info('[PassRecovery Service] :: Invalid email', email);
-        return { status: 403, error: 'Invalid Email' };
-      }
+      // console.log(`${frontendUrl}/forgot-password?token=${token}`, 'link');
 
-      return { email: info.accepted[0] };
+      // if (!isEmpty(info.rejected)) {
+      //   logger.info('[PassRecovery Service] :: Invalid email', email);
+      //   return { status: 403, error: 'Invalid Email' };
+      // }
+
+      // return { email: info.accepted[0] };
+      return email;
     } catch (error) {
       logger.error(
-        '[Pass Recovery Service] :: Error staring recovery process:',
+        '[Pass Recovery Service] :: Error starting recovery process:',
         error
       );
       throw Error('Error staring recovery process');
@@ -113,6 +112,42 @@ module.exports = {
     } catch (error) {
       logger.error('[Pass Recovery Service] :: Error updating password');
       throw Error('Error updating password');
+    }
+  },
+
+  async getWalletFromToken(token) {
+    try {
+      const recover = await this.passRecoveryDao.findRecoverBytoken(token);
+      if (!recover) {
+        logger.error('[Pass Recovery Service] :: Token not found: ', token);
+        throw new COAError(errors.user.InvalidToken);
+      }
+
+      // const hoursFromCreation =
+      //   (new Date() - new Date(recover.createdAt)) / 3600000;
+      // if (hoursFromCreation > support.recoveryTime) {
+      //   logger.error('[Pass Recovery Service] :: Token has expired: ', token);
+      //   await this.passRecoveryDao.deleteRecoverByToken(token);
+      //   throw new COAError(errors.user.InvalidToken);
+      // }
+
+      const { email } = recover;
+      const { encryptedWallet } = await this.userDao.getUserByEmail(email);
+      if (!encryptedWallet) {
+        logger.error(
+          '[Pass Recovery Service] :: Wallet not found of user with email: ',
+          email
+        );
+        throw new COAError(errors.user.InvalidEmail);
+      }
+      // console.log(encryptedWallet);
+      return encryptedWallet;
+    } catch (error) {
+      logger.error(
+        '[Pass Recovery Service] :: Error validating token in recovery process:',
+        error
+      );
+      throw Error('Error validating token in recovery process');
     }
   }
 };

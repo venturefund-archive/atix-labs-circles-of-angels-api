@@ -82,6 +82,14 @@ const successPasswordUpdated = {
   description: 'Returns a success message if the password was changed'
 };
 
+const successMailSent = {
+  type: 'object',
+  properties: {
+    email: { type: 'string' }
+  },
+  description: 'Returns the email to where the recovery password was sent'
+};
+
 const successWithWalletResponse = {
   type: 'string',
   description: 'Returns the string of the encrypted wallet'
@@ -286,37 +294,14 @@ const routes = {
         summary: 'Start password recovery process',
         body: {
           type: 'object',
-          properties: {
-            email: { type: 'string' }
-          },
+          properties: { email: { type: 'string' } },
           required: ['email'],
           description: 'E-mail account of the user to recover the password'
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              email: { type: 'string' }
-            },
-            description:
-              'Returns the email account of the user if the mail has been sent'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successMailSent),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
@@ -416,6 +401,26 @@ const routes = {
       }
     },
     handler: handlers.getWallet
+  },
+
+  getWalletFromToken: {
+    method: 'GET',
+    path: `${basePath}/wallet/:token`,
+    options: {
+      beforeHandler: ['withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description:
+          'Returns the encrypted wallet to an existing user when forgotten password',
+        summary: 'Get the encrpyted wallet by user',
+        response: {
+          ...successResponse(successWithWalletResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getWalletFromToken
   },
 
   getMyProjects: {

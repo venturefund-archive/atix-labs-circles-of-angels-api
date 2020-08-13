@@ -11,6 +11,14 @@ module.exports = {
     message: 'The email is already in use',
     statusCode: 400
   },
+  InvalidRecovery: {
+    message: 'Can not create recovery',
+    statusCode: 402
+  },
+  InvalidToken: {
+    message: 'Invalid token',
+    statusCode: 400
+  },
   UserNotFound: {
     message: 'User is not found',
     statusCode: 400
