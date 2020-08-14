@@ -34,9 +34,7 @@ module.exports = {
 
       const hash = await crypto.randomBytes(25);
       const token = hash.toString('hex');
-      // console.log('token', token);
       const recovery = await this.passRecoveryDao.createRecovery(email, token);
-      // console.log('recovery', recovery);
 
       if (!recovery) {
         logger.info(
@@ -56,12 +54,10 @@ module.exports = {
       //     <a href='${frontendUrl}/forgot-password?token=${token}'>Recovery Link</a>`
       // });
 
-      // console.log(`${frontendUrl}/forgot-password?token=${token}`, 'link');
-
-      // if (!isEmpty(info.rejected)) {
-      //   logger.info('[PassRecovery Service] :: Invalid email', email);
-      //   return { status: 403, error: 'Invalid Email' };
-      // }
+      if (!isEmpty(info.rejected)) {
+        logger.info('[PassRecovery Service] :: Invalid email', email);
+        throw new COAError(errors.user.InvalidEmail);
+      }
 
       // return { email: info.accepted[0] };
       return email;
@@ -74,48 +70,7 @@ module.exports = {
     }
   },
 
-  async updatePassword(token, password) {
-    try {
-      const recover = await this.passRecoveryDao.findRecoverBytoken(token);
-
-      if (!recover) {
-        logger.error('[Pass Recovery Service] :: Token not found: ', token);
-        return { status: 404, error: 'Invalid Token' };
-      }
-
-      const hoursFromCreation =
-        (new Date() - new Date(recover.createdAt)) / 3600000;
-      if (hoursFromCreation > support.recoveryTime) {
-        logger.error('[Pass Recovery Service] :: Token has expired: ', token);
-        await this.passRecoveryDao.deleteRecoverByToken(token);
-        return { status: 409, error: 'Token has expired' };
-      }
-
-      if (!isEmpty(recover)) {
-        const hashedPwd = await bcrypt.hash(password, 10);
-        const updated = await this.userDao.updatePasswordByMail(
-          recover.email,
-          hashedPwd
-        );
-        if (!updated) {
-          logger.error(
-            '[Pass Recovery Service] :: Error updating password in database for user: ',
-            recover.email
-          );
-          return { status: 500, error: 'Error updating password' };
-        }
-        await this.passRecoveryDao.deleteRecoverByToken(token);
-        return updated;
-      }
-
-      return { status: 404, error: 'Invalid token' };
-    } catch (error) {
-      logger.error('[Pass Recovery Service] :: Error updating password');
-      throw Error('Error updating password');
-    }
-  },
-
-  async getWalletFromToken(token) {
+  async getMnemonicFromToken(token) {
     try {
       const recover = await this.passRecoveryDao.findRecoverBytoken(token);
       if (!recover) {
@@ -132,22 +87,49 @@ module.exports = {
       // }
 
       const { email } = recover;
-      const { encryptedWallet } = await this.userDao.getUserByEmail(email);
-      if (!encryptedWallet) {
+      const { mnemonic } = await this.userDao.getUserByEmail(email);
+      if (!mnemonic) {
         logger.error(
-          '[Pass Recovery Service] :: Wallet not found of user with email: ',
+          '[Pass Recovery Service] :: Mnemonic not found of user with email: ',
           email
         );
         throw new COAError(errors.user.InvalidEmail);
       }
-      // console.log(encryptedWallet);
-      return encryptedWallet;
+      return mnemonic;
     } catch (error) {
       logger.error(
         '[Pass Recovery Service] :: Error validating token in recovery process:',
         error
       );
       throw Error('Error validating token in recovery process');
+    }
+  },
+
+  async updatePassword(token, password, encryptedWallet) {
+    try {
+      const { email } = await this.passRecoveryDao.findRecoverBytoken(token);
+      if (!email) {
+        logger.error('[Pass Recovery Service] :: Token not found: ', token);
+        throw new COAError(errors.user.InvalidToken);
+      }
+      const hashedPwd = await bcrypt.hash(password, 10);
+      const user = {
+        password: hashedPwd,
+        encryptedWallet
+      };
+      const updated = await this.userDao.updateUserByEmail(email, user);
+      if (!updated) {
+        logger.error(
+          '[Pass Recovery Service] :: Error updating password in database for user: ',
+          email
+        );
+        throw new COAError(errors.user.UserUpdateError);
+      }
+      await this.passRecoveryDao.deleteRecoverByToken(token);
+      return updated;
+    } catch (error) {
+      logger.error('[Pass Recovery Service] :: Error updating password');
+      throw Error('Error updating password');
     }
   }
 };
