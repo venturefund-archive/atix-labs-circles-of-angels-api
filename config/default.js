@@ -28,7 +28,6 @@ module.exports = {
   },
   frontendUrl: 'http://localhost:3000',
   email: {
-    recoveryTime: 1, // in hours
     host: 'smtp.example.com',
     port: 587,
     user: 'username',
@@ -36,6 +35,10 @@ module.exports = {
     apiKey: undefined, // sendgrid apikey, when undefined uses smtp
     from: 'from@example.com',
     disabled: false
+  },
+
+  support: {
+    recoveryTime: 1 // in hours
   },
 
   jwt: {
