@@ -59,7 +59,6 @@ module.exports = {
   recoverPassword: () => async (request, reply) => {
     const { email } = request.body || {};
     const response = await passRecoveryService.startPassRecoveryProcess(email);
-    console.log('RESPONSE', response);
     reply.status(200).send(response);
   },
 
