@@ -38,6 +38,7 @@ module.exports = {
     },
     blocked: { type: 'boolean', defaultsTo: false, required: false },
     encryptedWallet: { type: 'json', required: true },
+    mnemonic: { type: 'string', required: true },
     projects: {
       collection: 'project',
       via: 'owner'

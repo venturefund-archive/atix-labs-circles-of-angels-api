@@ -123,7 +123,8 @@ module.exports = {
     company,
     answers,
     address,
-    encryptedWallet
+    encryptedWallet,
+    mnemonic
   }) {
     logger.info(`[User Routes] :: Creating new user with email ${email}`);
     validateRequiredParams({
@@ -138,7 +139,8 @@ module.exports = {
         country,
         answers,
         address,
-        encryptedWallet
+        encryptedWallet,
+        mnemonic
       }
     });
 
@@ -167,7 +169,8 @@ module.exports = {
       answers,
       company,
       address,
-      encryptedWallet
+      encryptedWallet,
+      mnemonic
     };
     // TODO: this should be replaced by a gas relayer
     const accounts = await ethers.signers();

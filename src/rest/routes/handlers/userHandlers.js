@@ -10,6 +10,7 @@ const config = require('config');
 const apiHelper = require('../../services/helper');
 
 const userService = require('../../services/userService');
+const passRecoveryService = require('../../services/passRecoveryService');
 
 module.exports = {
   getUser: fastify => async (request, reply) => {
@@ -55,64 +56,22 @@ module.exports = {
     reply.status(200).send({ userId: user.id });
   },
 
-  recoverPassword: fastify => async (request, reply) => {
-    try {
-      const { passRecoveryService } = apiHelper.helper.services;
-      fastify.log.info('[User Routes] :: Starting pass recovery proccess');
-      const { email } = request.body;
-      const response = await passRecoveryService.startPassRecoveryProcess(
-        email
-      );
-      if (response.error) {
-        fastify.log.error(
-          '[User Routes] :: Recovery password procces failed',
-          response
-        );
-        reply.status(response.status).send(response);
-      } else {
-        fastify.log.info(
-          '[User Routes] :: Recovery password procces started successfully',
-          response
-        );
-        reply.status(200).send(response);
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply
-        .status(500)
-        .send({ error: 'Error Starting recovery password proccess' });
-    }
-  },
-
-  updatePassword: fastify => async (request, reply) => {
-    try {
-      const { passRecoveryService } = apiHelper.helper.services;
-      fastify.log.info('[User Routes] :: Updating password');
-      const { token, password } = request.body;
-      const response = await passRecoveryService.updatePassword(
-        token,
-        password
-      );
-      if (response.error) {
-        fastify.log.error('[User Routes] :: Update password failed', response);
-        reply.status(response.status).send(response);
-      } else {
-        fastify.log.info(
-          '[User Routes] :: Password updated successfully',
-          response
-        );
-        reply.status(200).send({ success: 'Password updated successfully' });
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error updating password' });
-    }
+  recoverPassword: () => async (request, reply) => {
+    const { email } = request.body || {};
+    const response = await passRecoveryService.startPassRecoveryProcess(email);
+    reply.status(200).send(response);
   },
 
   changePassword: () => async (request, reply) => {
     const { id } = request.user;
-    const { encryptedWallet, password } = request.body || {};
+    const { password, encryptedWallet } = request.body || {};
     await userService.updatePassword(id, password, encryptedWallet);
+    reply.status(200).send({ success: 'Password updated successfully' });
+  },
+
+  changeRecoverPassword: () => async (request, reply) => {
+    const { token, password, encryptedWallet } = request.body || {};
+    await passRecoveryService.updatePassword(token, password, encryptedWallet);
     reply.status(200).send({ success: 'Password updated successfully' });
   },
 
@@ -120,6 +79,12 @@ module.exports = {
     const { wallet } = request.user;
     const { encryptedWallet } = wallet;
     reply.status(200).send(encryptedWallet);
+  },
+
+  getMnemonicFromToken: () => async (request, reply) => {
+    const { token } = request.params;
+    const mnemonic = await passRecoveryService.getMnemonicFromToken(token);
+    reply.status(200).send(mnemonic);
   },
 
   getMyProjects: () => async (request, reply) => {

@@ -6,20 +6,17 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const createRecovery = passRecoveryModel => async (email, token) => {
-  const recover = await passRecoveryModel.find({ email });
-  if (recover) await passRecoveryModel.destroyOne({ email });
-  return passRecoveryModel.create({ email, token });
+module.exports = {
+  async createRecovery(email, token) {
+    const recover = await this.model.find({ email });
+    if (recover) await this.model.destroyOne({ email });
+    return this.model.create({ email, token });
+  },
+  async findRecoverBytoken(token) {
+    const found = await this.model.findOne({ where: { token } });
+    return found;
+  },
+  async deleteRecoverByToken(token) {
+    await this.model.destroyOne({ where: { token } });
+  }
 };
-
-const findRecoverBytoken = passRecoveryModel => async token =>
-  passRecoveryModel.findOne({ where: { token } });
-
-const deleteRecoverByToken = passRecoveryModel => async token =>
-  passRecoveryModel.destroyOne({ where: { token } });
-
-module.exports = passRecoveryModel => ({
-  createRecovery: createRecovery(passRecoveryModel),
-  findRecoverBytoken: findRecoverBytoken(passRecoveryModel),
-  deleteRecoverByToken: deleteRecoverByToken(passRecoveryModel)
-});

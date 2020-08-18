@@ -82,9 +82,22 @@ const successPasswordUpdated = {
   description: 'Returns a success message if the password was changed'
 };
 
+const successMailSent = {
+  type: 'object',
+  properties: {
+    email: { type: 'string' }
+  },
+  description: 'Returns the email to where the recovery password was sent'
+};
+
 const successWithWalletResponse = {
   type: 'string',
   description: 'Returns the string of the encrypted wallet'
+};
+
+const successWithMnemonicResponse = {
+  type: 'string',
+  description: 'Returns the mnemonic of the wallet'
 };
 
 const projectResponse = {
@@ -246,7 +259,8 @@ const routes = {
             answers: { type: 'string' },
             company: { type: 'string' },
             address: { type: 'string' },
-            encryptedWallet: { type: 'string' }
+            encryptedWallet: { type: 'string' },
+            mnemonic: { type: 'string' }
           },
           required: [
             'firstName',
@@ -258,7 +272,8 @@ const routes = {
             'country',
             'answers',
             'address',
-            'encryptedWallet'
+            'encryptedWallet',
+            'mnemonic'
           ],
           additionalProperties: false,
           description: 'User on-boarding information'
@@ -286,89 +301,18 @@ const routes = {
         summary: 'Start password recovery process',
         body: {
           type: 'object',
-          properties: {
-            email: { type: 'string' }
-          },
+          properties: { email: { type: 'string' } },
           required: ['email'],
           description: 'E-mail account of the user to recover the password'
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              email: { type: 'string' }
-            },
-            description:
-              'Returns the email account of the user if the mail has been sent'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successMailSent),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
     handler: handlers.recoverPassword
-  },
-
-  updatePassword: {
-    method: 'put',
-    path: `${basePath}/password`,
-    options: {
-      schema: {
-        tags: [routeTags.USER.name, routeTags.PUT.name],
-        description:
-          'Modifies the password of an existing user validating the token sent by email',
-        summary: 'Update user password',
-        body: {
-          type: 'object',
-          properties: {
-            token: { type: 'string' },
-            password: { type: 'string' }
-          },
-          required: ['token', 'password'],
-          description: 'New password and validation token'
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'string' }
-            },
-            description: 'Returns a success message if the password was changed'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.updatePassword
   },
 
   changePassword: {
@@ -399,6 +343,35 @@ const routes = {
     handler: handlers.changePassword
   },
 
+  changeRecoverPassword: {
+    method: 'put',
+    path: `${basePath}/me/recover-password`,
+    options: {
+      schema: {
+        tags: [routeTags.USER.name, routeTags.PUT.name],
+        description:
+          'Modifies the password and wallet of an existing user that asked for recovery',
+        summary: 'Update user password and wallet',
+        body: {
+          type: 'object',
+          properties: {
+            token: { type: 'string' },
+            password: { type: 'string' },
+            encryptedWallet: { type: 'string' }
+          },
+          required: ['token', 'password', 'encryptedWallet'],
+          description: 'New password and new encrypted wallet'
+        },
+        response: {
+          ...successResponse(successPasswordUpdated),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.changeRecoverPassword
+  },
+
   getWallet: {
     method: 'get',
     path: `${basePath}/me/wallet`,
@@ -416,6 +389,25 @@ const routes = {
       }
     },
     handler: handlers.getWallet
+  },
+
+  getMnmemonicFromToken: {
+    method: 'GET',
+    path: `${basePath}/mnemonic/:token`,
+    options: {
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description:
+          'Returns the mnemonics existing user when forgotten password',
+        summary: 'Get the mnemonics by user',
+        response: {
+          ...successResponse(successWithMnemonicResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getMnemonicFromToken
   },
 
   getMyProjects: {
