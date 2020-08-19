@@ -449,5 +449,4 @@ describe('Testing userService', () => {
       );
     });
   });
-  test.todo('getUserWallet');
 });
