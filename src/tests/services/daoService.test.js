@@ -119,7 +119,7 @@ describe('Testing daoService', () => {
     },
     findByTxHash: hash => {
       const found = dbVote.find(proposal => proposal.txHash === hash);
-      if (!found) return [];
+      if (!found) return;
       return found;
     },
     findByDaoAndProposalId: (daoId, proposalId) => {
@@ -236,7 +236,7 @@ describe('Testing daoService', () => {
           memberAddress: ALL_ZERO_ADDRESS,
           user: defaultUser
         })
-      ).rejects.toThrow(errors.user.InvalidEmail);
+      ).rejects.toThrow(errors.dao.MemberNotFound(ALL_ZERO_ADDRESS, 0));
     });
     it('should throw an error if the member address is invalid', async () => {
       await expect(
@@ -871,9 +871,15 @@ describe('Testing daoService', () => {
       );
     });
     it('should throw an error if the vote does not exist', async () => {
+      const wrongTxHash = '0x55555555555';
       await expect(
-        mockedDaoService.updateVoteByTxHash('0x0', txProposalStatus.CONFIRMED)
-      ).rejects.toThrow(errors.common.CantFindModelWithTxHash('vote', '0x0'));
+        mockedDaoService.updateVoteByTxHash(
+          wrongTxHash,
+          txProposalStatus.CONFIRMED
+        )
+      ).rejects.toThrow(
+        errors.common.CantFindModelWithTxHash('vote', '0x55555555555')
+      );
     });
     it('should throw an error if the status is not valid', async () => {
       await expect(
