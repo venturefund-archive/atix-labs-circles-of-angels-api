@@ -5,7 +5,6 @@ const { injectMocks } = require('../../rest/util/injection');
 const {
   userRoles,
   proposalTypeEnum,
-  voteEnum,
   daoMemberRoleEnum,
   daoMemberRoleNames,
   txProposalStatus
@@ -237,7 +236,7 @@ describe('Testing daoService', () => {
           memberAddress: ALL_ZERO_ADDRESS,
           user: defaultUser
         })
-      ).rejects.toThrow(errors.dao.MemberNotFound(ALL_ZERO_ADDRESS, 0));
+      ).rejects.toThrow(errors.user.InvalidEmail);
     });
     it('should throw an error if the member address is invalid', async () => {
       await expect(

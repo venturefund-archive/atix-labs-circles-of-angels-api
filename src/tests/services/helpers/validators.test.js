@@ -396,6 +396,4 @@ describe('Testing project status validators', () => {
       );
     });
   });
-
-  test.todo('Test rest of status transitions when coded');
 });

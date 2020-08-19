@@ -616,10 +616,6 @@ describe('Testing milestoneService', () => {
     });
   });
 
-  test.todo(
-    'Method processMilestones needs a big refactor to be able to test it easily'
-  );
-
   describe('Testing isMilestoneEmpty', () => {
     beforeAll(() => restoreMilestoneService());
     it(

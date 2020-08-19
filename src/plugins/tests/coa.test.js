@@ -341,6 +341,4 @@ describe('COA plugin tests', () => {
       });
     });
   });
-
-  test.todo('Write missing tests');
 });

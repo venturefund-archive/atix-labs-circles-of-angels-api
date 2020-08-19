@@ -40,7 +40,7 @@ module.exports = {
         '[PassRecovery Service]:: Can not create recovery with email',
         email
       );
-      throw new COAError(errors.user.InvalidRecovery());
+      throw new COAError(errors.user.InvalidRecovery);
     }
 
     const info = await this.mailService.sendMail({
