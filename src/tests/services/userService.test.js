@@ -224,7 +224,8 @@ describe('Testing userService', () => {
       }),
       company: 'AtixLabs',
       address: 'address',
-      encryptedWallet: '{ "address": 65dqw6sa9787a }'
+      encryptedWallet: '{ "address": 65dqw6sa9787a }',
+      mnemonic: 'fast envelope asd asd asd asd asd'
     };
     beforeAll(() => {
       bcrypt.hash = jest.fn();
@@ -448,5 +449,4 @@ describe('Testing userService', () => {
       );
     });
   });
-  test.todo('getUserWallet');
 });
