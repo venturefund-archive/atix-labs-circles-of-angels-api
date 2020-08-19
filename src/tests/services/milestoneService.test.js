@@ -1117,28 +1117,28 @@ describe('Testing milestoneService', () => {
       dbTask.push(taskWithOracle);
       await deployContracts();
     });
-    it.skip('should return true if all tasks are approved', async () => {
-      const signerAddress = await run('get-signer-zero');
-      const projectAddress = await run('create-project');
-      dbUser = [{ ...userSupporter, address: signerAddress }];
-      dbProject = [{ ...executingProject, address: projectAddress }];
-      const claimHash = sha3(
-        executingProject.id,
-        taskWithOracle.oracle,
-        taskWithOracle.id
-      );
-      await run('add-claim', {
-        project: projectAddress,
-        claim: claimHash,
-        valid: true,
-        milestone: claimedMilestone.id
-      });
-      await expect(
-        milestoneService.isMilestoneCompleted(claimedMilestone.id)
-      ).resolves.toBe(true);
-    });
+    // it('should return true if all tasks are approved', async () => {
+    //   const signerAddress = await run('get-signer-zero');
+    //   const projectAddress = await run('create-project');
+    //   dbUser = [{ ...userSupporter, address: signerAddress }];
+    //   dbProject = [{ ...executingProject, address: projectAddress }];
+    //   const claimHash = sha3(
+    //     executingProject.id,
+    //     taskWithOracle.oracle,
+    //     taskWithOracle.id
+    //   );
+    //   await run('add-claim', {
+    //     project: projectAddress,
+    //     claim: claimHash,
+    //     valid: true,
+    //     milestone: claimedMilestone.id
+    //   });
+    //   await expect(
+    //     milestoneService.isMilestoneCompleted(claimedMilestone.id)
+    //   ).resolves.toBe(true);
+    // });
 
-    // it.skip('should return false if any task is not approved', async () => {
+    // it('should return false if any task is not approved', async () => {
     //   const signerAddress = await run('get-signer-zero');
     //   const projectAddress = await run('create-project');
     //   dbUser = [{ ...userSupporter, address: signerAddress }];
@@ -1277,7 +1277,7 @@ describe('Testing milestoneService', () => {
       }
     );
 
-    // it.skip(
+    // it(
     //   'should return undefined and not call setClaimable ' +
     //     'if the current milestone is the last one',
     //   async () => {
