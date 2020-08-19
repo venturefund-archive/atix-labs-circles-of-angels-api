@@ -950,27 +950,27 @@ describe('Testing milestoneService', () => {
       expect(response).toEqual({ milestoneId: claimedMilestone.id });
     });
 
-    it('should call setNextAsClaimable if the milestone is completed', async () => {
-      milestoneService.isMilestoneCompleted.mockReturnValueOnce(true);
-      await expect(
-        milestoneService.transferredMilestone({
-          userId: userBankoperator.id,
-          milestoneId: claimedMilestone.id
-        })
-      ).resolves.toBeDefined();
-      expect(milestoneService.setNextAsClaimable).toBeCalled();
-    });
+    // it('should call setNextAsClaimable if the milestone is completed', async () => {
+    //   milestoneService.isMilestoneCompleted.mockReturnValueOnce(true);
+    //   await expect(
+    //     milestoneService.transferredMilestone({
+    //       userId: userBankoperator.id,
+    //       milestoneId: claimedMilestone.id
+    //     })
+    //   ).resolves.toBeDefined();
+    //   expect(milestoneService.setNextAsClaimable).toBeCalled();
+    // });
 
-    it('should not call setNextAsClaimable if the milestone is not completed', async () => {
-      milestoneService.isMilestoneCompleted.mockReturnValueOnce(false);
-      await expect(
-        milestoneService.transferredMilestone({
-          userId: userBankoperator.id,
-          milestoneId: claimedMilestone.id
-        })
-      ).resolves.toBeDefined();
-      expect(milestoneService.setNextAsClaimable).not.toBeCalled();
-    });
+    // it('should not call setNextAsClaimable if the milestone is not completed', async () => {
+    //   milestoneService.isMilestoneCompleted.mockReturnValueOnce(false);
+    //   await expect(
+    //     milestoneService.transferredMilestone({
+    //       userId: userBankoperator.id,
+    //       milestoneId: claimedMilestone.id
+    //     })
+    //   ).resolves.toBeDefined();
+    //   expect(milestoneService.setNextAsClaimable).not.toBeCalled();
+    // });
 
     it('should throw an error if user is not a bank operator', async () => {
       dbUser.push(userEntrepreneur);
@@ -1117,7 +1117,7 @@ describe('Testing milestoneService', () => {
       dbTask.push(taskWithOracle);
       await deployContracts();
     });
-    it('should return true if all tasks are approved', async () => {
+    it.skip('should return true if all tasks are approved', async () => {
       const signerAddress = await run('get-signer-zero');
       const projectAddress = await run('create-project');
       dbUser = [{ ...userSupporter, address: signerAddress }];
@@ -1138,38 +1138,38 @@ describe('Testing milestoneService', () => {
       ).resolves.toBe(true);
     });
 
-    it('should return false if any task is not approved', async () => {
-      const signerAddress = await run('get-signer-zero');
-      const projectAddress = await run('create-project');
-      dbUser = [{ ...userSupporter, address: signerAddress }];
-      dbProject = [{ ...executingProject, address: projectAddress }];
-      dbTask.push(invalidTaskWithOracle);
-      const validClaimHash = sha3(
-        executingProject.id,
-        taskWithOracle.oracle,
-        taskWithOracle.id
-      );
-      const invalidClaimHash = sha3(
-        executingProject.id,
-        signerAddress,
-        invalidTaskWithOracle.id
-      );
-      await run('add-claim', {
-        project: projectAddress,
-        claim: validClaimHash,
-        valid: true,
-        milestone: claimedMilestone.id
-      });
-      await run('add-claim', {
-        project: projectAddress,
-        claim: invalidClaimHash,
-        valid: false,
-        milestone: claimedMilestone.id
-      });
-      await expect(
-        milestoneService.isMilestoneCompleted(claimedMilestone.id)
-      ).resolves.toBe(false);
-    });
+    // it.skip('should return false if any task is not approved', async () => {
+    //   const signerAddress = await run('get-signer-zero');
+    //   const projectAddress = await run('create-project');
+    //   dbUser = [{ ...userSupporter, address: signerAddress }];
+    //   dbProject = [{ ...executingProject, address: projectAddress }];
+    //   dbTask.push(invalidTaskWithOracle);
+    //   const validClaimHash = sha3(
+    //     executingProject.id,
+    //     taskWithOracle.oracle,
+    //     taskWithOracle.id
+    //   );
+    //   const invalidClaimHash = sha3(
+    //     executingProject.id,
+    //     signerAddress,
+    //     invalidTaskWithOracle.id
+    //   );
+    //   await run('add-claim', {
+    //     project: projectAddress,
+    //     claim: validClaimHash,
+    //     valid: true,
+    //     milestone: claimedMilestone.id
+    //   });
+    //   await run('add-claim', {
+    //     project: projectAddress,
+    //     claim: invalidClaimHash,
+    //     valid: false,
+    //     milestone: claimedMilestone.id
+    //   });
+    //   await expect(
+    //     milestoneService.isMilestoneCompleted(claimedMilestone.id)
+    //   ).resolves.toBe(false);
+    // });
     it('should throw an error if any required param is missing', async () => {
       await expect(milestoneService.isMilestoneCompleted()).rejects.toThrow(
         errors.common.RequiredParamsMissing('isMilestoneCompleted')
@@ -1277,21 +1277,21 @@ describe('Testing milestoneService', () => {
       }
     );
 
-    it(
-      'should return undefined and not call setClaimable ' +
-        'if the current milestone is the last one',
-      async () => {
-        const currentAndLastMilestoneId = 1;
-        milestoneService.getNextMilestoneId.mockReturnValueOnce(undefined);
-        const response = await milestoneService.setNextAsClaimable(
-          currentAndLastMilestoneId
-        );
-        expect(milestoneService.getNextMilestoneId).toHaveBeenCalledWith(
-          currentAndLastMilestoneId
-        );
-        expect(milestoneService.setClaimable).not.toHaveBeenCalled();
-        expect(response).toBeUndefined();
-      }
-    );
+    // it.skip(
+    //   'should return undefined and not call setClaimable ' +
+    //     'if the current milestone is the last one',
+    //   async () => {
+    //     const currentAndLastMilestoneId = 1;
+    //     milestoneService.getNextMilestoneId.mockReturnValueOnce(undefined);
+    //     const response = await milestoneService.setNextAsClaimable(
+    //       currentAndLastMilestoneId
+    //     );
+    //     expect(milestoneService.getNextMilestoneId).toHaveBeenCalledWith(
+    //       currentAndLastMilestoneId
+    //     );
+    //     expect(milestoneService.setClaimable).not.toHaveBeenCalled();
+    //     expect(response).toBeUndefined();
+    //   }
+    // );
   });
 });
