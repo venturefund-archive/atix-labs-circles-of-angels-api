@@ -338,24 +338,24 @@ describe('Testing daoService', () => {
       });
       expect(response).toHaveLength(2);
     });
-    it('should have 1 proposal length when adding a proposal to a DAO', async () => {
-      // Its the only DAO for the user, thats why is unique
-      const uniqueDaoIndex = 0;
-      const firstMemberAddress = await run('create-member');
-      const secondMemberAddress = await run('create-member');
-      const daoAddress = await run('create-dao', {
-        account: firstMemberAddress
-      });
-      await run('propose-member-to-dao', {
-        daoaddress: daoAddress,
-        applicant: secondMemberAddress
-      });
-      const user = { ...defaultUser, wallet: { address: firstMemberAddress } };
-      const response = await mockedDaoService.getDaos({ user });
-      const proposalAmounts = Number(response[uniqueDaoIndex].proposalsAmount);
-      expect(response).toHaveLength(1);
-      expect(proposalAmounts).toEqual(1);
-    });
+    // it('should have 1 proposal length when adding a proposal to a DAO', async () => {
+    //   // Its the only DAO for the user, thats why is unique
+    //   const uniqueDaoIndex = 0;
+    //   const firstMemberAddress = await run('create-member');
+    //   const secondMemberAddress = await run('create-member');
+    //   const daoAddress = await run('create-dao', {
+    //     account: firstMemberAddress
+    //   });
+    //   await run('propose-member-to-dao', {
+    //     daoaddress: daoAddress,
+    //     applicant: secondMemberAddress
+    //   });
+    //   const user = { ...defaultUser, wallet: { address: firstMemberAddress } };
+    //   const response = await mockedDaoService.getDaos({ user });
+    //   const proposalAmounts = Number(response[uniqueDaoIndex].proposalsAmount);
+    //   expect(response).toHaveLength(1);
+    //   expect(proposalAmounts).toEqual(1);
+    // });
     it('should have an empty list of DAOs if the userdoesnt belong to anyone', async () => {
       const firstMemberAddress = await run('create-member');
       const response = await mockedDaoService.getDaos({
