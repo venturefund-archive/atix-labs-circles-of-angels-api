@@ -338,7 +338,7 @@ describe('Testing daoService', () => {
       });
       expect(response).toHaveLength(2);
     });
-    it.skip('should have 1 proposal length when adding a proposal to a DAO', async () => {
+    it('should have 1 proposal length when adding a proposal to a DAO', async () => {
       // Its the only DAO for the user, thats why is unique
       const uniqueDaoIndex = 0;
       const firstMemberAddress = await run('create-member');
