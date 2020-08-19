@@ -2,8 +2,6 @@ const { run, coa, ethereum } = require('@nomiclabs/buidler');
 const { Wallet } = require('ethers');
 const { sha3 } = require('../../rest/util/hash');
 
-const TEST_TIMEOUT_MS = 10000;
-
 const deployContracts = async () => {
   await run('deploy', { reset: true });
   return ethereum.send('evm_snapshot', []);
@@ -29,8 +27,8 @@ describe('COA plugin tests', () => {
   let evmSnapshot;
   beforeAll(async () => {
     evmSnapshot = await deployContracts();
-  }, TEST_TIMEOUT_MS);
-  beforeEach(() => revertSnapshot(evmSnapshot), TEST_TIMEOUT_MS);
+  });
+  beforeEach(() => revertSnapshot(evmSnapshot));
 
   describe('Testing getUnsignedTransaction method', () => {
     it(
@@ -255,7 +253,7 @@ describe('COA plugin tests', () => {
   describe('Testing getOpenProposalsFromDao method', () => {
     beforeAll(async () => {
       evmSnapshot = await deployContracts();
-    }, TEST_TIMEOUT_MS);
+    });
 
     const superDaoId = 0;
     const userAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';

@@ -28,7 +28,6 @@ const restoreMilestoneService = () => {
   milestoneService = Object.assign({}, originalMilestoneService);
 };
 
-const TEST_TIMEOUT_MS = 10000;
 const deployContracts = async () => {
   await run('deploy', { reset: true });
   const coaContract = await coa.getCOA();
@@ -1121,7 +1120,7 @@ describe('Testing milestoneService', () => {
       dbProject.push(executingProject, newProject);
       dbTask.push(taskWithOracle);
       await deployContracts();
-    }, TEST_TIMEOUT_MS);
+    });
     it('should return true if all tasks are approved', async () => {
       const signerAddress = await run('get-signer-zero');
       const projectAddress = await run('create-project');

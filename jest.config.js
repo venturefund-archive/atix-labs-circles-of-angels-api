@@ -13,5 +13,6 @@ module.exports = {
     '<rootDir>/rest/services/cronjob/',
     '<rootDir>/rest/services/helper.js', // not being used anymore
     '<rootDir>/rest/services/helpers/buidlerTasks.js'
-  ]
+  ],
+  testTimeout: 30000
 };
