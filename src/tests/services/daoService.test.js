@@ -878,7 +878,7 @@ describe('Testing daoService', () => {
           txProposalStatus.CONFIRMED
         )
       ).rejects.toThrow(
-        errors.common.CantFindModelWithTxHash('vote', '0x55555555555')
+        errors.common.CantFindModelWithTxHash('vote', wrongTxHash)
       );
     });
     it('should throw an error if the status is not valid', async () => {
