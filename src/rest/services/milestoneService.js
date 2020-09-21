@@ -25,6 +25,12 @@ const files = require('../util/files');
 
 const logger = require('../logger');
 
+const allowEditStatuses = [
+  projectStatuses.NEW,
+  projectStatuses.REJECTED,
+  projectStatuses.CONSENSUS
+];
+
 module.exports = {
   async getMilestoneById(id) {
     logger.info('[MilestoneService] :: Entering getMilestoneById method');
@@ -52,6 +58,13 @@ module.exports = {
       }`
     );
     const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
+    // if the milestone exists this shouldn't happen
+    if (!project) {
+      logger.info(
+        `[MilestoneService] :: No project found for milestone ${milestoneId}`
+      );
+      throw new COAError(errors.milestone.ProjectNotFound(milestoneId));
+    }
     return project;
   },
 
@@ -66,19 +79,19 @@ module.exports = {
    */
   async createMilestone(projectId, { userId, milestoneParams }) {
     logger.info('[MilestoneService] :: Entering createMilestone method');
-    validateRequiredParams({
-      method: 'createMilestone',
-      params: { projectId, userId, milestoneParams }
-    });
-
     const { description, category } = milestoneParams;
+
     validateRequiredParams({
       method: 'createMilestone',
       params: {
+        projectId,
+        userId,
+        milestoneParams,
         description,
         category
       }
     });
+
     logger.info(`[MilestoneService] :: Getting project ${projectId}`);
     const project = await this.projectService.getProject(projectId);
     if (!project) {
@@ -89,12 +102,6 @@ module.exports = {
     }
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to create a milestone
-    const allowedProjectStatus = [
-      projectStatuses.NEW,
-      projectStatuses.REJECTED,
-      projectStatuses.CONSENSUS
-    ];
     if (!allowedProjectStatus.includes(project.status)) {
       logger.error(
         `[MilestoneService] :: Can't create milestones in project ${projectId} with status ${
@@ -106,7 +113,6 @@ module.exports = {
       );
     }
 
-    // TODO: any other restriction for creating?
     logger.info(
       `[MilestoneService] :: Creating new milestone in project ${projectId}`
     );
@@ -135,7 +141,6 @@ module.exports = {
    * @returns { {milestoneId: number} } id of updated milestone
    */
   async updateMilestone(milestoneId, { userId, milestoneParams }) {
-    // TODO: should replace updateMilestone
     logger.info('[MilestoneService] :: Entering updateMilestone method');
     validateRequiredParams({
       method: 'updateMilestone',
@@ -144,21 +149,7 @@ module.exports = {
 
     const project = await this.getProjectFromMilestone(milestoneId);
 
-    // if the milestone exists this shouldn't happen
-    if (!project) {
-      logger.info(
-        `[MilestoneService] :: No project found for milestone ${milestoneId}`
-      );
-      throw new COAError(errors.milestone.ProjectNotFound(milestoneId));
-    }
-
     validateOwnership(project.owner, userId);
-
-    const allowEditStatuses = [
-      projectStatuses.NEW,
-      projectStatuses.REJECTED,
-      projectStatuses.CONSENSUS
-    ];
 
     if (!allowEditStatuses.includes(project.status)) {
       logger.error(
@@ -170,8 +161,6 @@ module.exports = {
         errors.milestone.UpdateWithInvalidProjectStatus(project.status)
       );
     }
-
-    // TODO: any other restriction for editing?
 
     logger.info(
       `[MilestoneService] :: Updating milestone of id ${milestoneId}`
@@ -201,23 +190,8 @@ module.exports = {
       params: { milestoneId, userId }
     });
 
-    await checkExistence(this.milestoneDao, milestoneId, 'milestone');
-
     const project = await this.getProjectFromMilestone(milestoneId);
-    // if the milestone exists this shouldn't happen
-    if (!project) {
-      logger.info(
-        `[MilestoneService] :: No project found for milestone ${milestoneId}`
-      );
-      throw new COAError(errors.milestone.ProjectNotFound(milestoneId));
-    }
     validateOwnership(project.owner, userId);
-
-    const allowEditStatuses = [
-      projectStatuses.NEW,
-      projectStatuses.REJECTED,
-      projectStatuses.CONSENSUS
-    ];
 
     if (!allowEditStatuses.includes(project.status)) {
       logger.error(
@@ -229,8 +203,6 @@ module.exports = {
         errors.milestone.DeleteWithInvalidProjectStatus(project.status)
       );
     }
-
-    // TODO: any other restriction for deleting?
 
     const milestoneTasks = await this.milestoneDao.getMilestoneTasks(
       milestoneId
@@ -284,15 +256,11 @@ module.exports = {
   },
 
   deleteFieldsFromActivities(activities) {
-    // TODO: check this
     return activities.map(activity => {
       // eslint-disable-next-line no-param-reassign
       activity.reviewCriteria = activity.impactCriterion;
       // eslint-disable-next-line no-param-reassign
       activity.description = activity.tasks;
-      // delete activity.tasks;
-      // delete activity.signsOfSuccess;
-      // delete activity.impactCriterion;
       return activity;
     });
   },
@@ -329,9 +297,6 @@ module.exports = {
       const savedMilestones = await Promise.all(
         milestones.map(async milestone => {
           if (!this.isMilestoneEmpty(milestone)) {
-            // const isFirstMilestone = isEmpty(
-            //   await this.milestoneDao.getMilestonesByProject(projectId)
-            // );
             const activityList = milestone.activityList.slice(0);
             const milestoneWithoutFields = this.deleteFieldsFromMilestone(
               milestone
@@ -373,12 +338,7 @@ module.exports = {
       milestones: [],
       errors: []
     };
-
-    const { worksheet, cellKeys, nameMap } = readExcelData(data);
-
-    // TODO: everything below this is a mess.
-    //       We will need to refactor it eventually
-    let milestone;
+    let milestone = { activityList: [] };
     let actualQuarter;
     const COLUMN_KEY = 0;
 
@@ -386,9 +346,7 @@ module.exports = {
       const entry = {};
       while (!isEmpty(row)) {
         const cell = row.shift();
-        const value = worksheet[cell].v;
-        const AtributeKey = xlsxConfigs.keysMap[cell[COLUMN_KEY]];
-        entry[AtributeKey] = value;
+        entry[xlsxConfigs.keysMap[cell[COLUMN_KEY]]] = worksheet[cell].v;
       }
       return entry;
     };
@@ -397,6 +355,8 @@ module.exports = {
       response.errors.push({ rowNumber, msg });
     };
 
+    const { worksheet, cellKeys, nameMap } = readExcelData(data);
+    // for each row
     while (!isEmpty(cellKeys)) {
       let rowNum = cellKeys[0].slice(1);
       const row = remove(cellKeys, k => k.slice(1) === rowNum);
@@ -404,23 +364,13 @@ module.exports = {
 
       const pushError = pushErrorBuilder(rowNum);
 
-      const quarter = worksheet[`${nameMap.quarter}${rowNum}`]
+      actualQuarter = worksheet[`${nameMap.quarter}${rowNum}`]
         ? worksheet[`${nameMap.quarter}${rowNum}`].v
-        : false;
+        : actualQuarter;
 
-      if (quarter) {
-        actualQuarter = quarter;
-      }
-      if (!milestone) {
-        milestone = {};
-        milestone.activityList = [];
-      }
-
-      const type = worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`]
-        ? worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`].v
-        : false;
-      if (type) {
-        //  if is a milestone/activity row
+      //  if is not a milestone/activity row then continue
+      if (worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`]) {
+        const type = worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`].v;
         remove(
           row,
           col =>
@@ -439,17 +389,15 @@ module.exports = {
             }
           }
 
-          milestone = {};
-          milestone.activityList = [];
-
+          milestone = { activityList: [] };
           Object.assign(milestone, getStandardAttributes(row));
           milestone.quarter = actualQuarter;
           this.verifyMilestone(milestone, pushError);
           response.milestones.push(milestone);
-        } else if (type.includes('Activity')) {
+          // Activity
+        } else {
           const activity = {};
           Object.assign(activity, getStandardAttributes(row));
-
           if (
             !this.isMilestoneValid(milestone) ||
             this.isMilestoneEmpty(milestone)
@@ -458,7 +406,6 @@ module.exports = {
               'Found an activity without an specified milestone or inside an invalid milestone'
             );
           }
-
           this.verifyActivity(activity, pushError);
           milestone.activityList.push(activity);
         }
@@ -819,8 +766,6 @@ module.exports = {
         if (!oracle || !oracle.address)
           throw new COAError(errors.task.OracleAddressNotFound(task.id));
 
-        // TODO: check what should we hash
-        // TODO: how to properly hash this
         const claimHash = sha3(projectId, oracle.id, task.id);
         return [oracle.address, claimHash];
       })
@@ -886,14 +831,6 @@ module.exports = {
         `[MilestoneService] :: Milestone ${currentMilestoneId} is the last milestone of the project`
       );
       const project = await this.getProjectFromMilestone(currentMilestoneId);
-      if (!project) {
-        logger.info(
-          `[MilestoneService] :: No project found for milestone ${currentMilestoneId}`
-        );
-        throw new COAError(
-          errors.milestone.ProjectNotFound(currentMilestoneId)
-        );
-      }
       await this.projectService.updateProjectStatus(
         project.owner,
         project.id,
