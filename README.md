@@ -25,6 +25,8 @@ Execute this script by running `psql -d postgres -a -f schema.sql` to create the
 
 Clone the repository by running `git@gitlab.com:atixlabs-oss/circles-of-angels-api.git` and create a new branch from the latest development branch
 
+**Remember not to commit nor push the .env file**
+
 ## Development
 
 - ### Setup environment
