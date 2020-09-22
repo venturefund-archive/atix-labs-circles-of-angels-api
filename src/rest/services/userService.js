@@ -112,20 +112,23 @@ module.exports = {
    * @param {object} questionnaire on boarding Q&A
    * @returns new user | error
    */
-  async createUser({
-    firstName,
-    lastName,
-    email,
-    password,
-    role,
-    phoneNumber,
-    country,
-    company,
-    answers,
-    address,
-    encryptedWallet,
-    mnemonic
-  }) {
+  async createUser(
+    {
+      firstName,
+      lastName,
+      email,
+      password,
+      role,
+      phoneNumber,
+      country,
+      company,
+      answers,
+      address,
+      encryptedWallet,
+      mnemonic
+    },
+    adminRole
+  ) {
     logger.info(`[User Routes] :: Creating new user with email ${email}`);
     validateRequiredParams({
       method: 'createUser',
@@ -143,6 +146,13 @@ module.exports = {
         mnemonic
       }
     });
+    // if user role is admin then not allow to regiter
+    if (role === userRoles.COA_ADMIN && !adminRole) {
+      logger.error(
+        '[User Service] :: It is not allowed to create users with admin role.'
+      );
+      throw new COAError(errors.user.NotAllowSignUpAdminUser);
+    }
 
     const existingUser = await this.userDao.getUserByEmail(email);
 
