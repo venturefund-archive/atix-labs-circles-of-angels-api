@@ -15,8 +15,8 @@ require('dotenv').config();
 
 module.exports = {
   server: {
-    host: 'localhost',
-    port: 3001,
+    host: process.env.SERVER_HOST,
+    port: process.env.SERVER_PORT,
     headers: {
       'Access-Control-Allow-Credentials': true,
       'Access-Control-Allow-Headers': [
@@ -26,35 +26,35 @@ module.exports = {
     isHttps: false,
     domain: 'localhost'
   },
-  frontendUrl: 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL,
   email: {
-    host: 'smtp.example.com',
-    port: 587,
-    user: 'username',
-    pass: 'password',
-    apiKey: undefined, // sendgrid apikey, when undefined uses smtp
-    from: 'from@example.com',
-    disabled: false
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+    apiKey: process.env.EMAIL_API_KEY, // sendgrid apikey, when undefined uses smtp
+    from: process.env.EMAIL_FROM,
+    disabled: process.env.EMAIL_DISABLED || false
   },
 
   support: {
-    recoveryTime: 1 // in hours
+    recoveryTime: process.env.SUPPORT_RECOVERY_TIME // in hours
   },
 
   jwt: {
-    secret: 'atix2018',
-    expirationTime: 3 // in months
+    secret: process.env.JWT_SECRET,
+    expirationTime: process.env.JWT_EXPIRATION_TIME // in months
   },
 
   database: {
     adapter: require('sails-postgresql'),
     adapterType: 'postgresql',
     database: {
-      name: 'coadb',
-      user: 'atixlabs',
-      password: 'atix2018',
-      host: 'localhost',
-      port: '5432'
+      name: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT
     },
     decoratorName: 'models',
     modelPath: require('path').join(__dirname, '../db/models'),
@@ -66,8 +66,8 @@ module.exports = {
   },
 
   fileServer: {
-    filePath: '/home/atixlabs/files/server/files',
-    maxFileSize: 5000000
+    filePath: process.env.FILE_SERVER_PATH,
+    maxFileSize: process.env.FILE_SERVER_MAX_FILE_SIZE
   },
 
   swagger: {
