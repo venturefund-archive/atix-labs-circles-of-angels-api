@@ -146,7 +146,6 @@ module.exports = {
         mnemonic
       }
     });
-    // if user role is admin then not allow to regiter
     if (role === userRoles.COA_ADMIN && !adminRole) {
       logger.error(
         '[User Service] :: It is not allowed to create users with admin role.'
