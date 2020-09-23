@@ -25,7 +25,7 @@ const files = require('../util/files');
 
 const logger = require('../logger');
 
-const allowEditStatuses = [
+const allowCreateEditStatuses = [
   projectStatuses.NEW,
   projectStatuses.REJECTED,
   projectStatuses.CONSENSUS
@@ -51,14 +51,7 @@ module.exports = {
     logger.info(
       '[MilestoneService] :: Entering getProjectFromMilestone method'
     );
-    const milestone = await checkExistence(this.milestoneDao, id, 'milestone');
-    logger.info(
-      `[MilestoneService] :: Found milestone ${milestone.id} of project ${
-        milestone.project
-      }`
-    );
     const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
-    // if the milestone exists this shouldn't happen
     if (!project) {
       logger.info(
         `[MilestoneService] :: No project found for milestone ${milestoneId}`
@@ -102,7 +95,7 @@ module.exports = {
     }
     validateOwnership(project.owner, userId);
 
-    if (!allowedProjectStatus.includes(project.status)) {
+    if (!allowCreateEditStatuses.includes(project.status)) {
       logger.error(
         `[MilestoneService] :: Can't create milestones in project ${projectId} with status ${
           project.status
@@ -151,7 +144,7 @@ module.exports = {
 
     validateOwnership(project.owner, userId);
 
-    if (!allowEditStatuses.includes(project.status)) {
+    if (!allowCreateEditStatuses.includes(project.status)) {
       logger.error(
         `[MilestoneService] :: It can't update a milestone when the project is in ${
           project.status
@@ -193,7 +186,7 @@ module.exports = {
     const project = await this.getProjectFromMilestone(milestoneId);
     validateOwnership(project.owner, userId);
 
-    if (!allowEditStatuses.includes(project.status)) {
+    if (!allowCreateEditStatuses.includes(project.status)) {
       logger.error(
         `[MilestoneService] :: It can't delete a milestone when the project is in ${
           project.status
@@ -364,9 +357,9 @@ module.exports = {
 
       const pushError = pushErrorBuilder(rowNum);
 
-      actualQuarter = worksheet[`${nameMap.quarter}${rowNum}`]
-        ? worksheet[`${nameMap.quarter}${rowNum}`].v
-        : actualQuarter;
+      if (worksheet[`${nameMap.quarter}${rowNum}`]) {
+        actualQuarter = worksheet[`${nameMap.quarter}${rowNum}`].v;
+      }
 
       //  if is not a milestone/activity row then continue
       if (worksheet[`${xlsxConfigs.typeColumnKey}${rowNum}`]) {
