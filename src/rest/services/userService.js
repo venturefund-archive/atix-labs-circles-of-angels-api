@@ -154,6 +154,7 @@ module.exports = {
     }
     await this.countryService.getCountryById(country);
 
+    this.validatePassword(password);
     // TODO: check phoneNumber format
 
     const hashedPwd = await bcrypt.hash(password, 10);
@@ -282,6 +283,34 @@ module.exports = {
       funding: user.funding,
       monitoring: user.monitoring
     };
+  },
+
+  validatePassword(password) {
+    if (!RegExp('^(?=.{8,})').test(password)) {
+      logger.error(
+        `[User Service] :: Password ${password} must have at least 8 characters`
+      );
+      throw new COAError(errors.user.minimunCharacterPassword);
+    }
+    if (!RegExp('^(?=.*[a-z])').test(password)) {
+      logger.error(
+        `[User Service] :: Password ${password} must have at least 1 lowercase character`
+      );
+      throw new COAError(errors.user.lowerCaseCharacterPassword);
+    }
+    if (!RegExp('^(?=.*[A-Z])').test(password)) {
+      logger.error(
+        `[User Service] :: Password ${password} must have at least 1 uppercase character`
+      );
+      throw new COAError(errors.user.upperCaseCharacterPassword);
+    }
+
+    if (!RegExp('^(?=.*[0-9])').test(password)) {
+      logger.error(
+        `[User Service] :: Password ${password} must have at least 1 numeric character`
+      );
+      throw new COAError(errors.user.numericCharacterPassword);
+    }
   },
 
   async validUser(user, roleId) {
