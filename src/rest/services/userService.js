@@ -298,7 +298,7 @@ module.exports = {
     return { address, encryptedWallet };
   },
 
-  async updatePassword(id, password, encryptedWallet) {
+  async updatePassword(id, currentPassword, newPassword, encryptedWallet) {
     logger.info('[UserService] :: Entering updatePassword method');
     let user = await this.userDao.getUserById(id);
     if (!user) {
@@ -309,7 +309,15 @@ module.exports = {
       throw new COAError(errors.user.UserNotFound);
     }
 
-    const hashedPwd = await bcrypt.hash(password, 10);
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      logger.error(
+        '[User Service] :: Update password failed. Current password is incorrect'
+      );
+      throw new COAError(errors.user.InvalidPassword);
+    }
+
+    const hashedPwd = await bcrypt.hash(newPassword, 10);
     user = {
       password: hashedPwd,
       encryptedWallet,

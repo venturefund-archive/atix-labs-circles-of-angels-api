@@ -64,8 +64,14 @@ module.exports = {
 
   changePassword: () => async (request, reply) => {
     const { id } = request.user;
-    const { password, encryptedWallet } = request.body || {};
-    await userService.updatePassword(id, password, encryptedWallet);
+    const { currentPassword, newPassword, encryptedWallet } =
+      request.body || {};
+    await userService.updatePassword(
+      id,
+      currentPassword,
+      newPassword,
+      encryptedWallet
+    );
     reply.status(200).send({ success: 'Password updated successfully' });
   },
 
