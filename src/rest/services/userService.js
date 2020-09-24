@@ -301,12 +301,13 @@ module.exports = {
   async updatePassword(id, password, encryptedWallet) {
     logger.info('[UserService] :: Entering updatePassword method');
     let user = await this.userDao.getUserById(id);
+
     if (!user) {
       logger.info(
         '[UserService] :: There is no user associated with that email',
         id
       );
-      throw new COAError(errors.user.UserNotFound);
+      return false;
     }
 
     const hashedPwd = await bcrypt.hash(password, 10);
