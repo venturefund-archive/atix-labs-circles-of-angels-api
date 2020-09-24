@@ -166,7 +166,7 @@ const initJWT = fastify => {
     fastify.decorate('generalAuth', async (request, reply) => {
       try {
         const token = getToken(request, reply);
-        fastify.log.info('[Server] :: General JWT Authentication', token);
+        fastify.log.info('[Server] :: General JWT Authentication');
         if (token) await validateUser(token, reply);
       } catch (err) {
         fastify.log.error('[Server] :: There was an error authenticating', err);
@@ -176,7 +176,7 @@ const initJWT = fastify => {
     fastify.decorate('adminAuth', async (request, reply) => {
       try {
         const token = getToken(request, reply);
-        fastify.log.info('[Server] :: Admin JWT Authentication', token);
+        fastify.log.info('[Server] :: Admin JWT Authentication');
         if (token) await validateUser(token, reply, userRoles.COA_ADMIN);
       } catch (error) {
         fastify.log.error(
