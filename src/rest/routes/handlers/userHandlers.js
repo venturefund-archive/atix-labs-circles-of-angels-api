@@ -52,7 +52,7 @@ module.exports = {
   },
 
   signupUser: () => async (request, reply) => {
-    const user = await userService.createUser(request.body);
+    const user = await userService.createUser(request.body, request.user);
     reply.status(200).send({ userId: user.id });
   },
 

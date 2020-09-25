@@ -49,5 +49,9 @@ module.exports = {
   IsNotSupporter: {
     message: 'The user is not a Supporter',
     statusCode: 403
+  },
+  NotAllowSignUpAdminUser: {
+    message: 'It is not allowed to create users with admin role',
+    statusCode: 403
   }
 };
