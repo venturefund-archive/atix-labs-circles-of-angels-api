@@ -53,5 +53,9 @@ module.exports = {
   NotAllowSignUpAdminUser: {
     message: 'It is not allowed to create users with admin role',
     statusCode: 403
+  },
+  NotConfirmEmail: {
+    message: 'User needs confirm email address',
+    statusCode: 403
   }
 };

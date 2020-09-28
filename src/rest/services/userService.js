@@ -98,6 +98,13 @@ module.exports = {
       throw new COAError(errors.user.UserRejected);
     }
 
+    if (!user.emailConfirmation) {
+      logger.error(
+        `[User Service] :: User ID ${user.id} needs confirm email address `
+      );
+      throw new COAError(errors.user.NotConfirmEmail);
+    }
+
     return authenticatedUser;
   },
 
@@ -198,6 +205,8 @@ module.exports = {
 
   async validateUserEmail(userId) {
     const user = await this.getUserById(userId);
+    const { firstName, lastName, email, id, role, forcePasswordChange } = user;
+
     const accounts = await ethers.signers();
     const tx = {
       to: user.address,
@@ -218,7 +227,19 @@ module.exports = {
       );
       throw new COAError(errors.user.UserUpdateError);
     }
-    return updated;
+    user.wallet = await this.getUserWallet(user.id);
+    const userDaos = await this.daoService.getDaos({ user });
+    const hasDaos = userDaos.length > 0;
+
+    return {
+      firstName,
+      lastName,
+      email,
+      id,
+      role,
+      hasDaos,
+      forcePasswordChange
+    };
   },
 
   /**
