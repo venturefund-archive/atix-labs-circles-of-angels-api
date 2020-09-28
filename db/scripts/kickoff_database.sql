@@ -1193,9 +1193,9 @@ COPY public.answer (id, "questionId", answer) FROM stdin;
 1	1	Not yet
 2	1	Less than 1 investment in the last 12 months
 3	1	1 to 3 investments in the last 12 months
-4	1	4-5 investments in the last 12 months
+4	1	4 to 5 investments in the last 12 months
 5	1	More than 5 investments in the last 12 months
-6	1	I currently only do philanthropy eg: donate to charitable causes online & offline
+6	1	I currently only do philanthropy e.g.: donate to charitable causes online & offline
 7	1	Other
 8	2	No poverty
 9	2	Zero Hunger
