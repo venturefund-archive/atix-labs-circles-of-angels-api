@@ -91,5 +91,28 @@ module.exports = {
       templateNames.PROJECT_STATUS_CHANGE
     );
     await this.sendMail({ to, subject, text, html });
+  },
+
+  async sendEmailVerification(
+    to,
+    subject = 'Circles of Angels: Account verification',
+    text,
+    bodyContent,
+    userId
+  ) {
+    logger.info('[MailService] :: Sending verification mail to:', to);
+    validateRequiredParams({
+      method: 'sendEmailVerification',
+      params: { to, subject, bodyContent }
+    });
+
+    const html = await templateParser.completeTemplate(
+      {
+        ...bodyContent,
+        frontendUrl: `${config.frontendUrl}/confirm/${userId}`
+      },
+      templateNames.PROJECT_STATUS_CHANGE
+    );
+    await this.sendMail({ to, subject, text, html });
   }
 };

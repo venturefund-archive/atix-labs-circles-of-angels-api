@@ -181,29 +181,44 @@ module.exports = {
       encryptedWallet,
       mnemonic
     };
-    // TODO: this should be replaced by a gas relayer
+    const savedUser = await this.userDao.createUser(user);
+    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
+
+    await this.mailService.sendEmailVerification({
+      to: email,
+      bodyContent: {
+        userName: firstName,
+        userId: savedUser.id
+      },
+      userId
+    });
+
+    return true;
+  },
+
+  async validateUserEmail(userId) {
+    const user = await this.getUserById(userId);
     const accounts = await ethers.signers();
     const tx = {
-      to: address,
+      to: user.address,
       value: utils.parseEther('0.001')
     };
     await accounts[0].sendTransaction(tx);
 
-    const profile = `${firstName} ${lastName}`;
-    // using migrateMember instead of createMember for now
-    await coa.migrateMember(profile, address);
+    const profile = `${user.firstName} ${user.lastName}`;
+    await coa.migrateMember(profile, user.address);
 
-    const savedUser = await this.userDao.createUser(user);
-    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
-
-    await this.mailService.sendSignUpMail({
-      to: email,
-      bodyContent: {
-        userName: firstName
-      }
+    const updated = await this.userDao.updateUser(userId, {
+      emailConfirmation: true
     });
-
-    return savedUser;
+    if (!updated) {
+      logger.error(
+        '[UserService] :: Error updating emailValidation in database for user: ',
+        id
+      );
+      throw new COAError(errors.user.UserUpdateError);
+    }
+    return updated;
   },
 
   /**
