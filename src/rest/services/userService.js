@@ -143,6 +143,7 @@ module.exports = {
         mnemonic
       }
     });
+    this.validatePassword(password);
 
     const existingUser = await this.userDao.getUserByEmail(email);
 
@@ -153,8 +154,6 @@ module.exports = {
       throw new COAError(errors.user.EmailAlreadyInUse);
     }
     await this.countryService.getCountryById(country);
-
-    this.validatePassword(password);
     // TODO: check phoneNumber format
 
     const hashedPwd = await bcrypt.hash(password, 10);
