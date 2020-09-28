@@ -10,7 +10,7 @@ const { coa, ethers } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
 const { Wallet, utils } = require('ethers');
 
-const { userRoles } = require('../util/constants');
+const { userRoles, encryption } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const checkExistence = require('./helpers/checkExistence');
 
@@ -156,7 +156,7 @@ module.exports = {
 
     // TODO: check phoneNumber format
 
-    const hashedPwd = await bcrypt.hash(password, 10);
+    const hashedPwd = await bcrypt.hash(password, encryption.saltOrRounds);
 
     const user = {
       firstName,
@@ -317,7 +317,7 @@ module.exports = {
       throw new COAError(errors.user.InvalidPassword);
     }
 
-    const hashedPwd = await bcrypt.hash(newPassword, 10);
+    const hashedPwd = await bcrypt.hash(newPassword, encryption.saltOrRounds);
     user = {
       password: hashedPwd,
       encryptedWallet,
