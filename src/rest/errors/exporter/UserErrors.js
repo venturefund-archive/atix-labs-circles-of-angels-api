@@ -50,6 +50,22 @@ module.exports = {
     message: 'The user is not a Supporter',
     statusCode: 403
   },
+  minimunCharacterPassword: {
+    message: 'Password must have at least 8 characters',
+    statusCode: 400
+  },
+  upperCaseCharacterPassword: {
+    message: 'Password must have at least 1 uppercase character',
+    statusCode: 400
+  },
+  lowerCaseCharacterPassword: {
+    message: 'Password must have at least 1 lowercase character',
+    statusCode: 400
+  },
+  numericCharacterPassword: {
+    message: 'Password must have at least 1 numeric character',
+    statusCode: 400
+  },
   NotAllowSignUpAdminUser: {
     message: 'It is not allowed to create users with admin role',
     statusCode: 403
