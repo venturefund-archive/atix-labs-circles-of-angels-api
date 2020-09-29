@@ -470,7 +470,7 @@ const routes = {
 
   confirmEmail: {
     method: 'put',
-    path: `${basePath}/:id/confirm`,
+    path: `${basePath}/:id/email/confirm`,
     options: {
       beforeHandler: [],
       schema: {
