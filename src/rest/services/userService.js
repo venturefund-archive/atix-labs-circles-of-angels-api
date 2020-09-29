@@ -10,7 +10,7 @@ const { coa, ethers } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
 const { Wallet, utils } = require('ethers');
 
-const { userRoles } = require('../util/constants');
+const { userRoles, encryption } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const checkExistence = require('./helpers/checkExistence');
 
@@ -112,20 +112,23 @@ module.exports = {
    * @param {object} questionnaire on boarding Q&A
    * @returns new user | error
    */
-  async createUser({
-    firstName,
-    lastName,
-    email,
-    password,
-    role,
-    phoneNumber,
-    country,
-    company,
-    answers,
-    address,
-    encryptedWallet,
-    mnemonic
-  }) {
+  async createUser(
+    {
+      firstName,
+      lastName,
+      email,
+      password,
+      role,
+      phoneNumber,
+      country,
+      company,
+      answers,
+      address,
+      encryptedWallet,
+      mnemonic
+    },
+    adminRole
+  ) {
     logger.info(`[User Routes] :: Creating new user with email ${email}`);
     validateRequiredParams({
       method: 'createUser',
@@ -145,6 +148,13 @@ module.exports = {
     });
     this.validatePassword(password);
 
+    if (role === userRoles.COA_ADMIN && !adminRole) {
+      logger.error(
+        '[User Service] :: It is not allowed to create users with admin role.'
+      );
+      throw new COAError(errors.user.NotAllowSignUpAdminUser);
+    }
+
     const existingUser = await this.userDao.getUserByEmail(email);
 
     if (existingUser) {
@@ -156,7 +166,7 @@ module.exports = {
     await this.countryService.getCountryById(country);
     // TODO: check phoneNumber format
 
-    const hashedPwd = await bcrypt.hash(password, 10);
+    const hashedPwd = await bcrypt.hash(password, encryption.saltOrRounds);
 
     const user = {
       firstName,
@@ -326,18 +336,27 @@ module.exports = {
     return { address, encryptedWallet };
   },
 
-  async updatePassword(id, password, encryptedWallet) {
+  async updatePassword(id, currentPassword, newPassword, encryptedWallet) {
     logger.info('[UserService] :: Entering updatePassword method');
     let user = await this.userDao.getUserById(id);
+
     if (!user) {
       logger.info(
         '[UserService] :: There is no user associated with that email',
         id
       );
-      throw new COAError(errors.user.UserNotFound);
+      return false;
     }
 
-    const hashedPwd = await bcrypt.hash(password, 10);
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      logger.error(
+        '[User Service] :: Update password failed. Current password is incorrect'
+      );
+      throw new COAError(errors.user.InvalidPassword);
+    }
+
+    const hashedPwd = await bcrypt.hash(newPassword, encryption.saltOrRounds);
     user = {
       password: hashedPwd,
       encryptedWallet,

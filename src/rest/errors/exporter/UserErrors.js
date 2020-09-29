@@ -3,6 +3,10 @@ module.exports = {
     message: 'Invalid email',
     statusCode: 400
   },
+  InvalidPassword: {
+    message: 'Invalid password',
+    statusCode: 400
+  },
   InvalidUserOrPassword: {
     message: 'Invalid user or password',
     statusCode: 400
@@ -10,10 +14,6 @@ module.exports = {
   EmailAlreadyInUse: {
     message: 'The email is already in use',
     statusCode: 400
-  },
-  InvalidRecovery: {
-    message: 'Can not create recovery',
-    statusCode: 402
   },
   InvalidToken: {
     message: 'Invalid token',
@@ -65,5 +65,9 @@ module.exports = {
   numericCharacterPassword: {
     message: 'Password must have at least 1 numeric character',
     statusCode: 400
+  },
+  NotAllowSignUpAdminUser: {
+    message: 'It is not allowed to create users with admin role',
+    statusCode: 403
   }
 };

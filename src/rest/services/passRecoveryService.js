@@ -10,8 +10,6 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
 const { frontendUrl, support } = require('config');
-const { link } = require('fs');
-const { encrypt } = require('ethers/utils/secret-storage');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -28,7 +26,7 @@ module.exports = {
         '[PassRecovery Service] :: There is no user associated with that email',
         email
       );
-      throw new COAError(errors.user.InvalidEmail);
+      return email;
     }
 
     const hash = await crypto.randomBytes(25);
@@ -40,10 +38,10 @@ module.exports = {
         '[PassRecovery Service]:: Can not create recovery with email',
         email
       );
-      throw new COAError(errors.user.InvalidRecovery);
+      return email;
     }
 
-    const info = await this.mailService.sendMail({
+    const info = this.mailService.sendMail({
       from: '"Circles of Angels Support" <coa@support.com>',
       to: email,
       subject: 'Circles of Angels - Recovery Password',
@@ -55,8 +53,8 @@ module.exports = {
 
     if (!info || !isEmpty(info.rejected)) {
       logger.info('[PassRecovery Service] :: Invalid email', email);
-      throw new COAError(errors.user.InvalidEmail);
     }
+
     return email;
   },
 

@@ -39,7 +39,8 @@ const featuredProjectsResponse = {
     properties: Object.assign(
       {},
       {
-        id: { type: 'integer' }
+        id: { type: 'integer' },
+        status: { type: 'string' }
       },
       projectThumbnailProperties,
       cardPhotoPathProperty
