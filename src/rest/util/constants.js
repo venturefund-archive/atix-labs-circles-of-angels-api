@@ -177,6 +177,10 @@ const txProposalStatus = {
   FAILED: 'failed'
 };
 
+const encryption = {
+  saltOrRounds: 10
+};
+
 module.exports = {
   evidenceFileTypes,
   txFunderStatus,
@@ -199,5 +203,6 @@ module.exports = {
   daoMemberRoleEnum,
   claimMilestoneStatus,
   txEvidenceStatus,
-  txProposalStatus
+  txProposalStatus,
+  encryption
 };

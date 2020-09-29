@@ -330,7 +330,7 @@ const routes = {
             password: { type: 'string' },
             encryptedWallet: { type: 'string' }
           },
-          required: ['password', 'encryptedWallet'],
+          required: ['currentPassword', 'newPassword', 'encryptedWallet'],
           description: 'New password and new encrypted wallet'
         },
         response: {
