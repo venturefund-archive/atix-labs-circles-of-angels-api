@@ -109,5 +109,11 @@ module.exports = {
     const userId = request.user.id;
     const projects = await userService.getAppliedProjects({ userId });
     reply.status(200).send(projects);
+  },
+
+  confirmEmail: () => async (request, reply) => {
+    const { id } = request.params;
+    const user = await userService.validateUserEmail(id);
+    reply.status(200).send(user);
   }
 };

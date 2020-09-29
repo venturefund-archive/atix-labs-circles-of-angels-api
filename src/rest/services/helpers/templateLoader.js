@@ -10,14 +10,17 @@ const readFile = promisify(fs.readFile);
 const templateNames = {
   GENERIC: 'generic',
   SIGNUP: 'signup',
-  PROJECT_STATUS_CHANGE: 'projectStatusChange'
+  PROJECT_STATUS_CHANGE: 'projectStatusChange',
+  EMAIL_VERIFICATION: 'emailVerification'
 };
 
 const templatePaths = {
   [templateNames.GENERIC]: '../../../../assets/templates/email/generic.html',
   [templateNames.SIGNUP]: '../../../../assets/templates/email/signup.html',
   [templateNames.PROJECT_STATUS_CHANGE]:
-    '../../../../assets/templates/email/projectStatusChange.html'
+    '../../../../assets/templates/email/projectStatusChange.html',
+  [templateNames.EMAIL_VERIFICATION]:
+    '../../../../assets/templates/email/confirmEmail.html'
 };
 
 const getTemplatePath = template =>
