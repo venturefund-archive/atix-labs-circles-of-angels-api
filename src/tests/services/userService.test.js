@@ -449,4 +449,24 @@ describe('Testing userService', () => {
       );
     });
   });
+
+  describe('Testing updatePassword', () => {
+    const userDao2 = {
+      ...userDao,
+      getUserById: id => dbUser.find(user => user.id === id)
+    };
+    beforeAll(() => {
+      injectMocks(userService, { userDao: userDao2 });
+    });
+    afterAll(() => restoreUserService());
+
+    test('Invalid id should return false', async () => {
+      const response = await userService.updatePassword(
+        100000,
+        'correctPass123*',
+        {}
+      );
+      expect(response).toBe(false);
+    });
+  });
 });
