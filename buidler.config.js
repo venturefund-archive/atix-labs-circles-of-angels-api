@@ -98,6 +98,10 @@ module.exports = {
   },
   solc: {
     version: '0.5.8',
-    evmVersion: 'byzantium'
+    evmVersion: 'byzantium',
+    optimizer: {
+      enabled: true,
+      runs: 1
+    }
   }
 };
