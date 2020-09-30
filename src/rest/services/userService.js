@@ -102,7 +102,7 @@ module.exports = {
       logger.error(
         `[User Service] :: User ID ${user.id} needs confirm email address `
       );
-      throw new COAError(errors.user.NotConfirmEmail);
+      throw new COAError(errors.user.NotConfirmedEmail);
     }
 
     return authenticatedUser;
@@ -198,15 +198,23 @@ module.exports = {
         userName: firstName,
         userId: savedUser.id
       },
-      userId
+      userId: savedUser.id
     });
 
-    return true;
+    return savedUser;
   },
 
   async validateUserEmail(userId) {
     const user = await this.getUserById(userId);
-    const { firstName, lastName, email, id, role, forcePasswordChange } = user;
+    const {
+      firstName,
+      lastName,
+      email,
+      id,
+      role,
+      forcePasswordChange,
+      address
+    } = user;
 
     const accounts = await ethers.signers();
     const tx = {
@@ -215,8 +223,8 @@ module.exports = {
     };
     await accounts[0].sendTransaction(tx);
 
-    const profile = `${user.firstName} ${user.lastName}`;
-    await coa.migrateMember(profile, user.address);
+    const profile = `${firstName} ${lastName}`;
+    await coa.migrateMember(profile, address);
 
     const updated = await this.userDao.updateUser(userId, {
       emailConfirmation: true
@@ -228,7 +236,7 @@ module.exports = {
       );
       throw new COAError(errors.user.UserUpdateError);
     }
-    user.wallet = await this.getUserWallet(user.id);
+    user.wallet = await this.getUserWallet(id);
     const userDaos = await this.daoService.getDaos({ user });
     const hasDaos = userDaos.length > 0;
 

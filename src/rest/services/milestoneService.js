@@ -51,7 +51,12 @@ module.exports = {
     logger.info(
       '[MilestoneService] :: Entering getProjectFromMilestone method'
     );
-    const { project } = await this.milestoneDao.getMilestoneByIdWithProject(id);
+
+    const milestone = await this.milestoneDao.getMilestoneByIdWithProject(id);
+    if (!milestone) {
+      throw new COAError(errors.milestone.MilestoneDoesNotBelongToProject);
+    }
+    const { project } = milestone;
     if (!project) {
       logger.info(
         `[MilestoneService] :: No project found for milestone ${milestoneId}`
@@ -139,7 +144,7 @@ module.exports = {
       method: 'updateMilestone',
       params: { userId, milestoneId, milestoneParams }
     });
-
+    await checkExistence(this.milestoneDao, milestoneId, 'milestone');
     const project = await this.getProjectFromMilestone(milestoneId);
 
     validateOwnership(project.owner, userId);
@@ -182,8 +187,12 @@ module.exports = {
       method: 'deleteMilestone',
       params: { milestoneId, userId }
     });
-
+    await checkExistence(this.milestoneDao, milestoneId, 'milestone');
     const project = await this.getProjectFromMilestone(milestoneId);
+
+    if (!project) {
+      throw errors.project.ProjectNotFound;
+    }
     validateOwnership(project.owner, userId);
 
     if (!allowCreateEditStatuses.includes(project.status)) {
