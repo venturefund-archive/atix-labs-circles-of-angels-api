@@ -23,7 +23,8 @@ const restoreUserService = () => {
 
 const mailService = {
   sendMail: jest.fn(),
-  sendSignUpMail: jest.fn()
+  sendSignUpMail: jest.fn(),
+  sendEmailVerification: jest.fn()
 };
 
 const daoService = {
@@ -54,7 +55,8 @@ describe('Testing userService', () => {
     role: userRoles.PROJECT_SUPPORTER,
     email: 'supporter@test.com',
     blocked: false,
-    address: '0x222'
+    address: '0x222',
+    emailConfirmation: true
   };
 
   const userAdmin = {
@@ -184,6 +186,12 @@ describe('Testing userService', () => {
       }
     );
 
+    it('should throw an error if a user has never confirm email address', async () => {
+      await expect(
+        userService.login(userSupporter.email, 'correctPass123*')
+      ).rejects.toThrow(errors.user.InvalidUserOrPassword);
+    });
+
     it('should throw an error if a user with that email does not exist', async () => {
       await expect(userService.login('', 'anyPass123*')).rejects.toThrow(
         errors.user.InvalidUserOrPassword
@@ -229,13 +237,6 @@ describe('Testing userService', () => {
     };
     beforeAll(() => {
       bcrypt.hash = jest.fn();
-      coa.migrateMember = jest.fn();
-      const sendTransaction = jest.fn();
-      ethers.signers = jest.fn(() => [
-        {
-          sendTransaction
-        }
-      ]);
       injectMocks(userService, { userDao, mailService, countryService });
     });
     afterAll(() => restoreUserService());
@@ -254,8 +255,7 @@ describe('Testing userService', () => {
 
       const created = dbUser.find(user => user.id === response.id);
       expect(created).toBeDefined();
-      expect(coa.migrateMember).toHaveBeenCalled();
-      expect(mailService.sendSignUpMail).toHaveBeenCalled();
+      expect(mailService.sendEmailVerification).toHaveBeenCalled();
     });
     it('should return an error if any required param is missing', async () => {
       await expect(
