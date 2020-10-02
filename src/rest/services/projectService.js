@@ -1202,7 +1202,7 @@ module.exports = {
           });
 
           const milestones = await this.milestoneService.getAllMilestonesByProject(
-            projectId
+            project.id
           );
           // set first milestone as claimable
           if (milestones && milestones.length && milestones[0]) {
