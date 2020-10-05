@@ -21,11 +21,12 @@ const projectThumbnailProperties = {
   projectName: { type: 'string' },
   location: { type: 'string' },
   timeframe: { type: 'string' },
-  goalAmount: { type: 'number' }
+  goalAmount: { type: 'number' },
+  files: { type: 'object' }
 };
 
-const imgPathProperty = {
-  imgPath: { type: 'string' }
+const imgHashProperty = {
+  imgHash: { type: 'string' }
 };
 
 const cardPhotoPathProperty = {
@@ -51,7 +52,8 @@ const featuredProjectsResponse = {
 
 const projectDetailProperties = {
   mission: { type: 'string' },
-  problemAddressed: { type: 'string' }
+  problemAddressed: { type: 'string' },
+  files: { type: 'object' }
 };
 
 const projectProposalProperties = {
@@ -237,7 +239,6 @@ const projectThumbnailRoutes = {
         summary: 'Create new project and project thumbnail',
         type: 'multipart/form-data',
         raw: {
-          files: { type: 'object' },
           body: {
             type: 'object',
             properties: projectThumbnailProperties
@@ -264,7 +265,6 @@ const projectThumbnailRoutes = {
         summary: 'Updates an existing project thumbnail',
         type: 'multipart/form-data',
         raw: {
-          files: { type: 'object' },
           body: {
             type: 'object',
             properties: projectThumbnailProperties
@@ -297,7 +297,7 @@ const projectThumbnailRoutes = {
             properties: Object.assign(
               {},
               projectThumbnailProperties,
-              imgPathProperty
+              imgHashProperty
             ),
             description: 'Returns the project description'
           }),
@@ -322,7 +322,6 @@ const projectDetailRoutes = {
         summary: 'Create new project and project detail',
         params: projectIdParam,
         raw: {
-          files: { type: 'object' },
           body: {
             type: 'object',
             properties: projectDetailProperties
@@ -347,7 +346,6 @@ const projectDetailRoutes = {
         description: 'Updates the detail of an existing project.',
         summary: 'Updates a project detail',
         raw: {
-          files: { type: 'object' },
           body: {
             type: 'object',
             properties: projectDetailProperties
@@ -379,7 +377,7 @@ const projectDetailRoutes = {
             properties: Object.assign(
               {},
               projectDetailProperties,
-              imgPathProperty
+              imgHashProperty
             ),
             description: 'Returns the project detail'
           }),
@@ -477,7 +475,7 @@ const projectMilestonesRoute = {
           'Process excel file and creates the milestones of a project',
         summary: 'Creates milestones from file',
         type: 'multipart/form-data',
-        raw: {
+        body: {
           type: 'object',
           properties: {
             files: { type: 'object' }

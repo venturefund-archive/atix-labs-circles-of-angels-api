@@ -27,6 +27,7 @@ const idParam = (description, param) => ({
 
 const projectIdParam = idParam('Project identification', 'projectId');
 const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
+const claimReceiptFileHashParam = { type: 'string' };
 
 const projectResponse = {
   type: 'object',
@@ -211,8 +212,11 @@ const milestoneRoutes = {
         summary: 'Milestone transferred',
         params: milestoneIdParam,
         type: 'multipart/form-data',
-        raw: {
-          files: { type: 'object' }
+        body: {
+          type: 'object',
+          properties: { claimReceiptFileHash: claimReceiptFileHashParam },
+          required: ['claimReceiptFileHash'],
+          additionalProperties: false
         },
         response: {
           ...successResponse(successWithMilestoneIdResponse),

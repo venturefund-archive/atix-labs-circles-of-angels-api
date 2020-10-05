@@ -945,32 +945,10 @@ describe('Testing milestoneService', () => {
       const response = await milestoneService.transferredMilestone({
         userId: userBankoperator.id,
         milestoneId: claimedMilestone.id,
-        claimReceiptFile: imgFile
+        claimReceiptFileHash: imgFile.name
       });
       expect(response).toEqual({ milestoneId: claimedMilestone.id });
     });
-
-    // it('should call setNextAsClaimable if the milestone is completed', async () => {
-    //   milestoneService.isMilestoneCompleted.mockReturnValueOnce(true);
-    //   await expect(
-    //     milestoneService.transferredMilestone({
-    //       userId: userBankoperator.id,
-    //       milestoneId: claimedMilestone.id
-    //     })
-    //   ).resolves.toBeDefined();
-    //   expect(milestoneService.setNextAsClaimable).toBeCalled();
-    // });
-
-    // it('should not call setNextAsClaimable if the milestone is not completed', async () => {
-    //   milestoneService.isMilestoneCompleted.mockReturnValueOnce(false);
-    //   await expect(
-    //     milestoneService.transferredMilestone({
-    //       userId: userBankoperator.id,
-    //       milestoneId: claimedMilestone.id
-    //     })
-    //   ).resolves.toBeDefined();
-    //   expect(milestoneService.setNextAsClaimable).not.toBeCalled();
-    // });
 
     it('should throw an error if user is not a bank operator', async () => {
       dbUser.push(userEntrepreneur);
@@ -979,7 +957,7 @@ describe('Testing milestoneService', () => {
         milestoneService.transferredMilestone({
           userId: userEntrepreneur.id,
           milestoneId: claimedMilestone.id,
-          claimReceiptFile: imgFile
+          claimReceiptFileHash: imgFile.name
         })
       ).rejects.toThrow(errors.common.UserNotAuthorized(userEntrepreneur.id));
     });
@@ -999,7 +977,7 @@ describe('Testing milestoneService', () => {
         milestoneService.transferredMilestone({
           userId: userBankoperator.id,
           milestoneId: 0,
-          claimReceiptFile: imgFile
+          claimReceiptFileHash: imgFile.name
         })
       ).rejects.toThrow(errors.common.CantFindModelWithId('milestone', 0));
     });
@@ -1012,7 +990,7 @@ describe('Testing milestoneService', () => {
         milestoneService.transferredMilestone({
           userId: userBankoperator.id,
           milestoneId: updatableMilestone.id,
-          claimReceiptFile: imgFile
+          claimReceiptFileHash: imgFile.name
         })
       ).rejects.toThrow(
         errors.common.InvalidStatus('project', projectStatuses.NEW)
@@ -1026,7 +1004,7 @@ describe('Testing milestoneService', () => {
         milestoneService.transferredMilestone({
           userId: userBankoperator.id,
           milestoneId: pendingClaimMilestone.id,
-          claimReceiptFile: imgFile
+          claimReceiptFileHash: imgFile.name
         })
       ).rejects.toThrow(
         errors.common.InvalidStatus('milestone', claimMilestoneStatus.PENDING)

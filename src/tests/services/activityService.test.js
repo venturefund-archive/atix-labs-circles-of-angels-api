@@ -593,7 +593,7 @@ describe('Testing activityService', () => {
         const response = await activityService.sendAddClaimTransaction({
           taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
-          file: evidenceFile,
+          proofFileHash: evidenceFile.name,
           description: mockedDescription,
           approved: true,
           signedTransaction,
@@ -610,7 +610,7 @@ describe('Testing activityService', () => {
         activityService.sendAddClaimTransaction({
           taskId: nonUpdatableTask.id,
           userId: userEntrepreneur.id,
-          file: evidenceFile
+          proofFileHash: evidenceFile.name
         })
       ).rejects.toThrow(
         errors.common.RequiredParamsMissing('sendAddClaimTransaction')
@@ -621,7 +621,7 @@ describe('Testing activityService', () => {
         activityService.sendAddClaimTransaction({
           taskId: 0,
           userId: userEntrepreneur.id,
-          file: evidenceFile,
+          proofFileHash: evidenceFile.name,
           description: mockedDescription,
           approved: true,
           signedTransaction,
@@ -638,7 +638,7 @@ describe('Testing activityService', () => {
         activityService.sendAddClaimTransaction({
           taskId: updatableTask.id,
           userId: userEntrepreneur.id,
-          file: evidenceFile,
+          proofFileHash: evidenceFile.name,
           description: 'description',
           approved: true,
           signedTransaction,
@@ -653,7 +653,7 @@ describe('Testing activityService', () => {
         activityService.sendAddClaimTransaction({
           taskId: nonUpdatableTask.id,
           userId: 0,
-          file: evidenceFile,
+          proofFileHash: evidenceFile.name,
           description: mockedDescription,
           approved: true,
           signedTransaction,
@@ -665,33 +665,6 @@ describe('Testing activityService', () => {
           taskId: nonUpdatableTask.id
         })
       );
-    });
-    it('should throw an error if the file mtype is invalid', async () => {
-      await expect(
-        activityService.sendAddClaimTransaction({
-          taskId: nonUpdatableTask.id,
-          userId: userEntrepreneur.id,
-          file: { name: 'invalidclaim.exe', size: 2000 },
-          description: mockedDescription,
-          approved: true,
-          signedTransaction,
-          userAddress
-        })
-      ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
-    });
-
-    it('should throw an error if the file has an invalid size', async () => {
-      await expect(
-        activityService.sendAddClaimTransaction({
-          taskId: nonUpdatableTask.id,
-          userId: userEntrepreneur.id,
-          file: { name: 'imbig.jpg', size: 999999999999 },
-          description: mockedDescription,
-          approved: true,
-          signedTransaction,
-          userAddress
-        })
-      ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
     });
   });
 
@@ -734,7 +707,7 @@ describe('Testing activityService', () => {
       coa.getAddClaimTransaction.mockReturnValueOnce(unsignedTx);
       const response = await activityService.getAddClaimTransaction({
         taskId: nonUpdatableTask.id,
-        file: evidenceFile,
+        proofFileHash: evidenceFile.name,
         approved: true,
         userWallet
       });
@@ -756,31 +729,11 @@ describe('Testing activityService', () => {
       await expect(
         activityService.getAddClaimTransaction({
           taskId: 0,
-          file: evidenceFile,
+          proofFileHash: evidenceFile.name,
           approved: true,
           userWallet
         })
       ).rejects.toThrow(errors.common.CantFindModelWithId('task', 0));
-    });
-    it('should throw an error if the file mtype is invalid', async () => {
-      await expect(
-        activityService.getAddClaimTransaction({
-          taskId: nonUpdatableTask.id,
-          file: { name: 'invalidclaim.exe', size: 2000 },
-          approved: true,
-          userWallet
-        })
-      ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
-    });
-    it('should throw an error if the file has an invalid size', async () => {
-      await expect(
-        activityService.getAddClaimTransaction({
-          taskId: nonUpdatableTask.id,
-          file: { name: 'imbig.jpg', size: 9999999999 },
-          approved: true,
-          userWallet
-        })
-      ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
     });
   });
 

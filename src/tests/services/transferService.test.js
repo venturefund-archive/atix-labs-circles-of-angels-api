@@ -59,7 +59,7 @@ describe('Testing transferService', () => {
     project: fundingProject.id,
     currency: 'USD',
     destinationAccount: '1235AASDD',
-    receiptFile: { name: 'receipt.jpg', size: 20000 }
+    receiptFileHash: 'receipt.jpg'
   };
 
   const verifiedTransfer = {
@@ -279,26 +279,6 @@ describe('Testing transferService', () => {
         );
       }
     );
-
-    it('should throw an error if the receipt file is not a valid image', async () => {
-      await expect(
-        transferService.createTransfer({
-          ...newTransfer,
-          projectId: newTransfer.project,
-          receiptFile: { name: 'receipt.doc', size: 20000 }
-        })
-      ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
-    });
-
-    it('should throw an error if the receipt image size is bigger than allowed', async () => {
-      await expect(
-        transferService.createTransfer({
-          ...newTransfer,
-          projectId: newTransfer.project,
-          receiptFile: { name: 'receipt.jpg', size: 10000000 }
-        })
-      ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
-    });
   });
 
   describe('Testing transferService updateTransfer', () => {

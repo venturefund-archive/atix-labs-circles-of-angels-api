@@ -11,7 +11,6 @@ const { coa } = require('@nomiclabs/buidler');
 const { values, isEmpty } = require('lodash');
 const fs = require('fs');
 const { promisify } = require('util');
-const files = require('../util/files');
 const { forEachPromise } = require('../util/promises');
 const {
   projectStatuses,
@@ -23,8 +22,6 @@ const { sha3 } = require('../util/hash');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
-const validateMtype = require('./helpers/validateMtype');
-const validatePhotoSize = require('./helpers/validatePhotoSize');
 const {
   buildBlockURL,
   buildTxURL,
@@ -33,8 +30,6 @@ const {
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
-
-const claimType = 'claims';
 
 module.exports = {
   readFile: promisify(fs.readFile),
@@ -429,7 +424,7 @@ module.exports = {
    *
    * @param {Number} taskId
    * @param {Number} userId
-   * @param {File} file
+   * @param {String} proofFileHash
    * @param {String} description
    * @param {Boolean} approved
    * @param {Transaction} signedTransaction
@@ -437,7 +432,7 @@ module.exports = {
   async sendAddClaimTransaction({
     taskId,
     userId,
-    file,
+    proofFileHash,
     description,
     approved,
     signedTransaction,
@@ -449,7 +444,7 @@ module.exports = {
       params: {
         taskId,
         userId,
-        file,
+        proofFileHash,
         description,
         approved,
         signedTransaction,
@@ -485,13 +480,9 @@ module.exports = {
     const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[ActivityService] :: Add claim transaction sent', tx);
 
-    // TODO: we shouldn't save the file once we have the ipfs storage working
-    logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
-    const filePath = await files.validateAndSaveFile(claimType, file);
-    logger.info(`[ActivityService] :: File saved to: ${filePath}`);
     const evidence = {
       description,
-      proof: filePath,
+      proof: proofFileHash,
       task: taskId,
       approved,
       txHash: tx.hash,
@@ -513,15 +504,20 @@ module.exports = {
    *
    * @param {Number} taskId
    * @param {Number} userId
-   * @param {File} file
+   * @param {String} proofFileHash
    * @param {Boolean} approved
    * @param {JSON} userWallet
    */
-  async getAddClaimTransaction({ taskId, file, approved, userWallet }) {
+  async getAddClaimTransaction({
+    taskId,
+    proofFileHash,
+    approved,
+    userWallet
+  }) {
     logger.info('[ActivityService] :: Entering getAddClaimTransaction method');
     validateRequiredParams({
       method: 'getAddClaimTransaction',
-      params: { taskId, file, approved, userWallet }
+      params: { taskId, proofFileHash, approved, userWallet }
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
@@ -530,22 +526,13 @@ module.exports = {
     const projectFound = await this.projectService.getProjectById(projectId);
     const { address } = projectFound;
 
-    // TODO: we shouldn't save the file once we have the ipfs storage working
-    validateMtype(claimType, file);
-    validatePhotoSize(file);
-    const filePath = await files.getSaveFilePath(claimType, file);
-    logger.info(
-      `[ActivityService] :: File to be saved in ${filePath} when tx is sent`
-    );
-
     const claim = sha3(projectId, oracle, taskId);
-    const proof = sha3(filePath); // TODO: this should be an ipfs hash
 
     logger.info('[ActivityService] :: Getting add claim transaction');
     const unsignedTx = await coa.getAddClaimTransaction(
       address,
       claim,
-      proof,
+      proofFileHash,
       approved,
       milestoneId
     );
@@ -687,7 +674,9 @@ module.exports = {
       },
       txHash,
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
-      creationDate: timestamp ? new Date(timestamp * secondsConversion) : undefined,
+      creationDate: timestamp
+        ? new Date(timestamp * secondsConversion)
+        : undefined,
       blockNumber,
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       proof

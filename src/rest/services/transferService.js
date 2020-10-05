@@ -15,11 +15,8 @@ const {
   publicProjectStatuses
 } = require('../util/constants');
 const { sha3 } = require('../util/hash');
-const files = require('../util/files');
 const checkExistence = require('./helpers/checkExistence');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
-const validateMtype = require('./helpers/validateMtype');
-const validatePhotoSize = require('./helpers/validatePhotoSize');
 const {
   buildBlockURL,
   buildTxURL,
@@ -49,7 +46,7 @@ module.exports = {
     amount,
     currency,
     projectId,
-    receiptFile
+    receiptFileHash
   }) {
     logger.info('[TransferService] :: Entering createTransfer method');
     validateRequiredParams({
@@ -61,7 +58,7 @@ module.exports = {
         amount,
         currency,
         projectId,
-        receiptFile
+        receiptFileHash
       }
     });
     const project = await this.projectService.getProjectById(projectId);
@@ -99,10 +96,6 @@ module.exports = {
       throw new COAError(errors.transfer.TransferIdAlreadyExists(transferId));
     }
 
-    validateMtype('transferReceipt', receiptFile);
-    validatePhotoSize(receiptFile);
-    const receiptPath = await files.saveFile('transferReceipt', receiptFile);
-
     const transfer = {
       transferId,
       senderId,
@@ -110,7 +103,7 @@ module.exports = {
       amount,
       currency,
       projectId,
-      receiptPath
+      receiptPath: receiptFileHash
     };
     logger.info('[TransferService] :: Creating transfer with params', transfer);
     const created = await this.transferDao.create({
@@ -393,7 +386,6 @@ module.exports = {
     );
     const project = await this.projectService.getProjectById(projectId);
     const claim = sha3(projectId, userId, transferId);
-    const proof = sha3(receiptPath); // TODO: this should be an ipfs hash
 
     const { address: projectAddress } = project;
     if (!projectAddress) {
@@ -406,7 +398,7 @@ module.exports = {
     const unsignedTx = await coa.getAddClaimTransaction(
       projectAddress,
       claim,
-      proof,
+      receiptPath,
       approved,
       0 // 0 because it doesn't belong to a milestone
     );

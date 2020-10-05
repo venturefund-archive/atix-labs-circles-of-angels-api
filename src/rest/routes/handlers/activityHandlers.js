@@ -52,14 +52,14 @@ module.exports = {
 
   getApprovedClaimTransaction: () => async (request, reply) => {
     const { taskId } = request.params;
+    const { proofFileHash } = request.body;
     const { id: userId, wallet: userWallet } = request.user;
-    const { proof } = request.raw.files || {};
     const { description } = request.raw.body || {};
 
     const response = await activityService.getAddClaimTransaction({
       taskId,
       userId,
-      file: proof,
+      proofFileHash,
       description,
       approved: true,
       userWallet
@@ -70,12 +70,12 @@ module.exports = {
 
   getDisapprovedClaimTransaction: () => async (request, reply) => {
     const { taskId } = request.params;
+    const { proofFileHash } = request.body;
     const { wallet: userWallet } = request.user;
-    const { proof } = request.raw.files || {};
 
     const response = await activityService.getAddClaimTransaction({
       taskId,
-      file: proof,
+      proofFileHash,
       approved: false,
       userWallet
     });
@@ -85,14 +85,14 @@ module.exports = {
 
   sendClaimTransaction: approved => async (request, reply) => {
     const { taskId } = request.params;
+    const { proofFileHash } = request.body;
     const { id: userId, wallet } = request.user;
-    const { proof } = request.raw.files || {};
     const { description, signedTransaction } = request.raw.body || {};
 
     const response = await activityService.sendAddClaimTransaction({
       taskId,
       userId,
-      file: proof,
+      proofFileHash,
       description,
       approved,
       signedTransaction,

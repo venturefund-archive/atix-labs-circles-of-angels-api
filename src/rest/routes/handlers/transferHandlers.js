@@ -12,9 +12,14 @@ module.exports = {
   createTransfer: () => async (request, reply) => {
     const { projectId } = request.params;
     const body = request.raw.body || {};
-    const files = request.raw.files || {};
 
-    const { transferId, destinationAccount, amount, currency } = body;
+    const {
+      transferId,
+      destinationAccount,
+      amount,
+      currency,
+      receiptHash
+    } = body;
     const { receiptPath } = files;
     const senderId = request.user.id;
 
@@ -25,7 +30,7 @@ module.exports = {
       currency,
       projectId,
       senderId,
-      receiptFile: receiptPath
+      receiptFile: receiptHash
     });
     reply.status(200).send(response);
   },

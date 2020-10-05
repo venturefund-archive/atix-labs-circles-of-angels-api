@@ -16,16 +16,15 @@ const { projectStatuses, supporterRoles } = require('../../util/constants');
 module.exports = {
   createProjectThumbnail: () => async (request, reply) => {
     const body = request.raw.body || {};
-    const files = request.raw.files || {};
 
-    const { projectName, location, timeframe } = body;
+    const { projectName, location, timeframe, files } = body;
     const ownerId = request.user.id;
-    const { cardPhotoPath } = files;
+    const { cardPhotoHash } = files;
     const response = await projectService.createProjectThumbnail({
       projectName,
       location,
       timeframe,
-      file: cardPhotoPath,
+      fileHash: cardPhotoHash,
       ownerId
     });
     reply.status(200).send(response);
@@ -33,17 +32,16 @@ module.exports = {
 
   updateProjectThumbnail: () => async (request, reply) => {
     const body = request.raw.body || {};
-    const files = request.raw.files || {};
 
     const { projectId } = request.params;
-    const { projectName, location, timeframe } = body;
+    const { projectName, location, timeframe, files } = body;
     const ownerId = request.user.id;
-    const { cardPhotoPath } = files;
+    const { cardPhotoHash } = files;
     const response = await projectService.updateProjectThumbnail(projectId, {
       projectName,
       location,
       timeframe,
-      file: cardPhotoPath,
+      fileHash: cardPhotoHash,
       ownerId
     });
     reply.status(200).send(response);
@@ -57,18 +55,20 @@ module.exports = {
 
   createProjectDetail: () => async (request, reply) => {
     const body = request.raw.body || {};
-    const files = request.raw.files || {};
 
     const { projectId } = request.params;
     const ownerId = request.user.id;
-    const { mission, problemAddressed } = body;
-    const { coverPhotoPath, agreementFile, proposalFile } = files;
+    const {
+      mission,
+      problemAddressed,
+      files: { coverPhotoHash, agreementFileHash, proposalFileHash }
+    } = body;
     const response = await projectService.createProjectDetail(projectId, {
       mission,
       problemAddressed,
-      coverPhoto: coverPhotoPath,
-      agreementFile,
-      proposalFile,
+      coverPhotoHash,
+      agreementFileHash,
+      proposalFileHash,
       ownerId
     });
     reply.status(200).send(response);
@@ -76,18 +76,17 @@ module.exports = {
 
   updateProjectDetail: () => async (request, reply) => {
     const body = request.raw.body || {};
-    const files = request.raw.files || {};
 
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { coverPhotoPath, agreementFile, proposalFile } = files;
+    const { coverPhotoHash, agreementFileHash, proposalFileHash } = body.files;
     const response = await projectService.updateProjectDetail(projectId, {
       mission,
       problemAddressed,
-      coverPhoto: coverPhotoPath,
-      agreementFile,
-      proposalFile,
+      coverPhotoHash,
+      agreementFileHash,
+      proposalFileHash,
       ownerId
     });
     reply.status(200).send(response);
@@ -118,11 +117,11 @@ module.exports = {
 
   getMilestonesFile: () => async (request, reply) => {
     const { projectId } = request.params;
-    const response = await projectService.getProjectMilestonesPath(projectId);
+    const response = await projectService.getProjectMilestonesHash(projectId);
 
     reply.header('file', response.filename);
     reply.header('Access-Control-Expose-Headers', 'file');
-    reply.status(200).sendFile(response.filepath);
+    reply.status(200).send({ fileHash: response.fileHash });
   },
 
   getTemplateOfProjectMilestone: fastify => async (request, reply) => {
@@ -133,13 +132,13 @@ module.exports = {
   },
 
   processMilestonesFile: () => async (request, reply) => {
-    const files = request.raw.files || {};
     const { projectId } = request.params;
-    const { milestoneFile } = files;
+    const { milestoneFile, milestoneFileHash } = request.body.files || {};
     const ownerId = request.user.id;
     const response = await projectService.processMilestoneFile(projectId, {
       file: milestoneFile,
-      ownerId
+      ownerId,
+      fileHash: milestoneFileHash
     });
     reply.status(200).send(response);
   },

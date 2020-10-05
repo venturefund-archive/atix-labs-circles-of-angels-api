@@ -45,8 +45,6 @@ const {
   getSecondsPassed
 } = require('../util/dateFormatters');
 
-const thumbnailType = files.TYPES.thumbnail;
-const coverPhotoType = files.TYPES.coverPhoto;
 const milestonesType = files.TYPES.milestones;
 
 module.exports = {
@@ -88,12 +86,12 @@ module.exports = {
     location,
     timeframe,
     ownerId,
-    file
+    fileHash
   }) {
     logger.info('[ProjectService] :: Entering createProjectThumbnail method');
     validateRequiredParams({
       method: 'createProjectThumbnail',
-      params: { projectName, location, timeframe, ownerId, file }
+      params: { projectName, location, timeframe, ownerId, fileHash }
     });
     const user = await this.userService.getUserById(ownerId);
 
@@ -104,19 +102,12 @@ module.exports = {
       throw new COAError(errors.user.UnauthorizedUserRole(user.role));
     }
 
-    validateMtype(thumbnailType, file);
-    validatePhotoSize(file);
-
-    logger.info(`[ProjectService] :: Saving file of type '${thumbnailType}'`);
-    const cardPhotoPath = await files.saveFile(thumbnailType, file);
-    logger.info(`[ProjectService] :: File saved to: ${cardPhotoPath}`);
-
     const project = {
       projectName,
       location,
       timeframe,
       goalAmount: 0,
-      cardPhotoPath,
+      cardPhotoPath: fileHash,
       owner: ownerId
     };
 
@@ -132,7 +123,7 @@ module.exports = {
 
   async updateProjectThumbnail(
     projectId,
-    { projectName, location, timeframe, ownerId, file }
+    { projectName, location, timeframe, ownerId, fileHash }
   ) {
     logger.info('[ProjectService] :: Entering updateProjectThumbnail method');
     validateRequiredParams({
@@ -151,15 +142,7 @@ module.exports = {
       throw new COAError(errors.project.ProjectCantBeUpdated(status));
     }
 
-    let { cardPhotoPath } = project;
-
-    if (file) {
-      validateMtype(thumbnailType, file);
-      validatePhotoSize(file);
-      logger.info(`[ProjectService] :: Saving file of type '${thumbnailType}'`);
-      cardPhotoPath = await files.saveFile(thumbnailType, file);
-      logger.info(`[ProjectService] :: File saved to: ${cardPhotoPath}`);
-    }
+    const { cardPhotoPath } = project;
 
     logger.info(`[ProjectService] :: Updating project of id ${projectId}`);
 
@@ -167,7 +150,7 @@ module.exports = {
       projectName,
       location,
       timeframe,
-      cardPhotoPath
+      cardPhotoPath: fileHash
     });
     logger.info(`[ProjectService] :: Project of id ${projectId} updated`);
 
@@ -193,7 +176,7 @@ module.exports = {
       location,
       timeframe,
       goalAmount,
-      imgPath: cardPhotoPath
+      imgHash: cardPhotoPath
     };
   },
 
@@ -202,53 +185,28 @@ module.exports = {
     {
       mission,
       problemAddressed,
-      coverPhoto,
+      coverPhotoHash,
       ownerId,
-      agreementFile,
-      proposalFile
+      agreementFileHash,
+      proposalFileHash
     }
   ) {
     logger.info('[ProjectService] :: Entering createProjectDetail method');
     validateRequiredParams({
       method: 'createProjectDetail',
-      params: { mission, problemAddressed, coverPhoto, ownerId, projectId }
+      params: { mission, problemAddressed, coverPhotoHash, ownerId, projectId }
     });
 
     await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
-    logger.info('[ProjectService] :: Uploading cover photo');
-    const coverPhotoPath = await files.validateAndSaveFile(
-      coverPhotoType,
-      coverPhoto
-    );
-
-    let agreementFilePath;
-    let proposalFilePath;
-
-    if (agreementFile) {
-      logger.info('[ProjectService] :: Uploading agreement file');
-      agreementFilePath = await files.validateAndSaveFile(
-        files.TYPES.agreementFile,
-        agreementFile
-      );
-    }
-
-    if (proposalFile) {
-      logger.info('[ProjectService] :: Uploading proposal file');
-      proposalFilePath = await files.validateAndSaveFile(
-        files.TYPES.proposalFile,
-        proposalFile
-      );
-    }
-
     const projectDetail = {
       mission,
       problemAddressed,
-      coverPhotoPath,
-      agreementFilePath,
-      proposalFilePath
+      coverPhotoPath: coverPhotoHash,
+      agreementFilePath: agreementFileHash,
+      proposalFilePath: proposalFileHash
     };
 
     logger.info(
@@ -270,10 +228,10 @@ module.exports = {
     {
       mission,
       problemAddressed,
-      coverPhoto,
+      coverPhotoHash,
       ownerId,
-      agreementFile,
-      proposalFile
+      agreementFileHash,
+      proposalFileHash
     }
   ) {
     logger.info('[ProjectService] :: Entering updateProjectDetail method');
@@ -294,38 +252,14 @@ module.exports = {
       throw new COAError(errors.project.ProjectCantBeUpdated(status));
     }
 
-    let { coverPhotoPath, agreementFilePath, proposalFilePath } = project;
-
-    if (coverPhoto) {
-      logger.info('[ProjectService] :: Updating cover photo');
-      coverPhotoPath = await files.validateAndSaveFile(
-        files.TYPES.coverPhoto,
-        coverPhoto
-      );
-    }
-    if (agreementFile) {
-      logger.info('[ProjectService] :: Updating agreement file');
-      agreementFilePath = await files.validateAndSaveFile(
-        files.TYPES.agreementFile,
-        agreementFile
-      );
-    }
-    if (proposalFile) {
-      logger.info('[ProjectService] :: Updating proposal file');
-      proposalFilePath = await files.validateAndSaveFile(
-        files.TYPES.proposalFile,
-        proposalFile
-      );
-    }
-
     logger.info(`[ProjectService] :: Updating project of id ${projectId}`);
 
     const updatedProjectId = await this.updateProject(projectId, {
       mission,
       problemAddressed,
-      coverPhotoPath,
-      agreementFilePath,
-      proposalFilePath
+      coverPhotoPath: coverPhotoHash,
+      agreementFilePath: agreementFileHash,
+      proposalFilePath: proposalFileHash
     });
     logger.info(`[ProjectService] :: Project of id ${projectId} updated`);
     return { projectId: updatedProjectId };
@@ -343,7 +277,7 @@ module.exports = {
       coverPhotoPath
     } = await validateExistence(this.projectDao, projectId, 'project');
     logger.info(`[ProjectService] :: Project of id ${projectId} found`);
-    return { mission, problemAddressed, imgPath: coverPhotoPath };
+    return { mission, problemAddressed, imgHash: coverPhotoPath };
   },
 
   async updateProjectProposal(projectId, { proposal, ownerId }) {
@@ -395,7 +329,7 @@ module.exports = {
     return { proposal };
   },
 
-  async processMilestoneFile(projectId, { file, ownerId }) {
+  async processMilestoneFile(projectId, { file, ownerId, fileHash }) {
     logger.info('[ProjectService] :: Entering processMilestoneFile method');
     validateRequiredParams({
       method: 'processMilestoneFile',
@@ -443,13 +377,9 @@ module.exports = {
 
     const goalAmount = this.calculateGoalAmountFromMilestones(milestones);
 
-    logger.info(`[ProjectService] :: Saving file of type '${milestonesType}'`);
-    const milestonePath = await files.saveFile(milestonesType, file);
-    logger.info(`[ProjectService] :: File saved to: ${milestonePath}`);
-
     const savedProjectId = await this.updateProject(projectId, {
       goalAmount,
-      milestonePath
+      milestonePath: fileHash
     });
     logger.info(
       `[ProjectService] :: Milestones of project ${savedProjectId} saved`
@@ -467,7 +397,7 @@ module.exports = {
     return this.milestoneService.getAllMilestonesByProject(projectId);
   },
 
-  async getProjectMilestonesPath(projectId) {
+  async getProjectMilestonesHash(projectId) {
     validateParams(projectId);
     await validateExistence(this.projectDao, projectId, 'project');
 
@@ -475,35 +405,22 @@ module.exports = {
       `[Project Routes] :: Getting milestones file of project ${projectId}`
     );
 
-    const milestonesFilePath = await this.projectDao.getProjectMilestonesFilePath(
+    const milestonesFileHash = await this.projectDao.getProjectMilestonesFilePath(
       projectId
     );
 
-    if (!milestonesFilePath)
+    if (!milestonesFileHash)
       throw new COAError(
         errors.project.ProjectDoesntHaveMilestonesFile(projectId)
       );
 
-    const { milestonePath } = milestonesFilePath;
-    logger.info('[Project Routes] :: MilestonesFilePath: ', milestonesFilePath);
-
-    const milestonesFileExists = await files.fileExists(milestonePath);
-
-    if (!milestonesFileExists)
-      throw new COAError(
-        errors.project.MilestonesFileNotFound(projectId, milestonePath)
-      );
-
-    const response = {
-      filename: path.basename(milestonePath),
-      filepath: milestonePath
-    };
+    logger.info('[Project Routes] :: MilestonesFileHash: ', milestonesFileHash);
 
     logger.info(
       `[Project Routes] :: Milestones file of project ${projectId} got successfully`
     );
 
-    return response;
+    return { fileHash: milestonesFileHash };
   },
 
   /**

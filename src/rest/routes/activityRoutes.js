@@ -19,6 +19,7 @@ const {
 const taskIdParam = idParam('Task identification', 'taskId');
 const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
 const evidenceIdParam = idParam('Evidence identification', 'evidenceId');
+const proofFileHashParam = { type: 'string' };
 
 const taskProperties = {
   description: { type: 'string' },
@@ -175,6 +176,19 @@ const evidencesRoutes = {
           'Get unsigned tx for an approved claim of a task for an existing project',
         summary: 'Get unsigned tx for an approved claim',
         params: { taskIdParam },
+        body: {
+          type: 'object',
+          properties: { ...taskProperties, proofFileHash: proofFileHashParam },
+          required: [
+            'description',
+            'reviewCriteria',
+            'category',
+            'keyPersonnel',
+            'budget',
+            'proofFileHash'
+          ],
+          additionalProperties: false
+        },
         type: 'multipart/form-data',
         response: {
           ...clientErrorResponse(),
@@ -196,6 +210,12 @@ const evidencesRoutes = {
           'Get unsigned tx for a disapproved claim of a task for an existing project',
         summary: 'Get unsigned tx for a disapproved claim',
         params: { taskIdParam },
+        body: {
+          type: 'object',
+          properties: { proofFileHash: proofFileHashParam },
+          required: ['proofFileHash'],
+          additionalProperties: false
+        },
         type: 'multipart/form-data',
         response: {
           ...clientErrorResponse(),
@@ -216,6 +236,12 @@ const evidencesRoutes = {
         description: 'Send approved claim signed transaction to blockchain',
         summary: 'Send approved claim signed tx to blockchain',
         params: { taskIdParam },
+        body: {
+          type: 'object',
+          properties: { proofFileHash: proofFileHashParam },
+          required: ['proofFileHash'],
+          additionalProperties: false
+        },
         type: 'multipart/form-data',
         response: {
           ...clientErrorResponse(),
@@ -236,6 +262,12 @@ const evidencesRoutes = {
         description: 'Send disapproved claim signed transaction to blockchain',
         summary: 'Send disapproved claim signed tx to blockchain',
         params: { taskIdParam },
+        body: {
+          type: 'object',
+          properties: { proofFileHash: proofFileHashParam },
+          required: ['proofFileHash'],
+          additionalProperties: false
+        },
         type: 'multipart/form-data',
         response: {
           ...clientErrorResponse(),

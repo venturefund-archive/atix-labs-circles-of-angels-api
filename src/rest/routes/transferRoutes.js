@@ -34,7 +34,7 @@ const transferProperties = {
   destinationAccount: { type: 'string' },
   amount: { type: 'number' },
   currency: { type: 'string' },
-  receiptPath: { type: 'string' }
+  receiptHash: { type: 'string' }
 };
 
 const transferStatusProperties = {
@@ -103,7 +103,6 @@ const transferRoutes = {
         description: 'Creates a new transfer to be verified by the admin',
         summary: 'Create new transfer',
         raw: {
-          files: { type: 'object' },
           body: {
             type: 'object',
             properties: transferProperties,
