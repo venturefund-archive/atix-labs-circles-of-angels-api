@@ -643,6 +643,12 @@ module.exports = {
     );
   },
 
+  async getProjectsWithTransfers() {
+    // TODO: implement pagination
+    logger.info('Getting all the projects with at least one transfer');
+    return this.projectDao.findProjectsWithTransfers();
+  },
+
   /**
    * Returns the projects that belong to the specified user
    *
@@ -1202,7 +1208,7 @@ module.exports = {
           });
 
           const milestones = await this.milestoneService.getAllMilestonesByProject(
-            projectId
+            project.id
           );
           // set first milestone as claimable
           if (milestones && milestones.length && milestones[0]) {

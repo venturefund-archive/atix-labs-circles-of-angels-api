@@ -8,6 +8,7 @@
 
 const { forEachPromise } = require('../util/promises');
 const { projectStatus } = require('../util/constants');
+const transferDao = require('./transferDao');
 
 module.exports = {
   async saveProject(project) {
@@ -58,7 +59,7 @@ module.exports = {
   async findById(id) {
     return this.model.findOne({ id });
   },
-
+  /* eslint no-param-reassign: ["error", { "props": false }] */
   async addUserInfoOnProject(project) {
     const user = await userDao.getUserById(project.ownerId);
     if (!user) return project;
@@ -135,5 +136,17 @@ module.exports = {
       id: projectsId,
       status: { '>=': projectStatus.PUBLISHED }
     });
+  },
+
+  async findProjectsWithTransfers() {
+    try {
+      const projectIds = await transferDao.findProjectIdsWithTransfers();
+      const projects = await this.model.find({
+        where: { id: { in: projectIds } }
+      });
+      return projects;
+    } catch (error) {
+      throw Error('Error getting projects');
+    }
   }
 };
