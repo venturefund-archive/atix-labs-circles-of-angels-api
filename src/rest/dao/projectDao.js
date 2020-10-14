@@ -141,10 +141,7 @@ module.exports = {
   async findProjectsWithTransfers() {
     try {
       const projectIds = await transferDao.findProjectIdsWithTransfers();
-      const projects = await this.model.find({
-        where: { id: { in: projectIds } }
-      });
-      return projects;
+      return this.model.find({ where: { id: { in: projectIds } } });
     } catch (error) {
       throw Error('Error getting projects');
     }

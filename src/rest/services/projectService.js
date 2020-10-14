@@ -645,7 +645,9 @@ module.exports = {
 
   async getProjectsWithTransfers() {
     // TODO: implement pagination
-    logger.info('Getting all the projects with at least one transfer');
+    logger.info(
+      '[ProjectService] :: Getting all the projects with at least one transfer'
+    );
     return this.projectDao.findProjectsWithTransfers();
   },
 

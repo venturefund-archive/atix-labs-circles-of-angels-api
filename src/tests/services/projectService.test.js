@@ -194,6 +194,21 @@ const consensusProject = {
   status: projectStatuses.CONSENSUS
 };
 
+const projectWithTransfer = {
+  id: 6,
+  projectName,
+  location,
+  timeframe,
+  goalAmount,
+  owner: ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: projectStatuses.FUNDING
+};
+
 const userService = {
   getUserById: id => {
     if (id === 2 || id === 3) {
@@ -266,7 +281,8 @@ const projectDao = {
       };
     }
     return undefined;
-  }
+  },
+  findProjectsWithTransfers: () => [projectWithTransfer]
 };
 
 const milestoneDao = {
@@ -2144,6 +2160,17 @@ describe('Project Service Test', () => {
       ).rejects.toThrow(
         errors.project.BlockchainInfoNotFound(executingProject.id)
       );
+    });
+  });
+
+  describe('Get project with transfers', () => {
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, { projectDao, userService });
+    });
+    it('Should return projects array with at least one transfer', async () => {
+      const response = await projectService.getProjectsWithTransfers();
+      expect(response).toEqual([projectWithTransfer]);
     });
   });
 });
