@@ -1,9 +1,9 @@
 pragma solidity ^0.5.8;
 
-import '@openzeppelin/contracts/ownership/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol';
+import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import "@openzeppelin/upgrades/contracts/Initializable.sol";
 
 import "./ClaimsRegistry.sol";
 
@@ -20,7 +20,7 @@ contract Project is Ownable, Initializable {
     }
 
     function initialize(string memory _name) public payable initializer {
-        registry = ClaimsRegistry(_registryAddress);
-        createSuperDAO();
+        Ownable.__Ownable_init();
+        name = _name;
     }
 }
