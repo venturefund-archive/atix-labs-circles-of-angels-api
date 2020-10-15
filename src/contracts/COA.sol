@@ -5,9 +5,10 @@ import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
 import './SuperDAO.sol';
+import "@openzeppelin/upgrades/contracts/Initializable.sol";
 
 /// @title COA main contract to store projects related information
-contract COA is Ownable {
+contract COA is Ownable, Initializable {
     struct Member {
         string profile;
     }
@@ -28,11 +29,10 @@ contract COA is Ownable {
     /// Emitted when a new Project is created
     event ProjectCreated(uint256 id, address addr);
 
-    constructor(address _registryAddress) public Ownable() {
+    function initialize(address _registryAddress) public payable initializer {
         registry = ClaimsRegistry(_registryAddress);
         createSuperDAO();
     }
-
     /**
      * @notice Adds a new member in COA.
      * @param _profile - string of the member's profile.
