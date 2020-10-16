@@ -15,10 +15,6 @@ contract Project is Ownable, Initializable {
 
     mapping (bytes32 => bool) public isClaimValidated;
 
-    constructor(string memory _name) Ownable() public {
-        name = _name;
-    }
-
     function initialize(string memory _name) public payable initializer {
         Ownable.__Ownable_init();
         name = _name;

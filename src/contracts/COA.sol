@@ -69,7 +69,8 @@ contract COA is Ownable, Initializable {
         public
         returns (uint256)
     {
-        Project project = new Project(_name);
+        Project project = new Project();
+        project.initialize(_name);
         projects.push(project);
         emit ProjectCreated(_id, address(project));
     }
@@ -80,7 +81,8 @@ contract COA is Ownable, Initializable {
      * @param _creator - address of the first member of the DAO (i.e. its creator)
      */
     function createDAO(string memory _name, address _creator) public {
-        DAO dao = new DAO(_name, _creator);
+        DAO dao = new DAO();
+        dao.initialize(_name, _creator);
         daos.push(dao);
         emit DAOCreated(address(dao));
     }
@@ -90,7 +92,8 @@ contract COA is Ownable, Initializable {
      *      It's the DAO that can be used to create other DAOs.
      */
     function createSuperDAO() internal {
-        SuperDAO dao = new SuperDAO('Super DAO', msg.sender, address(this));
+        SuperDAO dao = new SuperDAO();
+        dao.initialize('Super DAO', msg.sender, address(this));
         daos.push(dao);
         emit DAOCreated(address(dao));
     }
