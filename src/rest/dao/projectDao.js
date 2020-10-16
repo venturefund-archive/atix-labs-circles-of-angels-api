@@ -5,9 +5,9 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
-
+const moment = require('moment');
 const { forEachPromise } = require('../util/promises');
-const { projectStatus } = require('../util/constants');
+const { projectStatus, projectStatuses } = require('../util/constants');
 
 module.exports = {
   async saveProject(project) {
@@ -16,7 +16,12 @@ module.exports = {
   },
 
   async findAllByProps(filters, populate) {
-    return this.model.find(filters, populate);
+    const projects = await this.model.find(filters, populate);
+    return projects.map(project =>
+      Object.assign(project, {
+        nextStatusUpdateAt: this.addNextStatusUpdate(project)
+      })
+    );
   },
 
   async findOneByProps(filters, populate) {
@@ -56,9 +61,12 @@ module.exports = {
   },
 
   async findById(id) {
-    return this.model.findOne({ id });
+    const project = await this.model.findOne({ id });
+    return Object.assign(project, {
+      nextStatusUpdateAt: this.addNextStatusUpdate(project)
+    });
   },
-
+  /* eslint no-param-reassign: "error" */
   async addUserInfoOnProject(project) {
     const user = await userDao.getUserById(project.ownerId);
     if (!user) return project;
@@ -135,5 +143,27 @@ module.exports = {
       id: projectsId,
       status: { '>=': projectStatus.PUBLISHED }
     });
+  },
+
+  addNextStatusUpdate({
+    status,
+    lastUpdatedStatusAt,
+    consensusSeconds,
+    fundingSeconds
+  }) {
+    let secondsToAdd;
+    if (
+      ![projectStatuses.CONSENSUS, projectStatuses.FUNDING].includes(status)
+    ) {
+      return null;
+    }
+    if (status === projectStatuses.CONSENSUS) {
+      secondsToAdd = consensusSeconds;
+    } else {
+      secondsToAdd = fundingSeconds;
+    }
+    return moment(lastUpdatedStatusAt)
+      .add(secondsToAdd, 'seconds')
+      .toISOString();
   }
 };

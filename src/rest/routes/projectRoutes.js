@@ -217,10 +217,10 @@ const projectsResponse = {
       status: { type: 'string' },
       owner: userResponse,
       createdAt: { type: 'string' },
-      // address: { type: 'string' },
       proposalFilePath: { type: 'string' },
       agreementFilePath: { type: 'string' },
-      id: { type: 'number' }
+      id: { type: 'number' },
+      nextStatusUpdateAt: { type: 'string' }
     }
   },
   description: 'Returns all projects'

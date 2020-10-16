@@ -299,7 +299,8 @@ module.exports = {
 
     const transfers = await this.transferDao.findAllByProps({
       project: projectId,
-      status: txFunderStatus.VERIFIED
+      status: txFunderStatus.VERIFIED,
+      rejectionReason: null
     });
 
     const totalAmount = transfers.reduce(
