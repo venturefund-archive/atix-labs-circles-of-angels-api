@@ -25,8 +25,8 @@
     "@nomiclabs/buidler-ethers": "1.1.2",
     "@nomiclabs/buidler-truffle5": "1.1.2",
     "@nomiclabs/buidler-web3": "1.1.2",
-    "@openzeppelin/contracts": "3.2.0",
-    "@openzeppelin/contracts-ethereum-package": "3.0.0",
+    "@openzeppelin/contracts": "2.5.1",
+    "@openzeppelin/contracts-ethereum-package": "2.5.0",
     "@openzeppelin/upgrades": "2.8.0",
     "@sendgrid/mail": "6.5.4",
     "@truffle/hdwallet-provider": "1.0.29",
@@ -64,6 +64,7 @@
   "devDependencies": {
     "@commitlint/cli": "8.3.5",
     "@commitlint/config-conventional": "8.3.4",
+    "@openzeppelin/buidler-upgrades": "^1.2.0",
     "babel-eslint": "10.0.1",
     "chai": "4.2.0",
     "commitlint": "8.3.5",

@@ -1,6 +1,6 @@
 pragma solidity ^0.5.8;
 
-import '@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 
@@ -82,7 +82,7 @@ contract AbstractDAO is Initializable {
     function initialize(
         string memory _name,
         address _creator
-    ) public payable initializer {
+    ) public initializer {
         name = _name;
         creationTime = now;
         addMember(_creator);

@@ -1,6 +1,6 @@
 pragma solidity ^0.5.8;
 
-import '@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import './COA.sol';
 import './AbstractDAO.sol';
@@ -11,7 +11,7 @@ contract SuperDAO is AbstractDAO {
 
     function initialize(string memory _name,
         address _creator,
-        address _coaAddress) public payable initializer {
+        address _coaAddress) public initializer {
         AbstractDAO.initialize(_name, _creator);
         coa = COA(_coaAddress);
     }
