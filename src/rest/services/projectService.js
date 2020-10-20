@@ -643,6 +643,14 @@ module.exports = {
     );
   },
 
+  async getProjectsWithTransfers() {
+    // TODO: implement pagination
+    logger.info(
+      '[ProjectService] :: Getting all the projects with at least one transfer'
+    );
+    return this.projectDao.findProjectsWithTransfers();
+  },
+
   /**
    * Returns the projects that belong to the specified user
    *
