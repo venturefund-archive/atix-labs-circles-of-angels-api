@@ -91,13 +91,10 @@ module.exports = {
   },
 
   async findProjectIdsWithTransfers() {
-    const projectIds = await this.findAllByProps({
+    const transfers = await this.findAllByProps({
       select: ['project']
     });
-    return projectIds
-      .map(t => t.project)
-      .reduce((unique, item) =>
-        unique.toString().includes(item) ? [unique] : [...unique, item]
-      );
+    const projectIds = transfers.map(t => t.project);
+    return projectIds.filter((v, i) => projectIds.indexOf(v) === i);
   }
 };
