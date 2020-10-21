@@ -93,13 +93,13 @@ module.exports = {
     await this.sendMail({ to, subject, text, html });
   },
 
-  async sendEmailVerification(
+  async sendEmailVerification({
     to,
     subject = 'Circles of Angels: Account verification',
     text,
     bodyContent,
     userId
-  ) {
+  }) {
     logger.info('[MailService] :: Sending verification mail to:', to);
     validateRequiredParams({
       method: 'sendEmailVerification',
