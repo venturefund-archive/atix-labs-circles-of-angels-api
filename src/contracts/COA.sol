@@ -1,13 +1,15 @@
 pragma solidity ^0.5.8;
 
-import '@openzeppelin/contracts/ownership/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol';
+import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
 import './SuperDAO.sol';
 
+
 /// @title COA main contract to store projects related information
-contract COA is Ownable {
+contract COA is Ownable, Initializable {
     struct Member {
         string profile;
     }
@@ -28,11 +30,11 @@ contract COA is Ownable {
     /// Emitted when a new Project is created
     event ProjectCreated(uint256 id, address addr);
 
-    constructor(address _registryAddress) public Ownable() {
+    function initialize(address _registryAddress) public payable initializer {
+        Ownable.__Ownable_init();
         registry = ClaimsRegistry(_registryAddress);
         createSuperDAO();
     }
-
     /**
      * @notice Adds a new member in COA.
      * @param _profile - string of the member's profile.
@@ -67,7 +69,8 @@ contract COA is Ownable {
         public
         returns (uint256)
     {
-        Project project = new Project(_name);
+        Project project = new Project();
+        project.initialize(_name);
         projects.push(project);
         emit ProjectCreated(_id, address(project));
     }
@@ -78,7 +81,8 @@ contract COA is Ownable {
      * @param _creator - address of the first member of the DAO (i.e. its creator)
      */
     function createDAO(string memory _name, address _creator) public {
-        DAO dao = new DAO(_name, _creator);
+        DAO dao = new DAO();
+        dao.initialize(_name, _creator);
         daos.push(dao);
         emit DAOCreated(address(dao));
     }
@@ -88,7 +92,8 @@ contract COA is Ownable {
      *      It's the DAO that can be used to create other DAOs.
      */
     function createSuperDAO() internal {
-        SuperDAO dao = new SuperDAO('Super DAO', msg.sender, address(this));
+        SuperDAO dao = new SuperDAO();
+        dao.initialize('Super DAO', msg.sender, address(this));
         daos.push(dao);
         emit DAOCreated(address(dao));
     }

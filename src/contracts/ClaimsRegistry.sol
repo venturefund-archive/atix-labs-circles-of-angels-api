@@ -1,11 +1,11 @@
 pragma solidity ^0.5.8;
 
-
+import '@openzeppelin/upgrades/contracts/Initializable.sol';
 /**
  * @title This contract holds information about claims made buy COA members
  * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
  */
-contract ClaimsRegistry {
+contract ClaimsRegistry is Initializable{
     struct Claim {
         bool approved;
         bytes32 proof;
@@ -25,6 +25,9 @@ contract ClaimsRegistry {
         uint256 verifiedAt,
         uint256 milestone
     );
+
+    function initialize() public payable initializer {
+    }
 
     /**
      * @notice Adds a claim into the registry.
