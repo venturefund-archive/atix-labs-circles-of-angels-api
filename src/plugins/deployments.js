@@ -11,8 +11,11 @@ const {
   web3,
   run,
   config,
-  ethers
+  ethers,
+  upgrades
 } = require('@nomiclabs/buidler');
+// const { ethers } = require('@nomiclabs/buidler-ethers');
+
 const {
   ensureFileSync,
   existsSync,
@@ -203,7 +206,12 @@ async function deploy(contractName, params, signer) {
   );
   // factory.connect(await getSigner(signer));
 
-  const contract = await factory.deploy(...params);
+  //const contract = await factory.deploy(...params);
+  console.log('Deploying', contractName, params)
+  /*
+    TODO: considere unsafeAllowCustomTypes and unsafeAllowLinkedLibraries params. Always would be TRUE's independent of the contracts?
+  */
+  const contract = await upgrades.deployProxy(factory, params, { initializer: 'initialize', unsafeAllowCustomTypes: true, unsafeAllowLinkedLibraries: false });
   await contract.deployed();
 
   // console.log('Deployed', contractName, 'at', contract.address);
@@ -261,7 +269,7 @@ async function getChainId(chainId) {
 
 async function getSigner(account) {
   if (account === undefined) {
-    return (await ethers.signers())[0];
+    return (await ethers.getSigners())[0];
   }
   if (typeof account === 'string') {
     return ethers.provider.getSigner(account);
