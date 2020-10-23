@@ -1,13 +1,11 @@
 usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
+usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
 usePlugin('@openzeppelin/buidler-upgrades');
 // const deployments = ;
 const config = require('config');
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
-const {
-  createChainIdGetter
-} = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
 require('./src/rest/services/helpers/buidlerTasks');
 const COA = require('./src/plugins/coa');
 
