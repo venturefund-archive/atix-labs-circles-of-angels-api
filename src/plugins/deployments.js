@@ -207,7 +207,6 @@ async function deploy(contractName, params, signer) {
   // factory.connect(await getSigner(signer));
 
   //const contract = await factory.deploy(...params);
-  console.log('Deploying', contractName, params)
   /*
     TODO: considere unsafeAllowCustomTypes and unsafeAllowLinkedLibraries params. Always would be TRUE's independent of the contracts?
   */
