@@ -687,7 +687,9 @@ module.exports = {
       },
       txHash,
       txHashUrl: txHash ? buildTxURL(txHash) : undefined,
-      creationDate: timestamp ? new Date(timestamp * secondsConversion) : undefined,
+      creationDate: timestamp
+        ? new Date(timestamp * secondsConversion)
+        : undefined,
       blockNumber,
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       proof
@@ -796,5 +798,17 @@ module.exports = {
       logger.info('[ActivityService] :: No failed transactions found');
     }
     return failed;
+  },
+  async getAllOraclesWithTasksFromProject(project) {
+    const oracles = [];
+    const milestones = await this.milestoneService.getMilestones({ project });
+    milestones.forEach(({ tasks }) => {
+      tasks.forEach(({ oracle }) => {
+        if (!oracles.includes(oracle)) {
+          oracles.push(oracle);
+        }
+      });
+    });
+    return oracles;
   }
 };

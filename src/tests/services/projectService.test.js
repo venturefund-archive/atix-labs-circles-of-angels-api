@@ -1493,6 +1493,7 @@ describe('Project Service Test', () => {
         hasTimePassed: jest.fn(),
         getNextValidStatus: jest.fn(),
         removeFundersWithNoTransfersFromProject: jest.fn(),
+        removeOraclesWithoutActivitiesFromProject: jest.fn(),
         generateProjectAgreement: jest.fn(() => 'agreementJson'),
         notifyProjectStatusChange: jest.fn()
       });
@@ -1801,6 +1802,104 @@ describe('Project Service Test', () => {
       });
       const response = await projectService.removeFundersWithNoTransfersFromProject(
         fundingProject
+      );
+      expect(response).toHaveLength(0);
+    });
+  });
+
+  describe('Remove oracles without activities', () => {
+    let dbTasks = [];
+    let dbProjectOracle = [];
+    let oracles = [];
+    const consensusProjectWithOracles = {
+      id: 1,
+      status: projectStatuses.CONSENSUS
+    };
+    const oracleUser = { id: 1 };
+    const noOracleUser = { id: 2 };
+    beforeEach(() => {
+      dbProjectOracle = [];
+      dbTasks = [];
+      oracles = [];
+    });
+
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        activityService: Object.assign(
+          {},
+          {
+            getAllOraclesWithTasksFromProject: () => {
+              oracles = dbTasks
+                .filter(
+                  task => task.projectId === consensusProjectWithOracles.id
+                )
+                .map(task => task.oracleId);
+              return oracles;
+            }
+          }
+        ),
+        oracleDao: Object.assign(
+          {},
+          {
+            removeCandidatesByProps: () =>
+              dbProjectOracle
+                .filter(p => !oracles.includes(p.user))
+                .map(p => p.id)
+          }
+        )
+      });
+    });
+
+    it(
+      'should remove the oracles with no activities ' +
+        'from the project and return their ids',
+      async () => {
+        dbTasks.push({
+          id: 1,
+          projectId: consensusProjectWithOracles.id,
+          oracleId: 1
+        });
+        dbProjectOracle.push(
+          {
+            id: 1,
+            project: consensusProjectWithOracles.id,
+            user: oracleUser.id
+          },
+          {
+            id: 2,
+            project: consensusProjectWithOracles.id,
+            user: noOracleUser.id
+          }
+        );
+        const response = await projectService.removeOraclesWithoutActivitiesFromProject(
+          consensusProjectWithOracles.id
+        );
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([noOracleUser.id]);
+      }
+    );
+
+    it('should return an empty array if the project has no oracles assigned', async () => {
+      const response = await projectService.removeOraclesWithoutActivitiesFromProject(
+        consensusProjectWithOracles.id
+      );
+      expect(response).toHaveLength(0);
+    });
+
+    it('should return an empty array if all oracles are assigned to activities', async () => {
+      dbTasks.push({
+        id: 1,
+        projectId: consensusProjectWithOracles.id,
+        oracleId: 1
+      });
+      dbProjectOracle.push({
+        id: 1,
+        project: consensusProjectWithOracles.id,
+        user: oracleUser.id
+      });
+      const response = await projectService.removeOraclesWithoutActivitiesFromProject(
+        consensusProjectWithOracles.id
       );
       expect(response).toHaveLength(0);
     });
