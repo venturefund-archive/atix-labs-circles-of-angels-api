@@ -7,7 +7,10 @@
  */
 const moment = require('moment');
 const { forEachPromise } = require('../util/promises');
-const { projectStatus, projectStatuses } = require('../util/constants');
+const {
+  projectStatus,
+  projectStatusesWithUpdateTime
+} = require('../util/constants');
 
 module.exports = {
   async saveProject(project) {
@@ -17,11 +20,10 @@ module.exports = {
 
   async findAllByProps(filters, populate) {
     const projects = await this.model.find(filters, populate);
-    return projects.map(project =>
-      Object.assign(project, {
-        nextStatusUpdateAt: this.addNextStatusUpdate(project)
-      })
-    );
+    return projects.map(project => ({
+      ...project,
+      nextStatusUpdateAt: this.getNextStatusUpdate(project)
+    }));
   },
 
   async findOneByProps(filters, populate) {
@@ -62,9 +64,10 @@ module.exports = {
 
   async findById(id) {
     const project = await this.model.findOne({ id });
-    return Object.assign(project, {
-      nextStatusUpdateAt: this.addNextStatusUpdate(project)
-    });
+    return {
+      ...project,
+      nextStatusUpdateAt: this.getNextStatusUpdate(project)
+    };
   },
   /* eslint no-param-reassign: "error" */
   async addUserInfoOnProject(project) {
@@ -145,23 +148,22 @@ module.exports = {
     });
   },
 
-  addNextStatusUpdate({
+  getNextStatusUpdate({
     status,
     lastUpdatedStatusAt,
     consensusSeconds,
     fundingSeconds
   }) {
+    const { CONSENSUS, FUNDING } = projectStatusesWithUpdateTime;
     let secondsToAdd;
-    if (
-      ![projectStatuses.CONSENSUS, projectStatuses.FUNDING].includes(status)
-    ) {
+    if (status === CONSENSUS) {
+      secondsToAdd = consensusSeconds;
+    } else if (status === FUNDING) {
+      secondsToAdd = fundingSeconds;
+    } else {
       return null;
     }
-    if (status === projectStatuses.CONSENSUS) {
-      secondsToAdd = consensusSeconds;
-    } else {
-      secondsToAdd = fundingSeconds;
-    }
+
     return moment(lastUpdatedStatusAt)
       .add(secondsToAdd, 'seconds')
       .toISOString();
