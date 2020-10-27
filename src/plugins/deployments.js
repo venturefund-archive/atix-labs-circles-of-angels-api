@@ -52,7 +52,7 @@ class DeploymentSetup {
 
   async deploy() {
     const contracts = {};
-    const signer = (await ethers.signers())[0];
+    const signer = await getSigner();
     // console.log('About to deploy', this.setup.contracts.length, 'contracts')
     for (const cfg of this.setup.contracts) {
       // console.log('Deploying', cfg.name)
@@ -273,7 +273,7 @@ async function getChainId(chainId) {
 
 async function getSigner(account) {
   if (account === undefined) {
-    return (await ethers.signers())[0];
+    return (await ethers.getSigners())[0];
   }
   if (typeof account === 'string') {
     return ethers.provider.getSigner(account);
