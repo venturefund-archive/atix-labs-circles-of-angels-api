@@ -4,6 +4,7 @@ const {
   readArtifactSync
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
+const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
 const {
   artifacts,
   ethereum,
@@ -11,7 +12,8 @@ const {
   web3,
   run,
   config,
-  ethers
+  ethers,
+  upgrades
 } = require('@nomiclabs/buidler');
 const {
   ensureFileSync,
@@ -153,7 +155,7 @@ async function getDeployedContracts(name, chainId) {
   const contracts = [];
   for (const addr of addresses) {
     const code = await ethers.provider.getCode(addr);
-    if (code === artifact.deployedBytecode) {
+    if (code === artifact.deployedBytecode || code === AdminUpgradeabilityProxy.deployedBytecode) {
       contracts.push(factory.attach(addr));
     }
   }
@@ -199,17 +201,27 @@ async function saveDeployedContract(name, instance) {
 async function deploy(contractName, params, signer) {
   const factory = await getContractFactory(
     contractName,
-    await getSigner(signer)
+    signer
   );
-  // factory.connect(await getSigner(signer));
 
   const contract = await factory.deploy(...params);
   await contract.deployed();
 
-  // console.log('Deployed', contractName, 'at', contract.address);
-  // await this.saveDeployedContract(contractName, contract);
   const receipt = await ethers.provider.getTransactionReceipt(
     contract.deployTransaction.hash
+  );
+  return [contract, receipt];
+}
+
+
+async function deployProxy(contractName, params, signer) {
+  const factory = await ethers.getContractFactory(contractName, await getSigner(signer));
+
+  const contract = await upgrades.deployProxy(factory, params, { unsafeAllowCustomTypes: true });
+  await contract.deployed();
+
+  const receipt = await ethers.provider.getTransactionReceipt(
+      contract.deployTransaction.hash
   );
   return [contract, receipt];
 }
@@ -279,6 +291,7 @@ function isDeployed(state, chainId, name) {
 
 module.exports = {
   deploy,
+  deployProxy,
   getDeployedContracts,
   saveDeployedContract,
   getLastDeployedContract,

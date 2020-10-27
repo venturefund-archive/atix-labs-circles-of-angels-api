@@ -1,5 +1,6 @@
 usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
+usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
 
 // const deployments = ;
@@ -30,14 +31,14 @@ task('deploy', 'Deploys COA contracts')
       'ClaimsRegistry'
     );
     if (registry === undefined || reset === true) {
-      [registry] = await env.deployments.deploy('ClaimsRegistry', []);
+      [registry] = await env.deployments.deployProxy('ClaimsRegistry', []);
       await env.deployments.saveDeployedContract('ClaimsRegistry', registry);
       // console.log('ClaimsRegistry deployed. Address:', registry.address);
     }
 
     let [coa] = await env.deployments.getDeployedContracts('COA');
     if (coa === undefined || reset === true) {
-      [coa] = await env.deployments.deploy('COA', [registry.address]);
+      [coa] = await env.deployments.deployProxy('COA', [registry.address]);
       await env.deployments.saveDeployedContract('COA', coa);
       // console.log('COA deployed. Address:', coa.address);
     }
