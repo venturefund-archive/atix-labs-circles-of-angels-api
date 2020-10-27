@@ -11,6 +11,7 @@ const {
   projectStatus,
   projectStatusesWithUpdateTime
 } = require('../util/constants');
+const transferDao = require('./transferDao');
 
 module.exports = {
   async saveProject(project) {
@@ -69,7 +70,8 @@ module.exports = {
       nextStatusUpdateAt: this.getNextStatusUpdate(project)
     };
   },
-  /* eslint no-param-reassign: "error" */
+
+  /* eslint no-param-reassign: ["error", { "props": false }] */
   async addUserInfoOnProject(project) {
     const user = await userDao.getUserById(project.ownerId);
     if (!user) return project;
@@ -167,5 +169,14 @@ module.exports = {
     return moment(lastUpdatedStatusAt)
       .add(secondsToAdd, 'seconds')
       .toISOString();
+  },
+
+  async findProjectsWithTransfers() {
+    try {
+      const projectIds = await transferDao.findProjectIdsWithTransfers();
+      return this.model.find({ where: { id: { in: projectIds } } });
+    } catch (error) {
+      throw Error('Error getting projects');
+    }
   }
 };
