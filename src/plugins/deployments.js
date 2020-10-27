@@ -142,6 +142,8 @@ async function getDeployedContracts(name, chainId) {
   const factory = await getContractFactory(name);
   const addresses = await getDeployedAddresses(name, chainId);
   const artifact = readArtifactSync(config.paths.artifacts, name);
+  // This slot was recollected from @openzeppelin/upgrades-core/artifacts/BaseUpgradeabilityProxy.json
+  const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
   // TODO : should use deployedBytecode instead?
   if (artifact.bytecode !== factory.bytecode) {
@@ -155,8 +157,14 @@ async function getDeployedContracts(name, chainId) {
   const contracts = [];
   for (const addr of addresses) {
     const code = await ethers.provider.getCode(addr);
-    if (code === artifact.deployedBytecode || code === AdminUpgradeabilityProxy.deployedBytecode) {
+    if (code === artifact.deployedBytecode) {
       contracts.push(factory.attach(addr));
+    } else if (code === AdminUpgradeabilityProxy.deployedBytecode) {
+      const implAddr = await ethers.provider.getStorageAt(addr, IMPLEMENTATION_SLOT);
+      const implCode = await ethers.provider.getCode(implAddr);
+      if (implCode === artifact.deployedBytecode) {
+        contracts.push(factory.attach(addr));
+      }
     }
   }
 
