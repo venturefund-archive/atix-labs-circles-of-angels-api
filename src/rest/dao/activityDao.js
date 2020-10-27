@@ -60,7 +60,7 @@ module.exports = {
     return task;
   },
 
-  async getTaskByMilestones(milestoneIds) {
+  getTaskByMilestones(milestoneIds) {
     return this.model.find({
       where: { milestone: { in: milestoneIds } }
     });

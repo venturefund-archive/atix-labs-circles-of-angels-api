@@ -1384,10 +1384,10 @@ module.exports = {
     logger.info(
       '[ProjectService] :: Entering removeOraclesWithoutActivitiesFromProject method'
     );
-    const oraclesWithActivities = await this.activityService.getAllOraclesWithTasksFromProject(
+    const oraclesWithActivities = await this.getAllOraclesWithTasksFromProject(
       projectId
     );
-    if (oraclesWithActivities.length === 0) {
+    if (!oraclesWithActivities.length) {
       return [];
     }
     return this.oracleDao.removeCandidatesByProps({
@@ -1474,5 +1474,21 @@ module.exports = {
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       agreement: undefined // TODO: add when ipfs is implemented
     };
+  },
+  /**
+   * Returns the oracles assigned at least one transfer
+   * @param {number} project
+   */
+  async getAllOraclesWithTasksFromProject(project) {
+    const oracles = {};
+    const milestones = await this.milestoneService.getMilestones({ project });
+    milestones.forEach(({ tasks }) => {
+      tasks.forEach(({ oracle }) => {
+        if (!oracles.includes(oracle)) {
+          oracles.push(oracle);
+        }
+      });
+    });
+    return oracles;
   }
 };

@@ -798,17 +798,5 @@ module.exports = {
       logger.info('[ActivityService] :: No failed transactions found');
     }
     return failed;
-  },
-  async getAllOraclesWithTasksFromProject(project) {
-    const oracles = [];
-    const milestones = await this.milestoneService.getMilestones({ project });
-    milestones.forEach(({ tasks }) => {
-      tasks.forEach(({ oracle }) => {
-        if (!oracles.includes(oracle)) {
-          oracles.push(oracle);
-        }
-      });
-    });
-    return oracles;
   }
 };
