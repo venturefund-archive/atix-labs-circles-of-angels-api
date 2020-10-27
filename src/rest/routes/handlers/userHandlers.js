@@ -51,7 +51,7 @@ module.exports = {
       .setCookie('userAuth', token, {
         domain: config.server.domain,
         path: '/',
-        httpOnly: true,
+        httpOnly: false,
         expires: expirationDate,
         secure: config.server.isHttps
       })
