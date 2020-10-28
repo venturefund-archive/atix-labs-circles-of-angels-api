@@ -11,7 +11,7 @@ const templateNames = {
   GENERIC: 'generic',
   SIGNUP: 'signup',
   PROJECT_STATUS_CHANGE: 'projectStatusChange',
-  EMAIL_VERIFICATION: 'emailVerification'
+  EMAIL_VERIFICATION: 'confirmEmail'
 };
 
 const templatePaths = {
