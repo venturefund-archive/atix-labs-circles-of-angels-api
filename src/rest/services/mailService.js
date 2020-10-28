@@ -111,7 +111,7 @@ module.exports = {
         ...bodyContent,
         frontendUrl: config.frontendUrl
       },
-      templateNames.EMAIL_VERIFICATION
+      templateNames.EMAIL_CONFIRMATION
     );
     await this.sendMail({ to, subject, text, html });
   }
