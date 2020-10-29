@@ -169,7 +169,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
     });
 
     it('Should fail when a non member is sending a proposal', async () => {
-      const signers = await ethers.signers();
+      const signers = await ethers.getSigners();
       await throwsAsync(
         // We are using the first few signers
         dao
@@ -180,7 +180,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
     });
 
     it('Should fail when a non member is voting', async () => {
-      const signers = await ethers.signers();
+      const signers = await ethers.getSigners();
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       await throwsAsync(
         // We are using the first few signers

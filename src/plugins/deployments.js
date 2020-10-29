@@ -4,6 +4,7 @@ const {
   readArtifactSync
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
+const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
 const {
   artifacts,
   ethereum,
@@ -53,7 +54,7 @@ class DeploymentSetup {
 
   async deploy() {
     const contracts = {};
-    const signer = (await ethers.signers())[0];
+    const signer = await getSigner();
     // console.log('About to deploy', this.setup.contracts.length, 'contracts')
     for (const cfg of this.setup.contracts) {
       // console.log('Deploying', cfg.name)
@@ -143,6 +144,8 @@ async function getDeployedContracts(name, chainId) {
   const factory = await getContractFactory(name);
   const addresses = await getDeployedAddresses(name, chainId);
   const artifact = readArtifactSync(config.paths.artifacts, name);
+  // This slot was recollected from @openzeppelin/upgrades-core/artifacts/BaseUpgradeabilityProxy.json
+  const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
   // TODO : should use deployedBytecode instead?
   if (artifact.bytecode !== factory.bytecode) {
@@ -158,6 +161,12 @@ async function getDeployedContracts(name, chainId) {
     const code = await ethers.provider.getCode(addr);
     if (code === artifact.deployedBytecode) {
       contracts.push(factory.attach(addr));
+    } else if (code === AdminUpgradeabilityProxy.deployedBytecode) {
+      const implAddr = await ethers.provider.getStorageAt(addr, IMPLEMENTATION_SLOT);
+      const implCode = await ethers.provider.getCode(implAddr);
+      if (implCode === artifact.deployedBytecode) {
+        contracts.push(factory.attach(addr));
+      }
     }
   }
 
@@ -202,9 +211,8 @@ async function saveDeployedContract(name, instance) {
 async function deploy(contractName, params, signer) {
   const factory = await getContractFactory(
     contractName,
-    await getSigner(signer)
+    signer
   );
-  // factory.connect(await getSigner(signer));
 
   //const contract = await factory.deploy(...params);
   /*
@@ -213,10 +221,21 @@ async function deploy(contractName, params, signer) {
   const contract = await upgrades.deployProxy(factory, params, { initializer: 'initialize', unsafeAllowCustomTypes: true, unsafeAllowLinkedLibraries: false });
   await contract.deployed();
 
-  // console.log('Deployed', contractName, 'at', contract.address);
-  // await this.saveDeployedContract(contractName, contract);
   const receipt = await ethers.provider.getTransactionReceipt(
     contract.deployTransaction.hash
+  );
+  return [contract, receipt];
+}
+
+
+async function deployProxy(contractName, params, signer) {
+  const factory = await ethers.getContractFactory(contractName, await getSigner(signer));
+
+  const contract = await upgrades.deployProxy(factory, params, { unsafeAllowCustomTypes: true });
+  await contract.deployed();
+
+  const receipt = await ethers.provider.getTransactionReceipt(
+      contract.deployTransaction.hash
   );
   return [contract, receipt];
 }
@@ -286,6 +305,7 @@ function isDeployed(state, chainId, name) {
 
 module.exports = {
   deploy,
+  deployProxy,
   getDeployedContracts,
   saveDeployedContract,
   getLastDeployedContract,
