@@ -1,5 +1,6 @@
 const { readArtifact } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory, Wallet, utils } = require('ethers');
+const { types } = require('@nomiclabs/buidler/config');
 
 const { sha3 } = require('../../util/hash');
 const { proposalTypeEnum, voteEnum } = require('../../util/constants');
@@ -10,7 +11,7 @@ const getCOAContract = async env => {
 };
 
 const getSigner = async (env, account) => {
-  let creator = (await env.ethers.signers())[0];
+  let creator = (await env.ethers.getSigners())[0];
   if (account && typeof account === 'string') {
     creator = await env.ethers.provider.getSigner(account);
   }
@@ -52,7 +53,7 @@ task('create-member', 'Create COA member')
     const wallet = Wallet.createRandom();
     const { address } = wallet;
     const memberProfile = profile || 'Member created by buidler';
-    const accounts = await env.ethers.signers();
+    const accounts = await env.ethers.getSigners();
     const tx = {
       to: address,
       value: utils.parseEther('0.001')
@@ -149,7 +150,7 @@ task('propose-member-to-dao', 'Creates proposal to add member to existing DAO')
 
 task('vote-proposal', 'Votes a proposal')
   .addParam('daoaddress', 'DAO address')
-  .addParam('proposal', 'Proposal index')
+  .addParam('proposal', 'Proposal index', 0, types.int)
   .addParam('vote', 'Vote (true or false)', false, types.boolean)
   .addOptionalParam('voter', 'Voter address')
   .setAction(async ({ daoaddress, proposal, vote, voter }, env) => {
@@ -162,7 +163,7 @@ task('vote-proposal', 'Votes a proposal')
 
 task('process-proposal', 'Process a proposal')
   .addParam('daoaddress', 'DAO address')
-  .addParam('proposal', 'Proposal index')
+  .addParam('proposal', 'Proposal index', 0, types.int)
   .addOptionalParam('signer', 'Tx signer address')
   .setAction(async ({ daoaddress, proposal, signer }, env) => {
     const member = await getSigner(env, signer);
