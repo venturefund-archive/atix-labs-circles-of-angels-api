@@ -1,6 +1,6 @@
 pragma solidity ^0.5.8;
 
-import '@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import './Project.sol';
 import './ClaimsRegistry.sol';
@@ -9,7 +9,7 @@ import './SuperDAO.sol';
 
 
 /// @title COA main contract to store projects related information
-contract COA is Ownable, Initializable {
+contract COA is Initializable, Ownable {
     struct Member {
         string profile;
     }
@@ -30,8 +30,8 @@ contract COA is Ownable, Initializable {
     /// Emitted when a new Project is created
     event ProjectCreated(uint256 id, address addr);
 
-    function initialize(address _registryAddress) public payable initializer {
-        Ownable.__Ownable_init();
+    function initialize(address _registryAddress) public initializer {
+        Ownable.initialize(msg.sender);
         registry = ClaimsRegistry(_registryAddress);
         createSuperDAO();
     }

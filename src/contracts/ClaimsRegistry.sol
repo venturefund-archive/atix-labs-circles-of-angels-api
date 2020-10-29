@@ -26,7 +26,7 @@ contract ClaimsRegistry is Initializable{
         uint256 milestone
     );
 
-    function initialize() public payable initializer {
+    function initialize() public initializer {
     }
 
     /**

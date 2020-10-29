@@ -216,7 +216,7 @@ module.exports = {
       address
     } = user;
 
-    const accounts = await ethers.signers();
+    const accounts = await ethers.getSigners();
     const tx = {
       to: user.address,
       value: utils.parseEther('0.001')

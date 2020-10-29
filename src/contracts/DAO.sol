@@ -5,7 +5,7 @@ import './AbstractDAO.sol';
 /// @title A DAO contract based on MolochDAO ideas
 contract DAO is AbstractDAO {
 
-    function initialize(string memory _name, address _creator) public payable initializer {
+    function initialize(string memory _name, address _creator) public initializer {
         AbstractDAO.initialize(_name, _creator);
     }
     
