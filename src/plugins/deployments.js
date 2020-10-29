@@ -306,6 +306,7 @@ function isDeployed(state, chainId, name) {
 module.exports = {
   deploy,
   deployProxy,
+  getSigner,
   getDeployedContracts,
   saveDeployedContract,
   getLastDeployedContract,

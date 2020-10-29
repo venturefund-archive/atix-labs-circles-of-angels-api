@@ -1,4 +1,11 @@
-const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
+const {
+  web3,
+  run,
+  deployments,
+  ethers,
+  upgrades
+} = require('@nomiclabs/buidler');
+const { getSigner } = require('../../plugins/deployments');
 
 const { throwsAsync } = require('./testHelpers');
 
@@ -92,6 +99,27 @@ contract('COA.sol', ([creator, founder]) => {
         }),
         'Returned error: VM Exception while processing transaction: revert'
       );
+    });
+  });
+
+  describe('Upgrade Project sol', () => {
+    it('Should upgrade a new version of project', async () => {
+      const project = {
+        id: 1,
+        name: 'a good project'
+      };
+      await coa.createProject(project.id, project.name);
+      // const instance = await getProjectAt(await coa.projects(0));
+      const instance = await coa.projects(0);
+      const mockContract = await ethers.getContractFactory('MockProjectV2');
+      // const instance = await deployments.getContractInstance('AdminUpgradeabilityProxy', await coa.projects(0));
+      // await instance.upgradeTo(mockContract.address);
+      const contractUpgraded = await upgrades.upgradeProxy(
+        instance.address,
+        mockContract
+      );
+      assert.equal(await contractUpgraded.name(), project.name);
+      assert.equal(await contractUpgraded.test(), 'test');
     });
   });
 });

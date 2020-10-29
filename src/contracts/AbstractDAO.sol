@@ -326,4 +326,6 @@ contract AbstractDAO is Initializable {
      */
     function processNewDaoProposal(string memory _name, address _applicant)
         internal;
+
+    uint256[50] private _gap;
 }

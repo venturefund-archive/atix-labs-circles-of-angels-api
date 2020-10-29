@@ -31,4 +31,6 @@ contract SuperDAO is AbstractDAO {
             'Invalid Proposal Type'
         );
     }
+
+    uint256[50] private _gap;
 }

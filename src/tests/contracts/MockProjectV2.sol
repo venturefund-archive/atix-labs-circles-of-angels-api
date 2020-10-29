@@ -3,13 +3,13 @@ pragma solidity ^0.5.8;
 import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import './ClaimsRegistry.sol';
 
-contract Project is Initializable, Ownable {
+contract MockProjectV2 is Initializable, Ownable {
     using SafeMath for uint256;
 
     string public name;
     address public entrepreneurAddress;
+    string public test = "test";
 
     mapping (bytes32 => bool) public isClaimValidated;
 
@@ -18,5 +18,5 @@ contract Project is Initializable, Ownable {
         name = _name;
     }
 
-    uint256[50] private _gap;
+    uint256[49] private _gap;
 }

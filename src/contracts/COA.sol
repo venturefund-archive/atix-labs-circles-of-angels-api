@@ -2,6 +2,8 @@ pragma solidity ^0.5.8;
 
 import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
+import '@openzeppelin/upgrades/contracts/upgradeability/InitializableUpgradeabilityProxy.sol';
+import '@openzeppelin/upgrades/contracts/upgradeability/Proxy.sol';
 import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
@@ -15,7 +17,8 @@ contract COA is Initializable, Ownable {
     }
 
     /// Projects list
-    Project[] public projects;
+    //Project[] public projects;
+    InitializableUpgradeabilityProxy[] public projects;
     /// COA members
     mapping(address => Member) public members;
     /// COA owned daos
@@ -69,9 +72,12 @@ contract COA is Initializable, Ownable {
         public
         returns (uint256)
     {
+        InitializableUpgradeabilityProxy proxy = new InitializableUpgradeabilityProxy();
         Project project = new Project();
-        project.initialize(_name);
-        projects.push(project);
+        bytes memory payload = abi.encodeWithSignature("initialize(string)", _name);
+        //AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(project), msg.sender, payload);
+        proxy.initialize(address(project),  payload);
+        projects.push(proxy);
         emit ProjectCreated(_id, address(project));
     }
 
@@ -119,4 +125,6 @@ contract COA is Initializable, Ownable {
     function getProjectsLength() public view returns (uint256) {
         return projects.length;
     }
+
+    uint256[50] private _gap;
 }
