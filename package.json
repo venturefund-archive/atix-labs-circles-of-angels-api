@@ -70,6 +70,7 @@
     "commitlint": "8.3.5",
     "eslint": "5.14.1",
     "eslint-config-airbnb": "17.1.0",
+    "eslint-config-airbnb-base": "13.2.0",
     "eslint-config-prettier": "4.0.0",
     "eslint-plugin-flowtype": "3.4.2",
     "eslint-plugin-import": "2.16.0",
@@ -80,10 +81,12 @@
     "ethers": "5.0.0",
     "ganache-cli": "6.8.2",
     "husky": "4.2.3",
+    "pre-commit": "1.2.2",
     "jest": "24.1.0",
     "lint-staged": "10.0.8",
     "prettier": "1.16.4",
-    "solidity-coverage": "git+https://github.com/sc-forks/solidity-coverage.git#buidler-plugin"
+    "solidity-coverage": "git+https://github.com/sc-forks/solidity-coverage.git#buidler-plugin",
+    "ws": "7.3.1"
   },
   "husky": {
     "hooks": {
