@@ -162,7 +162,8 @@ async function getDeployedContracts(name, chainId) {
     if (code === artifact.deployedBytecode) {
       contracts.push(factory.attach(addr));
     } else if (code === AdminUpgradeabilityProxy.deployedBytecode) {
-      const implAddr = await ethers.provider.getStorageAt(addr, IMPLEMENTATION_SLOT);
+      const storageAddr = await ethers.provider.getStorageAt(addr, IMPLEMENTATION_SLOT);
+      const implAddr = '0x' + storageAddr.substring(storageAddr.length - 40, storageAddr.length);
       const implCode = await ethers.provider.getCode(implAddr);
       if (implCode === artifact.deployedBytecode) {
         contracts.push(factory.attach(addr));
