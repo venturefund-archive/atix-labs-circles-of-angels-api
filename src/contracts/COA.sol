@@ -10,8 +10,6 @@ import './ClaimsRegistry.sol';
 import './DAO.sol';
 import './SuperDAO.sol';
 
-import '@nomiclabs/buidler/console.sol';
-
 /// @title COA main contract to store projects related information
 contract COA is Initializable, Ownable {
     struct Member {
@@ -35,12 +33,9 @@ contract COA is Initializable, Ownable {
     event ProjectCreated(uint256 id, address addr);
 
     function initialize(address _registryAddress) public initializer {
-        console.log("Creating COA..");
         Ownable.initialize(msg.sender);
         registry = ClaimsRegistry(_registryAddress);
-        console.log("Creating superdao..");
         createSuperDAO();
-        console.log("Superdao created..");
     }
     /**
      * @notice Adds a new member in COA.
@@ -102,11 +97,9 @@ contract COA is Initializable, Ownable {
      *      It's the DAO that can be used to create other DAOs.
      */
     function createSuperDAO() internal {
-        console.log("Creating superdao");
         SuperDAO dao = new SuperDAO();
         address superDaoAdmin = 0x26C43a1D431A4e5eE86cD55Ed7Ef9Edf3641e901;
         bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", 'Super DAO', superDaoAdmin, address(this));
-        console.log("Creating proxy");
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), owner(), payload);
         daos.push(proxy);
         emit DAOCreated(address(dao));
