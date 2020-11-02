@@ -26,11 +26,10 @@ contract AbstractDAO is Initializable {
     enum Role {Normal, Bank, Curator}
 
     /// TODO: actually define these numbers
-    uint256 public periodDuration = 17280; /// seconds
-    uint256 public votingPeriodLength = 35; /// periods
-    uint256 public gracePeriodLength = 35;
-    uint256 public processingPeriodLength = votingPeriodLength +
-        gracePeriodLength;
+    uint256 public periodDuration; /// seconds
+    uint256 public votingPeriodLength; /// periods
+    uint256 public gracePeriodLength;
+    uint256 public processingPeriodLength;
 
     /// Emitted then a proposal was successfuly submitted
     event SubmitProposal(
@@ -86,6 +85,10 @@ contract AbstractDAO is Initializable {
         name = _name;
         creationTime = now;
         addMember(_creator);
+        periodDuration = 17280;
+        votingPeriodLength = 35; /// periods
+        gracePeriodLength = 35;
+        processingPeriodLength = votingPeriodLength + gracePeriodLength;
     }
     /**
      * @notice Function to be invoked in order to create a new proposal.
@@ -155,7 +158,6 @@ contract AbstractDAO is Initializable {
             'Moloch::submitVote - proposal does not exist'
         );
         Proposal storage proposal = proposalQueue[_proposalIndex];
-
         Vote vote = Vote(_vote);
         require(
             vote == Vote.Yes || vote == Vote.No,

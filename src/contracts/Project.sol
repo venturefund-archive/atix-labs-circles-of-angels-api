@@ -3,7 +3,6 @@ pragma solidity ^0.5.8;
 import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import './ClaimsRegistry.sol';
 
 contract Project is Initializable, Ownable {
     using SafeMath for uint256;

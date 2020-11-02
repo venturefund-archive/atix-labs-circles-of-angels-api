@@ -81,4 +81,6 @@ contract ClaimsRegistry is Initializable{
         }
         return true;
     }
+
+    uint256[50] private _gap;
 }
