@@ -377,13 +377,7 @@ module.exports = class COA {
   }
 
   async getSigner(account) {
-    if (account === undefined) {
-      return (await this.env.ethers.getSigners())[0];
-    }
-    if (typeof account === 'string') {
-      return this.env.ethers.provider.getSigner(account);
-    }
-    return account;
+    return this.env.deployments.getSigner(account);
   }
 
   isDeployed(state, chainId, name) {
