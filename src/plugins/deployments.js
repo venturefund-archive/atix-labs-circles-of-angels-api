@@ -5,6 +5,7 @@ const {
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
+const ProxyAdmin = require('@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json');
 const {
   artifacts,
   ethereum,
@@ -15,6 +16,7 @@ const {
   ethers,
   upgrades
 } = require('@nomiclabs/buidler');
+
 // const { ethers } = require('@nomiclabs/buidler-ethers');
 
 const {
@@ -228,7 +230,7 @@ async function deploy(contractName, params, signer) {
 }
 
 
-async function deployProxy(contractName, params, signer) {
+async function deployProxy(contractName, params, signer, proxyAdmin) {
   const factory = await ethers.getContractFactory(contractName, await getSigner(signer));
 
   const contract = await upgrades.deployProxy(factory, params, { unsafeAllowCustomTypes: true });

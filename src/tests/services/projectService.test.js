@@ -1664,7 +1664,7 @@ describe('Project Service Test', () => {
     it('should return the fail status if the validation not fails', async () => {
       validators.fromFunding.mockImplementationOnce(() => {
         throw new COAError(
-          errors.project.errors.project.MinimumFundingNotReached(1)
+          errors.project.MinimumFundingNotReached(1)
         );
       });
       await expect(

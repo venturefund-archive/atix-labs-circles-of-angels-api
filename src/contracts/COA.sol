@@ -4,12 +4,13 @@ import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol';
 import '@openzeppelin/upgrades/contracts/upgradeability/InitializableUpgradeabilityProxy.sol';
-import '@openzeppelin/upgrades/contracts/upgradeability/Proxy.sol';
+import '@openzeppelin/upgrades/contracts/upgradeability/ProxyAdmin.sol';
 import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
 import './SuperDAO.sol';
 
+import '@nomiclabs/buidler/console.sol';
 /// @title COA main contract to store projects related information
 contract COA is Initializable, Ownable {
     struct Member {
@@ -32,10 +33,15 @@ contract COA is Initializable, Ownable {
     /// Emitted when a new Project is created
     event ProjectCreated(uint256 id, address addr);
 
-    function initialize(address _registryAddress) public initializer {
+    address internal proxyOwnerAddress;
+
+    function initialize(address _registryAddress, address _proxyOwnerAddress) public initializer {
+        console.log("Creating COA..");
         Ownable.initialize(msg.sender);
         registry = ClaimsRegistry(_registryAddress);
+        proxyOwnerAddress = _proxyOwnerAddress;
         createSuperDAO();
+        console.log("Superdao created..");
     }
     /**
      * @notice Adds a new member in COA.
@@ -84,10 +90,10 @@ contract COA is Initializable, Ownable {
      * @param _creator - address of the first member of the DAO (i.e. its creator)
      */
     function createDAO(string memory _name, address _creator) public {
-        require(owner() != _creator, "The creator can not be the coa owner.");
+        require(proxyOwnerAddress != _creator, "The creator can not be the owner proxy.");
         DAO dao = new DAO();
         bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), owner(), payload);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyOwnerAddress, payload);
         daos.push(proxy);
         emit DAOCreated(address(dao));
     }
@@ -97,10 +103,10 @@ contract COA is Initializable, Ownable {
      *      It's the DAO that can be used to create other DAOs.
      */
     function createSuperDAO() internal {
+        require(proxyOwnerAddress != owner(), "The creator can not be the owner proxy.");
         SuperDAO dao = new SuperDAO();
-        address superDaoAdmin = 0x26C43a1D431A4e5eE86cD55Ed7Ef9Edf3641e901;
-        bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", 'Super DAO', superDaoAdmin, address(this));
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), owner(), payload);
+        bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", 'Super DAO', owner(), address(this));
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyOwnerAddress, payload);
         daos.push(proxy);
         emit DAOCreated(address(dao));
     }
