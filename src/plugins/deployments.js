@@ -81,7 +81,7 @@ class DeploymentSetup {
       const ctx = { ...this.context, ...context };
       const values = typeof params === 'function' ? params(ctx) : params;
 
-      const [contract, receipt] = await deploy(
+      const [contract, receipt] = await deployProxy(
         artifact === undefined ? name : artifact,
         values === undefined ? [] : values,
         signer
@@ -212,16 +212,15 @@ async function saveDeployedContract(name, instance) {
 async function deploy(contractName, params, signer) {
   const factory = await getContractFactory(
     contractName,
-    signer
+    await getSigner(signer)
   );
+  // factory.connect(await getSigner(signer));
 
-  //const contract = await factory.deploy(...params);
-  /*
-    TODO: considere unsafeAllowCustomTypes and unsafeAllowLinkedLibraries params. Always would be TRUE's independent of the contracts?
-  */
-  const contract = await upgrades.deployProxy(factory, params, { initializer: 'initialize', unsafeAllowCustomTypes: true, unsafeAllowLinkedLibraries: false });
+  const contract = await factory.deploy(...params);
   await contract.deployed();
 
+  // console.log('Deployed', contractName, 'at', contract.address);
+  // await this.saveDeployedContract(contractName, contract);
   const receipt = await ethers.provider.getTransactionReceipt(
     contract.deployTransaction.hash
   );
