@@ -290,11 +290,11 @@ async function getChainId(chainId) {
 async function getSigner(account) {
   if (account === undefined) {
     return (await ethers.getSigners())[0];
-  }
-  if (typeof account === 'string') {
+  } else if (typeof account === "number") {
+    return (await ethers.getSigners())[account];
+  } else if (typeof account === 'string') {
     return ethers.provider.getSigner(account);
-  }
-  return account;
+  } else throw TypeError("Invalid account value.");
 }
 
 function isDeployed(state, chainId, name) {
