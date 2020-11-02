@@ -40,6 +40,8 @@ const userResponse = {
     blocked: { type: 'boolean' },
     emailConfirmation: { type: 'boolean' },
     phoneNumber: { type: 'string' },
+    answers: { type: 'string' },
+    company: { type: 'string' },
     country: {
       anyOf: [
         { type: 'number' },
