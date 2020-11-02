@@ -38,6 +38,8 @@
     "cron": "1.8.2",
     "dotenv": "8.2.0",
     "ethereumjs-tx": "2.1.2",
+    "@ethersproject/providers": "git+https://github.com/atixlabs/ethers-providers.git#v5.0.19",
+    "@ethersproject/logger": "5.0.6",
     "ethers": "5.0.19",
     "fast-water": "1.0.2",
     "fastify": "1.14.1",
