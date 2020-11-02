@@ -156,11 +156,10 @@ module.exports = {
     consensusSeconds,
     fundingSeconds
   }) {
-    const { CONSENSUS, FUNDING } = projectStatusesWithUpdateTime;
     let secondsToAdd;
-    if (status === CONSENSUS) {
+    if (status === projectStatusesWithUpdateTime.CONSENSUS) {
       secondsToAdd = consensusSeconds;
-    } else if (status === FUNDING) {
+    } else if (status === projectStatusesWithUpdateTime.FUNDING) {
       secondsToAdd = fundingSeconds;
     } else {
       return null;
