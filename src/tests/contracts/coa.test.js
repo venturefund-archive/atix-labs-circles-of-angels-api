@@ -52,7 +52,7 @@ contract('COA.sol', ([creator, founder]) => {
       assert.equal(agreementAdded, agreementHash);
     });
     it('Should fail when trying to add an agreement if not owner', async () => {
-      const signers = await ethers.signers();
+      const signers = await ethers.getSigners();
       const agreementHash = 'an IPFS/RIF Storage hash';
       await throwsAsync(
         coa

@@ -1,10 +1,11 @@
 pragma solidity ^0.5.8;
 
-import '@openzeppelin/contracts/ownership/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
+import '@openzeppelin/upgrades/contracts/Initializable.sol';
 
 /// @title A DAO contract based on MolochDAO ideas
-contract AbstractDAO {
+contract AbstractDAO is Initializable {
     using SafeMath for uint256;
 
     /// DAO members
@@ -78,12 +79,14 @@ contract AbstractDAO {
      * @param _name DAO name
      * @param _creator User that will be assigned as the first member
      */
-    constructor(string memory _name, address _creator) public {
+    function initialize(
+        string memory _name,
+        address _creator
+    ) public initializer {
         name = _name;
         creationTime = now;
         addMember(_creator);
     }
-
     /**
      * @notice Function to be invoked in order to create a new proposal.
      *
