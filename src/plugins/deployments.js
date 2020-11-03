@@ -294,7 +294,9 @@ async function getSigner(account) {
     return (await ethers.getSigners())[account];
   } else if (typeof account === 'string') {
     return ethers.provider.getSigner(account);
-  } else throw TypeError("Invalid account value.");
+  }
+  // TODO: Is it okay return account?
+  return account;
 }
 
 function isDeployed(state, chainId, name) {
@@ -313,5 +315,6 @@ module.exports = {
   saveDeployedContract,
   getLastDeployedContract,
   getContractInstance,
+  getContractFactory,
   getDeploymentSetup
 };
