@@ -54,7 +54,6 @@ const moveForwardPeriodsUntilProcessingEnabled = async (
   if (currentPeriod < moveTo) await moveForwardPeriods(moveTo - currentPeriod);
 };
 
-const superDaoOwner = "0x26c43a1d431a4e5ee86cd55ed7ef9edf3641e901";
 /**
  * Fetches the latest proposal and checks if it was created properly, i.e., runs
  * assertions assuming nothing has changed the proposal state after submission.
@@ -107,8 +106,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, daoCreator, curator, notM
     dao = await deployments.getContractInstance('DAO', daoAddress, daoCreator);
     superDao = await deployments.getContractInstance(
       'SuperDAO',
-      superDaoAddress,
-      superDaoOwner
+      superDaoAddress
     );
   });
 
@@ -123,7 +121,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, daoCreator, curator, notM
   });
 
   describe('Proposal submission', async () => {
-    
+
     it('Single proposal', async () => {
       const proposalsBeforeSubmitting = await dao.getProposalQueueLength();
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
