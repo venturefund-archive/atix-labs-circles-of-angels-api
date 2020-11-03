@@ -97,7 +97,11 @@ module.exports = {
         throw new COAError(errors.project.TransfersNotFound(project.id));
 
       const totalFunded = transfers
-        .filter(transfer => transfer.status === txFunderStatus.VERIFIED)
+        .filter(
+          transfer =>
+            transfer.status === txFunderStatus.VERIFIED &&
+            !transfer.rejectionReason
+        )
         .reduce((total, transfer) => total + transfer.amount, 0);
 
       // TODO: what is the minimum amount??
