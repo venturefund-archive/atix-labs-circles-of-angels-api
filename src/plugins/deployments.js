@@ -230,10 +230,10 @@ async function deploy(contractName, params, signer) {
 }
 
 
-async function deployProxy(contractName, params, signer, proxyAdmin) {
+async function deployProxy(contractName, params, signer, opts) {
   const factory = await ethers.getContractFactory(contractName, await getSigner(signer));
 
-  const contract = await upgrades.deployProxy(factory, params, { unsafeAllowCustomTypes: true });
+  const contract = await upgrades.deployProxy(factory, params, { ...opts, unsafeAllowCustomTypes: true });
   await contract.deployed();
 
   const receipt = await ethers.provider.getTransactionReceipt(

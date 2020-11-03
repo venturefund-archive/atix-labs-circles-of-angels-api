@@ -41,14 +41,17 @@ task('deploy', 'Deploys COA contracts')
 
     let [coa] = await env.deployments.getDeployedContracts('COA');
     if (coa === undefined || reset === true) {
-      [coa] = await env.deployments.deployProxy('COA', [
-        registry.address,
-        proxyAdmin.address
-      ]);
+      [coa] = await env.deployments.deployProxy(
+        'COA',
+        [registry.address, proxyAdmin.address],
+        undefined,
+        { initializer: 'coaInitialize' }
+      );
       await env.deployments.saveDeployedContract('COA', coa);
       // console.log('COA deployed. Address:', coa.address);
     }
 
+    // console.log('ProxyAdmin attached to', proxyAdmin.address);
     // console.log('Registry attached to', registry.address);
     // console.log('COA attached to', coa.address);
   });

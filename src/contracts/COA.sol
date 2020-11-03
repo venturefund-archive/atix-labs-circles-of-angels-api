@@ -35,7 +35,7 @@ contract COA is Initializable, Ownable {
 
     address internal proxyAdmin;
 
-    function initialize(address _registryAddress, address _proxyAdmin) public initializer {
+    function coaInitialize(address _registryAddress, address _proxyAdmin) public initializer {
         console.log("Creating COA..");
         Ownable.initialize(msg.sender);
         registry = ClaimsRegistry(_registryAddress);
@@ -93,7 +93,7 @@ contract COA is Initializable, Ownable {
         require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
         DAO dao = new DAO();
         bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyOwnerAddress, payload);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(dao));
     }
@@ -103,10 +103,10 @@ contract COA is Initializable, Ownable {
      *      It's the DAO that can be used to create other DAOs.
      */
     function createSuperDAO() internal {
-        require(proxyOwnerAddress != owner(), "The creator can not be the owner proxy.");
+        require(proxyAdmin != owner(), "The creator can not be the admin proxy.");
         SuperDAO dao = new SuperDAO();
         bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", 'Super DAO', owner(), address(this));
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyOwnerAddress, payload);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(dao));
     }
