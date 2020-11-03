@@ -28,6 +28,7 @@ task('deploy', 'Deploys COA contracts')
     if (proxyAdmin === undefined || reset === true) {
       [proxyAdmin] = await env.deployments.deploy('ProxyAdmin', []);
       await env.deployments.saveDeployedContract('ProxyAdmin', proxyAdmin);
+      // console.log('ProxyAdmin deployed. Address:', proxyAdmin.address);
     }
     let [registry] = await env.deployments.getDeployedContracts(
       'ClaimsRegistry'
@@ -40,8 +41,10 @@ task('deploy', 'Deploys COA contracts')
 
     let [coa] = await env.deployments.getDeployedContracts('COA');
     if (coa === undefined || reset === true) {
-      console.log('deploy coa:', proxyAdmin.address);
-      [coa] = await env.deployments.deployProxy('COA', [registry.address, registry.address]);
+      [coa] = await env.deployments.deployProxy('COA', [
+        registry.address,
+        proxyAdmin.address
+      ]);
       await env.deployments.saveDeployedContract('COA', coa);
       // console.log('COA deployed. Address:', coa.address);
     }
@@ -57,7 +60,10 @@ const coaDeploySetup = {
     },
     {
       name: 'COA',
-      params: context => [context.ClaimsRegistry.address, context.ProxyAdmin.address]
+      params: context => [
+        context.ClaimsRegistry.address,
+        context.ProxyAdmin.address
+      ]
     }
   ]
 };

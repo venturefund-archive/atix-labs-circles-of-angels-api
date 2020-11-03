@@ -83,7 +83,7 @@ class DeploymentSetup {
       const ctx = { ...this.context, ...context };
       const values = typeof params === 'function' ? params(ctx) : params;
 
-      const [contract, receipt] = await deployProxy(
+      const [contract, receipt] = await deploy(
         artifact === undefined ? name : artifact,
         values === undefined ? [] : values,
         signer
@@ -214,7 +214,7 @@ async function saveDeployedContract(name, instance) {
 async function deploy(contractName, params, signer) {
   const factory = await getContractFactory(
     contractName,
-    await getSigner(signer)
+    signer
   );
   // factory.connect(await getSigner(signer));
 
