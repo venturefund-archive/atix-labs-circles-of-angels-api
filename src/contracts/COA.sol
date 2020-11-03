@@ -33,13 +33,13 @@ contract COA is Initializable, Ownable {
     /// Emitted when a new Project is created
     event ProjectCreated(uint256 id, address addr);
 
-    address internal proxyOwnerAddress;
+    address internal proxyAdmin;
 
-    function initialize(address _registryAddress, address _proxyOwnerAddress) public initializer {
+    function initialize(address _registryAddress, address _proxyAdmin) public initializer {
         console.log("Creating COA..");
         Ownable.initialize(msg.sender);
         registry = ClaimsRegistry(_registryAddress);
-        proxyOwnerAddress = _proxyOwnerAddress;
+        proxyAdmin = _proxyAdmin;
         createSuperDAO();
         console.log("Superdao created..");
     }
@@ -90,7 +90,7 @@ contract COA is Initializable, Ownable {
      * @param _creator - address of the first member of the DAO (i.e. its creator)
      */
     function createDAO(string memory _name, address _creator) public {
-        require(proxyOwnerAddress != _creator, "The creator can not be the owner proxy.");
+        require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
         DAO dao = new DAO();
         bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyOwnerAddress, payload);
