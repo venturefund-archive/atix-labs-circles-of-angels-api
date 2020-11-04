@@ -109,9 +109,9 @@ module.exports = {
     const html = await templateParser.completeTemplate(
       {
         ...bodyContent,
-        frontendUrl: `${config.frontendUrl}/confirm/${userId}`
+        frontendUrl: config.frontendUrl
       },
-      templateNames.PROJECT_STATUS_CHANGE
+      templateNames.EMAIL_CONFIRMATION
     );
     await this.sendMail({ to, subject, text, html });
   }
