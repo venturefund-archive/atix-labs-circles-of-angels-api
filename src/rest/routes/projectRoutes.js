@@ -672,7 +672,7 @@ const commonProjectRoutes = {
         }
       }
     },
-    handler: () => handlers.getProjectsWithTransfers
+    handler: handlers.getProjectsWithTransfers
   },
 
   getProject: {
