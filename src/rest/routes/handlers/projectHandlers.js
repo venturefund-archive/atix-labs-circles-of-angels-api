@@ -207,6 +207,11 @@ module.exports = {
     reply.status(200).send(projects);
   },
 
+  getProjectsWithTransfers: () => async (request, reply) => {
+    const projects = await projectService.getProjectsWithTransfers();
+    reply.status(200).send(projects);
+  },
+
   getPublicProjects: () => async (request, reply) => {
     const projects = await projectService.getPublicProjects();
     reply.status(200).send(projects);

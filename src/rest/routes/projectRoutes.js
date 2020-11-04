@@ -672,7 +672,7 @@ const commonProjectRoutes = {
         }
       }
     },
-    handler: () => handlers.getProjects({ status: projectStatuses.FUNDING })
+    handler: handlers.getProjectsWithTransfers
   },
 
   getProject: {

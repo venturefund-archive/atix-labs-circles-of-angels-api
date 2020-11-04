@@ -11,10 +11,17 @@ const apiHelper = require('../../services/helper');
 
 const userService = require('../../services/userService');
 const passRecoveryService = require('../../services/passRecoveryService');
+const { userRoles } = require('../../util/constants');
 
 module.exports = {
   getUser: fastify => async (request, reply) => {
     fastify.log.info('[User Routes] :: Getting user info');
+    const { id, role } = request.user;
+    if (request.params.userId !== id && role !== userRoles.COA_ADMIN) {
+      reply.status(403).send({
+        error: `Access denied to get user id: ${request.params.userId}`
+      });
+    }
     const user = await userService.getUserById(request.params.userId);
     if (!user)
       reply.status(404).send({
@@ -44,7 +51,7 @@ module.exports = {
       .setCookie('userAuth', token, {
         domain: config.server.domain,
         path: '/',
-        httpOnly: true,
+        httpOnly: false,
         expires: expirationDate,
         secure: config.server.isHttps
       })

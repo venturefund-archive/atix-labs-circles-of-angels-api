@@ -88,5 +88,13 @@ module.exports = {
       where: { status: txFunderStatus.SENT }
     });
     return transfers;
+  },
+
+  async findProjectIdsWithTransfers() {
+    const transfers = await this.findAllByProps({
+      select: ['project']
+    });
+    const projectIds = transfers.map(t => t.project);
+    return projectIds.filter((v, i) => projectIds.indexOf(v) === i);
   }
 };
