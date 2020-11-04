@@ -92,14 +92,14 @@ contract('COA.sol', ([creator, founder, other]) => {
   });
 
   describe('Transaction', () => {
-    it('Should revert when sending a tx to the contract', async () => {
+    it.only('Should revert when sending a tx to the contract', async () => {
       await throwsAsync(
         web3.eth.sendTransaction({
           from: other,
           to: coa.address,
           value: '0x16345785d8a0000'
         }),
-        'Returned error: Transaction reverted without a reason'
+        "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
       );
     });
   });

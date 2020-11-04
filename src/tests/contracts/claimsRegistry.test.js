@@ -147,14 +147,14 @@ contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
     assert.equal(approved, true);
   });
 
-  it('It should revert when sending a tx to the contract', async () => {
+  it.only('It should revert when sending a tx to the contract', async () => {
     await throwsAsync(
       web3.eth.sendTransaction({
         from: creator,
         to: registry.address,
         value: '0x16345785d8a0000'
       }),
-      'Returned error: Transaction reverted without a reason'
+      "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
     );
   });
 
