@@ -69,7 +69,8 @@ describe('Testing transferService', () => {
     status: txFunderStatus.VERIFIED,
     project: fundingProject.id,
     txHash: '0x222',
-    receiptPath: '/path/to/file.png'
+    receiptPath: '/path/to/file.png',
+    rejectionReason: null
   };
 
   const pendingTransfer = {
@@ -85,7 +86,8 @@ describe('Testing transferService', () => {
     amount: 50,
     transferId: 'existing123',
     status: txFunderStatus.VERIFIED,
-    project: fundingProject.id
+    project: fundingProject.id,
+    rejectionReason: null
   };
 
   const sentTransfer = {
