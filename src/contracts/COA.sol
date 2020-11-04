@@ -1,23 +1,28 @@
 pragma solidity ^0.5.8;
 
-import '@openzeppelin/contracts/ownership/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
+import '@openzeppelin/upgrades/contracts/Initializable.sol';
+import '@openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol';
+import '@openzeppelin/upgrades/contracts/upgradeability/InitializableUpgradeabilityProxy.sol';
+import '@openzeppelin/upgrades/contracts/upgradeability/ProxyAdmin.sol';
 import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
 import './SuperDAO.sol';
 
+import '@nomiclabs/buidler/console.sol';
 /// @title COA main contract to store projects related information
-contract COA is Ownable {
+contract COA is Initializable, Ownable {
     struct Member {
         string profile;
     }
-
     /// Projects list
-    Project[] public projects;
+    //Project[] public projects;
+    AdminUpgradeabilityProxy[] public projects;
     /// COA members
     mapping(address => Member) public members;
     /// COA owned daos
-    AbstractDAO[] public daos;
+    AdminUpgradeabilityProxy[] public daos;
     /// FIXME: Where is this used
     ClaimsRegistry public registry;
     // Agreements by project address => agreementHash
@@ -28,11 +33,16 @@ contract COA is Ownable {
     /// Emitted when a new Project is created
     event ProjectCreated(uint256 id, address addr);
 
-    constructor(address _registryAddress) public Ownable() {
-        registry = ClaimsRegistry(_registryAddress);
-        createSuperDAO();
-    }
+    address internal proxyAdmin;
 
+    function coaInitialize(address _registryAddress, address _proxyAdmin) public initializer {
+        console.log("Creating COA..");
+        Ownable.initialize(msg.sender);
+        registry = ClaimsRegistry(_registryAddress);
+        proxyAdmin = _proxyAdmin;
+        createSuperDAO();
+        console.log("Superdao created..");
+    }
     /**
      * @notice Adds a new member in COA.
      * @param _profile - string of the member's profile.
@@ -67,8 +77,10 @@ contract COA is Ownable {
         public
         returns (uint256)
     {
-        Project project = new Project(_name);
-        projects.push(project);
+        Project project = new Project();
+        bytes memory payload = abi.encodeWithSignature("initialize(string)", _name);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(project), owner(), payload);
+        projects.push(proxy);
         emit ProjectCreated(_id, address(project));
     }
 
@@ -78,8 +90,11 @@ contract COA is Ownable {
      * @param _creator - address of the first member of the DAO (i.e. its creator)
      */
     function createDAO(string memory _name, address _creator) public {
-        DAO dao = new DAO(_name, _creator);
-        daos.push(dao);
+        require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
+        DAO dao = new DAO();
+        bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyAdmin, payload);
+        daos.push(proxy);
         emit DAOCreated(address(dao));
     }
 
@@ -88,8 +103,11 @@ contract COA is Ownable {
      *      It's the DAO that can be used to create other DAOs.
      */
     function createSuperDAO() internal {
-        SuperDAO dao = new SuperDAO('Super DAO', msg.sender, address(this));
-        daos.push(dao);
+        require(proxyAdmin != owner(), "The creator can not be the admin proxy.");
+        SuperDAO dao = new SuperDAO();
+        bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", 'Super DAO', owner(), address(this));
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyAdmin, payload);
+        daos.push(proxy);
         emit DAOCreated(address(dao));
     }
 
@@ -114,4 +132,6 @@ contract COA is Ownable {
     function getProjectsLength() public view returns (uint256) {
         return projects.length;
     }
+
+    uint256[50] private _gap;
 }

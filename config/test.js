@@ -13,5 +13,8 @@ module.exports = {
   buidler: {
     defaultNetwork: 'buidlerevm'
   },
+  fileServer: {
+    maxFileSize: 500000
+  },
   frontendUrl: '//test'
 };

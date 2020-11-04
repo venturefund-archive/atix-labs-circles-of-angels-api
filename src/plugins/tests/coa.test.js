@@ -38,7 +38,7 @@ describe('COA plugin tests', () => {
         const coaContract = await coa.getCOA();
         const response = await coa.getUnsignedTransaction(
           coaContract,
-          'migrateMember',
+          'migrateMember(string,address)',
           ['member profile', address]
         );
         expect(response).toHaveProperty('to', expect.any(String));
@@ -81,7 +81,7 @@ describe('COA plugin tests', () => {
     };
     beforeAll(async () => {
       const wallet = Wallet.createRandom();
-      signedTx = await wallet.sign(unsignedTx);
+      signedTx = await wallet.signTransaction(unsignedTx);
     });
 
     it(

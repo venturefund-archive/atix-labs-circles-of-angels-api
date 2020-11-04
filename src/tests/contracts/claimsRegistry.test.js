@@ -1,4 +1,4 @@
-const { run, deployments, web3 } = require('@nomiclabs/buidler');
+const { run, deployments, web3, upgrades } = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
 const { throwsAsync, waitForEvent } = require('./testHelpers');
 
@@ -31,7 +31,7 @@ const addClaim = async (
   };
 };
 
-contract('ClaimsRegistry.sol', ([creator]) => {
+contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
   let coa;
   let registry;
   let project;
@@ -146,6 +146,7 @@ contract('ClaimsRegistry.sol', ([creator]) => {
     const approved = await registry.areApproved(project, validators, claims);
     assert.equal(approved, true);
   });
+
   it('It should revert when sending a tx to the contract', async () => {
     await throwsAsync(
       web3.eth.sendTransaction({
@@ -153,7 +154,22 @@ contract('ClaimsRegistry.sol', ([creator]) => {
         to: registry.address,
         value: '0x16345785d8a0000'
       }),
-      'Returned error: VM Exception while processing transaction: revert'
+      "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
     );
+  });
+
+  it('Should upgrade a new version of claimsregistry contract', async () => {
+    const { proofHash, claimHash } = await addClaim(registry, project);
+    const mockContract = await ethers.getContractFactory('ClaimsRegistryV2');
+    const registryV2 = await upgrades.upgradeProxy(
+      registry.address,
+      mockContract,
+      { unsafeAllowCustomTypes: true }
+    );
+    const claim = await registryV2.registry(project, creator, claimHash);
+    // Claim is stored properly
+    assert.equal(claim.proof, proofHash);
+    await registryV2.setTest('test');
+    assert.equal(await registryV2.test(), 'test');
   });
 });

@@ -24,7 +24,7 @@ const throwsAsync = async (promise, errMsg) => {
  * @param {string} eventName event name or '*' to watch them all
  * @param {number} timeout max amount of ms to wait for the event to happen
  */
-const waitForEvent = (contract, eventName, timeout = 2000) =>
+const waitForEvent = (contract, eventName, timeout = 20000) =>
   new Promise((resolve, reject) => {
     contract.on(eventName, function callback() {
       // eslint-disable-next-line prefer-rest-params

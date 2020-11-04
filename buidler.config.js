@@ -1,13 +1,10 @@
 usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
+usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
-
 // const deployments = ;
 const config = require('config');
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
-const {
-  createChainIdGetter
-} = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
 require('./src/rest/services/helpers/buidlerTasks');
 const COA = require('./src/plugins/coa');
 
@@ -26,22 +23,34 @@ task('deploy', 'Deploys COA contracts')
     // TODO: check if reset condition is needed
     if (reset) env.coa.clearContracts();
 
+    let [proxyAdmin] = await env.deployments.getDeployedContracts('ProxyAdmin');
+    if (proxyAdmin === undefined || reset === true) {
+      [proxyAdmin] = await env.deployments.deploy('ProxyAdmin', []);
+      await env.deployments.saveDeployedContract('ProxyAdmin', proxyAdmin);
+      // console.log('ProxyAdmin deployed. Address:', proxyAdmin.address);
+    }
     let [registry] = await env.deployments.getDeployedContracts(
       'ClaimsRegistry'
     );
     if (registry === undefined || reset === true) {
-      [registry] = await env.deployments.deploy('ClaimsRegistry', []);
+      [registry] = await env.deployments.deployProxy('ClaimsRegistry', []);
       await env.deployments.saveDeployedContract('ClaimsRegistry', registry);
       // console.log('ClaimsRegistry deployed. Address:', registry.address);
     }
 
     let [coa] = await env.deployments.getDeployedContracts('COA');
     if (coa === undefined || reset === true) {
-      [coa] = await env.deployments.deploy('COA', [registry.address]);
+      [coa] = await env.deployments.deployProxy(
+        'COA',
+        [registry.address, proxyAdmin.address],
+        undefined,
+        { initializer: 'coaInitialize' }
+      );
       await env.deployments.saveDeployedContract('COA', coa);
       // console.log('COA deployed. Address:', coa.address);
     }
 
+    // console.log('ProxyAdmin attached to', proxyAdmin.address);
     // console.log('Registry attached to', registry.address);
     // console.log('COA attached to', coa.address);
   });
@@ -53,7 +62,10 @@ const coaDeploySetup = {
     },
     {
       name: 'COA',
-      params: context => [context.ClaimsRegistry.address]
+      params: context => [
+        context.ClaimsRegistry.address,
+        context.ProxyAdmin.address
+      ]
     }
   ]
 };

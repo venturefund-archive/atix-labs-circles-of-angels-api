@@ -1,16 +1,21 @@
 const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
+const { getSigner } = require('../../plugins/deployments');
 
 const { throwsAsync } = require('./testHelpers');
 
 let coa;
 let registry;
 
-async function getProjectAt(address) {
-  const project = await deployments.getContractInstance('Project', address);
+async function getProjectAt(address, consultant) {
+  const project = await deployments.getContractInstance(
+    'Project',
+    address,
+    consultant
+  );
   return project;
 }
 
-contract('COA.sol', ([creator, founder]) => {
+contract('COA.sol', ([creator, founder, other]) => {
   beforeEach('deploy contracts', async () => {
     await run('deploy', { reset: true });
     [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
@@ -42,7 +47,7 @@ contract('COA.sol', ([creator, founder]) => {
         name: 'a good project'
       };
       await coa.createProject(project.id, project.name);
-      const instance = await getProjectAt(await coa.projects(0));
+      const instance = await getProjectAt(await coa.projects(0), other);
       assert.equal(await instance.name(), project.name);
     });
     it('Should allow the owner to add an agreement to a project', async () => {
@@ -52,7 +57,7 @@ contract('COA.sol', ([creator, founder]) => {
       assert.equal(agreementAdded, agreementHash);
     });
     it('Should fail when trying to add an agreement if not owner', async () => {
-      const signers = await ethers.signers();
+      const signers = await ethers.getSigners();
       const agreementHash = 'an IPFS/RIF Storage hash';
       await throwsAsync(
         coa
@@ -69,7 +74,11 @@ contract('COA.sol', ([creator, founder]) => {
       await coa.createDAO('the dao', founder);
       const daosLengthAfterCreation = await coa.getDaosLength();
       const daoAddress = await coa.daos(daosLengthAfterCreation - 1);
-      const dao = await deployments.getContractInstance('DAO', daoAddress);
+      const dao = await deployments.getContractInstance(
+        'DAO',
+        daoAddress,
+        founder
+      );
       const daoMember = await dao.members(founder);
 
       assert.equal(
@@ -86,12 +95,38 @@ contract('COA.sol', ([creator, founder]) => {
     it('Should revert when sending a tx to the contract', async () => {
       await throwsAsync(
         web3.eth.sendTransaction({
-          from: creator,
+          from: other,
           to: coa.address,
           value: '0x16345785d8a0000'
         }),
-        'Returned error: VM Exception while processing transaction: revert'
+        "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
       );
+    });
+  });
+
+  describe('Upgrade Project contract', () => {
+    it('Should upgrade a new version of project', async () => {
+      const project = {
+        id: 1,
+        name: 'a good project'
+      };
+      await coa.createProject(project.id, project.name);
+      const factory = await ethers.getContractFactory('ProjectV2');
+      const mockContract = await factory.deploy({});
+      const instance = await deployments.getContractInstance(
+        'AdminUpgradeabilityProxy',
+        await coa.projects(0),
+        creator
+      );
+      await instance.upgradeTo(mockContract.address);
+      const newVersion = await deployments.getContractInstance(
+        'ProjectV2',
+        await coa.projects(0),
+        other
+      );
+      newVersion.setTest('test');
+      assert.equal(await newVersion.name(), project.name);
+      assert.equal(await newVersion.test(), 'test');
     });
   });
 });

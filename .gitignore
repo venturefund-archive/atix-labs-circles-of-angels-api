@@ -10,3 +10,5 @@ artifacts/*
 flyway*
 state.json
 coverage.json
+/.idea/
+/.openzeppelin/
