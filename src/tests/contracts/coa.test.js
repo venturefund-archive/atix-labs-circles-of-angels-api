@@ -92,7 +92,7 @@ contract('COA.sol', ([creator, founder, other]) => {
   });
 
   describe('Transaction', () => {
-    it.only('Should revert when sending a tx to the contract', async () => {
+    it('Should revert when sending a tx to the contract', async () => {
       await throwsAsync(
         web3.eth.sendTransaction({
           from: other,

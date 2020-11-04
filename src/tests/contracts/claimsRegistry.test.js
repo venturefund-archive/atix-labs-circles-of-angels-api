@@ -147,7 +147,7 @@ contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
     assert.equal(approved, true);
   });
 
-  it.only('It should revert when sending a tx to the contract', async () => {
+  it('It should revert when sending a tx to the contract', async () => {
     await throwsAsync(
       web3.eth.sendTransaction({
         from: creator,
