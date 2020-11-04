@@ -189,7 +189,7 @@ module.exports = {
       encryptedWallet,
       mnemonic
     };
-    const accounts = await ethers.signers();
+    const accounts = await ethers.getSigners();
     const tx = {
       to: address,
       value: utils.parseEther('0.001')
