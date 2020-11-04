@@ -1480,8 +1480,11 @@ module.exports = {
    * @param {number} project
    */
   async getAllOraclesWithTasksFromProject(project) {
-    const oracles = {};
+    const oracles = [];
     const milestones = await this.milestoneService.getMilestones({ project });
+    if (!milestones.length) {
+      return [];
+    }
     milestones.forEach(({ tasks }) => {
       tasks.forEach(({ oracle }) => {
         if (!oracles.includes(oracle)) {
