@@ -147,7 +147,6 @@ contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
     assert.equal(approved, true);
   });
 
-  // TODO: the error must be the second
   it('It should revert when sending a tx to the contract', async () => {
     await throwsAsync(
       web3.eth.sendTransaction({
@@ -155,8 +154,7 @@ contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
         to: registry.address,
         value: '0x16345785d8a0000'
       }),
-      "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
-      // 'Returned error: VM Exception while processing transaction: revert'
+      'Returned error: Transaction reverted without a reason'
     );
   });
 

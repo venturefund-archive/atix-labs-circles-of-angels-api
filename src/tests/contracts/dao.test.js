@@ -447,7 +447,6 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, daoCreator, curator, notM
     });
   });
 
-  // TODO: the error must be the other
   describe('transaction', () => {
     it('should revert when sending a tx to the contract', async () => {
       await throwsAsync(
@@ -457,7 +456,6 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, daoCreator, curator, notM
           value: '0x16345785d8a0000'
         }),
         "Returned error: Transaction reverted without a reason"
-        //'Returned error: VM Exception while processing transaction: revert'
       );
     });
   });

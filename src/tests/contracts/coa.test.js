@@ -91,7 +91,6 @@ contract('COA.sol', ([creator, founder, other]) => {
     });
   });
 
-  // TODO: the error must be the second
   describe('Transaction', () => {
     it('Should revert when sending a tx to the contract', async () => {
       await throwsAsync(
@@ -100,8 +99,7 @@ contract('COA.sol', ([creator, founder, other]) => {
           to: coa.address,
           value: '0x16345785d8a0000'
         }),
-        "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
-        // 'Returned error: VM Exception while processing transaction: revert'
+        'Returned error: Transaction reverted without a reason'
       );
     });
   });
