@@ -261,7 +261,6 @@ describe('Testing userService', () => {
     it("should return an object with the new user's information", async () => {
       bcrypt.hash.mockReturnValueOnce(newUser.password);
       const response = await userService.createUser(newUser);
-      console.log(response);
       expect(response).toEqual({
         ...newUser,
         id: 1
