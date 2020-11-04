@@ -226,8 +226,7 @@ module.exports = {
       );
       throw new COAError(errors.user.UserUpdateError);
     }
-
-    return updatedUser;
+    return true;
   },
 
   /**

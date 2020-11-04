@@ -97,11 +97,17 @@ describe('Testing userService', () => {
     findByAddress: address => dbUser.find(user => user.address === address),
     getFollowedProjects: id => {
       const userFound = dbUser.find(user => user.id === id);
+      if (!userFound) {
+        return undefined;
+      }
       userFound.following = [newProject, executingProject];
       return userFound;
     },
     getAppliedProjects: id => {
       const userFound = dbUser.find(user => user.id === id);
+      if (!userFound) {
+        return undefined;
+      }
       userFound.funding = [newProject];
       userFound.monitoring = [executingProject];
       return userFound;
@@ -237,6 +243,13 @@ describe('Testing userService', () => {
     };
     beforeAll(() => {
       bcrypt.hash = jest.fn();
+      coa.migrateMember = jest.fn();
+      const sendTransaction = jest.fn();
+      ethers.signers = jest.fn(() => [
+        {
+          sendTransaction
+        }
+      ]);
       injectMocks(userService, { userDao, mailService, countryService });
     });
     afterAll(() => restoreUserService());
