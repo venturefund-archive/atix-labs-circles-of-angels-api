@@ -1824,19 +1824,12 @@ describe('Project Service Test', () => {
     beforeAll(() => {
       restoreProjectService();
       injectMocks(projectService, {
-        activityService: Object.assign(
-          {},
-          {
-            getAllOraclesWithTasksFromProject: () => {
-              oracles = dbTasks
-                .filter(
-                  task => task.projectId === consensusProjectWithOracles.id
-                )
-                .map(task => task.oracleId);
-              return oracles;
-            }
-          }
-        ),
+        getAllOraclesWithTasksFromProject: () => {
+          oracles = dbTasks
+            .filter(task => task.projectId === consensusProjectWithOracles.id)
+            .map(task => task.oracleId);
+          return oracles;
+        },
         oracleDao: Object.assign(
           {},
           {
