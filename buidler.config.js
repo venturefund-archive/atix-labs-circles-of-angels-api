@@ -2,7 +2,6 @@ usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
-usePlugin('@openzeppelin/buidler-upgrades');
 // const deployments = ;
 const config = require('config');
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
