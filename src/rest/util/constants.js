@@ -51,6 +51,11 @@ const inactiveProjectStatuses = {
   // SUSPENDED: 'suspended'
 };
 
+const projectStatusesWithUpdateTime = {
+  CONSENSUS: 'consensus',
+  FUNDING: 'funding'
+};
+
 const projectStatuses = {
   ...privateProjectStatuses,
   ...publicProjectStatuses,
@@ -204,5 +209,6 @@ module.exports = {
   claimMilestoneStatus,
   txEvidenceStatus,
   txProposalStatus,
-  encryption
+  encryption,
+  projectStatusesWithUpdateTime
 };

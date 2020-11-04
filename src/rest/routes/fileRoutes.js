@@ -35,7 +35,7 @@ const routes = {
     method: 'delete',
     path: `${basePath}/:fileId`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['adminAuth'],
       schema: {
         tags: [routeTags.FILE.name, routeTags.DELETE.name],
         description: 'Deletes an existing file',
