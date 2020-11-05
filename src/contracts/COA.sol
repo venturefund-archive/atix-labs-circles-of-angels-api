@@ -34,14 +34,24 @@ contract COA is Initializable, Ownable {
     event ProjectCreated(uint256 id, address addr);
 
     address internal proxyAdmin;
+    address internal implProject;
+    address internal implSuperDao;
+    address internal implDao;
 
-    function coaInitialize(address _registryAddress, address _proxyAdmin) public initializer {
-        console.log("Creating COA..");
+    function coaInitialize(
+        address _registryAddress,
+        address _proxyAdmin,
+        address _implProject,
+        address _implSuperDao,
+        address _implDao
+    ) public initializer {
         Ownable.initialize(msg.sender);
         registry = ClaimsRegistry(_registryAddress);
         proxyAdmin = _proxyAdmin;
+        implProject = _implProject;
+        implSuperDao = _implSuperDao;
+        implDao = _implDao;
         createSuperDAO();
-        console.log("Superdao created..");
     }
     /**
      * @notice Adds a new member in COA.
@@ -77,11 +87,10 @@ contract COA is Initializable, Ownable {
         public
         returns (uint256)
     {
-        Project project = new Project();
         bytes memory payload = abi.encodeWithSignature("initialize(string)", _name);
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(project), owner(), payload);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implProject, owner(), payload);
         projects.push(proxy);
-        emit ProjectCreated(_id, address(project));
+        emit ProjectCreated(_id, address(proxy));
     }
 
     /**
@@ -91,11 +100,10 @@ contract COA is Initializable, Ownable {
      */
     function createDAO(string memory _name, address _creator) public {
         require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
-        DAO dao = new DAO();
         bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyAdmin, payload);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
         daos.push(proxy);
-        emit DAOCreated(address(dao));
+        emit DAOCreated(address(proxy));
     }
 
     /**
@@ -104,11 +112,10 @@ contract COA is Initializable, Ownable {
      */
     function createSuperDAO() internal {
         require(proxyAdmin != owner(), "The creator can not be the admin proxy.");
-        SuperDAO dao = new SuperDAO();
         bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", 'Super DAO', owner(), address(this));
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(address(dao), proxyAdmin, payload);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);
         daos.push(proxy);
-        emit DAOCreated(address(dao));
+        emit DAOCreated(address(proxy));
     }
 
     // the agreement hash can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
