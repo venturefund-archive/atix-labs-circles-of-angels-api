@@ -1143,7 +1143,8 @@ module.exports = {
           // TODO: do we need an extra status while waiting for the tx confirmation?
           const tx = await coa.createProject(project.id, project.projectName);
           await this.updateProject(project.id, {
-            txHash: tx.hash
+            txHash: tx.hash,
+            status: newStatus
           });
         }
         return { projectId: project.id, newStatus };
