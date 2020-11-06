@@ -63,8 +63,10 @@ module.exports = {
     if (fields.status) {
       toUpdate = { ...fields, lastUpdatedStatusAt: new Date() };
     }
-    logger.info(`[ProjectService] :: Updating project id ${projectId} and
-      fields ${toUpdate}`);
+    logger.info(
+      `[ProjectService] :: Updating project id ${projectId}`,
+      toUpdate
+    );
     const updatedProject = await this.projectDao.updateProject(
       toUpdate,
       projectId
@@ -1143,7 +1145,7 @@ module.exports = {
             `[ProjectService] :: Sending project ${project.id} to blockchain`
           );
           // TODO: do we need an extra status while waiting for the tx confirmation?
-          let tx;
+          const tx = await coa.createProject(project.id, project.projectName);
           await this.updateProject(project.id, {
             txHash: tx.hash,
             status: newStatus
