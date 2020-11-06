@@ -168,7 +168,7 @@ async function getDeployedContracts(name, chainId) {
       const implContract = await getImplContract(contract, name);
       const implCode = await ethers.provider.getCode(implContract.address);
       if (implCode === artifact.deployedBytecode) {
-        contracts.push(implContract);
+        contracts.push(contract);
       }
     }
   }
