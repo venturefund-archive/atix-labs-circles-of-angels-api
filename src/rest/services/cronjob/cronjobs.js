@@ -5,8 +5,7 @@ const { EVERY_DAY_AT_MIDNIGHT, EVERY_HOUR } = require('./cronExpressions');
 
 module.exports = {
   transitionProjectStatusJob: {
-    cronTime:
-      config.crons.transitionProjectStatusJob.cronTime || EVERY_DAY_AT_MIDNIGHT,
+    cronTime: '*/1 * * * *',
     async onTick() {
       logger.info('[CronJobService] :: Executing transitionProjectStatusJob');
       const updatedConsensusProjects = await this.projectService.transitionConsensusProjects();
