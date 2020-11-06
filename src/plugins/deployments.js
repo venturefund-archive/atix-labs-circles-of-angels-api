@@ -146,8 +146,6 @@ async function getDeployedContracts(name, chainId) {
   const factory = await getContractFactory(name);
   const addresses = await getDeployedAddresses(name, chainId);
   const artifact = readArtifactSync(config.paths.artifacts, name);
-  // This slot was recollected from @openzeppelin/upgrades-core/artifacts/BaseUpgradeabilityProxy.json
-  const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
   // TODO : should use deployedBytecode instead?
   if (artifact.bytecode !== factory.bytecode) {
@@ -161,20 +159,51 @@ async function getDeployedContracts(name, chainId) {
   const contracts = [];
   for (const addr of addresses) {
     const code = await ethers.provider.getCode(addr);
+    const contract = factory.attach(addr);
     if (code === artifact.deployedBytecode) {
-      contracts.push(factory.attach(addr));
+      contracts.push(contract);
     } else if (code === AdminUpgradeabilityProxy.deployedBytecode) {
-      const storageAddr = await ethers.provider.getStorageAt(addr, IMPLEMENTATION_SLOT);
-      const implAddr = '0x' + storageAddr.substring(storageAddr.length - 40, storageAddr.length);
-      const implCode = await ethers.provider.getCode(implAddr);
+      const implContract = await getImplContract(contract, name);
+      const implCode = await ethers.provider.getCode(implContract.address);
       if (implCode === artifact.deployedBytecode) {
-        contracts.push(factory.attach(addr));
+        contracts.push(contract);
       }
     }
   }
 
   // return addresses.map(addr => factory.attach(addr));
   return contracts;
+}
+
+async function getImplContract(contract, contractName) {
+  const addr = contract.address;
+  const code = await ethers.provider.getCode(addr);
+
+  // This slot was recollected from
+  // @openzeppelin/upgrades-core/artifacts/BaseUpgradeabilityProxy.json
+  const IMPLEMENTATION_SLOT =
+      '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
+
+  if (code === AdminUpgradeabilityProxy.deployedBytecode) {
+    const storageAddr = await ethers.provider.getStorageAt(
+        addr,
+        IMPLEMENTATION_SLOT
+    );
+    const implAddr = `0x${storageAddr.substring(
+        storageAddr.length - 40,
+        storageAddr.length
+    )}`;
+    const contractFactory = await ethers.getContractFactory(contractName);
+    return contractFactory.attach(implAddr);
+  }
+  return undefined;
+}
+
+async function isProxy(contract) {
+  const addr = contract.address;
+  const code = await ethers.provider.getCode(addr);
+
+  return code === AdminUpgradeabilityProxy.deployedBytecode;
 }
 
 async function saveDeployedContract(name, instance) {
@@ -316,5 +345,7 @@ module.exports = {
   getLastDeployedContract,
   getContractInstance,
   getContractFactory,
+  getImplContract,
+  isProxy,
   getDeploymentSetup
 };

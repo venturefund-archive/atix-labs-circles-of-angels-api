@@ -8,12 +8,12 @@ const ethInit = async () => {
   const registry = await coa.getRegistry();
   const daos = await coa.getDaos();
   for (let i = 0; i < daos.length; i++) {
-    let currentAddress = await daos[i].address;
-    let dao = await coa.getDaoContract(currentAddress);
-    registerEvents(dao, 'DAO');
+    const currentAddress = await daos[i].address;
+    const dao = await coa.getDaoContract(currentAddress);
+    await registerEvents(dao, 'DAO');
   }
-  registerEvents(contract, 'COA');
-  registerEvents(registry, 'ClaimsRegistry');
+  await registerEvents(contract, 'COA');
+  await registerEvents(registry, 'ClaimsRegistry');
 };
 
 module.exports = {
