@@ -94,8 +94,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     // await fastify.eth.listener.startListen();
     module.exports.fastify = fastify;
   } catch (err) {
-    // TODO add logger
-    console.log('error', err);
+    logger.error('Error initializing server', err);
     process.exit(1);
   }
 };
