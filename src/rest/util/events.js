@@ -1,6 +1,5 @@
 const handlers = require('../services/eth/eventListeners/handlers');
 const { registerHandlers } = require('./listener');
-const { getImplContract, isProxy } = require('../../plugins/deployments');
 const logger = require('../logger');
 
 module.exports = {
@@ -10,11 +9,7 @@ module.exports = {
         contract.address
       }`
     );
-    let finalContract = contract;
-    if (await isProxy(contract)) {
-      finalContract = await getImplContract(contract, contractName);
-    }
     const contractHandlers = handlers[contractName];
-    registerHandlers(finalContract, contractHandlers);
+    registerHandlers(contract, contractHandlers);
   }
 };
