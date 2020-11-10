@@ -35,7 +35,9 @@ module.exports = {
       validateOwnership(owner, user.id);
       return true;
     }
-    if (status === projectStatuses.EXECUTING) {
+    if (
+      [projectStatuses.EXECUTING, projectStatuses.FINISHED].includes(status)
+    ) {
       return true;
     }
     throw new COAError(errors.project.InvalidStatusForExperienceUpload(status));
