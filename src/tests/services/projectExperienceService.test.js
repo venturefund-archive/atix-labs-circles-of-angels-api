@@ -34,6 +34,10 @@ describe('Project experience service', () => {
     owner: entrepreneurUser.id,
     status: projectStatuses.CONSENSUS
   };
+  const finishedProject = {
+    id: 1,
+    status: projectStatuses.FINISHED
+  };
 
   const consensusProjectExperiences = [
     {
@@ -156,7 +160,10 @@ describe('Project experience service', () => {
   });
   describe('Can upload', () => {
     // TODO: test all cases when defined
-    it.each([[consensusProject, entrepreneurUser]])(
+    it.each([
+      [consensusProject, entrepreneurUser],
+      [finishedProject, entrepreneurUser]
+    ])(
       'should return true when the project is %o and user is %o',
       (project, user) => {
         expect(projectExperienceService.canUpload(project, user)).toBe(true);
