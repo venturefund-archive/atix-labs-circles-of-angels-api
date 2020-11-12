@@ -92,5 +92,22 @@ module.exports = {
     logger.info(`[TransactionService] :: Checking if ${txHash} has failed`);
     const txReceipt = await coa.getTransactionReceipt(txHash);
     return !txReceipt || txReceipt.status === 0;
+  },
+  /**
+   * Checks if the transaction is still verified after a number of blocks.
+   *
+   * @param {number} blockNumber
+   * @param {number} currentBlockNumber
+   */
+  async hasVerified(blockNumber, currentBlockNumber) {
+    logger.info('[TransactionService] :: Entering hasVerified method');
+    validateRequiredParams({
+      method: 'hasVerified',
+      params: { blockNumber, currentBlockNumber }
+    });
+    logger.info(
+      `[TransactionService] :: Checking if block with block number ${blockNumber} is still verified`
+    );
+    return currentBlockNumber - blockNumber > process.env.BLOCKS_NUMBER_TO_WAIT;
   }
 };

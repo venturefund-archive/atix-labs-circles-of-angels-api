@@ -561,5 +561,62 @@ module.exports = {
       logger.info('[TransferService] :: No failed transactions found');
     }
     return failed;
+  },
+  /**
+   * Checks all transfer transactions and
+   * update to verified if transfer has not failed
+   * after a specified number of blocks
+   *
+   * Returns an array with all verified transfer ids
+   *
+   */
+  async updateVerifiedTransferTransactions(currentBlockNumber) {
+    logger.info(
+      '[TransferService] :: Entering updateVerifiedTransferTransactions method'
+    );
+    const txs = await this.transferDao.findAllPendingVerificationTxs();
+    logger.info(
+      `[TransferService] :: Found ${
+        txs.length
+      } pending of verification transactions`
+    );
+    const updated = await Promise.all(
+      txs.map(async ({ id, txHash }) => {
+        if (!txHash) {
+          logger.error(`[TransferService] :: Transfer ${id} has not txHash`);
+          return;
+        }
+        const { blockNumber } = await coa.getTransactionResponse(txHash);
+        const hasVerified = await this.transactionService.hasVerified(
+          blockNumber,
+          currentBlockNumber
+        );
+        if (hasVerified) {
+          try {
+            const { transferId } = await this.updateTransfer(id, {
+              status: txFunderStatus.VERIFIED
+            });
+            return transferId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              "[TransferService] :: Couldn't update verified transaction status",
+              txHash
+            );
+          }
+        }
+      })
+    );
+    const verified = updated.filter(tx => !!tx);
+    if (verified.length > 0) {
+      logger.info(
+        `[TransferService] :: Updated status to ${
+          txFunderStatus.VERIFIED
+        } for transfers ${verified}`
+      );
+    } else {
+      logger.info('[TransferService] :: No verified transactions found');
+    }
+    return verified;
   }
 };
