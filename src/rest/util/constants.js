@@ -75,7 +75,8 @@ const txFunderStatus = {
   CANCELLED: 'cancelled',
   VERIFIED: 'verified',
   SENT: 'sent',
-  FAILED: 'failed'
+  FAILED: 'failed',
+  PENDING_VERIFICATION: 'pending_verification'
 };
 
 const claimMilestoneStatus = {
@@ -172,7 +173,8 @@ const txEvidenceStatus = {
   NOT_SENT: 'notsent',
   SENT: 'sent',
   CONFIRMED: 'confirmed',
-  FAILED: 'failed'
+  FAILED: 'failed',
+  PENDING_VERIFICATION: 'pending_verification'
 };
 
 const txProposalStatus = {
