@@ -426,10 +426,9 @@ module.exports = {
       );
     }
 
-    // TODO?: in this case it should probably overwrite all milestones and file
-    if (project.milestonePath)
-      throw new COAError(errors.project.MilestoneFileHasBeenAlreadyUploaded);
-
+    if (project.milestonePath) {
+      await this.milestoneService.removeMilestonesFromProject(project.id);
+    }
     const milestones = await this.milestoneService.createMilestones(
       file,
       projectId
