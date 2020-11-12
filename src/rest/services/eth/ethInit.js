@@ -1,13 +1,11 @@
-const { coa, ethers } = require('@nomiclabs/buidler');
+const { coa } = require('@nomiclabs/buidler');
 const { registerEvents } = require('../../util/events');
 const logger = require('../../logger');
 const { ethProvider } = require('./ethProvider');
 
 const ethInit = async () => {
   logger.info('ethInit :: initializing eth');
-  ethers.provider.on('block', blockNumber => {
-    ethProvider(blockNumber);
-  });
+  ethProvider();
   const contract = await coa.getCOA();
   const registry = await coa.getRegistry();
   const daos = await coa.getDaos();
