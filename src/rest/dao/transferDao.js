@@ -96,5 +96,13 @@ module.exports = {
     });
     const projectIds = transfers.map(t => t.project);
     return projectIds.filter((v, i) => projectIds.indexOf(v) === i);
+  },
+
+  async findAllPendingVerificationTxs() {
+    const txs = await this.model.find({
+      select: ['id', 'txHash'],
+      where: { status: txFunderStatus.PENDING_VERIFICATION }
+    });
+    return txs;
   }
 };

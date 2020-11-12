@@ -29,7 +29,7 @@ module.exports = {
     if (milestoneId === 0) {
       logger.info('[ClaimsRegistry] :: Transfer fund claim created');
       const status = approved
-        ? txFunderStatus.VERIFIED
+        ? txFunderStatus.PENDING_VERIFICATION
         : txFunderStatus.CANCELLED;
       const updated = await transferService.updateTransferStatusByTxHash(
         transactionHash,
@@ -52,12 +52,12 @@ module.exports = {
 
     const updated = await activityService.updateEvidenceStatusByTxHash(
       transactionHash,
-      txEvidenceStatus.CONFIRMED
+      txEvidenceStatus.PENDING_VERIFICATION
     );
     if (updated) {
       logger.info(
         `[ClaimsRegistry] :: Evidence ${updated.evidenceId} status updated to ${
-          txEvidenceStatus.CONFIRMED
+          txEvidenceStatus.PENDING_VERIFICATION
         }`
       );
       const milestoneCompleted = await milestoneService.isMilestoneCompleted(
