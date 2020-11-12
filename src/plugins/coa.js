@@ -330,7 +330,7 @@ module.exports = class COA {
   }
 
   async checkProposalExistence(proposalId, dao) {
-    if (proposalId >= (await this.getProposalQueueLength(dao)))
+    if (proposalId >= (await this.getProposalQueueLength(dao)).toNumber())
       throw new Error('Proposal does not exist');
   }
 
