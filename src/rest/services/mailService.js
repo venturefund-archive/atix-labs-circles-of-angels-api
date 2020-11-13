@@ -8,14 +8,27 @@
 
 const { isEmpty } = require('lodash');
 const config = require('config');
-
+const path = require('path');
+const fs = require('fs');
 const validateRequiredParams = require('../services/helpers/validateRequiredParams');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const templateParser = require('../services/helpers/templateParser');
 const { templateNames } = require('../services/helpers/templateLoader');
-
 const logger = require('../logger');
+
+const image = fs
+  .readFileSync(path.join(__dirname, '../../../assets/public/logoemail.png'))
+  .toString('base64');
+const attachments = [
+  {
+    filename: 'logoemail.png',
+    type: 'image/png',
+    content: image,
+    content_id: 'imageLogo',
+    disposition: 'inline'
+  }
+];
 
 module.exports = {
   /**
@@ -39,7 +52,8 @@ module.exports = {
       from,
       subject,
       text,
-      html
+      html,
+      attachments
     });
     // why isEmpty?
     if (!isEmpty(info.rejected)) {
