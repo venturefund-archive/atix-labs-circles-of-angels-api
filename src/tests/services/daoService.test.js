@@ -33,6 +33,11 @@ const redeployContracts = async () => {
   return { coaContract, superDaoAddress, superUserAddress: _address };
 };
 
+const moveForwardSeconds = async seconds => {
+  await ethereum.send('evm_increaseTime', [seconds]);
+  await ethereum.send('evm_mine', []);
+};
+
 describe('Testing daoService', () => {
   const defaultUser = {
     id: 1,
@@ -483,7 +488,7 @@ describe('Testing daoService', () => {
 
     afterAll(() => restoreMockedDaoService());
 
-    it('should return the unsigned transaction and the encrypted user wallet', async () => {
+    it('should return the unsigned transaction when proposal is new member and the encrypted user wallet', async () => {
       const applicant = await run('create-member');
       const unsignedTx = {
         to: 'address',
@@ -498,6 +503,25 @@ describe('Testing daoService', () => {
         applicant,
         description,
         type: proposalTypeEnum.NEW_MEMBER
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should return the unsigned transaction when proposal is new dao and the encrypted user wallet', async () => {
+      const applicant = await run('create-member');
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getNewProposalTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await mockedDaoService.getNewProposalTransaction({
+        daoId: superDaoId,
+        userWallet,
+        applicant,
+        description,
+        type: proposalTypeEnum.NEW_DAO
       });
       expect(response.tx).toEqual(unsignedTx);
       expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
@@ -643,6 +667,96 @@ describe('Testing daoService', () => {
         })
       ).rejects.toThrow(
         errors.common.RequiredParamsMissing('sendNewVoteTransaction')
+      );
+    });
+  });
+  describe('Testing getProcessTransaction', () => {
+    const userWallet = {
+      address: '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D',
+      encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
+    };
+    const superDaoId = 0;
+
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService
+      });
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should return the unsigned process transaction and the encrypted user wallet', async () => {
+      const createdProposalIndex = await run('propose-member-to-dao', {
+        daoaddress: superDaoAddress,
+        applicant: userWallet.address
+      });
+
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getProcessProposalTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await mockedDaoService.getProcessProposalTransaction({
+        daoId: superDaoId,
+        proposalId: createdProposalIndex,
+        userWallet
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should throw an error if any required param is missing, in this case proposalId', async () => {
+      await expect(
+        mockedDaoService.getProcessProposalTransaction({
+          daoId: superDaoId,
+          userWallet
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('getProcessProposalTransaction')
+      );
+    });
+  });
+  describe('Testing sendNewProcessTransaction', () => {
+    const superDaoId = 0;
+    const signedTransaction = '0x11122233548979870';
+    const userWallet = {
+      address: '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D',
+      encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
+    };
+
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService
+      });
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should send the signed processed tx to the contract, save it and return the proposalId', async () => {
+      const createdProposalIndex = await run('propose-member-to-dao', {
+        daoaddress: superDaoAddress,
+        applicant: userWallet.address
+      });
+      coa.sendNewTransaction.mockReturnValueOnce({
+        hash: '0x148Ea11233'
+      });
+      const response = await mockedDaoService.sendProcessProposalTransaction({
+        daoId: superDaoId,
+        proposalId: createdProposalIndex,
+        userWallet,
+        signedTransaction
+      });
+      expect(response).toEqual(createdProposalIndex);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        mockedDaoService.sendProcessProposalTransaction({
+          daoId: superDaoId,
+          userWallet
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('sendProcessProposalTransaction')
       );
     });
   });
