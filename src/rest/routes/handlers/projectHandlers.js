@@ -328,5 +328,11 @@ module.exports = {
       projectId
     );
     reply.status(200).send(response);
+  },
+
+  getBlockchainData: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectService.getBlockchainData(projectId);
+    reply.status(200).send(response);
   }
 };

@@ -8,6 +8,7 @@ const user = require('./UserErrors');
 const dao = require('./DaoErrors');
 const server = require('./ServerErrors');
 const mail = require('./MailErrors');
+const transaction = require('./TransactionErrors');
 
 module.exports = {
   common,
@@ -19,5 +20,6 @@ module.exports = {
   user,
   dao,
   server,
-  mail
+  mail,
+  transaction
 };

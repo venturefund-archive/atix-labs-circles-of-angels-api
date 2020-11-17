@@ -85,7 +85,7 @@ module.exports = {
 
   sendClaimTransaction: approved => async (request, reply) => {
     const { taskId } = request.params;
-    const { id: userId } = request.user;
+    const { id: userId, wallet } = request.user;
     const { proof } = request.raw.files || {};
     const { description, signedTransaction } = request.raw.body || {};
 
@@ -95,18 +95,25 @@ module.exports = {
       file: proof,
       description,
       approved,
-      signedTransaction
+      signedTransaction,
+      userAddress: wallet.address
     });
     reply.status(200).send(response);
   },
 
   getTasksEvidences: () => async (request, reply) => {
     const { taskId } = request.params;
-
     const response = await activityService.getTaskEvidences({
       taskId
     });
+    reply.status(200).send(response);
+  },
 
+  getEvidenceBlockchainData: () => async (request, reply) => {
+    const { evidenceId } = request.params;
+    const response = await activityService.getEvidenceBlockchainData(
+      evidenceId
+    );
     reply.status(200).send(response);
   }
 };

@@ -20,7 +20,11 @@ const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
-const txExplorerHelper = require('./helpers/txExplorerHelper');
+const {
+  buildBlockURL,
+  buildTxURL,
+  buildAddressURL
+} = require('./helpers/txExplorerHelper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -431,12 +435,21 @@ module.exports = {
     file,
     description,
     approved,
-    signedTransaction
+    signedTransaction,
+    userAddress
   }) {
     logger.info('[ActivityService] :: Entering sendAddClaimTransaction method');
     validateRequiredParams({
       method: 'sendAddClaimTransaction',
-      params: { taskId, userId, file, description, approved, signedTransaction }
+      params: {
+        taskId,
+        userId,
+        file,
+        description,
+        approved,
+        signedTransaction,
+        userAddress
+      }
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
@@ -480,6 +493,11 @@ module.exports = {
     };
     logger.info('[ActivityService] :: Saving evidence in database', evidence);
     const taskEvidence = await this.taskEvidenceDao.addTaskEvidence(evidence);
+    await this.transactionService.save({
+      sender: userAddress,
+      txHash: tx.hash,
+      nonce: tx.nonce
+    });
     return { claimId: taskEvidence.id };
   },
 
@@ -525,7 +543,9 @@ module.exports = {
       approved,
       milestoneId
     );
-    const nonce = await coa.getTransactionNonce(userWallet.address);
+    const nonce = await this.transactionService.getNextNonce(
+      userWallet.address
+    );
     const txWithNonce = { ...unsignedTx, nonce };
 
     logger.info(
@@ -566,9 +586,7 @@ module.exports = {
 
     const evidencesWithLink = evidences.map(evidence => ({
       ...evidence,
-      txLink: evidence.txHash
-        ? txExplorerHelper.buildTxURL(evidence.txHash)
-        : undefined
+      txLink: evidence.txHash ? buildTxURL(evidence.txHash) : undefined
     }));
     return evidencesWithLink;
   },
@@ -598,5 +616,68 @@ module.exports = {
       );
       return false;
     }
+  },
+
+  /**
+   * Returns the blockchain information for the specified evidence
+   * @param {number} evidenceId
+   */
+  async getEvidenceBlockchainData(evidenceId) {
+    logger.info(
+      '[ActivityService] :: Entering getEvidenceBlockchainData method'
+    );
+    const evidence = await checkExistence(
+      this.taskEvidenceDao,
+      evidenceId,
+      'task_evidence'
+    );
+
+    const { txHash, proof } = evidence;
+
+    if (!txHash) {
+      logger.info(
+        `[ActivityService] :: Evidence ${evidenceId} does not have blockchain information`
+      );
+      throw new COAError(
+        errors.task.EvidenceBlockchainInfoNotFound(evidenceId)
+      );
+    }
+
+    logger.info(
+      `[ActivityService] :: Getting transaction response for ${txHash}`
+    );
+    const txResponse = await coa.getTransactionResponse(txHash);
+    // not sure if this is necessary
+    if (!txResponse) {
+      logger.info(
+        `[ActivityService] :: Evidence ${evidenceId} does not have blockchain information`
+      );
+      throw new COAError(
+        errors.task.EvidenceBlockchainInfoNotFound(evidenceId)
+      );
+    }
+    const { blockNumber, timestamp, from } = txResponse;
+
+    let oracleName;
+    try {
+      const oracle = await this.userService.getUserByAddress(from);
+      oracleName = `${oracle.firstName} ${oracle.lastName}`;
+    } catch (error) {
+      logger.error('[ActivityService] :: Oracle not found');
+    }
+
+    return {
+      oracle: {
+        oracleName,
+        oracleAddress: from,
+        oracleAddressUrl: from ? buildAddressURL(from) : undefined
+      },
+      txHash,
+      txHashUrl: txHash ? buildTxURL(txHash) : undefined,
+      creationDate: timestamp ? new Date(timestamp) : undefined,
+      blockNumber,
+      blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
+      proof
+    };
   }
 };

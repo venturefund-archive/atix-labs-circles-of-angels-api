@@ -34,5 +34,9 @@ module.exports = {
   OracleAddressNotFound: taskId => ({
     message: `Address of oracle assigned for task ${taskId} not found`,
     statusCode: 400
+  }),
+  EvidenceBlockchainInfoNotFound: evidenceId => ({
+    message: `Evidence ${evidenceId} doesn't have blockchain information`,
+    statusCode: 400
   })
 };

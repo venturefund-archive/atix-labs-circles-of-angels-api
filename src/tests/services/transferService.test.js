@@ -19,6 +19,7 @@ const files = require('../../rest/util/files');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const COAError = require('../../rest/errors/COAError');
 const transferService = require('../../rest/services/transferService');
+const txExplorerHelper = require('../../rest/services/helpers/txExplorerHelper');
 
 describe('Testing transferService', () => {
   let dbProject = [];
@@ -66,7 +67,9 @@ describe('Testing transferService', () => {
     amount: 150,
     transferId: 'existing123',
     status: txFunderStatus.VERIFIED,
-    project: fundingProject.id
+    project: fundingProject.id,
+    txHash: '0x222',
+    receiptPath: '/path/to/file.png'
   };
 
   const pendingTransfer = {
@@ -89,7 +92,7 @@ describe('Testing transferService', () => {
     files.saveFile = jest.fn(() => '/dir/path');
     coa.sendAddClaimTransaction = jest.fn(() => ({ hash: '0x01' }));
     coa.getAddClaimTransaction = jest.fn();
-    coa.getTransactionNonce = jest.fn(() => 0);
+    coa.getTransactionResponse = jest.fn(() => null);
   });
   afterAll(() => jest.clearAllMocks());
 
@@ -165,6 +168,11 @@ describe('Testing transferService', () => {
         throw new COAError(errors.common.CantFindModelWithId('user', id));
       return found;
     }
+  };
+
+  const transactionService = {
+    getNextNonce: jest.fn(() => 0),
+    save: jest.fn()
   };
 
   describe('Testing transferService createTransfer', () => {
@@ -417,9 +425,11 @@ describe('Testing transferService', () => {
   });
 
   describe('Testing sendAddTransferClaimTransaction method', () => {
+    const userAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';
     beforeAll(() => {
       injectMocks(transferService, {
-        transferDao
+        transferDao,
+        transactionService
       });
     });
 
@@ -442,7 +452,8 @@ describe('Testing transferService', () => {
           transferId: pendingTransfer.id,
           userId: bankOperatorUser.id,
           approved,
-          signedTransaction: '0x123'
+          signedTransaction: '0x123',
+          userAddress
         });
 
         const updated = dbTransfer.find(t => t.id === pendingTransfer.id);
@@ -471,7 +482,8 @@ describe('Testing transferService', () => {
           transferId: pendingTransfer.id,
           userId: userFunder.id,
           approved: true,
-          signedTransaction: '0x123'
+          signedTransaction: '0x123',
+          userAddress
         })
       ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));
     });
@@ -482,7 +494,8 @@ describe('Testing transferService', () => {
           transferId: 0,
           userId: bankOperatorUser.id,
           approved: true,
-          signedTransaction: '0x123'
+          signedTransaction: '0x123',
+          userAddress
         })
       ).rejects.toThrow(errors.common.CantFindModelWithId('fund_transfer', 0));
     });
@@ -493,7 +506,8 @@ describe('Testing transferService', () => {
           transferId: verifiedTransfer.id,
           userId: bankOperatorUser.id,
           approved: true,
-          signedTransaction: '0x123'
+          signedTransaction: '0x123',
+          userAddress
         })
       ).rejects.toThrow(errors.transfer.InvalidTransferTransition);
     });
@@ -507,7 +521,8 @@ describe('Testing transferService', () => {
     beforeAll(() => {
       injectMocks(transferService, {
         transferDao,
-        projectService
+        projectService,
+        transactionService
       });
     });
 
@@ -663,6 +678,61 @@ describe('Testing transferService', () => {
           approved: true
         })
       ).rejects.toThrow(errors.transfer.InvalidTransferTransition);
+    });
+  });
+
+  describe('Testing getBlockchainData method', () => {
+    const bankopAddress = '0x123456789';
+    const txResponse = {
+      blockNumber: 10,
+      timestamp: 1587146117347,
+      from: bankopAddress
+    };
+    beforeAll(() => {
+      injectMocks(transferService, {
+        transferDao
+      });
+    });
+
+    beforeEach(() => {
+      dbTransfer = [];
+      dbTransfer.push(pendingTransfer, verifiedTransfer);
+    });
+    it('should return the transfer blockchain data', async () => {
+      coa.getTransactionResponse.mockReturnValueOnce(txResponse);
+      const response = await transferService.getBlockchainData(
+        verifiedTransfer.id
+      );
+      expect(response).toEqual({
+        validatorAddress: txResponse.from,
+        validatorAddressUrl: txExplorerHelper.buildAddressURL(txResponse.from),
+        txHash: verifiedTransfer.txHash,
+        txHashUrl: txExplorerHelper.buildTxURL(verifiedTransfer.txHash),
+        creationDate: new Date(txResponse.timestamp),
+        blockNumber: txResponse.blockNumber,
+        blockNumberUrl: txExplorerHelper.buildBlockURL(txResponse.blockNumber),
+        receipt: verifiedTransfer.receiptPath
+      });
+    });
+    it('should throw an error if the transfer does not exist', async () => {
+      await expect(transferService.getBlockchainData(0)).rejects.toThrow(
+        errors.common.CantFindModelWithId('fund_transfer', 0)
+      );
+    });
+    it('should throw an error if the transfer does not have a txHash', async () => {
+      await expect(
+        transferService.getBlockchainData(pendingTransfer.id)
+      ).rejects.toThrow(
+        errors.transfer.BlockchainInfoNotFound(pendingTransfer.id)
+      );
+    });
+    it('should throw an error if the transaction does not exist', async () => {
+      coa.getTransactionResponse.mockReturnValueOnce(null);
+      await expect(
+        transferService.getBlockchainData(verifiedTransfer.id)
+      ).rejects.toThrow(
+        errors.transfer.BlockchainInfoNotFound(verifiedTransfer.id)
+      );
     });
   });
 });

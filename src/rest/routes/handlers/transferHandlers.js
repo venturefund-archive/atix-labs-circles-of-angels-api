@@ -66,14 +66,15 @@ module.exports = {
 
   sendApprovedTransferClaim: () => async (request, reply) => {
     const { transferId } = request.params;
-    const userId = request.user.id;
+    const { wallet, id: userId } = request.user;
     const { signedTransaction } = request.body;
 
     const response = await transferService.sendAddTransferClaimTransaction({
       transferId,
       userId,
       approved: true,
-      signedTransaction
+      signedTransaction,
+      userAddress: wallet.address
     });
 
     reply.status(200).send(response);
@@ -81,7 +82,7 @@ module.exports = {
 
   sendDisapprovedTransferClaim: () => async (request, reply) => {
     const { transferId } = request.params;
-    const userId = request.user.id;
+    const { wallet, id: userId } = request.user;
     const { rejectionReason, signedTransaction } = request.body;
 
     const response = await transferService.sendAddTransferClaimTransaction({
@@ -89,7 +90,8 @@ module.exports = {
       userId,
       approved: false,
       rejectionReason,
-      signedTransaction
+      signedTransaction,
+      userAddress: wallet.address
     });
 
     reply.status(200).send(response);
@@ -104,6 +106,12 @@ module.exports = {
       approved,
       userWallet
     });
+    reply.status(200).send(response);
+  },
+
+  getBlockchainData: () => async (request, reply) => {
+    const { transferId } = request.params;
+    const response = await transferService.getBlockchainData(transferId);
     reply.status(200).send(response);
   }
 };
