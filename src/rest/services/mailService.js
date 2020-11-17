@@ -128,5 +128,27 @@ module.exports = {
       templateNames.EMAIL_CONFIRMATION
     );
     await this.sendMail({ to, subject, text, html });
+  },
+
+  async sendEmailRecoveryPassword({
+    to,
+    subject = 'Circles of Angels: Recovery Password',
+    text,
+    bodyContent
+  }) {
+    logger.info('[MailService] :: Sending recovery password mail to:', to);
+    validateRequiredParams({
+      method: 'sendEmailRecoveryPassword',
+      params: { to, subject, bodyContent }
+    });
+
+    const html = await templateParser.completeTemplate(
+      {
+        ...bodyContent,
+        frontendUrl: config.frontendUrl
+      },
+      templateNames.RECOVERY_PASSWORD
+    );
+    await this.sendMail({ to, subject, text, html });
   }
 };

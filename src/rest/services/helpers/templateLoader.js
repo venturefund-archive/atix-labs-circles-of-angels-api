@@ -11,7 +11,8 @@ const templateNames = {
   GENERIC: 'generic',
   SIGNUP: 'signup',
   PROJECT_STATUS_CHANGE: 'projectStatusChange',
-  EMAIL_CONFIRMATION: 'confirmEmail'
+  EMAIL_CONFIRMATION: 'confirmEmail',
+  RECOVERY_PASSWORD: 'recoveryPassword'
 };
 
 const templatePaths = {
@@ -20,7 +21,9 @@ const templatePaths = {
   [templateNames.PROJECT_STATUS_CHANGE]:
     '../../../../assets/templates/email/projectStatusChange.html',
   [templateNames.EMAIL_CONFIRMATION]:
-    '../../../../assets/templates/email/confirmEmail.html'
+    '../../../../assets/templates/email/confirmEmail.html',
+  [templateNames.RECOVERY_PASSWORD]:
+    '../../../../assets/templates/email/recoveryPassword.html'
 };
 
 const getTemplatePath = template =>
