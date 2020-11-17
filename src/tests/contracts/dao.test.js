@@ -96,7 +96,8 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, daoCreator, curator, notM
   let dao;
   let superDao;
 
-  beforeEach('deploy contracts', async () => {
+  beforeEach('deploy contracts', async function() {
+    this.timeout(1 * 60 * 1000);
     await run('deploy', { reset: true });
     [coa] = await deployments.getDeployedContracts('COA');
     await coa.createDAO('the dao', daoCreator);

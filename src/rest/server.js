@@ -8,7 +8,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { ethers, network, run } = require('@nomiclabs/buidler');
+const { network, run } = require('@nomiclabs/buidler');
 const COAError = require('./errors/COAError');
 const errors = require('./errors/exporter/ErrorExporter');
 const { ethInit } = require('../rest/services/eth/ethInit');
@@ -32,15 +32,7 @@ process.on('unhandledRejection', (reason, p) => {
   }
 });
 
-ethers.provider.on('block', blockNumber => console.log('block', blockNumber));
-
 module.exports.start = async ({ db, logger, configs }) => {
-  // await coa.success();
-  // coa.fail();
-  // coa.emitEvent();
-  // coa.emitEvent();
-  // coa.fail();
-
   try {
     const swaggerConfigs = configs.swagger;
     const fastify = require('fastify')({ logger });
@@ -94,8 +86,7 @@ module.exports.start = async ({ db, logger, configs }) => {
     // await fastify.eth.listener.startListen();
     module.exports.fastify = fastify;
   } catch (err) {
-    // TODO add logger
-    console.log('error', err);
+    logger.error('Error initializing server', err);
     process.exit(1);
   }
 };

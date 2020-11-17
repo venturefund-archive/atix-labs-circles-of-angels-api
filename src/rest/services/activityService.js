@@ -798,5 +798,63 @@ module.exports = {
       logger.info('[ActivityService] :: No failed transactions found');
     }
     return failed;
+  },
+  /**
+   * Checks all evidence transactions and
+   * update to verified if transfer has not failed
+   * after a specified number of blocks
+   *
+   * Returns an array with all verified evidence ids
+   *
+   */
+  async updateVerifiedEvidenceTransactions(currentBlockNumber) {
+    logger.info(
+      '[ActivityService] :: Entering updateVerifiedEvidenceTransactions method'
+    );
+    const txs = await this.taskEvidenceDao.findAllPendingVerificationTxs();
+    logger.info(
+      `[ActivityService] :: Found ${
+        txs.length
+      } pending of verification transactions`
+    );
+    const updated = await Promise.all(
+      txs.map(async ({ id, txHash }) => {
+        if (!txHash) {
+          logger.error(`[TransferService] :: Evidence ${id} has not txHash`);
+          return;
+        }
+        const { blockNumber } = await coa.getTransactionResponse(txHash);
+        const hasVerified = await this.transactionService.hasVerified(
+          blockNumber,
+          currentBlockNumber
+        );
+        if (hasVerified) {
+          try {
+            const { evidenceId } = await this.updateEvidenceStatusByTxHash(
+              txHash,
+              txFunderStatus.CONFIRMED
+            );
+            return evidenceId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              `[ActivityService] :: Couldn't update confirmed transaction status ${txHash}`,
+              error
+            );
+          }
+        }
+      })
+    );
+    const confirmed = updated.filter(tx => !!tx);
+    if (confirmed.length > 0) {
+      logger.info(
+        `[ActivityService] :: Updated status to ${
+          txEvidenceStatus.CONFIRMED
+        } for evidences ${confirmed}`
+      );
+    } else {
+      logger.info('[ActivityService] :: No confirmed transactions found');
+    }
+    return updated;
   }
 };

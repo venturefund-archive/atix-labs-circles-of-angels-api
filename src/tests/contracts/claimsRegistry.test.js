@@ -36,7 +36,8 @@ contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
   let registry;
   let project;
 
-  beforeEach('deploy contracts', async () => {
+  beforeEach('deploy contracts', async function() {
+    this.timeout(1 * 60 * 1000);
     await run('deploy', { reset: true });
     [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
     [coa] = await deployments.getDeployedContracts('COA');

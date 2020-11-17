@@ -237,7 +237,7 @@ describe('Testing userService', () => {
         'Another question?': 'OK'
       }),
       company: 'AtixLabs',
-      address: 'address',
+      address: '0xdf08f82de32b8d460adbe8d72043e3a7e25a3b39',
       encryptedWallet: '{ "address": 65dqw6sa9787a }',
       mnemonic: 'fast envelope asd asd asd asd asd'
     };

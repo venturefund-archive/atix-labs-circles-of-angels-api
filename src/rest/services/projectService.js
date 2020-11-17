@@ -58,11 +58,15 @@ module.exports = {
   },
 
   async updateProject(projectId, fields) {
-    logger.info('[ProjectService] :: Entering updateProject method');
+    logger.info('[ProjectService] :: Entering updateProject method.');
     let toUpdate = { ...fields };
     if (fields.status) {
       toUpdate = { ...fields, lastUpdatedStatusAt: new Date() };
     }
+    logger.info(
+      `[ProjectService] :: Updating project id ${projectId}`,
+      toUpdate
+    );
     const updatedProject = await this.projectDao.updateProject(
       toUpdate,
       projectId

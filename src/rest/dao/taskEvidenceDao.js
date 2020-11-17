@@ -38,5 +38,13 @@ module.exports = {
       where: { status: txEvidenceStatus.SENT }
     });
     return txs;
+  },
+
+  async findAllPendingVerificationTxs() {
+    const txs = await this.model.find({
+      select: ['id', 'txHash'],
+      where: { status: txEvidenceStatus.PENDING_VERIFICATION }
+    });
+    return txs;
   }
 };

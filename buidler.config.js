@@ -23,12 +23,34 @@ task('deploy', 'Deploys COA contracts')
     // TODO: check if reset condition is needed
     if (reset) env.coa.clearContracts();
 
+    let [implProject] = await env.deployments.getDeployedContracts('Project');
+    if (implProject === undefined || reset === true) {
+      [implProject] = await env.deployments.deploy('Project', []);
+      await env.deployments.saveDeployedContract('Project', implProject);
+      // console.log('implProject deployed. Address:', implProject.address);
+    }
+
+    let [implSuperDao] = await env.deployments.getDeployedContracts('SuperDAO');
+    if (implSuperDao === undefined || reset === true) {
+      [implSuperDao] = await env.deployments.deploy('SuperDAO', []);
+      await env.deployments.saveDeployedContract('SuperDAO', implSuperDao);
+      // console.log('implSuperDao deployed. Address:', implSuperDao.address);
+    }
+
+    let [implDao] = await env.deployments.getDeployedContracts('DAO');
+    if (implDao === undefined || reset === true) {
+      [implDao] = await env.deployments.deploy('DAO', []);
+      await env.deployments.saveDeployedContract('DAO', implDao);
+      // console.log('implDao deployed. Address:', implDao.address);
+    }
+
     let [proxyAdmin] = await env.deployments.getDeployedContracts('ProxyAdmin');
     if (proxyAdmin === undefined || reset === true) {
       [proxyAdmin] = await env.deployments.deploy('ProxyAdmin', []);
       await env.deployments.saveDeployedContract('ProxyAdmin', proxyAdmin);
       // console.log('ProxyAdmin deployed. Address:', proxyAdmin.address);
     }
+
     let [registry] = await env.deployments.getDeployedContracts(
       'ClaimsRegistry'
     );
@@ -42,7 +64,13 @@ task('deploy', 'Deploys COA contracts')
     if (coa === undefined || reset === true) {
       [coa] = await env.deployments.deployProxy(
         'COA',
-        [registry.address, proxyAdmin.address],
+        [
+          registry.address,
+          proxyAdmin.address,
+          implProject.address,
+          implSuperDao.address,
+          implDao.address
+        ],
         undefined,
         { initializer: 'coaInitialize' }
       );

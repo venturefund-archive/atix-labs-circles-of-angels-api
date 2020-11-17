@@ -16,7 +16,8 @@ async function getProjectAt(address, consultant) {
 }
 
 contract('COA.sol', ([creator, founder, other]) => {
-  beforeEach('deploy contracts', async () => {
+  beforeEach('deploy contracts', async function() {
+    this.timeout(1 * 60 * 1000);
     await run('deploy', { reset: true });
     [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
     [coa] = await deployments.getDeployedContracts('COA');
