@@ -893,7 +893,8 @@ describe('Testing milestoneService', () => {
         milestoneDao,
         projectService,
         userService,
-        setNextAsClaimable: jest.fn()
+        setNextAsClaimable: jest.fn(),
+        isMilestoneCompleted: jest.fn()
       });
     });
 
@@ -906,14 +907,38 @@ describe('Testing milestoneService', () => {
       dbMilestone.push(claimedMilestone);
     });
 
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
     it('should claim the milestone and return its id', async () => {
       const response = await milestoneService.transferredMilestone({
         userId: userBankoperator.id,
         milestoneId: claimedMilestone.id
       });
-
       expect(response).toEqual({ milestoneId: claimedMilestone.id });
+    });
+
+    it('should call setNextAsClaimable if the milestone is completed', async () => {
+      milestoneService.isMilestoneCompleted.mockReturnValueOnce(true);
+      await expect(
+        milestoneService.transferredMilestone({
+          userId: userBankoperator.id,
+          milestoneId: claimedMilestone.id
+        })
+      ).resolves.toBeDefined();
       expect(milestoneService.setNextAsClaimable).toBeCalled();
+    });
+
+    it('should not call setNextAsClaimable if the milestone is not completed', async () => {
+      milestoneService.isMilestoneCompleted.mockReturnValueOnce(false);
+      await expect(
+        milestoneService.transferredMilestone({
+          userId: userBankoperator.id,
+          milestoneId: claimedMilestone.id
+        })
+      ).resolves.toBeDefined();
+      expect(milestoneService.setNextAsClaimable).not.toBeCalled();
     });
 
     it('should throw an error if user is not a bank operator', async () => {

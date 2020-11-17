@@ -135,10 +135,6 @@ module.exports = {
       address,
       privKey: privateKey
     };
-
-    const profile = `${firstName} ${lastName}`;
-    await coa.createMember(profile);
-
     // TODO: this should be replaced by a gas relayer
     const accounts = await ethers.signers();
     const tx = {
@@ -146,6 +142,10 @@ module.exports = {
       value: utils.parseEther('0.001')
     };
     await accounts[0].sendTransaction(tx);
+
+    const profile = `${firstName} ${lastName}`;
+    // using migrateMember instead of createMember for now
+    await coa.migrateMember(profile, address);
 
     const savedUser = await this.userDao.createUser(user);
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);

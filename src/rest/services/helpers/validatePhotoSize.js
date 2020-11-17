@@ -1,15 +1,17 @@
+const config = require('config');
 const errors = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
 
 const logger = require('../../logger');
 
-const MAX_PHOTO_SIZE = 500000;
+const MAX_PHOTO_SIZE = config.fileServer.maxFileSize;
 
 /**
  * Validates that the file size is not larger than the max allowed
  * @param {File} file - File to validate its size
  */
 module.exports = file => {
+  // TODO: change file name to validateFileSize
   logger.info('[ValidatePhotoSize] :: Entering validatePhotoSize method');
   if (file.size > MAX_PHOTO_SIZE) {
     logger.error(

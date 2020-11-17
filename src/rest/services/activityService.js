@@ -205,12 +205,16 @@ module.exports = {
     }
     validateOwnership(project.owner, userId);
 
-    // TODO: define in which statuses is ok to create a task
-    if (project.status !== projectStatuses.NEW) {
+    const allowedProjectStatus = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+    if (!allowedProjectStatus.includes(project.status)) {
       logger.error(
-        `[ActivityService] :: Status of project with id ${project.id} is not ${
-          projectStatuses.NEW
-        }`
+        `[ActivityService] :: Can't create activities in project ${
+          project.id
+        } with status ${project.status}`
       );
       throw new COAError(
         errors.task.CreateWithInvalidProjectStatus(project.status)
@@ -379,11 +383,11 @@ module.exports = {
    * @param {boolean} approved
    * @returns taskId || error
    */
-  async addClaim({ taskId, userId, file, description, approved }) {
+  async addClaim({ taskId, userId, file, description, approved, userWallet }) {
     logger.info('[ActivityService] :: Entering addClaim method');
     validateRequiredParams({
       method: 'addClaim',
-      params: { userId, taskId, file, description, approved }
+      params: { userId, taskId, file, description, approved, userWallet }
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
@@ -418,7 +422,14 @@ module.exports = {
     const claim = sha3(projectId, oracle, taskId);
     const proof = sha3(filePath); // TODO: this should be an ipfs hash
 
-    await coa.addClaim(address, claim, proof, approved, milestoneId);
+    await coa.addClaim(
+      address,
+      claim,
+      proof,
+      approved,
+      milestoneId,
+      userWallet
+    );
 
     const evidence = {
       description,

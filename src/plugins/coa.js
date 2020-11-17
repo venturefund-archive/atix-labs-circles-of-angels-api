@@ -28,9 +28,15 @@ module.exports = class COA {
   }
   // testing methods
 
-  async createMember(profile) {
+  async createMember(profile, wallet) {
     const coa = await this.getCOA();
-    await coa.createMember(profile);
+    const connected = await coa.connect(wallet);
+    await connected.createMember(profile);
+  }
+
+  async migrateMember(profile, address) {
+    const coa = await this.getCOA();
+    await coa.migrateMember(profile, address);
   }
 
   async createProject(id, name, agreement) {
@@ -60,9 +66,10 @@ module.exports = class COA {
     console.log(tx);
   }
 
-  async addClaim(project, claim, proof, valid, milestoneId) {
+  async addClaim(project, claim, proof, valid, milestoneId, validator) {
     const registry = await this.getRegistry();
-    const tx = await registry.addClaim(
+    const registryWithSigner = await registry.connect(validator);
+    const tx = await registryWithSigner.addClaim(
       project,
       claim,
       proof,

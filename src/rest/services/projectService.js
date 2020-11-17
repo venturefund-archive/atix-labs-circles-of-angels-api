@@ -40,9 +40,9 @@ const {
   getSecondsPassed
 } = require('../util/dateFormatters');
 
-const thumbnailType = 'thumbnail';
-const coverPhotoType = 'coverPhoto';
-const milestonesType = 'milestones';
+const thumbnailType = files.TYPES.thumbnail;
+const coverPhotoType = files.TYPES.coverPhoto;
+const milestonesType = files.TYPES.milestones;
 
 module.exports = {
   async getProjectById(id) {
@@ -173,14 +173,17 @@ module.exports = {
 
   async getProjectThumbnail(projectId) {
     logger.info('[ProjectService] :: Entering getProjectThumbnail method');
-    validateParams(projectId);
+    validateRequiredParams({
+      method: 'getProjectThumbnail',
+      params: { projectId }
+    });
     const {
       projectName,
       location,
       timeframe,
       goalAmount,
       cardPhotoPath
-    } = await validateExistence(this.projectDao, projectId, 'project');
+    } = await checkExistence(this.projectDao, projectId, 'project');
     logger.info(`[ProjectService] :: Project of id ${projectId} found`);
     return {
       projectName,
@@ -193,29 +196,56 @@ module.exports = {
 
   async createProjectDetail(
     projectId,
-    { mission, problemAddressed, file, ownerId }
+    {
+      mission,
+      problemAddressed,
+      coverPhoto,
+      ownerId,
+      agreementFile,
+      proposalFile
+    }
   ) {
     logger.info('[ProjectService] :: Entering createProjectDetail method');
     validateRequiredParams({
       method: 'createProjectDetail',
-      params: { mission, problemAddressed, file, ownerId, projectId }
+      params: { mission, problemAddressed, coverPhoto, ownerId, projectId }
     });
 
     await this.userService.getUserById(ownerId);
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
-    validateMtype(coverPhotoType, file);
-    validatePhotoSize(file);
+    logger.info('[ProjectService] :: Uploading cover photo');
+    const coverPhotoPath = await files.validateAndSaveFile(
+      coverPhotoType,
+      coverPhoto
+    );
 
-    logger.info(`[ProjectService] :: Saving file of type '${coverPhotoType}'`);
-    const coverPhotoPath = await files.saveFile(coverPhotoType, file);
-    logger.info(`[ProjectService] :: File saved to: ${coverPhotoPath}`);
+    let agreementFilePath;
+    let proposalFilePath;
+
+    if (agreementFile) {
+      logger.info('[ProjectService] :: Uploading agreement file');
+      agreementFilePath = await files.validateAndSaveFile(
+        files.TYPES.agreementFile,
+        agreementFile
+      );
+    }
+
+    if (proposalFile) {
+      logger.info('[ProjectService] :: Uploading proposal file');
+      proposalFilePath = await files.validateAndSaveFile(
+        files.TYPES.proposalFile,
+        proposalFile
+      );
+    }
 
     const projectDetail = {
       mission,
       problemAddressed,
-      coverPhotoPath
+      coverPhotoPath,
+      agreementFilePath,
+      proposalFilePath
     };
 
     logger.info(
@@ -234,7 +264,14 @@ module.exports = {
 
   async updateProjectDetail(
     projectId,
-    { mission, problemAddressed, file, ownerId }
+    {
+      mission,
+      problemAddressed,
+      coverPhoto,
+      ownerId,
+      agreementFile,
+      proposalFile
+    }
   ) {
     logger.info('[ProjectService] :: Entering updateProjectDetail method');
     validateRequiredParams({
@@ -246,11 +283,6 @@ module.exports = {
     const project = await checkExistence(this.projectDao, projectId, 'project');
     validateOwnership(project.owner, ownerId);
 
-    if (file) {
-      validateMtype(coverPhotoType, file);
-      validatePhotoSize(file);
-    }
-
     const { status } = project;
     if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
       logger.error(
@@ -259,16 +291,28 @@ module.exports = {
       throw new COAError(errors.project.ProjectCantBeUpdated(status));
     }
 
-    let { coverPhotoPath } = project;
+    let { coverPhotoPath, agreementFilePath, proposalFilePath } = project;
 
-    if (file) {
-      validateMtype(coverPhotoType, file);
-      validatePhotoSize(file);
-      logger.info(
-        `[ProjectService] :: Saving file of type '${coverPhotoType}'`
+    if (coverPhoto) {
+      logger.info('[ProjectService] :: Updating cover photo');
+      coverPhotoPath = await files.validateAndSaveFile(
+        files.TYPES.coverPhoto,
+        coverPhoto
       );
-      coverPhotoPath = await files.saveFile(coverPhotoType, file);
-      logger.info(`[ProjectService] :: File saved to: ${coverPhotoPath}`);
+    }
+    if (agreementFile) {
+      logger.info('[ProjectService] :: Updating agreement file');
+      agreementFilePath = await files.validateAndSaveFile(
+        files.TYPES.agreementFile,
+        agreementFile
+      );
+    }
+    if (proposalFile) {
+      logger.info('[ProjectService] :: Updating proposal file');
+      proposalFilePath = await files.validateAndSaveFile(
+        files.TYPES.proposalFile,
+        proposalFile
+      );
     }
 
     logger.info(`[ProjectService] :: Updating project of id ${projectId}`);
@@ -276,7 +320,9 @@ module.exports = {
     const updatedProjectId = await this.updateProject(projectId, {
       mission,
       problemAddressed,
-      coverPhotoPath
+      coverPhotoPath,
+      agreementFilePath,
+      proposalFilePath
     });
     logger.info(`[ProjectService] :: Project of id ${projectId} updated`);
     return { projectId: updatedProjectId };
@@ -359,7 +405,12 @@ module.exports = {
     validateMtype(milestonesType, file);
 
     const { status } = project;
-    if (status !== projectStatuses.NEW && status !== projectStatuses.REJECTED) {
+    const allowedStatus = [
+      projectStatuses.NEW,
+      projectStatuses.REJECTED,
+      projectStatuses.CONSENSUS
+    ];
+    if (!allowedStatus.includes(status)) {
       logger.error(
         `[ProjectService] :: Status of project with id ${projectId} is not the correct for this action`
       );
@@ -616,7 +667,7 @@ module.exports = {
       funders
     };
 
-    const agreementJson = JSON.stringify(agreement, undefined, 2);
+    const agreementJson = JSON.stringify(agreement, undefined);
     return agreementJson;
   },
 
@@ -970,11 +1021,12 @@ module.exports = {
    *
    * @returns {Promise<object[]>} list of updated projects
    */
-  async transitionConsensusProjects() {
+  async transitionConsensusProjects(projectId) {
     logger.info(
       '[ProjectService] :: Entering transitionConsensusProjects method'
     );
     const projects = await this.projectDao.findAllByProps({
+      id: projectId,
       status: projectStatuses.CONSENSUS
     });
 
@@ -1011,12 +1063,13 @@ module.exports = {
    *
    * @returns {Promise<object[]>} list of updated projects
    */
-  async transitionFundingProjects() {
+  async transitionFundingProjects(projectId) {
     logger.info(
       '[ProjectService] :: Entering transitionFundingProjects method'
     );
     const projects = await this.projectDao.findAllByProps(
       {
+        id: projectId,
         status: projectStatuses.FUNDING
       },
       { funders: true }
@@ -1054,6 +1107,11 @@ module.exports = {
           });
         } else if (newStatus === projectStatuses.EXECUTING) {
           const agreement = await this.generateProjectAgreement(project.id);
+          logger.info(
+            `[ProjectService] :: Saving agreement for project ${project.id}`
+          );
+          await this.updateProject(project.id, { agreementJson: agreement });
+
           logger.info(
             `[ProjectService] :: Sending project ${project.id} to blockchain`
           );

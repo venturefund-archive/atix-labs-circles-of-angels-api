@@ -8,16 +8,19 @@
 
 const fs = require('fs');
 const configs = require('config');
+const mime = require('mime');
 const sharp = require('sharp');
 const mkdirp = require('mkdirp-promise');
 const logger = require('../logger');
+const validateMtype = require('../services/helpers/validateMtype');
+const validatePhotoSize = require('../services/helpers/validatePhotoSize'); // TODO: change name
 
-exports.getFileFromPath = filepath => {
+const getFileFromPath = filepath => {
   const file = fs.createReadStream(filepath, 'utf8');
   return file;
 };
 
-exports.fileExists = filepath =>
+const fileExists = filepath =>
   new Promise(resolve =>
     fs.access(filepath, fs.constants.F_OK, error => {
       if (error) resolve(false);
@@ -25,7 +28,21 @@ exports.fileExists = filepath =>
     })
   );
 
-const jpeg = '.jpeg';
+const TYPES = {
+  milestones: 'milestones',
+  thumbnail: 'thumbnail',
+  coverPhoto: 'coverPhoto',
+  projectExperiencePhoto: 'projectExperiencePhoto',
+  transferReceipt: 'transferReceipt',
+  claims: 'claims',
+  transferClaims: 'transferClaims',
+  agreementFile: 'agreementFile',
+  proposalFile: 'proposalFile'
+};
+
+const JPEG = '.jpeg';
+const XLSX = '.xlsx';
+const PDF = '.pdf';
 
 const getCoverPhotoPath = () =>
   `${configs.fileServer.filePath}/projects/coverPhotos/`;
@@ -48,6 +65,12 @@ const getClaimsPath = () =>
 const getTransferClaimsPath = () =>
   `${configs.fileServer.filePath}/projects/transfers/claims/`;
 
+const getProposalPath = () =>
+  `${configs.fileServer.filePath}/projects/proposal/`;
+
+const getAgreementPath = () =>
+  `${configs.fileServer.filePath}/projects/agreement/`;
+
 const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
   new Promise((resolve, reject) => {
     sharp(image.data)
@@ -67,56 +90,86 @@ const savePhotoJpgFormat = async (image, savePath, maxWidth = 1250) =>
       });
   });
 
-const milestoneSaver = async (file, savePath) => file.mv(savePath);
+const commonSaver = async (file, savePath) => file.mv(savePath);
 
 const fileSaver = {
-  milestones: {
-    save: milestoneSaver,
+  [TYPES.milestones]: {
+    save: commonSaver,
     getBasePath: getMilestonesPath,
-    fileExtension: '.xlsx'
+    defaultFileExtension: XLSX
   },
-  thumbnail: {
+  [TYPES.thumbnail]: {
     save: savePhotoJpgFormat,
     getBasePath: getCardPhotoPath,
-    fileExtension: jpeg
+    defaultFileExtension: JPEG
   },
-  coverPhoto: {
+  [TYPES.coverPhoto]: {
     save: savePhotoJpgFormat,
     getBasePath: getCoverPhotoPath,
-    fileExtension: jpeg
+    defaultFileExtension: JPEG
   },
-  projectExperiencePhoto: {
+  [TYPES.projectExperiencePhoto]: {
     save: savePhotoJpgFormat,
     getBasePath: getProjectExperiencePath,
-    fileExtension: jpeg
+    defaultFileExtension: JPEG
   },
-  transferReceipt: {
+  [TYPES.transferReceipt]: {
     save: savePhotoJpgFormat,
     getBasePath: getTransferReceiptPath,
-    fileExtension: jpeg
+    defaultFileExtension: JPEG
   },
-  claims: {
+  [TYPES.claims]: {
     save: savePhotoJpgFormat,
     getBasePath: getClaimsPath,
-    fileExtension: jpeg
+    defaultFileExtension: JPEG
   },
-  transferClaims: {
+  [TYPES.transferClaims]: {
     save: savePhotoJpgFormat,
     getBasePath: getTransferClaimsPath,
-    fileExtension: jpeg
+    defaultFileExtension: JPEG
+  },
+  [TYPES.agreementFile]: {
+    save: commonSaver,
+    getBasePath: getAgreementPath,
+    defaultFileExtension: PDF
+  },
+  [TYPES.proposalFile]: {
+    save: commonSaver,
+    getBasePath: getProposalPath,
+    defaultFileExtension: PDF
   }
 };
 
-exports.saveFile = async (type, file) => {
+const saveFile = async (type, file) => {
   const saver = fileSaver[type];
   const hash = file.md5;
-  const fileExtension = hash.concat(saver.fileExtension);
+  const fileExtension = '.'.concat(
+    mime.extension(mime.lookup(file.name)) || saver.defaultFileExtension
+  );
+  const withFileExtension = hash.concat(fileExtension);
   let path = saver
     .getBasePath()
     .concat(hash.charAt(0))
     .concat('/');
   await mkdirp(path);
-  path = path.concat(fileExtension);
+  path = path.concat(withFileExtension);
   await saver.save(file, path);
   return path.replace(configs.fileServer.filePath, '/files');
+};
+
+const validateAndSaveFile = async (type, file) => {
+  validateMtype(type, file);
+  validatePhotoSize(file);
+  logger.info(`[Files] :: Saving file of type '${type}'`);
+  const path = await saveFile(type, file);
+  logger.info(`[Files] :: File saved to: ${path}`);
+  return path;
+};
+
+module.exports = {
+  getFileFromPath,
+  fileExists,
+  TYPES,
+  saveFile,
+  validateAndSaveFile
 };

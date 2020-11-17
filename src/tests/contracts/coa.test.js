@@ -90,18 +90,41 @@ contract(
           await coa.createMember(...userData);
           assert.equal(await coa.members(creator), userData);
         });
+        it('should migrate an existing member', async () => {
+          const userData = ['first user profile'];
+          await coa.migrateMember(...userData, funder);
+          assert.equal(await coa.members(funder), userData);
+        });
       });
 
       describe('projects', () => {
         it('should create a project', async () => {
           const project = {
+            id: 1,
             name: 'a good project',
             agreementHash: 'an IPFS/RIF Storage hash'
           };
-          await coa.createProject(project.name, project.agreementHash);
+          await coa.createProject(
+            project.id,
+            project.name,
+            project.agreementHash
+          );
           const instance = await getProjectAt(await coa.projects(0));
           assert.equal(await instance.name(), project.name);
           assert.equal(await instance.agreementHash(), project.agreementHash);
+        });
+      });
+
+      describe('transaction', () => {
+        it('should revert when sending a tx to the contract', async () => {
+          await assertThrowsAsync(
+            async () =>
+              creator.sendTransaction({
+                to: coa.address,
+                value: '0x16345785d8a0000'
+              }),
+            'VM Exception while processing transaction: revert'
+          );
         });
       });
     });
@@ -176,19 +199,34 @@ contract(
         );
         assert.equal(approved, true);
       });
+      it('should revert when sending a tx to the contract', async () => {
+        await assertThrowsAsync(
+          async () =>
+            creator.sendTransaction({
+              to: registry.address,
+              value: '0x16345785d8a0000'
+            }),
+          'VM Exception while processing transaction: revert'
+        );
+      });
     });
 
     describe('DAO', () => {
-      before(async () => {
+      before('deploy contracts', async () => {
         // await run('deploy');
         [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
         [coa] = await deployments.getDeployedContracts('COA');
 
         const project = {
+          id: 1,
           name: 'a good project',
           agreementHash: 'an IPFS/RIF Storage hash'
         };
-        await coa.createProject(project.name, project.agreementHash);
+        await coa.createProject(
+          project.id,
+          project.name,
+          project.agreementHash
+        );
       });
       describe('not time movement', async () => {
         it('DAO has a summoner', async () => {
@@ -346,6 +384,19 @@ contract(
           proposal = await superDAO.proposalQueue(proposalIndex);
           member = await superDAO.members(funder);
           assert.equal(member.role, 2);
+        });
+      });
+      describe('transaction', () => {
+        it('should revert when sending a tx to the contract', async () => {
+          const superDAOAddress = await coa.daos(0);
+          await assertThrowsAsync(
+            async () =>
+              creator.sendTransaction({
+                to: superDAOAddress,
+                value: '0x16345785d8a0000'
+              }),
+            'VM Exception while processing transaction: revert'
+          );
         });
       });
     });

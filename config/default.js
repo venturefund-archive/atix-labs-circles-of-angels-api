@@ -59,7 +59,8 @@ module.exports = {
   },
 
   fileServer: {
-    filePath: '/home/atixlabs/files/server/files'
+    filePath: '/home/atixlabs/files/server/files',
+    maxFileSize: 5000000
   },
 
   swagger: {

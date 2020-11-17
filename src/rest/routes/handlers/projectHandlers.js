@@ -64,11 +64,13 @@ module.exports = {
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { coverPhotoPath } = files;
+    const { coverPhotoPath, agreementFile, proposalFile } = files;
     const response = await projectService.createProjectDetail(projectId, {
       mission,
       problemAddressed,
-      file: coverPhotoPath,
+      coverPhoto: coverPhotoPath,
+      agreementFile,
+      proposalFile,
       ownerId
     });
     reply.status(200).send(response);
@@ -81,11 +83,13 @@ module.exports = {
     const { projectId } = request.params;
     const ownerId = request.user.id;
     const { mission, problemAddressed } = body;
-    const { coverPhotoPath } = files;
+    const { coverPhotoPath, agreementFile, proposalFile } = files;
     const response = await projectService.updateProjectDetail(projectId, {
       mission,
       problemAddressed,
-      file: coverPhotoPath,
+      coverPhoto: coverPhotoPath,
+      agreementFile,
+      proposalFile,
       ownerId
     });
     reply.status(200).send(response);
@@ -311,6 +315,20 @@ module.exports = {
     const { projectId } = request.params;
     const userId = request.user.id;
     const response = await projectService.isCandidate({ projectId, userId });
+    reply.status(200).send(response);
+  },
+
+  setProjectAsExecuting: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectService.transitionFundingProjects(projectId);
+    reply.status(200).send(response);
+  },
+
+  setProjectAsFunding: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await projectService.transitionConsensusProjects(
+      projectId
+    );
     reply.status(200).send(response);
   }
 };

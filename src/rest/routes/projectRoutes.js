@@ -217,6 +217,8 @@ const projectsResponse = {
       owner: userResponse,
       createdAt: { type: 'string' },
       // address: { type: 'string' },
+      proposalFilePath: { type: 'string' },
+      agreementFilePath: { type: 'string' },
       id: { type: 'number' }
     }
   },
@@ -918,6 +920,48 @@ const featuredProjectsRoutes = {
   }
 };
 
+const adminRoutes = {
+  setProjectAsExecuting: {
+    method: 'put',
+    path: `${basePath}/:projectId/status/executing`,
+    options: {
+      beforeHandler: ['adminAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Set project as executing as an admin',
+        summary: 'Set project as executing',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.setProjectAsExecuting
+  },
+
+  setProjectAsFunding: {
+    method: 'put',
+    path: `${basePath}/:projectId/status/funding`,
+    options: {
+      beforeHandler: ['adminAuth'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.PUT.name],
+        description: 'Set project as funding as an admin',
+        summary: 'Set project as executing',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.setProjectAsFunding
+  }
+};
+
 const routes = {
   ...projectThumbnailRoutes,
   ...projectDetailRoutes,
@@ -926,7 +970,8 @@ const routes = {
   ...commonProjectRoutes,
   ...projectExperienceRoutes,
   ...projectStatusRoutes,
-  ...featuredProjectsRoutes
+  ...featuredProjectsRoutes,
+  ...adminRoutes
 };
 
 module.exports = routes;

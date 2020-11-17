@@ -25,8 +25,8 @@ const deployContracts = async () => {
   await run('deploy', { reset: true });
   const coaContract = await coa.getCOA();
   const superDaoAddress = await coaContract.daos(0);
-  const { _address } = await coa.getSigner();
-  return { coaContract, superDaoAddress, superUserAddress: _address };
+  const coaSigner = await coa.getSigner();
+  return { coaContract, superDaoAddress, coaSigner };
 };
 
 describe('Testing activityService', () => {
@@ -226,6 +226,9 @@ describe('Testing activityService', () => {
   });
 
   beforeEach(() => resetDb());
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
 
   describe('Testing updateTask', () => {
     beforeAll(() => {
@@ -436,6 +439,7 @@ describe('Testing activityService', () => {
   });
 
   describe('Testing addClaim', () => {
+    let coaSigner;
     beforeAll(() => {
       injectMocks(activityService, {
         activityDao,
@@ -451,7 +455,7 @@ describe('Testing activityService', () => {
         oracle: userEntrepreneur.id
       });
       dbMilestone.push(nonUpdatableMilestone);
-      await deployContracts();
+      ({ coaSigner } = await deployContracts());
       const projectAddress = await run('create-project');
       dbProject.push({ ...executingProject, address: projectAddress });
     }, TEST_TIMEOUT_MS);
@@ -464,7 +468,8 @@ describe('Testing activityService', () => {
         userId: userEntrepreneur.id,
         file: evidenceFile,
         description: mockedDescription,
-        approved: true
+        approved: true,
+        userWallet: coaSigner
       });
       expect(response).toEqual({ taskId: nonUpdatableTask.id });
     });
@@ -476,7 +481,8 @@ describe('Testing activityService', () => {
           userId: 0,
           file: evidenceFile,
           description: mockedDescription,
-          approved: true
+          approved: true,
+          userWallet: coaSigner
         })
       ).rejects.toThrow(
         errors.task.OracleNotAssigned({
@@ -497,7 +503,8 @@ describe('Testing activityService', () => {
           userId: userEntrepreneur.id,
           file: evidenceFile,
           description: mockedDescription,
-          approved: true
+          approved: true,
+          userWallet: coaSigner
         })
       ).rejects.toThrow(
         errors.project.InvalidStatusForEvidenceUpload(newProject.status)
@@ -521,7 +528,8 @@ describe('Testing activityService', () => {
           userId: userEntrepreneur.id,
           file: { name: 'invalidclaim.exe', size: 2000 },
           description: mockedDescription,
-          approved: true
+          approved: true,
+          userWallet: coaSigner
         })
       ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
     });
@@ -533,7 +541,8 @@ describe('Testing activityService', () => {
           userId: userEntrepreneur.id,
           file: { name: 'imbig.jpg', size: 500001 },
           description: mockedDescription,
-          approved: true
+          approved: true,
+          userWallet: coaSigner
         })
       ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
     });
@@ -573,7 +582,8 @@ describe('Testing activityService', () => {
       injectMocks(activityService, {
         activityDao,
         userService,
-        projectService
+        projectService,
+        milestoneService
       });
     });
 
