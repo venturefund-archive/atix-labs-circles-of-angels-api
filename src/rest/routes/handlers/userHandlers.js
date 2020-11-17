@@ -52,7 +52,7 @@ module.exports = {
   },
 
   signupUser: () => async (request, reply) => {
-    const user = await userService.createUser(request.body);
+    const user = await userService.createUser(request.body, request.user);
     reply.status(200).send({ userId: user.id });
   },
 
@@ -64,8 +64,14 @@ module.exports = {
 
   changePassword: () => async (request, reply) => {
     const { id } = request.user;
-    const { password, encryptedWallet } = request.body || {};
-    await userService.updatePassword(id, password, encryptedWallet);
+    const { currentPassword, newPassword, encryptedWallet } =
+      request.body || {};
+    await userService.updatePassword(
+      id,
+      currentPassword,
+      newPassword,
+      encryptedWallet
+    );
     reply.status(200).send({ success: 'Password updated successfully' });
   },
 
@@ -103,5 +109,11 @@ module.exports = {
     const userId = request.user.id;
     const projects = await userService.getAppliedProjects({ userId });
     reply.status(200).send(projects);
+  },
+
+  confirmEmail: () => async (request, reply) => {
+    const { id } = request.params;
+    const user = await userService.validateUserEmail(id);
+    reply.status(200).send(user);
   }
 };

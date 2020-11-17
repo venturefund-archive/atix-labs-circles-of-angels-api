@@ -10,7 +10,7 @@ const { coa, ethers } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
 const { Wallet, utils } = require('ethers');
 
-const { userRoles } = require('../util/constants');
+const { userRoles, encryption } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
 const checkExistence = require('./helpers/checkExistence');
 
@@ -98,6 +98,13 @@ module.exports = {
       throw new COAError(errors.user.UserRejected);
     }
 
+    if (!user.emailConfirmation) {
+      logger.error(
+        `[User Service] :: User ID ${user.id} needs confirm email address `
+      );
+      throw new COAError(errors.user.NotConfirmedEmail);
+    }
+
     return authenticatedUser;
   },
 
@@ -112,20 +119,23 @@ module.exports = {
    * @param {object} questionnaire on boarding Q&A
    * @returns new user | error
    */
-  async createUser({
-    firstName,
-    lastName,
-    email,
-    password,
-    role,
-    phoneNumber,
-    country,
-    company,
-    answers,
-    address,
-    encryptedWallet,
-    mnemonic
-  }) {
+  async createUser(
+    {
+      firstName,
+      lastName,
+      email,
+      password,
+      role,
+      phoneNumber,
+      country,
+      company,
+      answers,
+      address,
+      encryptedWallet,
+      mnemonic
+    },
+    adminRole
+  ) {
     logger.info(`[User Routes] :: Creating new user with email ${email}`);
     validateRequiredParams({
       method: 'createUser',
@@ -143,6 +153,14 @@ module.exports = {
         mnemonic
       }
     });
+    this.validatePassword(password);
+
+    if (role === userRoles.COA_ADMIN && !adminRole) {
+      logger.error(
+        '[User Service] :: It is not allowed to create users with admin role.'
+      );
+      throw new COAError(errors.user.NotAllowSignUpAdminUser);
+    }
 
     const existingUser = await this.userDao.getUserByEmail(email);
 
@@ -153,10 +171,9 @@ module.exports = {
       throw new COAError(errors.user.EmailAlreadyInUse);
     }
     await this.countryService.getCountryById(country);
-
     // TODO: check phoneNumber format
 
-    const hashedPwd = await bcrypt.hash(password, 10);
+    const hashedPwd = await bcrypt.hash(password, encryption.saltOrRounds);
 
     const user = {
       firstName,
@@ -172,29 +189,66 @@ module.exports = {
       encryptedWallet,
       mnemonic
     };
-    // TODO: this should be replaced by a gas relayer
+    const savedUser = await this.userDao.createUser(user);
+    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
+
+    await this.mailService.sendEmailVerification({
+      to: email,
+      bodyContent: {
+        userName: firstName,
+        userId: savedUser.id
+      },
+      userId: savedUser.id
+    });
+
+    return savedUser;
+  },
+
+  async validateUserEmail(userId) {
+    const user = await this.getUserById(userId);
+    const {
+      firstName,
+      lastName,
+      email,
+      id,
+      role,
+      forcePasswordChange,
+      address
+    } = user;
+
     const accounts = await ethers.signers();
     const tx = {
-      to: address,
+      to: user.address,
       value: utils.parseEther('0.001')
     };
     await accounts[0].sendTransaction(tx);
 
     const profile = `${firstName} ${lastName}`;
-    // using migrateMember instead of createMember for now
     await coa.migrateMember(profile, address);
 
-    const savedUser = await this.userDao.createUser(user);
-    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
-
-    await this.mailService.sendSignUpMail({
-      to: email,
-      bodyContent: {
-        userName: firstName
-      }
+    const updated = await this.userDao.updateUser(userId, {
+      emailConfirmation: true
     });
+    if (!updated) {
+      logger.error(
+        '[UserService] :: Error updating emailValidation in database for user: ',
+        id
+      );
+      throw new COAError(errors.user.UserUpdateError);
+    }
+    user.wallet = await this.getUserWallet(id);
+    const userDaos = await this.daoService.getDaos({ user });
+    const hasDaos = userDaos.length > 0;
 
-    return savedUser;
+    return {
+      firstName,
+      lastName,
+      email,
+      id,
+      role,
+      hasDaos,
+      forcePasswordChange
+    };
   },
 
   /**
@@ -284,6 +338,34 @@ module.exports = {
     };
   },
 
+  validatePassword(password) {
+    if (!RegExp('^(?=.{8,})').test(password)) {
+      logger.error(
+        `[User Service] :: Password ${password} must have at least 8 characters`
+      );
+      throw new COAError(errors.user.minimunCharacterPassword);
+    }
+    if (!RegExp('^(?=.*[a-z])').test(password)) {
+      logger.error(
+        `[User Service] :: Password ${password} must have at least 1 lowercase character`
+      );
+      throw new COAError(errors.user.lowerCaseCharacterPassword);
+    }
+    if (!RegExp('^(?=.*[A-Z])').test(password)) {
+      logger.error(
+        `[User Service] :: Password ${password} must have at least 1 uppercase character`
+      );
+      throw new COAError(errors.user.upperCaseCharacterPassword);
+    }
+
+    if (!RegExp('^(?=.*[0-9])').test(password)) {
+      logger.error(
+        `[User Service] :: Password ${password} must have at least 1 numeric character`
+      );
+      throw new COAError(errors.user.numericCharacterPassword);
+    }
+  },
+
   async validUser(user, roleId) {
     const existentUser = await this.getUserById(user.id);
     const role = roleId ? existentUser.role === roleId : true;
@@ -298,18 +380,27 @@ module.exports = {
     return { address, encryptedWallet };
   },
 
-  async updatePassword(id, password, encryptedWallet) {
+  async updatePassword(id, currentPassword, newPassword, encryptedWallet) {
     logger.info('[UserService] :: Entering updatePassword method');
     let user = await this.userDao.getUserById(id);
+
     if (!user) {
       logger.info(
         '[UserService] :: There is no user associated with that email',
         id
       );
-      throw new COAError(errors.user.UserNotFound);
+      return false;
     }
 
-    const hashedPwd = await bcrypt.hash(password, 10);
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      logger.error(
+        '[User Service] :: Update password failed. Current password is incorrect'
+      );
+      throw new COAError(errors.user.InvalidPassword);
+    }
+
+    const hashedPwd = await bcrypt.hash(newPassword, encryption.saltOrRounds);
     user = {
       password: hashedPwd,
       encryptedWallet,

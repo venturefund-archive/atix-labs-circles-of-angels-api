@@ -41,11 +41,12 @@ describe('Testing PassRecoveryService startPassRecoveryProcess', () => {
     );
     expect(response).toEqual('dummy@email.com');
   });
-  it('should fail with an error when the given email is not found', async () => {
+  it('should success when the given email is not found', async () => {
     bcrypt.compare.mockReturnValueOnce(true);
-    await expect(
-      passRecoveryService.startPassRecoveryProcess('notvalid@email.com')
-    ).rejects.toThrow(errors.user.InvalidEmail);
+    const response = await passRecoveryService.startPassRecoveryProcess(
+      'notvalid@email.com'
+    );
+    expect(response).toEqual('notvalid@email.com');
   });
 });
 

@@ -38,6 +38,7 @@ const userResponse = {
     hasDaos: { type: 'boolean' },
     forcePasswordChange: { type: 'boolean' },
     blocked: { type: 'boolean' },
+    emailConfirmation: { type: 'boolean' },
     phoneNumber: { type: 'string' },
     country: {
       anyOf: [
@@ -330,7 +331,7 @@ const routes = {
             password: { type: 'string' },
             encryptedWallet: { type: 'string' }
           },
-          required: ['password', 'encryptedWallet'],
+          required: ['currentPassword', 'newPassword', 'encryptedWallet'],
           description: 'New password and new encrypted wallet'
         },
         response: {
@@ -465,6 +466,26 @@ const routes = {
       }
     },
     handler: handlers.getAppliedProjects
+  },
+
+  confirmEmail: {
+    method: 'put',
+    path: `${basePath}/:id/email/confirm`,
+    options: {
+      beforeHandler: [],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.PUT.name],
+        description: 'Confirm user email address',
+        summary: 'Update user emailVerification',
+        body: {},
+        response: {
+          ...successResponse(userResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.confirmEmail
   }
 };
 
