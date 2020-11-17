@@ -142,7 +142,7 @@ const routes = {
     method: 'get',
     path: `${basePath}/:userId`,
     options: {
-      beforeHandler: ['generalAuth'],
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns an object the information of an existing user',
