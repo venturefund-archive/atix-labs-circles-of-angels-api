@@ -189,6 +189,17 @@ module.exports = {
       encryptedWallet,
       mnemonic
     };
+    const accounts = await ethers.signers();
+    const tx = {
+      to: address,
+      value: utils.parseEther('0.001')
+    };
+    await accounts[0].sendTransaction(tx);
+
+    const profile = `${firstName} ${lastName}`;
+    // using migrateMember instead of createMember for now
+    await coa.migrateMember(profile, address);
+
     const savedUser = await this.userDao.createUser(user);
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
 
@@ -205,50 +216,18 @@ module.exports = {
   },
 
   async validateUserEmail(userId) {
-    const user = await this.getUserById(userId);
-    const {
-      firstName,
-      lastName,
-      email,
-      id,
-      role,
-      forcePasswordChange,
-      address
-    } = user;
-
-    const accounts = await ethers.signers();
-    const tx = {
-      to: user.address,
-      value: utils.parseEther('0.001')
-    };
-    await accounts[0].sendTransaction(tx);
-
-    const profile = `${firstName} ${lastName}`;
-    await coa.migrateMember(profile, address);
-
-    const updated = await this.userDao.updateUser(userId, {
+    const updatedUser = await this.userDao.updateUser(userId, {
       emailConfirmation: true
     });
-    if (!updated) {
+    if (!updatedUser) {
       logger.error(
         '[UserService] :: Error updating emailValidation in database for user: ',
         id
       );
       throw new COAError(errors.user.UserUpdateError);
     }
-    user.wallet = await this.getUserWallet(id);
-    const userDaos = await this.daoService.getDaos({ user });
-    const hasDaos = userDaos.length > 0;
 
-    return {
-      firstName,
-      lastName,
-      email,
-      id,
-      role,
-      hasDaos,
-      forcePasswordChange
-    };
+    return updatedUser;
   },
 
   /**
