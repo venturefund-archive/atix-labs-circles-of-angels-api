@@ -16,7 +16,7 @@ module.exports = {
     },
     activity: {
       columnName: 'activityId',
-      model: 'activity'
+      model: 'task'
     },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }

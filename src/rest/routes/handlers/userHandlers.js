@@ -6,12 +6,13 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/user';
+const config = require('config');
 const apiHelper = require('../../services/helper');
+
+const userService = require('../../services/userService');
 
 module.exports = {
   getUser: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
     fastify.log.info('[User Routes] :: Getting user info');
     const user = await userService.getUserById(request.params.userId);
     if (!user)
@@ -22,191 +23,36 @@ module.exports = {
     reply.send(user);
   },
 
-  getUsers: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
-    fastify.log.info('[User Routes] :: Getting all users');
-    try {
-      const users = await userService.getUsers();
-      reply.status(200).send({ users });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all users:',
-        error
-      );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting all users'
-      });
-    }
-  },
-
-  getUserRole: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
-    try {
-      fastify.log.info('[User Routes] :: Getting user role');
-      const role = await userService.getUserRole(request.params.userId);
-
-      if (!role.error) {
-        fastify.log.info('[User Routes] :: Role found: ', role);
-        reply.status(200).send(role);
-      } else {
-        fastify.log.info(
-          '[User Routes] :: Error getting user role: ',
-          role.error
-        );
-        reply.status(404).send(role);
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting the user´s role:',
-        error
-      );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting the user´s role'
-      });
-    }
-  },
-
-  getRegistrationStatus: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
-    try {
-      fastify.log.info(
-        `[User Routes] :: GET request at ${basePath}/registrationStatus`
-      );
-
-      const registrationStatus = await userService.getAllRegistrationStatus();
-      reply.status(200).send({ registrationStatus });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all user registration status:',
-        error
-      );
-      reply.status(500).send({
-        error:
-          'There was an unexpected error getting all user registration status'
-      });
-    }
-  },
-
-  getAllRoles: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
-    try {
-      fastify.log.info(`[User Routes] :: GET request at ${basePath}/role`);
-
-      const roles = await userService.getAllRoles();
-      reply.status(200).send({ roles });
-    } catch (error) {
-      fastify.log.error(
-        '[User Routes] :: There was an error getting all user roles:',
-        error
-      );
-      reply.status(500).send({
-        error: 'There was an unexpected error getting all user roles'
-      });
-    }
+  getUsers: () => async (request, reply) => {
+    const users = await userService.getUsers();
+    reply.status(200).send({ users });
   },
 
   loginUser: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
-    try {
-      const { email, pwd } = request.body;
-      fastify.log.info('[User Routes] :: Trying to log in user:', email);
+    const { email, pwd } = request.body;
+    const user = await userService.login(email, pwd);
 
-      const user = await userService.login(email, pwd);
+    const token = fastify.jwt.sign(user);
+    const expirationDate = new Date();
+    expirationDate.setMonth(
+      expirationDate.getMonth() + config.jwt.expirationTime
+    );
 
-      if (user.error) {
-        fastify.log.error('[User Routes] :: Log in failed for user:', email);
-        reply.status(401).send({ error: user });
-      } else {
-        fastify.log.info('[User Routes] :: Log in successful for user:', email);
-        const token = fastify.jwt.sign(user);
-
-        const expirationDate = new Date();
-        expirationDate.setDate(expirationDate.getDate() + 1);
-        reply
-          .status(200)
-          .setCookie('userAuth', token, {
-            domain: fastify.configs.server.host,
-            path: '/',
-            httpOnly: true,
-            expires: expirationDate
-            // secure: true
-          })
-          .send(user);
-      }
-    } catch (err) {
-      reply
-        .status(500)
-        .send({ error: 'There was an unexpected error logging in' });
-    }
+    reply
+      .status(200)
+      .setCookie('userAuth', token, {
+        domain: config.server.domain,
+        path: '/',
+        httpOnly: true,
+        expires: expirationDate,
+        secure: config.server.isHttps
+      })
+      .send(user);
   },
 
-  signupUser: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
-    try {
-      const {
-        email,
-        pwd,
-        username,
-        role,
-        detail,
-        questionnaire
-      } = request.body;
-
-      fastify.log.info('[User Routes] :: Creating new user:', request.body);
-      const user = await userService.createUser(
-        username,
-        email,
-        pwd,
-        role,
-        detail,
-        questionnaire
-      );
-
-      if (user.error) {
-        fastify.log.error('[User Routes] :: User creation failed', user);
-        reply.status(user.status).send(user);
-      } else {
-        fastify.log.info('[User Routes] :: Creation successful:', user);
-        reply.status(200).send({ success: 'User successfully created!' });
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error creating user' });
-    }
-  },
-
-  updateUser: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
-    const { userId } = request.params;
-    fastify.log.info(`PUT request at ${basePath}/${userId}`, request.body);
-    try {
-      const { body } = request;
-
-      const updatedUser = await userService.updateUser(userId, body);
-
-      if (updatedUser.error) {
-        fastify.log.error('[User Routes] :: User update failed', updatedUser);
-        reply.status(updatedUser.status).send(updatedUser);
-      } else {
-        fastify.log.info('[User Routes] :: Update successful:', updatedUser);
-        reply.status(200).send({ success: 'User successfully updated!' });
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error updating user' });
-    }
-  },
-
-  getOracles: fastify => async (request, reply) => {
-    const { userService } = apiHelper.helper.services;
-    fastify.log.info('[User Routes] :: getting list of oracles');
-    try {
-      const oracles = await userService.getOracles();
-      reply.status(200).send(oracles);
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error getting oracles' });
-    }
+  signupUser: () => async (request, reply) => {
+    const user = await userService.createUser(request.body);
+    reply.status(200).send({ userId: user.id });
   },
 
   recoverPassword: fastify => async (request, reply) => {
@@ -263,28 +109,21 @@ module.exports = {
     }
   },
 
-  getUserProjects: fastify => async (request, reply) => {
-    const {
-      userService,
-      userProjectService,
-      projectService
-    } = apiHelper.helper.services;
-    const { userId } = request.params;
-    fastify.log.info('[User Routes] :: getting list of oracles');
-    try {
-      const projects = await userService.getProjectsOfUser(
-        userId,
-        userProjectService,
-        projectService
-      );
-      if (projects.error) {
-        reply.status(projects.status).send(projects);
-      } else {
-        reply.status(200).send(projects);
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send({ error: 'Error getting oracles' });
-    }
+  getMyProjects: () => async (request, reply) => {
+    const userId = request.user.id;
+    const projects = await userService.getProjectsOfUser(userId);
+    reply.status(200).send(projects);
+  },
+
+  getFollowedProjects: () => async (request, reply) => {
+    const userId = request.user.id;
+    const projects = await userService.getFollowedProjects({ userId });
+    reply.status(200).send(projects);
+  },
+
+  getAppliedProjects: () => async (request, reply) => {
+    const userId = request.user.id;
+    const projects = await userService.getAppliedProjects({ userId });
+    reply.status(200).send(projects);
   }
 };

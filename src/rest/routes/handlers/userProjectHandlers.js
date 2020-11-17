@@ -6,11 +6,10 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const apiHelper = require('../../services/helper');
+const userProjectService = require('../../services/userProjectService');
 
 module.exports = {
   signAgreement: fastify => async (request, reply) => {
-    const { userProjectService } = apiHelper.helper.services;
     fastify.log.info('[User Project Routes] :: Signing Agreement');
     const newUserProject = await userProjectService.signAgreement({
       userProjectId: request.params.userProjectId,
@@ -25,7 +24,6 @@ module.exports = {
   },
 
   getUsers: fastify => async (request, reply) => {
-    const { userProjectService } = apiHelper.helper.services;
     const { projectId } = request.params;
 
     fastify.log.info(
@@ -42,7 +40,6 @@ module.exports = {
   },
 
   createUserProject: fastify => async (request, reply) => {
-    const { userProjectService } = apiHelper.helper.services;
     const { userId, projectId } = request.body;
 
     fastify.log.info(

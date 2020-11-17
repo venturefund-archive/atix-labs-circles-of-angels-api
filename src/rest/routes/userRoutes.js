@@ -9,6 +9,104 @@
 const basePath = '/users';
 const handlers = require('./handlers/userHandlers');
 const routeTags = require('../util/routeTags');
+const {
+  successResponse,
+  serverErrorResponse,
+  clientErrorResponse
+} = require('../util/responses');
+
+const idParam = (description, param) => ({
+  type: 'object',
+  properties: {
+    [param]: {
+      type: 'integer',
+      description
+    }
+  }
+});
+
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    email: { type: 'string' },
+    address: { type: 'string' },
+    createdAt: { type: 'string' },
+    id: { type: 'integer' },
+    role: { type: 'string' },
+    blocked: { type: 'boolean' },
+    phoneNumber: { type: 'string' },
+    country: {
+      anyOf: [
+        { type: 'number' },
+        {
+          type: 'object',
+          properties: {
+            id: { type: 'number' },
+            name: { type: 'string' }
+          }
+        }
+      ]
+    }
+  },
+  description: "User's information"
+};
+
+const successWithMessageResponse = {
+  type: 'object',
+  properties: {
+    success: { type: 'string' }
+  },
+  description: 'Returns a success message if the user was signed up correctly'
+};
+
+const successWithUserResponse = {
+  type: 'object',
+  properties: {
+    users: {
+      type: 'array',
+      items: userResponse
+    }
+  },
+  description: 'Returns an array of objects with the users information'
+};
+
+const projectResponse = {
+  projectName: { type: 'string' },
+  mission: { type: 'string' },
+  problemAddressed: { type: 'string' },
+  location: { type: 'string' },
+  timeframe: { type: 'string' },
+  proposal: { type: 'string' },
+  faqLink: { type: 'string' },
+  coverPhotoPath: { type: 'string' },
+  cardPhotoPath: { type: 'string' },
+  goalAmount: { type: 'number' },
+  status: { type: 'string' },
+  owner: { type: 'number' },
+  createdAt: { type: 'string' },
+  transactionHash: { type: 'string' },
+  id: { type: 'number' }
+};
+
+const successWithProjectsResponse = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: projectResponse
+  },
+  description: 'Returns an array of objects with the projects information'
+};
+
+const appliedProjectsResponse = {
+  type: 'object',
+  properties: {
+    funding: successWithProjectsResponse,
+    monitoring: successWithProjectsResponse
+  },
+  description: 'Returns an object with the applied projects'
+};
 
 const routes = {
   getUser: {
@@ -33,7 +131,8 @@ const routes = {
           200: {
             type: 'object',
             properties: {
-              username: { type: 'string' },
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
               email: { type: 'string' },
               address: { type: 'string' },
               createdAt: { type: 'string' },
@@ -73,237 +172,13 @@ const routes = {
         description: 'Returns the information of all the existing COA users',
         summary: 'Get all existing users',
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              users: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    username: { type: 'string' },
-                    email: { type: 'string' },
-                    address: { type: 'string' },
-                    createdAt: { type: 'string' },
-                    updatedAt: { type: 'string' },
-                    id: { type: 'integer' },
-                    role: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'integer' },
-                        name: { type: 'string' }
-                      }
-                    },
-                    registrationStatus: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'integer' },
-                        name: { type: 'string' }
-                      }
-                    },
-                    answers: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          customAnswer: { type: 'string' },
-                          id: { type: 'integer' },
-                          question: {
-                            type: 'object',
-                            properties: {
-                              question: { type: 'string' },
-                              role: { type: 'integer' },
-                              answerLimit: { type: 'integer' },
-                              id: { type: 'integer' }
-                            }
-                          },
-                          answer: {
-                            type: 'object',
-                            properties: {
-                              answer: { type: 'string' },
-                              id: { type: 'integer' },
-                              question: { type: 'integer' }
-                            }
-                          },
-                          user: { type: 'integer' }
-                        }
-                      }
-                    },
-                    detail: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'integer' },
-                        phoneNumber: { type: ['string', 'null'] },
-                        company: { type: ['string', 'null'] },
-                        user: { type: 'integer' }
-                      }
-                    }
-                  },
-                  description: 'Information of an individual user'
-                }
-              }
-            },
-            description:
-              'Returns an array of objects with the users information'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithUserResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
     handler: handlers.getUsers
-  },
-
-  getUserRole: {
-    method: 'get',
-    path: `${basePath}/:userId/role`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.USER.name, routeTags.GET.name],
-        description: 'Returns the role of an existing user',
-        summary: "Get user's role",
-        params: {
-          type: 'object',
-          properties: {
-            userId: {
-              type: 'integer',
-              description: 'User to get the role from'
-            }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              id: { type: 'integer' },
-              name: { type: 'string' }
-            },
-            description: 'Returns an object with the role of the user'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.getUserRole
-  },
-
-  getRegistrationStatus: {
-    method: 'get',
-    path: `${basePath}/registrationStatus`,
-    options: {
-      schema: {
-        tags: [routeTags.USER.name, routeTags.GET.name],
-        description: 'Returns all available registration status for a COA user',
-        summary: 'Get all registration status',
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              registrationStatus: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' }
-                  }
-                }
-              }
-            },
-            description:
-              'Returns an array of objects with each available registration status'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.getRegistrationStatus
-  },
-
-  getAllRoles: {
-    method: 'get',
-    path: `${basePath}/roles`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.USER.name, routeTags.GET.name],
-        description: 'Returns all available user roles in COA',
-        summary: 'Get all user roles',
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              roles: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    name: { type: 'string' }
-                  }
-                }
-              }
-            },
-            description:
-              'Returns an array of objects with each available user roles'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.getAllRoles
   },
 
   loginUser: {
@@ -326,61 +201,9 @@ const routes = {
           description: 'User login information'
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              username: { type: 'string' },
-              email: { type: 'string' },
-              id: { type: 'integer' },
-              role: {
-                type: 'object',
-                properties: {
-                  id: { type: 'integer' },
-                  name: { type: 'string' }
-                }
-              },
-              registrationStatus: { type: 'integer' }
-            },
-            description:
-              'Returns an object with the information of the logged in user ' +
-              'and sets an http-only cookie with JWT'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: {
-                type: 'object',
-                properties: {
-                  status: { type: 'integer' },
-                  error: { type: 'string' },
-                  user: {
-                    type: 'object',
-                    properties: {
-                      username: { type: 'string' },
-                      email: { type: 'string' },
-                      id: { type: 'integer' },
-                      role: {
-                        type: 'object',
-                        properties: {
-                          id: { type: 'integer' },
-                          name: { type: 'string' }
-                        }
-                      },
-                      registrationStatus: { type: 'integer' }
-                    }
-                  }
-                }
-              }
-            },
-            description: 'Returns an object describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(userResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
@@ -398,160 +221,37 @@ const routes = {
         body: {
           type: 'object',
           properties: {
-            username: { type: 'string' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
             email: { type: 'string' },
-            pwd: { type: 'string' },
-            role: { type: 'number' },
-            detail: { type: 'object' },
-            questionnaire: {
-              type: 'array',
-              items: {
-                type: 'object'
-              }
-            }
+            password: { type: 'string' },
+            role: { type: 'string' },
+            phoneNumber: { type: 'string' },
+            country: { type: 'number' },
+            answers: { type: 'string' },
+            company: { type: 'string' }
           },
-          required: ['username', 'email', 'pwd', 'role'],
+          required: [
+            'firstName',
+            'lastName',
+            'email',
+            'password',
+            'role',
+            'phoneNumber',
+            'country',
+            'answers'
+          ],
+          additionalProperties: false,
           description: 'User on-boarding information'
         },
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'string' }
-            },
-            description:
-              'Returns a success message if the user was signed up correctly'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            response: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            response: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithMessageResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
         }
       }
     },
     handler: handlers.signupUser
-  },
-
-  updateUser: {
-    method: 'put',
-    path: `${basePath}/:userId`,
-    options: {
-      beforeHandler: ['adminAuth'],
-      schema: {
-        tags: [routeTags.USER.name, routeTags.PUT.name],
-        description: 'Modifies an existing user information',
-        summary: 'Update COA user',
-        body: {
-          type: 'object',
-          properties: {
-            username: { type: 'string' },
-            email: { type: 'string' },
-            pwd: { type: 'string' },
-            registrationStatus: { type: 'number' }
-          },
-          additionalProperties: false,
-          description: 'Fields to modify'
-        },
-        params: {
-          type: 'object',
-          properties: {
-            userId: { type: 'number', description: 'User to modify' }
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'string' }
-            },
-            description: 'Returns a success message if the user was updated'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.updateUser
-  },
-
-  getOracles: {
-    method: 'get',
-    path: `${basePath}/oracles`,
-    options: {
-      beforeHandler: ['generalAuth'],
-      schema: {
-        tags: [routeTags.USER.name, routeTags.GET.name],
-        description: 'Returns all existing COA Oracles',
-        summary: 'Get all COA Oracles',
-        response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                username: { type: 'string' },
-                email: { type: 'string' },
-                address: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                id: { type: 'integer' },
-                role: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'integer' },
-                    name: { type: 'string' }
-                  }
-                },
-                registrationStatus: { type: 'integer' }
-              }
-            },
-            description:
-              'Returns an array of objects with each oracle and their information'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
-        }
-      }
-    },
-    handler: handlers.getOracles
   },
 
   recoverPassword: {
@@ -652,73 +352,61 @@ const routes = {
     handler: handlers.updatePassword
   },
 
-  getUserProjects: {
+  getMyProjects: {
     method: 'get',
-    path: `${basePath}/:userId/projects`,
+    path: `${basePath}/me/projects`,
     options: {
+      beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.USER.name, routeTags.GET.name],
         description: 'Returns all projects related to an existing user',
         summary: 'Get all projects by user',
-        params: {
-          type: 'object',
-          properties: {
-            userId: { type: 'integer' }
-          },
-          description: 'User to get their projects from'
-        },
         response: {
-          200: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                projectName: { type: 'string' },
-                mission: { type: 'string' },
-                problemAddressed: { type: 'string' },
-                location: { type: 'string' },
-                timeframe: { type: 'string' },
-                pitchProposal: { type: 'string' },
-                faqLink: { type: 'string' },
-                milestonesFile: { type: 'string' },
-                goalAmount: { type: 'integer' },
-                status: { type: 'integer' },
-                ownerId: { type: 'integer' },
-                projectAgreement: { type: 'string' },
-                createdAt: { type: 'string' },
-                updatedAt: { type: 'string' },
-                transactionHash: { type: 'string' },
-                creationTransactionHash: { type: 'string' },
-                id: { type: 'integer' },
-                startBlockchainStatus: { type: 'integer' },
-                coverPhoto: { type: 'integer' },
-                cardPhoto: { type: 'integer' },
-                blockchainStatus: { type: 'integer' }
-              }
-            },
-            description:
-              'Returns an array of objects with the information of each project'
-          },
-          '4xx': {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          },
-          500: {
-            type: 'object',
-            properties: {
-              status: { type: 'number' },
-              error: { type: 'string' }
-            },
-            description: 'Returns a message describing the error'
-          }
+          ...successResponse(successWithProjectsResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
         }
       }
     },
-    handler: handlers.getUserProjects
+    handler: handlers.getMyProjects
+  },
+
+  getFollowedProjects: {
+    method: 'get',
+    path: `${basePath}/followed-projects`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns all projects followed to an existing user',
+        summary: 'Get all followed projects by user',
+        response: {
+          ...successResponse(successWithProjectsResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getFollowedProjects
+  },
+
+  getAppliedProjects: {
+    method: 'get',
+    path: `${basePath}/applied-projects`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns all projects applied of an existing user',
+        summary: 'Get all applied projects by user',
+        response: {
+          ...successResponse(appliedProjectsResponse),
+          ...serverErrorResponse(),
+          ...clientErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getAppliedProjects
   }
 };
 

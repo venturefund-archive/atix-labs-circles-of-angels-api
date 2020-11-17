@@ -6,127 +6,68 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const basePath = '/milestones';
-const apiHelper = require('../../services/helper');
+const milestoneService = require('../../services/milestoneService');
 
 module.exports = {
-  getMilestones: fastify => async (request, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
-    fastify.log.info('[Milestone Routes] :: GET request at /milestones');
-    try {
-      const milestones = await milestoneService.getAllMilestones();
-      reply.status(200).send({ milestones });
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error getting all milestones: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error getting all milestones' });
-    }
+  getMilestones: () => async (request, reply) => {
+    const filters = request.query;
+    const milestones = await milestoneService.getMilestones(filters);
+    reply.status(200).send(milestones);
   },
 
-  getBudgetStatus: fastify => async (req, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
-    fastify.log.info(
-      `[Milestone Routes] :: GET request at ${basePath}/budgetStatus`
-    );
-    try {
-      const budgetStatus = await milestoneService.getAllBudgetStatus();
-      reply.status(200).send({ budgetStatus });
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error getting all available budget transfer status: ',
-        error
-      );
-      reply.status(500).send({
-        error: 'Error getting all available budget transfer status'
-      });
-    }
+  createMilestone: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const milestoneParams = request.body;
+    const userId = request.user.id;
+    const response = await milestoneService.createMilestone(projectId, {
+      userId,
+      milestoneParams
+    });
+    reply.status(200).send(response);
   },
 
-  deleteMilestone: fastify => async (request, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
+  updateMilestone: () => async (request, reply) => {
     const { milestoneId } = request.params;
-    fastify.log.info(
-      `[Milestone Routes] Deleting milestone with id: ${milestoneId}`
-    );
-    try {
-      const deleted = await milestoneService.deleteMilestone(milestoneId);
-      reply.status(200).send(deleted);
-    } catch (error) {
-      fastify.log.error(error);
-      reply.status(500).send('Error deleting milestone');
-    }
+    const milestoneParams = request.body;
+    const userId = request.user.id;
+    const response = await milestoneService.updateMilestone(milestoneId, {
+      userId,
+      milestoneParams
+    });
+    reply.status(200).send(response);
   },
 
-  createMilestone: fastify => async (req, reply) => {
-    const { milestoneService } = apiHelper.helper.services;
-    fastify.log.info(
-      '[Milestone Routes] :: POST request at /milestones:',
-      req.body
+  deleteMilestone: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const userId = request.user.id;
+    const response = await milestoneService.deleteMilestone(
+      milestoneId,
+      userId
     );
-
-    const { milestone, projectId } = req.body;
-
-    try {
-      const response = await milestoneService.createMilestone(
-        milestone,
-        projectId
-      );
-
-      if (response.error) {
-        fastify.log.error(
-          '[Milestone Routes] :: Error creating milestone: ',
-          response.error
-        );
-        reply.status(response.status).send(response);
-      } else {
-        reply.send({ success: 'Milestone created successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error creating milestone: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error creating milestone' });
-    }
+    reply.status(200).send(response);
   },
 
-  updateMilestone: fastify => async (req, reply) => {
-    const { milestoneService, userService } = apiHelper.helper.services;
-    fastify.log.info(
-      `[Milestone Routes] :: PUT request at /milestones/${
-        req.params.milestoneId
-      }:`,
-      req.body
-    );
+  claimMilestone: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const userId = request.user.id;
 
-    const { milestone } = req.body;
-    const { milestoneId } = req.params;
+    const response = await milestoneService.claimMilestone({
+      milestoneId,
+      userId
+    });
 
-    try {
-      const user = await userService.getUserById(req.user.id);
-      const response = await milestoneService.updateMilestone(
-        milestone,
-        milestoneId,
-        user
-      );
+    reply.status(200).send(response);
+  },
 
-      if (response.error) {
-        fastify.log.error(
-          '[Milestone Routes] :: Error updating milestone: ',
-          response.error
-        );
-        reply.status(response.status).send(response);
-      } else {
-        reply.send({ success: 'Milestone updated successfully!' });
-      }
-    } catch (error) {
-      fastify.log.error(
-        '[Milestone Routes] :: Error updating milestone: ',
-        error
-      );
-      reply.status(500).send({ error: 'Error updating milestone' });
-    }
+  transferredMilestone: () => async (request, reply) => {
+    const { milestoneId } = request.params;
+    const userId = request.user.id;
+
+    const response = await milestoneService.transferredMilestone({
+      milestoneId,
+      userId
+    });
+
+    reply.status(200).send(response);
   }
 };

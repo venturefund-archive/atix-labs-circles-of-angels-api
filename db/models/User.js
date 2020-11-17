@@ -8,7 +8,8 @@
 
 /**
  * @description Represent a user of Circles Of Angels, this can be:
- *              Social entrepreneur, Funder, Oracle, Backoffice Administrator
+ *              Social Entrepreneur, Project Supporter, Project Curator,
+ *              Bank operator, COA Administrator
  * @attribute `id`: user id in the business domain
  * @attribute `name`: name with which the user will be shown
  * @attribute `email`: email with which the user is registered
@@ -16,27 +17,56 @@
  * @attribute `roles`: role / roles that the user has in the tool
  *            (this can be for example Funder and Oracle at the same time)
  */
+const { omit } = require('lodash');
+const { userRoles } = require('../../src/rest/util/constants');
+
 module.exports = {
   identity: 'user',
   primaryKey: 'id',
   attributes: {
-    username: { type: 'string', required: true },
+    firstName: { type: 'string', required: true },
+    lastName: { type: 'string', required: true },
     email: { type: 'string', required: true },
-    pwd: { type: 'string', required: true },
+    password: { type: 'string', required: true },
     address: { type: 'string', allowNull: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    updatedAt: { type: 'string', autoUpdatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
     role: {
-      columnName: 'roleId',
-      model: 'role'
+      type: 'string',
+      validations: { isIn: Object.values(userRoles) },
+      required: true
     },
-    registrationStatus: {
-      columnName: 'registrationStatus',
-      model: 'user_registration_status'
-    },
+    blocked: { type: 'boolean', defaultsTo: false, required: false },
     privKey: { type: 'string', required: true },
-    transferBlockchainStatus: { type: 'number', required: true }
+    projects: {
+      collection: 'project',
+      via: 'owner'
+    },
+    funding: {
+      collection: 'project',
+      via: 'user',
+      through: 'project_funder'
+    },
+    following: {
+      collection: 'project',
+      via: 'user',
+      through: 'project_follower'
+    },
+    monitoring: {
+      collection: 'project',
+      via: 'user',
+      through: 'project_oracle'
+    },
+    country: {
+      columnName: 'countryId',
+      model: 'country'
+    },
+    phoneNumber: { type: 'string', required: true },
+    answers: { type: 'string', required: true },
+    company: { type: 'string', required: false, allowNull: true }
+  },
+  customToJSON: function toJson() {
+    return omit(this, ['password', 'privKey']);
   },
   async findById(id) {
     return this.findOne(id);

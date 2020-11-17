@@ -1,1 +1,0 @@
-ALTER TABLE user_social_entrepreneur ALTER COLUMN "company" DROP NOT NULL;

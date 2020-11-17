@@ -1,7 +1,9 @@
 /**
  * AGPL License
  * Circle of Angels aims to democratize social impact financing.
- * It facilitate the investment process by utilizing smart contracts to develop impact milestones agreed upon by funders and the social entrepenuers.
+ * It facilitate the investment process by utilizing smart
+ * contracts to develop impact milestones agreed
+ * upon by funders and the social entrepenuers.
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
@@ -16,11 +18,13 @@ const {
   userFunder,
   userAdmin,
   userSE,
+  blockedUser,
   userSeDetails,
   userFunderDetails,
   userFunderAnswers,
   userSeAnswers,
-  userProject
+  userProject,
+  genericUser
 } = require('./mockModels');
 
 const {
@@ -28,6 +32,10 @@ const {
   blockchainStatus,
   userRoles
 } = require('../rest/util/constants');
+
+exports.buildGenericUserWithEmail = email => {
+  return genericUser(email);
+};
 
 exports.buildUserOracle = id => {
   const user = JSON.parse(JSON.stringify(userOracle));
@@ -75,16 +83,23 @@ exports.buildUserFunderAnswers = id => {
 
 exports.buildUserSeWithDetails = id => {
   const user = this.buildUserSe(id);
-  const answers = this.buildUserSeAnswers(user.id);
-  const detail = this.buildUserSeDetails(user.id);
-  return { ...user, answers, detail };
+  // const answers = {}; //this.buildUserSeAnswers(user.id);
+  // const detail = {}; //this.buildUserSeDetails(user.id);
+  return { ...user };
 };
 
 exports.buildUserFunderWithDetails = id => {
   const user = this.buildUserFunder(id);
-  const answers = this.buildUserFunderAnswers(user.id);
-  const detail = this.buildUserFunderDetails(user.id);
-  return { ...user, answers, detail };
+  // const answers = {}; //this.buildUserFunderAnswers(user.id);
+  // const detail = {}; // this.buildUserFunderDetails(user.id);
+  return { ...user };
+};
+
+exports.buildBlockedUser = id => {
+  const user = JSON.parse(JSON.stringify(blockedUser));
+  user.id = id || user.id;
+  user.blocked = true;
+  return user;
 };
 
 exports.populateUserRole = user => {

@@ -6,46 +6,50 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const apiHelper = require('../../services/helper');
+const transferService = require('../../services/transferService');
 
 module.exports = {
-  sendToVerification: fastify => async (request, reply) => {
-    const { transferService } = apiHelper.helper.services;
-    fastify.log.info('[Transfer Routes] :: Send transfer to verification');
-    const verification = await transferService.sendTransferToVerification({
-      transferId: request.body.transferId,
-      amount: request.body.amount,
-      currency: request.body.currency,
-      senderId: request.body.senderId,
-      projectId: request.body.projectId,
-      destinationAccount: request.body.destinationAccount
+  createTransfer: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const body = request.raw.body || {};
+    const files = request.raw.files || {};
+
+    const { transferId, destinationAccount, amount, currency } = body;
+    const { receiptPath } = files;
+    const senderId = request.user.id;
+
+    const response = await transferService.createTransfer({
+      transferId,
+      destinationAccount,
+      amount,
+      currency,
+      projectId,
+      senderId,
+      receiptFile: receiptPath
     });
-    if (!verification)
-      reply
-        .status(409)
-        .send({ error: 'Error when trying upload transfer information' });
-    reply.send({ sucess: 'Transfer information upload sucessfuly!' });
+    reply.status(200).send(response);
   },
 
-  updateTransfer: fastify => async (request, reply) => {
-    const { transferService } = apiHelper.helper.services;
-    fastify.log.info('[Transfer Routes] :: Update transfer state');
-    const verification = await transferService.updateTransferState({
-      transferId: request.params.id,
-      state: request.body.state
-    });
-    if (!verification)
-      reply.send({ error: 'Error when trying upload transfer state' });
-    reply.send({ sucess: 'Transfer information upload sucessfuly!' });
+  updateTransfer: () => async (request, reply) => {
+    const { id } = request.params;
+    const { status } = request.body;
+    const response = await transferService.updateTransfer(id, { status });
+    reply.status(200).send(response);
   },
 
-  getState: fastify => async (request, reply) => {
-    const { transferService } = apiHelper.helper.services;
-    fastify.log.info(
-      `[Transfer Routes] :: Getting state of user ${
-        request.params.userId
-      } in project ${request.params.projectId}`
-    );
+  getTransfers: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await transferService.getAllTransfersByProject(projectId);
+    reply.status(200).send(response);
+  },
+
+  getFundedAmount: () => async (request, reply) => {
+    const { projectId } = request.params;
+    const response = await transferService.getFundedAmount({ projectId });
+    reply.status(200).send(response);
+  },
+
+  getState: () => async (request, reply) => {
     const status = await transferService.getTransferStatusByUserAndProject({
       senderId: request.params.userId,
       projectId: request.params.projectId
@@ -60,16 +64,31 @@ module.exports = {
     }
   },
 
-  getTransfers: fastify => async (request, reply) => {
-    const { transferService } = apiHelper.helper.services;
-    fastify.log.info(
-      `[Transfer Routes] :: Getting transactions of project ${
-        request.params.projectId
-      }`
-    );
-    const transferList = await transferService.getTransferList({
-      projectId: request.params.projectId
+  addApprovedTransferClaim: () => async (request, reply) => {
+    const { transferId } = request.params;
+    const userId = request.user.id;
+
+    const response = await transferService.addTransferClaim({
+      transferId,
+      userId,
+      approved: true
     });
-    reply.send(transferList);
+
+    reply.status(200).send(response);
+  },
+
+  addDisapprovedTransferClaim: () => async (request, reply) => {
+    const { transferId } = request.params;
+    const userId = request.user.id;
+    const { rejectionReason } = request.body;
+
+    const response = await transferService.addTransferClaim({
+      transferId,
+      userId,
+      approved: false,
+      rejectionReason
+    });
+
+    reply.status(200).send(response);
   }
 };
