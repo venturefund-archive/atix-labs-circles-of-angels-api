@@ -534,6 +534,9 @@ module.exports = {
           ? await coa.votingPeriodExpired(daoId, index)
           : null,
       txStatus: proposal.status ? proposal.status : txProposalStatus.CONFIRMED,
+      voters: proposal.status
+        ? []
+        : await this.voteDao.findByDaoAndProposalId(daoId, index),
       id: proposal.status ? null : index
     }));
 

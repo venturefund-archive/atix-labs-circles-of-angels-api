@@ -5,7 +5,6 @@ const { injectMocks } = require('../../rest/util/injection');
 const {
   userRoles,
   proposalTypeEnum,
-  voteEnum,
   daoMemberRoleEnum,
   daoMemberRoleNames,
   txProposalStatus
@@ -16,7 +15,6 @@ const restoreMockedDaoService = () => {
   mockedDaoService = Object.assign({}, daoService);
 };
 
-const TEST_TIMEOUT_MS = 10000;
 const PERIOD_DURATION_SEC = 17280;
 const VOTING_PERIOD_LENGTH = 35; // periods
 const GRACE_PERIOD_LENGTH = 35;
@@ -83,7 +81,7 @@ describe('Testing daoService', () => {
       superDaoAddress,
       superUserAddress
     } = await redeployContracts());
-  }, TEST_TIMEOUT_MS);
+  });
 
   beforeAll(() => {
     coa.sendNewTransaction = jest.fn();
@@ -114,8 +112,24 @@ describe('Testing daoService', () => {
   };
 
   const voteDao = {
-    findById: id => dbVote.find(proposal => proposal.id === id),
-    findByTxHash: hash => dbVote.find(proposal => proposal.txHash === hash),
+    findById: id => {
+      const found = dbVote.find(proposal => proposal.id === id);
+      if (!found) return [];
+      return found;
+    },
+    findByTxHash: hash => {
+      const found = dbVote.find(proposal => proposal.txHash === hash);
+      if (!found) return;
+      return found;
+    },
+    findByDaoAndProposalId: (daoId, proposalId) => {
+      const found = dbVote.find(
+        proposal =>
+          proposal.daoId === daoId && proposal.proposalId === proposalId
+      );
+      if (!found) return [];
+      return found;
+    },
     addVote: ({ daoId, proposalId, vote, voter, txHash, status }) => {
       const newVoteId =
         dbVote.length > 0 ? dbVote[dbVote.length - 1].id + 1 : 1;
@@ -183,222 +197,18 @@ describe('Testing daoService', () => {
       return updated;
     },
     findAllSentTxs: () => {
-      dbProposal
+      const found = dbProposal
         .filter(p => p.status === txProposalStatus.SENT)
         .map(({ id, txHash }) => ({ id, txHash }));
+      return found;
     },
-    findAllSentTxsByDaoId: daoId =>
-      dbProposal.filter(
+    findAllSentTxsByDaoId: daoId => {
+      const filtered = dbProposal.filter(
         p => p.status === txProposalStatus.SENT && p.daoId === daoId
-      )
+      );
+      return filtered;
+    }
   };
-  describe('Testing submitProposal method', () => {
-    it(
-      'should create a new proposal in the specified DAO ' +
-        'if the user is a member and return the DAO id',
-      async () => {
-        const memberAddress = await run('create-member');
-        const response = await daoService.submitProposal({
-          daoId: 0,
-          type: proposalTypeEnum.NEW_MEMBER,
-          description: 'Test proposal',
-          applicant: memberAddress,
-          user: defaultUser
-        });
-        const proposals = await coa.getAllProposalsByDaoId(0);
-        expect(response).toEqual({ daoId: 0 });
-        expect(proposals).toHaveLength(1);
-      },
-      TEST_TIMEOUT_MS
-    );
-    it('should throw an error if any required parameters are missing', async () => {
-      await expect(
-        daoService.submitProposal({
-          daoId: 0,
-          type: proposalTypeEnum.NEW_MEMBER,
-          description: 'Test proposal',
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.common.RequiredParamsMissing('submitProposal'));
-    });
-    it('should throw an error if the proposal type is not a valid value', async () => {
-      await expect(
-        daoService.submitProposal({
-          daoId: 0,
-          type: 10,
-          description: 'Test proposal',
-          applicant: ALL_ZERO_ADDRESS,
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.dao.InvalidProposalType);
-    });
-    it('should throw an error if the applicant address is invalid', async () => {
-      await expect(
-        daoService.submitProposal({
-          daoId: 0,
-          type: proposalTypeEnum.NEW_MEMBER,
-          description: 'Test proposal',
-          applicant: '0x01234',
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.dao.ErrorSubmittingProposal(0));
-    });
-    it('should throw an error if the DAO does not exist', async () => {
-      const memberAddress = await run('create-member');
-      await expect(
-        daoService.submitProposal({
-          daoId: 1,
-          type: proposalTypeEnum.NEW_MEMBER,
-          description: 'Test proposal',
-          applicant: memberAddress,
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.dao.ErrorSubmittingProposal(1));
-    });
-  });
-  describe('Testing voteProposal method', () => {
-    it.each`
-      vote     | yesVotes | noVotes
-      ${true}  | ${1}     | ${0}
-      ${false} | ${0}     | ${1}
-    `(
-      'should allow the user to vote on a proposal of a DAO ' +
-        'with vote=$vote and return the proposal id',
-      async ({ vote, yesVotes, noVotes }) => {
-        const memberAddress = await run('create-member');
-        const createdProposalIndex = await run('propose-member-to-dao', {
-          daoaddress: superDaoAddress,
-          applicant: memberAddress
-        });
-        await ethereum.send('evm_increaseTime', [PERIOD_DURATION_SEC]);
-        const response = await daoService.voteProposal({
-          daoId: 0,
-          proposalId: createdProposalIndex,
-          vote,
-          user: defaultUser
-        });
-        expect(response).toEqual({ proposalId: createdProposalIndex });
-        const proposal = (await coa.getAllProposalsByDaoId(0))[
-          createdProposalIndex
-        ];
-        expect(Number(proposal.yesVotes)).toEqual(yesVotes);
-        expect(Number(proposal.noVotes)).toEqual(noVotes);
-      },
-      TEST_TIMEOUT_MS
-    );
-    it('should throw an error if any required parameters are missing', async () => {
-      await expect(
-        daoService.voteProposal({
-          daoId: 0,
-          proposalId: 0,
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.common.RequiredParamsMissing('voteProposal'));
-    });
-    it('should throw an error if the user address is invalid', async () => {
-      await expect(
-        daoService.voteProposal({
-          daoId: 0,
-          proposalId: 0,
-          vote: voteEnum.YES,
-          user: { ...defaultUser, wallet: { address: '0xx123' } }
-        })
-      ).rejects.toThrow(errors.dao.ErrorVotingProposal(0, 0));
-    });
-    it('should throw an error if the DAO does not exist', async () => {
-      await expect(
-        daoService.voteProposal({
-          daoId: 1,
-          proposalId: 0,
-          vote: voteEnum.YES,
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.dao.ErrorVotingProposal(0, 1));
-    });
-    it('should throw an error if the proposal does not exist', async () => {
-      await expect(
-        daoService.voteProposal({
-          daoId: 0,
-          proposalId: 1,
-          vote: voteEnum.YES,
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.dao.ErrorVotingProposal(1, 0));
-    });
-  });
-  describe('Testing processProposal method', () => {
-    it.each`
-      vote     | didPass
-      ${true}  | ${true}
-      ${false} | ${false}
-    `(
-      'should process the existing proposal, mark it as processed, ' +
-        'set didPass=$didPass and return its id',
-      async ({ vote, didPass }) => {
-        const memberAddress = await run('create-member');
-        const createdProposalIndex = await run('propose-member-to-dao', {
-          daoaddress: superDaoAddress,
-          applicant: memberAddress
-        });
-        await ethereum.send('evm_increaseTime', [PERIOD_DURATION_SEC]);
-        await run('vote-proposal', {
-          daoaddress: superDaoAddress,
-          proposal: createdProposalIndex,
-          vote
-        });
-        await ethereum.send('evm_increaseTime', [
-          VOTING_PERIOD_SEC + GRACE_PERIOD_SEC
-        ]);
-        const response = await daoService.processProposal({
-          daoId: 0,
-          proposalId: createdProposalIndex,
-          user: defaultUser
-        });
-        expect(response).toEqual({ proposalId: createdProposalIndex });
-        const proposal = (await coa.getAllProposalsByDaoId(0))[
-          createdProposalIndex
-        ];
-        expect(proposal.processed).toBe(true);
-        expect(proposal.didPass).toBe(didPass);
-      },
-      TEST_TIMEOUT_MS
-    );
-    it('should throw an error if any required parameters are missing', async () => {
-      await expect(
-        daoService.processProposal({
-          daoId: 0,
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.common.RequiredParamsMissing('processProposal'));
-    });
-    it('should throw an error if the user address is invalid', async () => {
-      await expect(
-        daoService.processProposal({
-          daoId: 0,
-          proposalId: 0,
-          user: { ...defaultUser, wallet: { address: '0xx123' } }
-        })
-      ).rejects.toThrow(errors.dao.ErrorProcessingProposal(0, 0));
-    });
-    it('should throw an error if the DAO does not exist', async () => {
-      await expect(
-        daoService.processProposal({
-          daoId: 1,
-          proposalId: 0,
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.dao.ErrorProcessingProposal(0, 1));
-    });
-    it('should throw an error if the proposal does not exist', async () => {
-      await expect(
-        daoService.processProposal({
-          daoId: 0,
-          proposalId: 1,
-          user: defaultUser
-        })
-      ).rejects.toThrow(errors.dao.ErrorProcessingProposal(1, 0));
-    });
-  });
   describe('Testing getMember method', () => {
     it('should return the information of the existing member in the DAO', async () => {
       const response = await daoService.getMember({
@@ -448,7 +258,19 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing getProposalsByDaoId method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao,
+        voteDao
+      });
+    });
+    beforeEach(() => {
+      resetDb();
+    });
+
     it('should return a list of all proposals in a dao', async () => {
+      const daoId = 0;
       const firstMemberAddress = await run('create-member');
       const secondMemberAddress = await run('create-member');
       const firstCreatedProposalIndex = await run('propose-member-to-dao', {
@@ -459,8 +281,9 @@ describe('Testing daoService', () => {
         daoaddress: superDaoAddress,
         applicant: secondMemberAddress
       });
-      const response = await daoService.getProposalsByDaoId({
-        daoId: 0
+      const response = await mockedDaoService.getProposalsByDaoId({
+        daoId,
+        user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
       expect(response).toHaveLength(2);
       expect(response[firstCreatedProposalIndex].applicant).toEqual(
@@ -475,10 +298,12 @@ describe('Testing daoService', () => {
       expect(response[secondCreatedProposalIndex].proposalType).toEqual(
         proposalTypeEnum.NEW_MEMBER
       );
+      expect(response[firstCreatedProposalIndex].voters.length).toEqual(0);
+      expect(response[secondCreatedProposalIndex].voters.length).toEqual(0);
     });
     it('should throw an error if any required parameters are missing', async () => {
       await expect(
-        daoService.getProposalsByDaoId({
+        mockedDaoService.getProposalsByDaoId({
           user: defaultUser
         })
       ).rejects.toThrow(
@@ -487,7 +312,7 @@ describe('Testing daoService', () => {
     });
     it('should throw an error if the DAO does not exist', async () => {
       await expect(
-        daoService.getProposalsByDaoId({
+        mockedDaoService.getProposalsByDaoId({
           daoId: 1,
           user: defaultUser
         })
@@ -495,43 +320,51 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing getDaos method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao
+      });
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
     it('should have a list of 2 daos when getDaos is applied', async () => {
       const firstMemberAddress = await run('create-member');
       await run('create-dao', { account: firstMemberAddress });
       await run('create-dao', { account: firstMemberAddress });
-      const response = await daoService.getDaos({
+      const response = await mockedDaoService.getDaos({
         user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
       expect(response).toHaveLength(2);
     });
-    it('should have 1 proposal length when adding a proposal to a DAO', async () => {
-      // Its the only DAO for the user, thats why is unique
-      const uniqueDaoIndex = 0;
-      const firstMemberAddress = await run('create-member');
-      const secondMemberAddress = await run('create-member');
-      const daoAddress = await run('create-dao', {
-        account: firstMemberAddress
-      });
-      await run('propose-member-to-dao', {
-        daoaddress: daoAddress,
-        applicant: secondMemberAddress
-      });
-      const response = await daoService.getDaos({
-        user: { ...defaultUser, wallet: { address: firstMemberAddress } }
-      });
-      const proposalAmounts = Number(response[uniqueDaoIndex].proposalsAmount);
-      expect(response).toHaveLength(1);
-      expect(proposalAmounts).toEqual(1);
-    });
+    // it('should have 1 proposal length when adding a proposal to a DAO', async () => {
+    //   // Its the only DAO for the user, thats why is unique
+    //   const uniqueDaoIndex = 0;
+    //   const firstMemberAddress = await run('create-member');
+    //   const secondMemberAddress = await run('create-member');
+    //   const daoAddress = await run('create-dao', {
+    //     account: firstMemberAddress
+    //   });
+    //   await run('propose-member-to-dao', {
+    //     daoaddress: daoAddress,
+    //     applicant: secondMemberAddress
+    //   });
+    //   const user = { ...defaultUser, wallet: { address: firstMemberAddress } };
+    //   const response = await mockedDaoService.getDaos({ user });
+    //   const proposalAmounts = Number(response[uniqueDaoIndex].proposalsAmount);
+    //   expect(response).toHaveLength(1);
+    //   expect(proposalAmounts).toEqual(1);
+    // });
     it('should have an empty list of DAOs if the userdoesnt belong to anyone', async () => {
       const firstMemberAddress = await run('create-member');
-      const response = await daoService.getDaos({
+      const response = await mockedDaoService.getDaos({
         user: { ...defaultUser, wallet: { address: firstMemberAddress } }
       });
       expect(response).toHaveLength(0);
     });
     it('should throw an error if method dont receive any user', async () => {
-      await expect(daoService.getDaos({})).rejects.toThrow(
+      await expect(mockedDaoService.getDaos({})).rejects.toThrow(
         errors.common.RequiredParamsMissing('getDaos')
       );
     });
@@ -626,6 +459,44 @@ describe('Testing daoService', () => {
         applicant,
         description,
         type: proposalTypeEnum.NEW_DAO
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should return the unsigned transaction when proposal is new banker and the encrypted user wallet', async () => {
+      const applicant = await run('create-member');
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getNewProposalTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await mockedDaoService.getNewProposalTransaction({
+        daoId: superDaoId,
+        userWallet,
+        applicant,
+        description,
+        type: proposalTypeEnum.ASSIGN_BANK
+      });
+      expect(response.tx).toEqual(unsignedTx);
+      expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
+    });
+    it('should return the unsigned transaction when proposal is new curator and the encrypted user wallet', async () => {
+      const applicant = await run('create-member');
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getNewProposalTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await mockedDaoService.getNewProposalTransaction({
+        daoId: superDaoId,
+        userWallet,
+        applicant,
+        description,
+        type: proposalTypeEnum.ASSIGN_CURATOR
       });
       expect(response.tx).toEqual(unsignedTx);
       expect(response.encryptedWallet).toEqual(userWallet.encryptedWallet);
@@ -1000,9 +871,15 @@ describe('Testing daoService', () => {
       );
     });
     it('should throw an error if the vote does not exist', async () => {
+      const wrongTxHash = '0x55555555555';
       await expect(
-        mockedDaoService.updateVoteByTxHash('0x0', txProposalStatus.CONFIRMED)
-      ).rejects.toThrow(errors.common.CantFindModelWithTxHash('vote', '0x0'));
+        mockedDaoService.updateVoteByTxHash(
+          wrongTxHash,
+          txProposalStatus.CONFIRMED
+        )
+      ).rejects.toThrow(
+        errors.common.CantFindModelWithTxHash('vote', wrongTxHash)
+      );
     });
     it('should throw an error if the status is not valid', async () => {
       await expect(

@@ -35,7 +35,9 @@ CREATE TABLE public.user (
     "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
     "encryptedWallet" json NOT NULL,
+    "mnemonic" varchar(200),
     blocked BOOLEAN NOT NULL DEFAULT FALSE,
+    "forcePasswordChange" BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     UNIQUE (email),
     UNIQUE (address),
@@ -220,9 +222,8 @@ CREATE TABLE public.vote (
     "txHash" varchar(80) NOT NULL,
     "createdAt" timestamp with time zone NOT NULL,
     status tx_proposal_status DEFAULT 'notsent',
-	CONSTRAINT proposal_pkey PRIMARY KEY ("id"),
+	CONSTRAINT vote_pkey PRIMARY KEY ("id"),
     FOREIGN KEY ("voter") REFERENCES public.user (address),
-    FOREIGN KEY ("proposalId") REFERENCES public.proposal("proposalId"),
     UNIQUE ("txHash")
 );
 

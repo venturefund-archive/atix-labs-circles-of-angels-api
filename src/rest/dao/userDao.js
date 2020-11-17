@@ -47,6 +47,11 @@ module.exports = {
     return updatedUser;
   },
 
+  async updateUserByEmail(email, user) {
+    const updatedUser = await this.model.updateOne({ email }).set({ ...user });
+    return updatedUser;
+  },
+
   async getUsers() {
     return this.model
       .find({ where: { role: { '!=': userRoles.COA_ADMIN } } })

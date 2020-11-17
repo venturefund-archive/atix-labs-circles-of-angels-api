@@ -154,7 +154,7 @@ module.exports = fastify => {
     injectDependencies(service, dependencies);
   }
 
-  function configurePasssRecoveryService(service) {
+  function configurePassRecoveryService(service) {
     const dependencies = {
       mailService,
       passRecoveryDao,
@@ -197,7 +197,8 @@ module.exports = fastify => {
   function configureProjectStatusValidators(service) {
     const dependencies = {
       projectService,
-      transferService
+      transferService,
+      milestoneService
     };
     injectDependencies(service, dependencies);
   }
@@ -231,7 +232,7 @@ module.exports = fastify => {
     injectModel(funderDao, models.project_funder);
     injectModel(countryDao, models.country);
     injectModel(milestoneBudgetStatusDao, models.milestoneBudgetStatus);
-    injectModel(passRecoveryDao, models.passRecovery);
+    injectModel(passRecoveryDao, models.pass_recovery);
     injectModel(activityDao, models.task);
     injectModel(projectExperienceDao, models.project_experience);
     injectModel(projectExperiencePhotoDao, models.project_experience_photo);
@@ -255,7 +256,7 @@ module.exports = fastify => {
     configureActivityService(activityService);
     configureUserProjectService(userProjectService);
     configureTransferService(transferService);
-    configurePasssRecoveryService(passRecoveryService);
+    configurePassRecoveryService(passRecoveryService);
     configureProjectExperienceService(projectExperienceService);
     configureDaoService(daoService);
     configureProjectStatusValidators(projectStatusValidators);
