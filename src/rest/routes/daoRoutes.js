@@ -45,13 +45,28 @@ const responseProposalProperties = {
   noVotes: { type: 'number' },
   didPass: { type: 'boolean' },
   description: { type: 'string' },
+  daoCreationTime: { type: 'number' },
   startingPeriod: { type: 'number' },
-  processed: { type: 'boolean' }
+  currentPeriod: { type: 'number' },
+  votingPeriodExpired: { type: 'boolean' },
+  processed: { type: 'boolean' },
+  id: { type: 'integer' }
+};
+
+const responseDaosProperties = {
+  name: { type: 'string' },
+  address: { type: 'string' },
+  proposalsAmount: { type: 'number' },
+  id: { type: 'integer' }
 };
 
 const submitProposalProperties = {
   description: { type: 'string' },
   applicant: { type: 'string' }
+};
+
+const sendTransactionProperties = {
+  signedTransaction: { type: 'string' }
 };
 
 const responseMemberProperties = {
@@ -69,13 +84,217 @@ const successWithProposalsArray = {
   description: 'Returns an array of proposals for a DAO'
 };
 
+const successWithDaosArray = {
+  type: 'array',
+  items: {
+    type: 'object',
+    properties: responseDaosProperties
+  },
+  description: 'Returns an array of DAOS'
+};
+
 const successWithMemberResponse = {
   type: 'object',
   properties: responseMemberProperties,
   description: 'Return the information of a member of a DAO'
 };
 
+const userResponse = {
+  type: 'object',
+  properties: {
+    firstName: { type: 'string' },
+    lastName: { type: 'string' },
+    address: { type: 'string' },
+    role: { type: 'string' }
+  }
+};
+
+const successWithUserResponse = {
+  type: 'object',
+  properties: {
+    users: {
+      type: 'array',
+      items: userResponse
+    }
+  },
+  description: 'Returns an array of objects with the users information'
+};
+
 const daoRoutes = {
+  getAllDaoUsers: {
+    method: 'get',
+    path: `${basePath}/users`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns relevant info of dao users',
+        summary: 'Get all existing users',
+        response: {
+          ...successResponse(successWithUserResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getAllUsers
+  },
+  getUsersFromDao: {
+    method: 'get',
+    path: `${basePath}/users/:daoId`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.GET.name],
+        description: 'Returns relevant info of users from a dao',
+        summary: 'Get all existing users in a dao',
+        params: { daoIdParam },
+        response: {
+          ...successResponse(successWithUserResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getUsersFromDao
+  },
+  getProcessProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/process-proposal/:proposalId/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Get unsigned tx for process an existing proposal',
+        summary: 'Get unsigned tx for process a proposal',
+        params: { daoIdParam, proposalIdParam },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getProcessProposalTransaction
+  },
+  sendProcessProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/process-proposal/:proposalId/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Send signed process proposal tx to the blockchain',
+        summary: 'send signed tx for process a proposal',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: sendTransactionProperties,
+          required: ['signedTransaction'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendProcessProposalTransaction
+  },
+  getVoteTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/proposal/:proposalId/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Get unsigned tx for a new vote on an existing proposal',
+        summary: 'Get unsigned tx for new vote',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: { vote: { type: 'boolean' } },
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getNewVoteTransaction
+  },
+  sendVoteTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/proposal/:proposalId/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Send aproved signed vote tx to the blockchain',
+        summary: 'send signed tx for new vote',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: sendTransactionProperties,
+          required: ['signedTransaction'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendNewVoteTransaction
+  },
+  getProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Get unsigned tx for a new proposal an existing DAO',
+        summary: 'Get unsigned tx for new proposal',
+        params: { daoIdParam, proposalIdParam },
+        body: {
+          type: 'object',
+          properties: submitProposalProperties,
+          required: ['description', 'applicant'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getNewProposalTransaction
+  },
+  sendProposalTransaction: {
+    method: 'post',
+    path: `${basePath}/:daoId/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.POST.name],
+        description: 'Send approved signed proposal tx to the blockchain',
+        summary: 'Send aproved signed proposal tx to the blockchain',
+        params: { daoIdParam },
+        body: {
+          type: 'object',
+          properties: sendTransactionProperties,
+          required: ['signedTransaction'],
+          additionalProperties: false
+        },
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.sendNewProposalTransaction
+  },
   voteProposal: {
     method: 'PUT',
     path: `${basePath}/:daoId/proposals/:proposalId/vote`,
@@ -238,6 +457,24 @@ const daoRoutes = {
       }
     },
     handler: handlers.getProposals
+  },
+  getDaos: {
+    method: 'GET',
+    path: `${basePath}`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.DAO.name, routeTags.GET.name],
+        description: 'Returns all DAOS',
+        summary: 'Returns all DAOS',
+        response: {
+          ...successResponse(successWithDaosArray),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getDaos
   },
   getMember: {
     method: 'GET',

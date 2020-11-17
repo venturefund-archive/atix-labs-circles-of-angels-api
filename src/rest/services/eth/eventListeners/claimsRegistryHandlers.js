@@ -1,7 +1,13 @@
 const logger = require('../../../logger');
-const { claimMilestoneStatus } = require('../../../util/constants');
+const {
+  claimMilestoneStatus,
+  txFunderStatus,
+  txEvidenceStatus
+} = require('../../../util/constants');
 // TODO: see if we can inject this service
 const milestoneService = require('../../milestoneService');
+const transferService = require('../../transferService');
+const activityService = require('../../activityService');
 
 module.exports = {
   ClaimApproved: async (
@@ -11,31 +17,67 @@ module.exports = {
     approved,
     proof,
     verifiedAt,
-    milestoneIdHex
+    milestoneIdHex,
+    tx
   ) => {
+    const { transactionHash } = tx;
     logger.info(
-      '[ClaimRegistry] :: Incoming event ClaimApproved - claim:',
+      '[ClaimsRegistry] :: Incoming event ClaimApproved - claim:',
       claim
     );
     const milestoneId = Number(milestoneIdHex);
     if (milestoneId === 0) {
-      logger.info('[ClaimRegistry] :: Transfer fund claim created');
+      logger.info('[ClaimsRegistry] :: Transfer fund claim created');
+      const status = approved
+        ? txFunderStatus.VERIFIED
+        : txFunderStatus.CANCELLED;
+      const updated = await transferService.updateTransferStatusByTxHash(
+        transactionHash,
+        status
+      );
+      if (updated) {
+        logger.info(
+          `[ClaimsRegistry] :: Transfer ${
+            updated.transferId
+          } status updated to ${status}`
+        );
+      } else {
+        logger.info(
+          `[ClaimsRegistry] :: Couldn't update transfer with txHash ${transactionHash}`
+        );
+      }
       return;
     }
+    logger.info('[ClaimsRegistry] :: Evidence claim created');
 
-    const milestoneCompleted = await milestoneService.isMilestoneCompleted(
-      milestoneId
+    const updated = await activityService.updateEvidenceStatusByTxHash(
+      transactionHash,
+      txEvidenceStatus.CONFIRMED
     );
-
-    const milestone = await milestoneService.getMilestoneById(milestoneId);
-    if (
-      milestoneCompleted &&
-      milestone.claimStatus === claimMilestoneStatus.TRANSFERRED
-    ) {
+    if (updated) {
       logger.info(
-        `[ClaimRegistry] :: Milestone ${milestoneId} completed. Marking next as claimable`
+        `[ClaimsRegistry] :: Evidence ${updated.evidenceId} status updated to ${
+          txEvidenceStatus.CONFIRMED
+        }`
       );
-      await milestoneService.setNextAsClaimable(milestoneId);
+      const milestoneCompleted = await milestoneService.isMilestoneCompleted(
+        milestoneId
+      );
+
+      const milestone = await milestoneService.getMilestoneById(milestoneId);
+      if (
+        milestoneCompleted &&
+        milestone.claimStatus === claimMilestoneStatus.TRANSFERRED
+      ) {
+        logger.info(
+          `[ClaimsRegistry] :: Milestone ${milestoneId} completed. Marking next as claimable`
+        );
+        await milestoneService.setNextAsClaimable(milestoneId);
+      }
+    } else {
+      logger.info(
+        `[ClaimsRegistry] :: Couldn't update evidence with txHash ${transactionHash}`
+      );
     }
   }
 };

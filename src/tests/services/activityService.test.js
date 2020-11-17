@@ -10,7 +10,11 @@
 
 const { coa } = require('@nomiclabs/buidler');
 const files = require('../../rest/util/files');
-const { projectStatuses, userRoles } = require('../../rest/util/constants');
+const {
+  projectStatuses,
+  userRoles,
+  txEvidenceStatus
+} = require('../../rest/util/constants');
 const { injectMocks } = require('../../rest/util/injection');
 const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
@@ -114,7 +118,8 @@ describe('Testing activityService', () => {
     proof: '/file/taskEvidence',
     approved: true,
     task: nonUpdatableTask.id,
-    txHash: '0x111'
+    txHash: '0x111',
+    status: txEvidenceStatus.SENT
   };
 
   const taskEvidenceNotApproved = {
@@ -168,6 +173,8 @@ describe('Testing activityService', () => {
 
   const taskEvidenceDao = {
     findById: id => dbTaskEvidence.find(evidence => evidence.id === id),
+    findByTxHash: hash =>
+      dbTaskEvidence.find(evidence => evidence.txHash === hash),
     addTaskEvidence: ({ description, proof, approved, task }) => {
       const newTaskEvidenceId =
         dbTaskEvidence.length > 0
@@ -191,7 +198,18 @@ describe('Testing activityService', () => {
       );
 
       return evidences;
-    }
+    },
+    updateTaskEvidence: (id, { status }) => {
+      const found = dbTaskEvidence.find(e => e.id === id);
+      if (!found) return;
+      const updated = { ...found, status };
+      dbTaskEvidence[dbTaskEvidence.indexOf(found)] = updated;
+      return updated;
+    },
+    findAllSentTxs: () =>
+      dbTaskEvidence
+        .filter(ev => ev.status === txEvidenceStatus.SENT)
+        .map(({ id, txHash }) => ({ id, txHash }))
   };
 
   const milestoneService = {
@@ -239,7 +257,8 @@ describe('Testing activityService', () => {
 
   const transactionService = {
     getNextNonce: jest.fn(() => 0),
-    save: jest.fn()
+    save: jest.fn(),
+    hasFailed: jest.fn(() => false)
   };
 
   beforeAll(() => {
@@ -251,9 +270,10 @@ describe('Testing activityService', () => {
     });
     files.saveFile = jest.fn(() => '/dir/path');
     files.getSaveFilePath = jest.fn(() => '/dir/path');
-    coa.sendAddClaimTransaction = jest.fn();
+    coa.sendNewTransaction = jest.fn();
     coa.getAddClaimTransaction = jest.fn();
     coa.getTransactionResponse = jest.fn(() => null);
+    coa.getBlock = jest.fn();
   });
 
   beforeEach(() => resetDb());
@@ -567,7 +587,7 @@ describe('Testing activityService', () => {
       'should send the signed tx to the contract, save the evidence ' +
         'and return its id',
       async () => {
-        coa.sendAddClaimTransaction.mockReturnValueOnce({
+        coa.sendNewTransaction.mockReturnValueOnce({
           hash: '0x148Ea11233'
         });
         const response = await activityService.sendAddClaimTransaction({
@@ -1042,9 +1062,11 @@ describe('Testing activityService', () => {
 
   describe('Testing getEvidenceBlockchainData method', () => {
     const oracleAddress = '0x123456789';
+    const blockResponse = {
+      timestamp: 1587146117347
+    };
     const txResponse = {
       blockNumber: 10,
-      timestamp: 1587146117347,
       from: oracleAddress
     };
 
@@ -1061,6 +1083,7 @@ describe('Testing activityService', () => {
     afterAll(() => restoreActivityService());
 
     it('should return the blockchain data of the evidence', async () => {
+      coa.getBlock.mockReturnValueOnce(blockResponse);
       coa.getTransactionResponse.mockReturnValueOnce(txResponse);
       const response = await activityService.getEvidenceBlockchainData(
         taskEvidence.id
@@ -1073,7 +1096,7 @@ describe('Testing activityService', () => {
         },
         txHash: taskEvidence.txHash,
         txHashUrl: txExplorerHelper.buildTxURL(taskEvidence.txHash),
-        creationDate: new Date(txResponse.timestamp),
+        creationDate: new Date(blockResponse.timestamp * 1000),
         blockNumber: txResponse.blockNumber,
         blockNumberUrl: txExplorerHelper.buildBlockURL(txResponse.blockNumber),
         proof: taskEvidence.proof
@@ -1102,6 +1125,92 @@ describe('Testing activityService', () => {
       ).rejects.toThrow(
         errors.task.EvidenceBlockchainInfoNotFound(taskEvidence.id)
       );
+    });
+  });
+
+  describe('Testing updateEvidenceStatusByTxHash method', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        taskEvidenceDao
+      });
+    });
+    beforeEach(() => {
+      resetDb();
+      dbTaskEvidence.push(taskEvidence);
+    });
+    afterAll(() => restoreActivityService());
+    it('should update the evidence status and return its id', async () => {
+      const response = await activityService.updateEvidenceStatusByTxHash(
+        taskEvidence.txHash,
+        txEvidenceStatus.CONFIRMED
+      );
+      expect(response).toEqual({ evidenceId: taskEvidence.id });
+      const updated = dbTaskEvidence.find(ev => ev.id === response.evidenceId);
+      expect(updated.status).toEqual(txEvidenceStatus.CONFIRMED);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        activityService.updateEvidenceStatusByTxHash(taskEvidence.txHash)
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('updateEvidenceStatusByTxHash')
+      );
+    });
+    it('should throw an error if the evidence does not exist', async () => {
+      await expect(
+        activityService.updateEvidenceStatusByTxHash(
+          '0x0',
+          txEvidenceStatus.CONFIRMED
+        )
+      ).rejects.toThrow(
+        errors.common.CantFindModelWithTxHash('task_evidence', '0x0')
+      );
+    });
+    it('should throw an error if the status is not valid', async () => {
+      await expect(
+        activityService.updateEvidenceStatusByTxHash(
+          taskEvidence.txHash,
+          'wrong status'
+        )
+      ).rejects.toThrow(errors.task.EvidenceStatusNotValid('wrong status'));
+    });
+    it('should throw an error if the evidence status cannot be changed', async () => {
+      dbTaskEvidence = [
+        { ...taskEvidence, status: txEvidenceStatus.CONFIRMED }
+      ];
+      await expect(
+        activityService.updateEvidenceStatusByTxHash(
+          taskEvidence.txHash,
+          txEvidenceStatus.FAILED
+        )
+      ).rejects.toThrow(
+        errors.task.EvidenceStatusCannotChange(txEvidenceStatus.CONFIRMED)
+      );
+    });
+  });
+
+  describe('Testing updateFailedEvidenceTransactions method', () => {
+    beforeAll(() => {
+      injectMocks(activityService, {
+        transactionService,
+        taskEvidenceDao
+      });
+    });
+    beforeEach(() => {
+      resetDb();
+      dbTaskEvidence.push(taskEvidence);
+    });
+    afterAll(() => restoreActivityService());
+    it('should update all failed evidences and return an array with their ids', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(true);
+      const response = await activityService.updateFailedEvidenceTransactions();
+      expect(response).toEqual([taskEvidence.id]);
+      const updated = dbTaskEvidence.find(ev => ev.id === taskEvidence.id);
+      expect(updated.status).toEqual(txEvidenceStatus.FAILED);
+    });
+    it('should return an empty array if no txs failed', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(false);
+      const response = await activityService.updateFailedEvidenceTransactions();
+      expect(response).toEqual([]);
     });
   });
 });

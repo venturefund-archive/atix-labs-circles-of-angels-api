@@ -6,9 +6,14 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { txEvidenceStatus } = require('../util/constants');
+
 module.exports = {
   async findById(id) {
     return this.model.findOne({ id });
+  },
+  async findByTxHash(txHash) {
+    return this.model.findOne({ txHash });
   },
 
   async addTaskEvidence(data) {
@@ -25,5 +30,13 @@ module.exports = {
       .updateOne({ id: evidenceId })
       .set(data);
     return updatedEvidence;
+  },
+
+  async findAllSentTxs() {
+    const txs = await this.model.find({
+      select: ['id', 'txHash'],
+      where: { status: txEvidenceStatus.SENT }
+    });
+    return txs;
   }
 };

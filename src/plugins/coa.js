@@ -70,7 +70,6 @@ module.exports = class COA {
     const coa = await this.getCOA();
     const projectAddress = await coa.projects(projectId);
     const tx = await coa.registry(projectAddress, validator, claim);
-    console.log(tx);
   }
 
   // TODO: delete if not needed
@@ -85,13 +84,6 @@ module.exports = class COA {
       milestoneId
     );
     return txReceipt;
-  }
-
-  async sendAddClaimTransaction(signedTransaction) {
-    const txResponse = await this.env.ethers.provider.sendTransaction(
-      signedTransaction
-    );
-    return txResponse;
   }
 
   async getAddClaimTransaction(
@@ -141,6 +133,60 @@ module.exports = class COA {
     // TODO : connect Contract instance to a signer (similar to web3's `from` argument)
     // coa.connect(validator);
     await coa.addClaim(project, claim, proof, valid);
+  }
+
+  async getProcessProposalTransaction(daoId, proposalId, memberAddress) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, memberAddress);
+    await this.checkProposalExistence(proposalId, dao);
+    const unsignedTransaction = await this.getUnsignedTransaction(
+      dao,
+      'processProposal',
+      [proposalId]
+    );
+    return unsignedTransaction;
+  }
+
+  async getNewVoteTransaction(daoId, proposalId, vote, memberAddress) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const daoContract = await this.getDaoContract(daoAddress, memberAddress);
+    await this.checkProposalExistence(proposalId, daoContract);
+    const unsignedTransaction = await this.getUnsignedTransaction(
+      daoContract,
+      'submitVote',
+      [proposalId, vote]
+    );
+    return unsignedTransaction;
+  }
+
+  async getNewProposalTransaction(
+    daoId,
+    applicant,
+    proposalType,
+    description,
+    memberAddress
+  ) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const daoContract = await this.getDaoContract(daoAddress, memberAddress);
+    const unsignedTransaction = await this.getUnsignedTransaction(
+      daoContract,
+      'submitProposal',
+      [applicant, proposalType, description]
+    );
+    return unsignedTransaction;
+  }
+
+  async sendNewTransaction(signedTransaction) {
+    const txResponse = await this.env.ethers.provider.sendTransaction(
+      signedTransaction
+    );
+    return txResponse;
   }
 
   async getMember(address) {
@@ -210,6 +256,24 @@ module.exports = class COA {
     return Promise.all(proposals);
   }
 
+  async getCreationTime(daoId, signer) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    const creationTime = await dao.creationTime();
+    return creationTime;
+  }
+
+  async getCurrentPeriod(daoId, signer) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress, signer);
+    const currentPeriod = await dao.getCurrentPeriod();
+    return currentPeriod;
+  }
+
   async getDaoMember(daoId, memberAddress, signer) {
     const coa = await this.getCOA();
     // TODO: check if this is necessary
@@ -221,11 +285,14 @@ module.exports = class COA {
   }
 
   async getDaos() {
-    const coa = await this.getCOA();
-    const daosLength = await coa.getDaosLength();
     const daos = [];
+    const coa = await this.getCOA();
+    if (!coa) return daos;
+    const daosLength = await coa.getDaosLength();
     for (let i = 0; i < daosLength; i++) {
-      daos.push(coa.daos(i));
+      const daoAddress = coa.daos(i);
+      const dao = this.getDaoContract(daoAddress);
+      daos.push(dao);
     }
     return Promise.all(daos);
   }
@@ -247,6 +314,20 @@ module.exports = class COA {
   async checkProposalExistence(proposalId, dao) {
     if (proposalId >= (await this.getProposalQueueLength(dao)))
       throw new Error('Proposal does not exist');
+  }
+
+  async votingPeriodExpired(daoId, proposalId) {
+    const coa = await this.getCOA();
+    await this.checkDaoExistence(daoId);
+    const daoAddress = await coa.daos(daoId);
+    const dao = await this.getDaoContract(daoAddress);
+    await this.checkProposalExistence(proposalId, dao);
+    const proposal = await dao.proposalQueue(proposalId);
+    const startingPeriod = Number(proposal.startingPeriod);
+    const votingPeriodExpired = await dao.hasVotingPeriodExpired(
+      startingPeriod
+    );
+    return votingPeriodExpired;
   }
 
   async getCOA() {
@@ -324,5 +405,23 @@ module.exports = class COA {
   async getTransactionResponse(txHash) {
     const txInfo = await this.env.ethers.provider.getTransaction(txHash);
     return txInfo;
+  }
+
+  async getTransactionReceipt(txHash) {
+    const receipt = await this.env.ethers.provider.getTransactionReceipt(
+      txHash
+    );
+    return receipt;
+  }
+
+  /**
+   * Returns the block at blockHashOrNumber
+   * or the last one if none specified
+   *
+   * @param {string | number} blockHashOrNumber
+   */
+  async getBlock(blockHashOrNumber) {
+    const block = await this.env.ethers.provider.getBlock(blockHashOrNumber);
+    return block;
   }
 };

@@ -8,7 +8,7 @@ const ethInit = async () => {
   const registry = await coa.getRegistry();
   const daos = await coa.getDaos();
   daos.forEach(async daoAddress => {
-    const dao = await coa.getDao(daoAddress);
+    const dao = await coa.getDaoContract(daoAddress);
     registerEvents(dao, 'DAO');
   });
   registerEvents(contract, 'COA');

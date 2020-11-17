@@ -88,11 +88,22 @@ describe('Testing transferService', () => {
     project: fundingProject.id
   };
 
+  const sentTransfer = {
+    id: 5,
+    amount: 150,
+    transferId: 'sent123',
+    status: txFunderStatus.SENT,
+    project: fundingProject.id,
+    txHash: '0x555',
+    receiptPath: '/path/to/file.png'
+  };
+
   beforeAll(() => {
     files.saveFile = jest.fn(() => '/dir/path');
-    coa.sendAddClaimTransaction = jest.fn(() => ({ hash: '0x01' }));
+    coa.sendNewTransaction = jest.fn(() => ({ hash: '0x01' }));
     coa.getAddClaimTransaction = jest.fn();
     coa.getTransactionResponse = jest.fn(() => null);
+    coa.getBlock = jest.fn();
   });
   afterAll(() => jest.clearAllMocks());
 
@@ -121,6 +132,7 @@ describe('Testing transferService', () => {
       return updated;
     },
     findById: id => dbTransfer.find(transfer => transfer.id === id),
+    findByTxHash: hash => dbTransfer.find(transfer => transfer.txHash === hash),
     getAllTransfersByProject: projectId =>
       dbTransfer.filter(transfer => transfer.projectId === projectId),
 
@@ -149,7 +161,11 @@ describe('Testing transferService', () => {
       ];
 
       return transfers;
-    }
+    },
+    findAllSentTxs: () =>
+      dbTransfer
+        .filter(tr => tr.status === txFunderStatus.SENT)
+        .map(({ id, txHash }) => ({ id, txHash }))
   };
 
   const projectService = {
@@ -172,7 +188,8 @@ describe('Testing transferService', () => {
 
   const transactionService = {
     getNextNonce: jest.fn(() => 0),
-    save: jest.fn()
+    save: jest.fn(),
+    hasFailed: jest.fn(() => false)
   };
 
   describe('Testing transferService createTransfer', () => {
@@ -326,11 +343,21 @@ describe('Testing transferService', () => {
       ).rejects.toThrow(errors.transfer.TransferStatusNotValid('wrong'));
     });
 
-    it('should throw an error if transfer status is not pending', async () => {
+    it('should throw an error if the transfer current status is cancelled', async () => {
       dbTransfer.push(verifiedTransfer);
       await expect(
         transferService.updateTransfer(verifiedTransfer.id, {
           status: txFunderStatus.CANCELLED
+        })
+      ).rejects.toThrow(
+        errors.transfer.TransferStatusCannotChange(verifiedTransfer.status)
+      );
+    });
+    it('should throw an error if the transfer current status is verified', async () => {
+      dbTransfer.push(verifiedTransfer);
+      await expect(
+        transferService.updateTransfer(verifiedTransfer.id, {
+          status: txFunderStatus.VERIFIED
         })
       ).rejects.toThrow(
         errors.transfer.TransferStatusCannotChange(verifiedTransfer.status)
@@ -440,26 +467,23 @@ describe('Testing transferService', () => {
       dbTransfer.push(pendingTransfer, verifiedTransfer);
     });
 
-    it.each([
-      [txFunderStatus.VERIFIED, true],
-      [txFunderStatus.CANCELLED, false]
-    ])(
+    it(
       'should send the claim to the blockchain, ' +
-        'update its status to %s when approved is %s ' +
+        'update its status to sent ' +
         'and save the txHash in database',
-      async (status, approved) => {
+      async () => {
         const response = await transferService.sendAddTransferClaimTransaction({
           transferId: pendingTransfer.id,
           userId: bankOperatorUser.id,
-          approved,
+          approved: true,
           signedTransaction: '0x123',
           userAddress
         });
 
         const updated = dbTransfer.find(t => t.id === pendingTransfer.id);
-        expect(updated.status).toEqual(status);
+        expect(updated.status).toEqual(txFunderStatus.SENT);
         expect(updated.txHash).toEqual('0x01');
-        expect(coa.sendAddClaimTransaction).toHaveBeenCalled();
+        expect(coa.sendNewTransaction).toHaveBeenCalled();
         expect(response).toEqual({ transferId: pendingTransfer.id });
       }
     );
@@ -683,9 +707,11 @@ describe('Testing transferService', () => {
 
   describe('Testing getBlockchainData method', () => {
     const bankopAddress = '0x123456789';
+    const blockResponse = {
+      timestamp: 1587146117347
+    };
     const txResponse = {
       blockNumber: 10,
-      timestamp: 1587146117347,
       from: bankopAddress
     };
     beforeAll(() => {
@@ -700,6 +726,7 @@ describe('Testing transferService', () => {
     });
     it('should return the transfer blockchain data', async () => {
       coa.getTransactionResponse.mockReturnValueOnce(txResponse);
+      coa.getBlock.mockReturnValueOnce(blockResponse);
       const response = await transferService.getBlockchainData(
         verifiedTransfer.id
       );
@@ -708,7 +735,7 @@ describe('Testing transferService', () => {
         validatorAddressUrl: txExplorerHelper.buildAddressURL(txResponse.from),
         txHash: verifiedTransfer.txHash,
         txHashUrl: txExplorerHelper.buildTxURL(verifiedTransfer.txHash),
-        creationDate: new Date(txResponse.timestamp),
+        creationDate: new Date(blockResponse.timestamp * 1000),
         blockNumber: txResponse.blockNumber,
         blockNumberUrl: txExplorerHelper.buildBlockURL(txResponse.blockNumber),
         receipt: verifiedTransfer.receiptPath
@@ -733,6 +760,72 @@ describe('Testing transferService', () => {
       ).rejects.toThrow(
         errors.transfer.BlockchainInfoNotFound(verifiedTransfer.id)
       );
+    });
+  });
+
+  describe('Testing updateTransferStatusByTxHash method', () => {
+    beforeAll(() => {
+      injectMocks(transferService, {
+        transferDao
+      });
+    });
+
+    beforeEach(() => {
+      dbTransfer = [];
+      dbTransfer.push(sentTransfer);
+    });
+    it('should update the transfer status and return its id', async () => {
+      const response = await transferService.updateTransferStatusByTxHash(
+        sentTransfer.txHash,
+        txFunderStatus.VERIFIED
+      );
+      expect(response).toEqual({ transferId: sentTransfer.id });
+      const updated = dbTransfer.find(
+        transfer => transfer.id === response.transferId
+      );
+      expect(updated.status).toEqual(txFunderStatus.VERIFIED);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        transferService.updateTransferStatusByTxHash(sentTransfer.txHash)
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('updateTransferStatusByTxHash')
+      );
+    });
+    it('should throw an error if the transfer does not exist', async () => {
+      await expect(
+        transferService.updateTransferStatusByTxHash(
+          '0x0',
+          txFunderStatus.VERIFIED
+        )
+      ).rejects.toThrow(
+        errors.common.CantFindModelWithTxHash('fund_transfer', '0x0')
+      );
+    });
+  });
+
+  describe('Testing updateFailedTransactions method', () => {
+    beforeAll(() => {
+      injectMocks(transferService, {
+        transactionService,
+        transferDao
+      });
+    });
+    beforeEach(() => {
+      dbTransfer = [];
+      dbTransfer.push(sentTransfer);
+    });
+    it('should update all failed transfers and return an array with their ids', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(true);
+      const response = await transferService.updateFailedTransactions();
+      expect(response).toEqual([sentTransfer.id]);
+      const updated = dbTransfer.find(ev => ev.id === sentTransfer.id);
+      expect(updated.status).toEqual(txFunderStatus.FAILED);
+    });
+    it('should return an empty array if no txs failed', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(false);
+      const response = await transferService.updateFailedTransactions();
+      expect(response).toEqual([]);
     });
   });
 });

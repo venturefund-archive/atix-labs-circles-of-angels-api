@@ -61,6 +61,7 @@ describe('Testing transactionService', () => {
   // setup
   beforeAll(() => {
     coa.getTransactionCount = jest.fn(() => 0);
+    coa.getTransactionReceipt = jest.fn();
   });
   beforeEach(() => resetDb());
   afterAll(() => {
@@ -151,6 +152,50 @@ describe('Testing transactionService', () => {
     it('should throw an error if any required param is missing', async () => {
       await expect(transactionService.getNextNonce()).rejects.toThrow(
         errors.common.RequiredParamsMissing('getNextNonce')
+      );
+    });
+  });
+
+  describe('Testing hasFailed method', () => {
+    it(
+      'should return false if the transaction receipt ' +
+        'is not null and the status is 1',
+      async () => {
+        coa.getTransactionReceipt.mockReturnValueOnce({
+          transactionHash: '0x01',
+          status: 1
+        });
+        const response = await transactionService.hasFailed('0x01');
+        expect(response).toBe(false);
+      }
+    );
+    it(
+      'should return false if the transaction receipt ' +
+        'is not null and the status is undefined',
+      async () => {
+        coa.getTransactionReceipt.mockReturnValueOnce({
+          transactionHash: '0x01'
+        });
+        const response = await transactionService.hasFailed('0x01');
+        expect(response).toBe(false);
+      }
+    );
+    it('should return true if the transaction receipt is null', async () => {
+      coa.getTransactionReceipt.mockReturnValueOnce(null);
+      const response = await transactionService.hasFailed('0x01');
+      expect(response).toBe(true);
+    });
+    it('should return true if the transaction receipt status is 0', async () => {
+      coa.getTransactionReceipt.mockReturnValueOnce({
+        transactionHash: '0x01',
+        status: 0
+      });
+      const response = await transactionService.hasFailed('0x01');
+      expect(response).toBe(true);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      await expect(transactionService.hasFailed()).rejects.toThrow(
+        errors.common.RequiredParamsMissing('hasFailed')
       );
     });
   });

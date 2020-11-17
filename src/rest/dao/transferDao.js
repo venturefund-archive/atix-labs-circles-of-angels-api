@@ -13,6 +13,10 @@ module.exports = {
     return this.model.findOne({ id });
   },
 
+  async findByTxHash(txHash) {
+    return this.model.findOne({ txHash });
+  },
+
   async findAllByProps(filters, populate) {
     return this.model.find(filters, populate);
   },
@@ -76,5 +80,13 @@ module.exports = {
       });
       return transfers;
     }
+  },
+
+  async findAllSentTxs() {
+    const transfers = await this.findAllByProps({
+      select: ['id', 'txHash'],
+      where: { status: txFunderStatus.SENT }
+    });
+    return transfers;
   }
 };

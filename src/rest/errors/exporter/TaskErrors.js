@@ -38,5 +38,13 @@ module.exports = {
   EvidenceBlockchainInfoNotFound: evidenceId => ({
     message: `Evidence ${evidenceId} doesn't have blockchain information`,
     statusCode: 400
+  }),
+  EvidenceStatusNotValid: status => ({
+    message: `Evidence status '${status}' is not a valid value`,
+    statusCode: 400
+  }),
+  EvidenceStatusCannotChange: status => ({
+    message: `Status ${status} of an evidence cannot be updated`,
+    statusCode: 400
   })
 };

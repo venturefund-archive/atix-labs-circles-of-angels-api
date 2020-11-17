@@ -77,7 +77,8 @@ module.exports = fastify => {
       userDao,
       mailService,
       projectService,
-      countryService
+      countryService,
+      daoService
     };
 
     injectDependencies(service, dependencies);
@@ -183,7 +184,8 @@ module.exports = fastify => {
 
   function configureDaoService(service) {
     const dependencies = {
-      userService
+      userService,
+      transactionService
     };
     injectDependencies(service, dependencies);
   }
@@ -198,7 +200,9 @@ module.exports = fastify => {
 
   function configureCronjobService(service) {
     const dependencies = {
-      projectService
+      projectService,
+      transferService,
+      activityService
     };
     injectDependencies(service, dependencies);
   }

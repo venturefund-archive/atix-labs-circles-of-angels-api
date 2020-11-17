@@ -11,6 +11,12 @@ module.exports = {
   ErrorGettingProposals: daoId => ({
     message: `An error has occurred while getting the proposals of ${daoId}`
   }),
+  ErrorGettingDaos: () => ({
+    message: 'An error has occurred while getting the Daos'
+  }),
+  ErrorGettingDaoUsers: daoId => ({
+    message: `An error has occurred while getting the Users of DAO ${daoId}`
+  }),
   ErrorGettingMember: (address, daoId) => ({
     message: `An error has occurred while getting the member of address ${address} in DAO ${daoId}`
   }),
@@ -18,8 +24,8 @@ module.exports = {
     message: `Member of address ${address} in DAO ${daoId} not found`,
     statusCode: 403
   }),
-  InvalidProposalType: {
+  InvalidProposalType: () => ({
     message: 'Proposal type is not valid',
     statusCode: 403
-  }
+  })
 };

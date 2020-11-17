@@ -10,6 +10,12 @@ const deployContracts = async () => {
 };
 const revertSnapshot = snapshot => ethereum.send('evm_revert', [snapshot]);
 
+const periodSeconds = 17280;
+const moveForwardAPeriod = async () => {
+  await ethereum.send('evm_increaseTime', [periodSeconds]);
+  await ethereum.send('evm_mine', []);
+};
+
 describe('COA plugin tests', () => {
   const address = '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A';
   const txHash =
@@ -78,7 +84,7 @@ describe('COA plugin tests', () => {
       'should send the signed tx to the contract and ' +
         'return the transaction response',
       async () => {
-        const response = await coa.sendAddClaimTransaction(signedTx);
+        const response = await coa.sendNewTransaction(signedTx);
         expect(response).toHaveProperty('hash', expect.any(String));
         expect(response.to).toEqual(unsignedTx.to);
         expect(response.data).toEqual(unsignedTx.data);
@@ -128,6 +134,80 @@ describe('COA plugin tests', () => {
     it('should return null if the transaction does not exist', async () => {
       const response = await coa.getTransactionResponse(txHash);
       expect(response).toEqual(null);
+    });
+  });
+
+  describe('Testing getTransactionReceipt method', () => {
+    it('should return the transaction receipt for the transaction', async () => {
+      const signer = await coa.getSigner();
+      const { hash } = await signer.sendTransaction({
+        to: address,
+        value: 100
+      });
+      const response = await coa.getTransactionReceipt(hash);
+      expect(response).toHaveProperty('transactionHash', hash);
+      expect(response).toHaveProperty('blockNumber', expect.any(Number));
+      expect(response).toHaveProperty('status', 1);
+    });
+    it('should return null if the transaction does not exist', async () => {
+      const response = await coa.getTransactionReceipt(txHash);
+      expect(response).toEqual(null);
+    });
+  });
+
+  describe('Testing getBlock method', () => {
+    it('should return the block of the transaction using the number as arg', async () => {
+      const signer = await coa.getSigner();
+      const { hash } = await signer.sendTransaction({
+        to: address,
+        value: 100
+      });
+      const receipt = await coa.getTransactionReceipt(hash);
+      expect(receipt).toHaveProperty('blockNumber', expect.any(Number));
+      const block = await coa.getBlock(receipt.blockNumber);
+      expect(block).toHaveProperty('hash', expect.any(String));
+      expect(block).toHaveProperty('number', receipt.blockNumber);
+      expect(block).toHaveProperty('timestamp', expect.any(Number));
+    });
+    it('should return the block of the transaction using the hash as arg', async () => {
+      const signer = await coa.getSigner();
+      const { hash } = await signer.sendTransaction({
+        to: address,
+        value: 100
+      });
+      const receipt = await coa.getTransactionReceipt(hash);
+      expect(receipt).toHaveProperty('blockHash', expect.any(String));
+      const block = await coa.getBlock(receipt.blockHash);
+      expect(block).toHaveProperty('hash', receipt.blockHash);
+      expect(block).toHaveProperty('number', expect.any(Number));
+      expect(block).toHaveProperty('timestamp', expect.any(Number));
+    });
+    it('should return null if the block does not exist', async () => {
+      const response = await coa.getBlock(50);
+      expect(response).toEqual(null);
+    });
+  });
+
+  describe('Testing getCurrentPeriod method', () => {
+    it('should return the initial period [0] number for the superDao [0]', async () => {
+      const superDaoId = 0;
+      const initialPeriod = 0;
+      const signer = await coa.getSigner();
+      const period = await coa.getCurrentPeriod(superDaoId, signer);
+      expect(Number(period)).toEqual(initialPeriod);
+    });
+    it('should return period 1 after moving forward one period', async () => {
+      const superDaoId = 0;
+      const initialPeriod = 0;
+      const expectedPeriod = 1;
+      const signer = await coa.getSigner();
+      const period = Number(await coa.getCurrentPeriod(superDaoId, signer));
+      expect(period).toEqual(initialPeriod);
+      await moveForwardAPeriod();
+      const currentPeriod = Number(
+        await coa.getCurrentPeriod(superDaoId, signer)
+      );
+      expect(currentPeriod).toEqual(expectedPeriod);
     });
   });
 
