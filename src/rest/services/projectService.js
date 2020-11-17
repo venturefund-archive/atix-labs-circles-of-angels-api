@@ -83,14 +83,13 @@ module.exports = {
     projectName,
     location,
     timeframe,
-    goalAmount,
     ownerId,
     file
   }) {
     logger.info('[ProjectService] :: Entering createProjectThumbnail method');
     validateRequiredParams({
       method: 'createProjectThumbnail',
-      params: { projectName, location, timeframe, goalAmount, ownerId, file }
+      params: { projectName, location, timeframe, ownerId, file }
     });
     const user = await this.userService.getUserById(ownerId);
 
@@ -112,7 +111,7 @@ module.exports = {
       projectName,
       location,
       timeframe,
-      goalAmount,
+      goalAmount: 0,
       cardPhotoPath,
       owner: ownerId
     };
@@ -129,11 +128,11 @@ module.exports = {
 
   async updateProjectThumbnail(
     projectId,
-    { projectName, location, timeframe, goalAmount, ownerId, file }
+    { projectName, location, timeframe, ownerId, file }
   ) {
     logger.info('[ProjectService] :: Entering updateProjectThumbnail method');
     validateRequiredParams({
-      method: 'createProjectThumbnail',
+      method: 'updateProjectThumbnail',
       params: { ownerId }
     });
     await this.userService.getUserById(ownerId);
@@ -164,7 +163,6 @@ module.exports = {
       projectName,
       location,
       timeframe,
-      goalAmount,
       cardPhotoPath
     });
     logger.info(`[ProjectService] :: Project of id ${projectId} updated`);
@@ -439,11 +437,14 @@ module.exports = {
       };
     }
 
+    const goalAmount = this.calculateGoalAmountFromMilestones(milestones);
+
     logger.info(`[ProjectService] :: Saving file of type '${milestonesType}'`);
     const milestonePath = await files.saveFile(milestonesType, file);
     logger.info(`[ProjectService] :: File saved to: ${milestonePath}`);
 
     const savedProjectId = await this.updateProject(projectId, {
+      goalAmount,
       milestonePath
     });
     logger.info(
@@ -1347,5 +1348,23 @@ module.exports = {
     const project = await checkExistence(this.projectDao, projectId, 'project');
     logger.info(`[ProjectService] :: Project id ${project.id} found`);
     return project.address;
+  },
+
+  calculateGoalAmountFromMilestones(milestones) {
+    logger.info(
+      '[ProjectService] :: Entering calculateGoalAmountFromMilestones method'
+    );
+    const goalAmount = milestones
+      .map(milestone =>
+        milestone.tasks.reduce(
+          (milestoneTotal, task) => milestoneTotal + Number(task.budget),
+          0
+        )
+      )
+      .reduce(
+        (totalProject, milestoneBudget) => totalProject + milestoneBudget,
+        0
+      );
+    return goalAmount;
   }
 };

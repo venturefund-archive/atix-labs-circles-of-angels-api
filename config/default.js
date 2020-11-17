@@ -101,5 +101,6 @@ module.exports = {
 
   buidler: {
     defaultNetwork: 'develop'
-  }
+  },
+  explorerLink: 'https://explorer.testnet.rsk.co'
 };

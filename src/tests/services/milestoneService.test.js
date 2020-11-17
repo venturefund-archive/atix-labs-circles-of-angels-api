@@ -240,6 +240,13 @@ describe('Testing milestoneService', () => {
       if (!foundProject)
         throw new COAError(errors.common.CantFindModelWithId('project', id));
       return foundProject.address;
+    },
+    updateProject: (projectId, params) => {
+      const found = dbProject.find(task => task.id === projectId);
+      if (!found) return;
+      const updated = { ...found, ...params };
+      dbProject[dbProject.indexOf(found)] = updated;
+      return updated;
     }
   };
 
@@ -426,7 +433,8 @@ describe('Testing milestoneService', () => {
     beforeAll(() => {
       restoreMilestoneService();
       injectMocks(milestoneService, {
-        milestoneDao
+        milestoneDao,
+        projectService
       });
     });
 
@@ -436,17 +444,27 @@ describe('Testing milestoneService', () => {
       dbUser.push(userEntrepreneur);
     });
 
-    it('should delete the milestone and return its id', async () => {
-      const response = await milestoneService.deleteMilestone(
-        updatableMilestone.id,
-        userEntrepreneur.id
-      );
-      const deleted = dbMilestone.find(
-        milestone => milestone.id === response.milestoneId
-      );
-      expect(response).toEqual({ milestoneId: updatableMilestone.id });
-      expect(deleted).toEqual(undefined);
-    });
+    it(
+      'should delete the milestone, subtract its budget from the project goal amount ' +
+        'and return the milestone id',
+      async () => {
+        const response = await milestoneService.deleteMilestone(
+          updatableMilestone.id,
+          userEntrepreneur.id
+        );
+        const deleted = dbMilestone.find(
+          milestone => milestone.id === response.milestoneId
+        );
+        const updatedProject = dbProject.find(
+          project => project.id === updatableMilestone.project
+        );
+        expect(response).toEqual({ milestoneId: updatableMilestone.id });
+        expect(deleted).toEqual(undefined);
+        expect(updatedProject.goalAmount).toEqual(
+          updatedProject.goalAmount - updatableTask.budget
+        );
+      }
+    );
 
     it('should throw an error if parameters are not valid', async () => {
       await expect(

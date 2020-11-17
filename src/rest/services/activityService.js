@@ -20,6 +20,7 @@ const validateRequiredParams = require('./helpers/validateRequiredParams');
 const validateOwnership = require('./helpers/validateOwnership');
 const validateMtype = require('./helpers/validateMtype');
 const validatePhotoSize = require('./helpers/validatePhotoSize');
+const txExplorerHelper = require('./helpers/txExplorerHelper');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -89,6 +90,24 @@ module.exports = {
       taskParams,
       taskId
     );
+
+    if (taskParams.budget) {
+      const actualBudget = Number(task.budget);
+      const newBudget = Number(taskParams.budget);
+      const difference = newBudget - actualBudget;
+      if (difference !== 0) {
+        const newGoalAmount = Number(project.goalAmount) + difference;
+        logger.info(
+          `[ActivityService] :: Updating project ${
+            project.id
+          } goalAmount to ${newGoalAmount}`
+        );
+        await this.projectService.updateProject(project.id, {
+          goalAmount: newGoalAmount
+        });
+      }
+    }
+
     logger.info(`[ActivityService] :: Task of id ${updatedTask.id} updated`);
     return { taskId: updatedTask.id };
   },
@@ -151,6 +170,16 @@ module.exports = {
     const deletedTask = await this.activityDao.deleteActivity(taskId);
     logger.info(`[ActivityService] :: Task of id ${deletedTask.id} deleted`);
 
+    const taskBudget = Number(task.budget);
+    const newGoalAmount = Number(project.goalAmount) - taskBudget;
+    logger.info(
+      `[ActivityService] :: Updating project ${
+        project.id
+      } goalAmount to ${newGoalAmount}`
+    );
+    await this.projectService.updateProject(project.id, {
+      goalAmount: newGoalAmount
+    });
     // if all activities of a milestone are deleted,
     // should the milestone be deleted as well?
     return { taskId: deletedTask.id };
@@ -240,6 +269,17 @@ module.exports = {
     logger.info(
       `[ActivityService] :: New task with id ${createdTask.id} created`
     );
+
+    const taskBudget = Number(budget);
+    const newGoalAmount = Number(project.goalAmount) + taskBudget;
+    logger.info(
+      `[ActivityService] :: Updating project ${
+        project.id
+      } goalAmount to ${newGoalAmount}`
+    );
+    await this.projectService.updateProject(project.id, {
+      goalAmount: newGoalAmount
+    });
     return { taskId: createdTask.id };
   },
   /**
@@ -454,14 +494,32 @@ module.exports = {
    * @returns transferId || error
    */
   async getTaskEvidences({ taskId }) {
-    logger.info('[ActivityService] :: Entering getClaims method');
+    logger.info('[ActivityService] :: Entering getTaskEvidences method');
     validateRequiredParams({
-      method: 'getClaims',
+      method: 'getTaskEvidences',
       params: { taskId }
     });
 
     await checkExistence(this.activityDao, taskId, 'task');
-    return this.taskEvidenceDao.getEvidencesByTaskId(taskId);
+    logger.info('[ActivityService] :: Getting evidences for task', taskId);
+    const evidences = await this.taskEvidenceDao.getEvidencesByTaskId(taskId);
+    if (!evidences) {
+      logger.info('[ActivityService] :: No evidences found for task', taskId);
+      return [];
+    }
+    logger.info(
+      `[ActivityService] :: Found ${
+        evidences.length
+      } evidences for task ${taskId}`
+    );
+
+    const evidencesWithLink = evidences.map(evidence => ({
+      ...evidence,
+      txLink: evidence.txHash
+        ? txExplorerHelper.buildTxURL(evidence.txHash)
+        : undefined
+    }));
+    return evidencesWithLink;
   },
 
   /**
