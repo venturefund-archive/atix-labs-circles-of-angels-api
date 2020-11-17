@@ -8,6 +8,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const { coa } = require('@nomiclabs/buidler');
 const {
   projectStatuses,
   userRoles,
@@ -26,7 +27,8 @@ describe('Testing transferService', () => {
 
   const fundingProject = {
     id: 1,
-    status: projectStatuses.FUNDING
+    status: projectStatuses.FUNDING,
+    address: '0xEa51CfB26e6547725835b4138ba96C0b5de9E54A'
   };
 
   const draftProject = {
@@ -53,7 +55,7 @@ describe('Testing transferService', () => {
     transferId: '1AA22SD444',
     amount: 200,
     senderId: userFunder.id,
-    projectId: fundingProject.id,
+    project: fundingProject.id,
     currency: 'USD',
     destinationAccount: '1235AASDD',
     receiptFile: { name: 'receipt.jpg', size: 20000 }
@@ -71,7 +73,7 @@ describe('Testing transferService', () => {
     id: 3,
     transferId: 'pendingABC',
     status: txFunderStatus.PENDING,
-    projectId: 1,
+    project: fundingProject.id,
     rejectionReason: null
   };
 
@@ -85,7 +87,11 @@ describe('Testing transferService', () => {
 
   beforeAll(() => {
     files.saveFile = jest.fn(() => '/dir/path');
+    coa.sendAddClaimTransaction = jest.fn(() => ({ hash: '0x01' }));
+    coa.getAddClaimTransaction = jest.fn();
+    coa.getTransactionNonce = jest.fn(() => 0);
   });
+  afterAll(() => jest.clearAllMocks());
 
   const transferDao = {
     findAllByProps: filter =>
@@ -104,10 +110,9 @@ describe('Testing transferService', () => {
     getTransferById: ({ transferId }) =>
       dbTransfer.find(transfer => transfer.transferId === transferId),
 
-    update: ({ id, status, rejectionReason }) => {
+    update: ({ id, ...params }) => {
       const found = dbTransfer.find(transfer => transfer.id === id);
       if (!found) return;
-      const params = { status, rejectionReason };
       const updated = { ...found, ...params };
       dbTransfer[dbTransfer.indexOf(found)] = updated;
       return updated;
@@ -142,14 +147,6 @@ describe('Testing transferService', () => {
 
       return transfers;
     }
-  };
-
-  const projectDao = {
-    findById: id => dbProject.find(project => project.id === id)
-  };
-
-  const userDao = {
-    findById: id => dbUser.find(user => user.id === id)
   };
 
   const projectService = {
@@ -188,7 +185,10 @@ describe('Testing transferService', () => {
     });
 
     it('should save the transfer as pending and return its id', async () => {
-      const response = await transferService.createTransfer(newTransfer);
+      const response = await transferService.createTransfer({
+        ...newTransfer,
+        projectId: newTransfer.project
+      });
       const savedTransfer = dbTransfer.find(
         transfer => transfer.id === response.transferId
       );
@@ -210,14 +210,22 @@ describe('Testing transferService', () => {
 
     it('should throw an error if sender user does not exist', async () => {
       await expect(
-        transferService.createTransfer({ ...newTransfer, senderId: 0 })
+        transferService.createTransfer({
+          ...newTransfer,
+          projectId: newTransfer.project,
+          senderId: 0
+        })
       ).rejects.toThrow(errors.common.CantFindModelWithId('user', 0));
     });
 
     it('should throw an error if sender user is not a funder', async () => {
       dbUser.push(oracleUser);
       await expect(
-        transferService.createTransfer({ ...newTransfer, senderId: 2 })
+        transferService.createTransfer({
+          ...newTransfer,
+          projectId: newTransfer.project,
+          senderId: 2
+        })
       ).rejects.toThrow(errors.user.UnauthorizedUserRole(oracleUser.role));
     });
 
@@ -238,6 +246,7 @@ describe('Testing transferService', () => {
         await expect(
           transferService.createTransfer({
             ...newTransfer,
+            projectId: newTransfer.project,
             transferId: verifiedTransfer.transferId
           })
         ).rejects.toThrow(
@@ -250,6 +259,7 @@ describe('Testing transferService', () => {
       await expect(
         transferService.createTransfer({
           ...newTransfer,
+          projectId: newTransfer.project,
           receiptFile: { name: 'receipt.doc', size: 20000 }
         })
       ).rejects.toThrow(errors.file.ImgFileTyPeNotValid);
@@ -259,6 +269,7 @@ describe('Testing transferService', () => {
       await expect(
         transferService.createTransfer({
           ...newTransfer,
+          projectId: newTransfer.project,
           receiptFile: { name: 'receipt.jpg', size: 10000000 }
         })
       ).rejects.toThrow(errors.file.ImgSizeBiggerThanAllowed);
@@ -405,11 +416,10 @@ describe('Testing transferService', () => {
     });
   });
 
-  describe('Testing transferService addTransferClaim', () => {
+  describe('Testing sendAddTransferClaimTransaction method', () => {
     beforeAll(() => {
       injectMocks(transferService, {
-        transferDao,
-        userService
+        transferDao
       });
     });
 
@@ -420,42 +430,214 @@ describe('Testing transferService', () => {
       dbTransfer.push(pendingTransfer, verifiedTransfer);
     });
 
-    it('should add an approved transfer claim and return the transfer id', async () => {
-      const response = await transferService.addTransferClaim({
-        transferId: pendingTransfer.id,
-        userId: bankOperatorUser.id,
-        approved: true
-      });
+    it.each([
+      [txFunderStatus.VERIFIED, true],
+      [txFunderStatus.CANCELLED, false]
+    ])(
+      'should send the claim to the blockchain, ' +
+        'update its status to %s when approved is %s ' +
+        'and save the txHash in database',
+      async (status, approved) => {
+        const response = await transferService.sendAddTransferClaimTransaction({
+          transferId: pendingTransfer.id,
+          userId: bankOperatorUser.id,
+          approved,
+          signedTransaction: '0x123'
+        });
 
-      const updatedTransfer = dbTransfer.find(
-        transfer => transfer.id === response.transferId
-      );
+        const updated = dbTransfer.find(t => t.id === pendingTransfer.id);
+        expect(updated.status).toEqual(status);
+        expect(updated.txHash).toEqual('0x01');
+        expect(coa.sendAddClaimTransaction).toHaveBeenCalled();
+        expect(response).toEqual({ transferId: pendingTransfer.id });
+      }
+    );
 
-      expect(updatedTransfer.status).toEqual(txFunderStatus.VERIFIED);
-      expect(response).toEqual({ transferId: pendingTransfer.id });
-    });
-
-    it('should add an dissaproved transfer claim and return the transfer id', async () => {
-      const rejectionReason = 'Transferencia invalida';
-      const response = await transferService.addTransferClaim({
-        transferId: pendingTransfer.id,
-        userId: bankOperatorUser.id,
-        approved: false,
-        rejectionReason
-      });
-
-      const updatedTransfer = dbTransfer.find(
-        transfer => transfer.id === response.transferId
-      );
-
-      expect(updatedTransfer.status).toEqual(txFunderStatus.CANCELLED);
-      expect(updatedTransfer.rejectionReason).toEqual(rejectionReason);
-      expect(response).toEqual({ transferId: pendingTransfer.id });
-    });
-
-    it('should throw an error if the user is not bank operator', async () => {
+    it('should throw an error if any required param is missing', async () => {
       await expect(
-        transferService.addTransferClaim({
+        transferService.sendAddTransferClaimTransaction({
+          transferId: pendingTransfer.id,
+          approved: true,
+          signedTransaction: '0x123'
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('sendAddTransferClaimTransaction')
+      );
+    });
+
+    it('should throw an error if the user is not a bank operator', async () => {
+      await expect(
+        transferService.sendAddTransferClaimTransaction({
+          transferId: pendingTransfer.id,
+          userId: userFunder.id,
+          approved: true,
+          signedTransaction: '0x123'
+        })
+      ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));
+    });
+
+    it('should throw an error if the transfer could not be found', async () => {
+      await expect(
+        transferService.sendAddTransferClaimTransaction({
+          transferId: 0,
+          userId: bankOperatorUser.id,
+          approved: true,
+          signedTransaction: '0x123'
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('fund_transfer', 0));
+    });
+
+    it('should throw an error if the transfer is not pending', async () => {
+      await expect(
+        transferService.sendAddTransferClaimTransaction({
+          transferId: verifiedTransfer.id,
+          userId: bankOperatorUser.id,
+          approved: true,
+          signedTransaction: '0x123'
+        })
+      ).rejects.toThrow(errors.transfer.InvalidTransferTransition);
+    });
+  });
+
+  describe('Testing getAddTransferClaimTransaction method', () => {
+    const userWallet = {
+      address: '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D',
+      encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
+    };
+    beforeAll(() => {
+      injectMocks(transferService, {
+        transferDao,
+        projectService
+      });
+    });
+
+    beforeEach(() => {
+      dbUser = [];
+      dbTransfer = [];
+      dbProject = [];
+      dbUser.push(bankOperatorUser, userFunder);
+      dbTransfer.push(pendingTransfer, verifiedTransfer);
+      dbProject.push(fundingProject);
+    });
+
+    it('should return the unsigned transaction and the encrypted user wallet', async () => {
+      const unsignedTx = {
+        to: 'address',
+        data: 'txdata',
+        gasLimit: 60000,
+        nonce: 0
+      };
+      coa.getAddClaimTransaction.mockReturnValueOnce(unsignedTx);
+      const response = await transferService.getAddTransferClaimTransaction({
+        transferId: pendingTransfer.id,
+        userId: bankOperatorUser.id,
+        approved: true,
+        userWallet
+      });
+
+      expect(coa.getAddClaimTransaction).toHaveBeenCalled();
+      expect(response).toEqual({
+        tx: unsignedTx,
+        encryptedWallet: userWallet.encryptedWallet
+      });
+    });
+
+    it('should throw an error if the project does not have an address', async () => {
+      dbProject = [{ ...fundingProject, address: undefined }];
+      await expect(
+        transferService.getAddTransferClaimTransaction({
+          transferId: pendingTransfer.id,
+          userId: bankOperatorUser.id,
+          approved: true,
+          userWallet
+        })
+      ).rejects.toThrow(errors.project.AddressNotFound(fundingProject.id));
+    });
+
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        transferService.getAddTransferClaimTransaction({
+          transferId: pendingTransfer.id,
+          userId: bankOperatorUser.id,
+          approved: true
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('getAddTransferClaimTransaction')
+      );
+    });
+
+    it('should throw an error if the user is not a bank operator', async () => {
+      await expect(
+        transferService.getAddTransferClaimTransaction({
+          transferId: pendingTransfer.id,
+          userId: userFunder.id,
+          approved: true,
+          userWallet
+        })
+      ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));
+    });
+
+    it('should throw an error if the transfer could not be found', async () => {
+      await expect(
+        transferService.getAddTransferClaimTransaction({
+          transferId: 0,
+          userId: bankOperatorUser.id,
+          approved: true,
+          userWallet
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('fund_transfer', 0));
+    });
+
+    it('should throw an error if the transfer is not pending', async () => {
+      await expect(
+        transferService.getAddTransferClaimTransaction({
+          transferId: verifiedTransfer.id,
+          userId: bankOperatorUser.id,
+          approved: true,
+          userWallet
+        })
+      ).rejects.toThrow(errors.transfer.InvalidTransferTransition);
+    });
+  });
+
+  describe('Testing validateAddTransferClaim method', () => {
+    beforeAll(() => {
+      injectMocks(transferService, {
+        transferDao
+      });
+    });
+
+    beforeEach(() => {
+      dbUser = [];
+      dbTransfer = [];
+      dbUser.push(bankOperatorUser, userFunder);
+      dbTransfer.push(pendingTransfer, verifiedTransfer);
+    });
+
+    it('should resolve to true if the transfer claim can be created', async () => {
+      await expect(
+        transferService.validateAddTransferClaim({
+          transferId: pendingTransfer.id,
+          userId: bankOperatorUser.id,
+          approved: true
+        })
+      ).resolves.toEqual(true);
+    });
+
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        transferService.validateAddTransferClaim({
+          transferId: pendingTransfer.id,
+          approved: true
+        })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('validateAddTransferClaim')
+      );
+    });
+
+    it('should throw an error if the user is not a bank operator', async () => {
+      await expect(
+        transferService.validateAddTransferClaim({
           transferId: pendingTransfer.id,
           userId: userFunder.id,
           approved: true
@@ -463,9 +645,19 @@ describe('Testing transferService', () => {
       ).rejects.toThrow(errors.common.UserNotAuthorized(userFunder.id));
     });
 
-    it('should throw an error if transfer is already evaluated', async () => {
+    it('should throw an error if the transfer could not be found', async () => {
       await expect(
-        transferService.addTransferClaim({
+        transferService.validateAddTransferClaim({
+          transferId: 0,
+          userId: bankOperatorUser.id,
+          approved: true
+        })
+      ).rejects.toThrow(errors.common.CantFindModelWithId('fund_transfer', 0));
+    });
+
+    it('should throw an error if the transfer is not pending', async () => {
+      await expect(
+        transferService.validateAddTransferClaim({
           transferId: verifiedTransfer.id,
           userId: bankOperatorUser.id,
           approved: true

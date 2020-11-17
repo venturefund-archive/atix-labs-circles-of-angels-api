@@ -32,7 +32,7 @@ CREATE TABLE public.user (
     "answers" text DEFAULT NULL,
     "createdAt" date DEFAULT now(),
     address varchar(42) NOT NULL,
-    "privKey" varchar(80) NOT NULL,
+    "encryptedWallet" json NOT NULL,
     blocked BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     UNIQUE (email),
@@ -212,6 +212,7 @@ CREATE TABLE public.fund_transfer (
     status TX_FUNDER_STATUS NOT NULL,
     "createdAt" DATE,
     "rejectionReason" varchar(80) DEFAULT NULL,
+    "txHash" varchar(80) DEFAULT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY ("projectId") REFERENCES public.project (id),
     FOREIGN KEY ("senderId") REFERENCES public.user (id)

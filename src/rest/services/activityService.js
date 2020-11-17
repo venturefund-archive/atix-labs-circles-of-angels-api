@@ -415,27 +415,36 @@ module.exports = {
   },
 
   /**
-   * Add a claim for an existing project
+   * Sends the signed transaction to the blockchain
+   * and saves the evidence in the database
    *
-   * @param {number} taskId
-   * @param {number} userId
-   * @param {object} file
-   * @param {boolean} approved
-   * @returns taskId || error
+   * @param {Number} taskId
+   * @param {Number} userId
+   * @param {File} file
+   * @param {String} description
+   * @param {Boolean} approved
+   * @param {Transaction} signedTransaction
    */
-  async addClaim({ taskId, userId, file, description, approved, userWallet }) {
-    logger.info('[ActivityService] :: Entering addClaim method');
+  async sendAddClaimTransaction({
+    taskId,
+    userId,
+    file,
+    description,
+    approved,
+    signedTransaction
+  }) {
+    logger.info('[ActivityService] :: Entering sendAddClaimTransaction method');
     validateRequiredParams({
-      method: 'addClaim',
-      params: { userId, taskId, file, description, approved, userWallet }
+      method: 'sendAddClaimTransaction',
+      params: { taskId, userId, file, description, approved, signedTransaction }
     });
 
     const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
-    const { id: milestoneId, project: projectId } = milestone;
+    const { project: projectId } = milestone;
     const { oracle } = task;
 
     const projectFound = await this.projectService.getProjectById(projectId);
-    const { status, address } = projectFound;
+    const { status } = projectFound;
 
     if (status !== projectStatuses.EXECUTING) {
       logger.error(
@@ -451,26 +460,17 @@ module.exports = {
       throw new COAError(errors.task.OracleNotAssigned({ userId, taskId }));
     }
 
-    // TODO: we shouldn't save the file once we have the ipfs storage working
-    validateMtype(claimType, file);
-    validatePhotoSize(file);
-    logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
-    const filePath = await files.saveFile(claimType, file);
-    logger.info(`[ActivityService] :: File saved to: ${filePath}`);
-
-    // TODO: is this correct?
-    const claim = sha3(projectId, oracle, taskId);
-    const proof = sha3(filePath); // TODO: this should be an ipfs hash
-
-    const tx = await coa.addClaim(
-      address,
-      claim,
-      proof,
-      approved,
-      milestoneId,
-      userWallet
+    logger.info(
+      '[ActivityService] :: Sending signed tx to the blockchain for task',
+      taskId
     );
+    const tx = await coa.sendAddClaimTransaction(signedTransaction);
+    logger.info('[ActivityService] :: Add claim transaction sent');
 
+    // TODO: we shouldn't save the file once we have the ipfs storage working
+    logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
+    const filePath = await files.validateAndSaveFile(claimType, file);
+    logger.info(`[ActivityService] :: File saved to: ${filePath}`);
     const evidence = {
       description,
       proof: filePath,
@@ -478,13 +478,64 @@ module.exports = {
       approved,
       txHash: tx.hash
     };
+    logger.info('[ActivityService] :: Saving evidence in database', evidence);
+    const taskEvidence = await this.taskEvidenceDao.addTaskEvidence(evidence);
+    return { claimId: taskEvidence.id };
+  },
 
-    const evidenceCreated = await this.taskEvidenceDao.addTaskEvidence(
-      evidence
+  /**
+   * Receives a task evidence and sends the unsigned
+   * transaction to the client with the user's encrypted json wallet
+   *
+   * @param {Number} taskId
+   * @param {Number} userId
+   * @param {File} file
+   * @param {Boolean} approved
+   * @param {JSON} userWallet
+   */
+  async getAddClaimTransaction({ taskId, file, approved, userWallet }) {
+    logger.info('[ActivityService] :: Entering getAddClaimTransaction method');
+    validateRequiredParams({
+      method: 'getAddClaimTransaction',
+      params: { taskId, file, approved, userWallet }
+    });
+
+    const { milestone, task } = await this.getMilestoneAndTaskFromId(taskId);
+    const { id: milestoneId, project: projectId } = milestone;
+    const { oracle } = task;
+    const projectFound = await this.projectService.getProjectById(projectId);
+    const { address } = projectFound;
+
+    // TODO: we shouldn't save the file once we have the ipfs storage working
+    validateMtype(claimType, file);
+    validatePhotoSize(file);
+    const filePath = await files.getSaveFilePath(claimType, file);
+    logger.info(
+      `[ActivityService] :: File to be saved in ${filePath} when tx is sent`
     );
 
-    logger.info('[ActivityService] :: Claim added succesfully');
-    return { taskId: evidenceCreated.task };
+    const claim = sha3(projectId, oracle, taskId);
+    const proof = sha3(filePath); // TODO: this should be an ipfs hash
+
+    logger.info('[ActivityService] :: Getting add claim transaction');
+    const unsignedTx = await coa.getAddClaimTransaction(
+      address,
+      claim,
+      proof,
+      approved,
+      milestoneId
+    );
+    const nonce = await coa.getTransactionNonce(userWallet.address);
+    const txWithNonce = { ...unsignedTx, nonce };
+
+    logger.info(
+      '[ActivityService] :: Sending unsigned transaction to client',
+      txWithNonce
+    );
+    return {
+      tx: txWithNonce,
+      encryptedWallet: userWallet.encryptedWallet
+    };
   },
 
   /**

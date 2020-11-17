@@ -279,23 +279,123 @@ module.exports = {
   },
 
   /**
-   * Add a transfer claim for an existing project
-   *
+   * Sends the signed transaction to add a transfer claim
+   * to the `ClaimsRegistry` contract and updates the transfer in db
    * @param {number} transferId
    * @param {number} userId
-   * @param {object} file
    * @param {boolean} approved
-   * @returns transferId || error
+   * @param {String} rejectionReason
+   * @param {Transaction} signedTransaction
    */
-  async addTransferClaim({ transferId, userId, approved, rejectionReason }) {
-    logger.info('[TransferService] :: Entering addTransferClaim method');
+  async sendAddTransferClaimTransaction({
+    transferId,
+    userId,
+    approved,
+    rejectionReason,
+    signedTransaction
+  }) {
+    logger.info(
+      '[TransferService] :: Entering sendAddTransferClaimTransaction method'
+    );
     validateRequiredParams({
-      method: 'addTransferClaim',
+      method: 'sendAddTransferClaimTransaction',
+      params: { transferId, userId, approved, signedTransaction }
+    });
+    await this.validateAddTransferClaim({ transferId, userId, approved });
+
+    logger.info(
+      '[TransferService] :: Sending signed tx to the blockchain for transfer',
+      transferId
+    );
+    const tx = await coa.sendAddClaimTransaction(signedTransaction);
+    logger.info('[TransferService] :: Add claim transaction sent');
+
+    const status = approved
+      ? txFunderStatus.VERIFIED
+      : txFunderStatus.CANCELLED;
+    const fields = { id: transferId, status, txHash: tx.hash };
+    if (!approved && rejectionReason) fields.rejectionReason = rejectionReason;
+
+    const updated = await this.transferDao.update(fields);
+    logger.info('[TransferService] :: Claim added and status transfer updated');
+    return { transferId: updated.id };
+  },
+
+  /**
+   * Returns the user encrypted wallet and the unsigned transaction
+   * to add a transfer claim to the `ClaimsRegistry` contract
+   * @param {number} transferId
+   * @param {number} userId
+   * @param {boolean} approved
+   * @param {JSON} userWallet
+   */
+  async getAddTransferClaimTransaction({
+    transferId,
+    userId,
+    approved,
+    userWallet
+  }) {
+    logger.info(
+      '[TransferService] :: Entering getAddTransferClaimTransaction method'
+    );
+    validateRequiredParams({
+      method: 'getAddTransferClaimTransaction',
+      params: { transferId, userId, approved, userWallet }
+    });
+    logger.info('[TransferService] :: Getting add claim transaction');
+    await this.validateAddTransferClaim({ transferId, userId, approved });
+
+    const { project: projectId, receiptPath } = await this.transferDao.findById(
+      transferId
+    );
+    const project = await this.projectService.getProjectById(projectId);
+    const claim = sha3(projectId, userId, transferId);
+    const proof = sha3(receiptPath); // TODO: this should be an ipfs hash
+
+    const { address: projectAddress } = project;
+    if (!projectAddress) {
+      logger.error(
+        `[TransferService] :: Address not found for project ${project.id}`
+      );
+      throw new COAError(errors.project.AddressNotFound(project.id));
+    }
+
+    const unsignedTx = await coa.getAddClaimTransaction(
+      projectAddress,
+      claim,
+      proof,
+      approved,
+      0 // 0 because it doesn't belong to a milestone
+    );
+    const nonce = await coa.getTransactionNonce(userWallet.address);
+    const txWithNonce = { ...unsignedTx, nonce };
+
+    logger.info(
+      '[TransferService] :: Sending unsigned transaction to client',
+      txWithNonce
+    );
+    return {
+      tx: txWithNonce,
+      encryptedWallet: userWallet.encryptedWallet
+    };
+  },
+
+  /**
+   * Returns `true` or throws an error if the transfer cannot be modified
+   * @param {number} transferId
+   * @param {number} userId
+   * @param {boolean} approved
+   */
+  async validateAddTransferClaim({ transferId, userId, approved }) {
+    logger.info(
+      '[TransferService] :: Entering validateAddTransferClaim method'
+    );
+    validateRequiredParams({
+      method: 'validateAddTransferClaim',
       params: { transferId, userId, approved }
     });
 
     const user = await this.userService.getUserById(userId);
-
     if (user.role !== userRoles.BANK_OPERATOR) {
       logger.error(
         `[TransferService] :: User ${userId} not authorized for this action`
@@ -318,22 +418,6 @@ module.exports = {
       );
       throw new COAError(errors.transfer.InvalidTransferTransition);
     }
-
-    // TODO replace both fields with the correct information
-    // const { projectId } = transfer;
-    // const claim = sha3(projectId, transferId);
-    // const proof = utils.id(file.name);
-
-    // TODO: uncomment this when contracts are deployed
-    // const tx = await coa.addClaim(projectId, claim, proof, approved);
-    // const { hash } = tx; // save in db
-
-    const status = approved ? VERIFIED : CANCELLED;
-    const fields = { id: transferId, status };
-    if (rejectionReason) fields.rejectionReason = rejectionReason;
-
-    const updated = await this.transferDao.update(fields);
-    logger.info('[TransferService] :: Claim added and status transfer updated');
-    return { transferId: updated.id };
+    return true;
   }
 };

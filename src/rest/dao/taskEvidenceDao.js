@@ -18,5 +18,12 @@ module.exports = {
 
   async getEvidencesByTaskId(taskId) {
     return this.model.find({ task: taskId });
+  },
+
+  async updateTaskEvidence(evidenceId, data) {
+    const updatedEvidence = await this.model
+      .updateOne({ id: evidenceId })
+      .set(data);
+    return updatedEvidence;
   }
 };

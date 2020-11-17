@@ -39,10 +39,16 @@ module.exports = class COA {
     await coa.migrateMember(profile, address);
   }
 
-  async createProject(id, name, agreement) {
+  async createProject(id, name) {
     const coa = await this.getCOA();
-    const tx = await coa.createProject(id, name, agreement);
+    const tx = await coa.createProject(id, name);
     return tx;
+  }
+
+  async addProjectAgreement(projectAddress, agreement) {
+    const coa = await this.getCOA();
+    const txReceipt = await coa.addAgreement(projectAddress, agreement);
+    return txReceipt;
   }
 
   async createDAO(name) {
@@ -67,18 +73,41 @@ module.exports = class COA {
     console.log(tx);
   }
 
+  // TODO: delete if not needed
   async addClaim(project, claim, proof, valid, milestoneId, validator) {
     const registry = await this.getRegistry();
     const registryWithSigner = await registry.connect(validator);
-    const tx = await registryWithSigner.addClaim(
+    const txReceipt = await registryWithSigner.addClaim(
       project,
       claim,
       proof,
       valid,
       milestoneId
     );
-    // get receipt and check logs
-    return tx;
+    return txReceipt;
+  }
+
+  async sendAddClaimTransaction(signedTransaction) {
+    const txResponse = await this.env.ethers.provider.sendTransaction(
+      signedTransaction
+    );
+    return txResponse;
+  }
+
+  async getAddClaimTransaction(
+    projectAddress,
+    claim,
+    proof,
+    valid,
+    milestoneId
+  ) {
+    const registry = await this.getRegistry();
+    const unsignedTransaction = await this.getUnsignedTransaction(
+      registry,
+      'addClaim',
+      [projectAddress, claim, proof, valid, milestoneId]
+    );
+    return unsignedTransaction;
   }
 
   async milestoneApproved(projectAddress, validators, claims) {
@@ -263,5 +292,32 @@ module.exports = class COA {
 
   clearContracts() {
     this.contracts = {};
+  }
+
+  /**
+   * Creates an unsigned transaction.
+   * @param {ethers.Contract} contract
+   * @param {String} functionName
+   * @param {Array} args
+   */
+  async getUnsignedTransaction(contract, functionName, args) {
+    const data = contract.interface.functions[functionName].encode(args);
+    const estimateGas = await contract.estimate[functionName](...args);
+    const minimumGas = await this.env.ethers.provider.getGasPrice();
+    return {
+      to: contract.address,
+      gasLimit: Number(estimateGas),
+      gasPrice: Number(minimumGas),
+      data
+    };
+  }
+
+  /**
+   * Returns the transaction count of an address
+   * @param {String} address
+   */
+  async getTransactionNonce(address) {
+    const nonce = await this.env.ethers.provider.getTransactionCount(address);
+    return nonce;
   }
 };

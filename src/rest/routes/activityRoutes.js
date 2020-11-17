@@ -9,21 +9,12 @@
 const basePath = '/activities';
 const handlers = require('./handlers/activityHandlers');
 const routeTags = require('../util/routeTags');
+const { idParam } = require('../util/params');
 const {
   successResponse,
   serverErrorResponse,
   clientErrorResponse
 } = require('../util/responses');
-
-const idParam = (description, param) => ({
-  type: 'object',
-  properties: {
-    [param]: {
-      type: 'integer',
-      description
-    }
-  }
-});
 
 const taskIdParam = idParam('Task identification', 'taskId');
 const milestoneIdParam = idParam('Milestone identification', 'milestoneId');
@@ -34,10 +25,6 @@ const taskProperties = {
   category: { type: 'string' },
   keyPersonnel: { type: 'string' },
   budget: { type: 'string' }
-};
-
-const claimProperties = {
-  description: { type: 'string' }
 };
 
 const oracleProperties = {
@@ -175,65 +162,87 @@ const oracleRoutes = {
   }
 };
 
-const routes = {
-  ...taskRoutes,
-  ...oracleRoutes,
-
+const evidencesRoutes = {
   addApprovedClaim: {
     method: 'post',
-    path: `${basePath}/:taskId/claim/approve`,
-    options: {
-      beforeHandler: ['generalAuth', 'withUser'],
-      schema: {
-        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
-        description: 'Add an approved claim of a task for an existing project',
-        summary: 'Add an approved claim',
-        params: { taskIdParam },
-        type: 'multipart/form-data',
-        raw: {
-          files: { type: 'object' },
-          body: {
-            type: 'object',
-            properties: claimProperties
-          }
-        },
-        response: {
-          ...successResponse(successWithTaskIdResponse),
-          ...clientErrorResponse(),
-          ...serverErrorResponse()
-        }
-      }
-    },
-    handler: handlers.addApprovedClaim
-  },
-
-  addDisapprovedClaim: {
-    method: 'post',
-    path: `${basePath}/:taskId/claim/disapprove`,
+    path: `${basePath}/:taskId/claim/approve/get-transaction`,
     options: {
       beforeHandler: ['generalAuth', 'withUser'],
       schema: {
         tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
         description:
-          'Add an disapproved claim of a task for an existing project',
-        summary: 'Add an disapproved claim',
+          'Get unsigned tx for an approved claim of a task for an existing project',
+        summary: 'Get unsigned tx for an approved claim',
         params: { taskIdParam },
         type: 'multipart/form-data',
-        raw: {
-          files: { type: 'object' },
-          body: {
-            type: 'object',
-            properties: claimProperties
-          }
-        },
         response: {
-          ...successResponse(successWithTaskIdResponse),
           ...clientErrorResponse(),
           ...serverErrorResponse()
         }
       }
     },
-    handler: handlers.addDisapprovedClaim
+    handler: handlers.getApprovedClaimTransaction
+  },
+
+  addDisapprovedClaim: {
+    method: 'post',
+    path: `${basePath}/:taskId/claim/disapprove/get-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
+        description:
+          'Get unsigned tx for a disapproved claim of a task for an existing project',
+        summary: 'Get unsigned tx for a disapproved claim',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.getDisapprovedClaimTransaction
+  },
+
+  sendDisapprovedClaimTransaction: {
+    method: 'post',
+    path: `${basePath}/:taskId/claim/disapprove/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
+        description: 'Send approved claim signed transaction to blockchain',
+        summary: 'Send approved claim signed tx to blockchain',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.sendClaimTransaction(false)
+  },
+
+  sendApprovedClaimTransaction: {
+    method: 'post',
+    path: `${basePath}/:taskId/claim/approve/send-transaction`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.ACTIVITY.name, routeTags.POST.name],
+        description: 'Send disapproved claim signed transaction to blockchain',
+        summary: 'Send disapproved claim signed tx to blockchain',
+        params: { taskIdParam },
+        type: 'multipart/form-data',
+        response: {
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: () => handlers.sendClaimTransaction(true)
   },
 
   getTaskEvidences: {
@@ -255,6 +264,12 @@ const routes = {
     },
     handler: handlers.getTasksEvidences
   }
+};
+
+const routes = {
+  ...taskRoutes,
+  ...oracleRoutes,
+  ...evidencesRoutes
 };
 
 module.exports = routes;

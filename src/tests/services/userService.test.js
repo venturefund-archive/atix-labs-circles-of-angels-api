@@ -10,7 +10,6 @@
 
 const bcrypt = require('bcrypt');
 const { coa, ethers } = require('@nomiclabs/buidler');
-const { Wallet } = require('ethers');
 const { injectMocks } = require('../../rest/util/injection');
 const { userRoles, projectStatuses } = require('../../rest/util/constants');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
@@ -213,17 +212,13 @@ describe('Testing userService', () => {
         'Question?': 'Test',
         'Another question?': 'OK'
       }),
-      company: 'AtixLabs'
-    };
-    const mockedWallet = {
+      company: 'AtixLabs',
       address: 'address',
-      privateKey: 'privKey'
+      encryptedWallet: '{ "address": 65dqw6sa9787a }'
     };
-
     beforeAll(() => {
-      Wallet.createRandom = jest.fn();
       bcrypt.hash = jest.fn();
-      coa.createMember = jest.fn();
+      coa.migrateMember = jest.fn();
       const sendTransaction = jest.fn();
       ethers.signers = jest.fn(() => [
         {
@@ -239,19 +234,16 @@ describe('Testing userService', () => {
     });
 
     it("should return an object with the new user's information", async () => {
-      Wallet.createRandom.mockReturnValueOnce(mockedWallet);
       bcrypt.hash.mockReturnValueOnce(newUser.password);
       const response = await userService.createUser(newUser);
       expect(response).toEqual({
         ...newUser,
-        id: 1,
-        address: mockedWallet.address,
-        privKey: mockedWallet.privateKey
+        id: 1
       });
 
       const created = dbUser.find(user => user.id === response.id);
       expect(created).toBeDefined();
-      expect(coa.createMember).toHaveBeenCalled();
+      expect(coa.migrateMember).toHaveBeenCalled();
       expect(mailService.sendSignUpMail).toHaveBeenCalled();
     });
     it('should return an error if any required param is missing', async () => {
