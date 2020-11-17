@@ -96,7 +96,7 @@ module.exports = class COA {
     const registry = await this.getRegistry();
     const unsignedTransaction = await this.getUnsignedTransaction(
       registry,
-      'addClaim',
+      'addClaim(address,bytes32,bytes32,bool,uint256)',
       [projectAddress, claim, proof, valid, milestoneId]
     );
     return unsignedTransaction;
@@ -143,7 +143,7 @@ module.exports = class COA {
     await this.checkProposalExistence(proposalId, dao);
     const unsignedTransaction = await this.getUnsignedTransaction(
       dao,
-      'processProposal',
+      'processProposal(uint256)',
       [proposalId]
     );
     return unsignedTransaction;
@@ -157,7 +157,7 @@ module.exports = class COA {
     await this.checkProposalExistence(proposalId, daoContract);
     const unsignedTransaction = await this.getUnsignedTransaction(
       daoContract,
-      'submitVote',
+      'submitVote(uint256,uint8)',
       [proposalId, vote]
     );
     return unsignedTransaction;
@@ -176,7 +176,7 @@ module.exports = class COA {
     const daoContract = await this.getDaoContract(daoAddress, memberAddress);
     const unsignedTransaction = await this.getUnsignedTransaction(
       daoContract,
-      'submitProposal',
+      'submitProposal(address,uint8,string)',
       [applicant, proposalType, description]
     );
     return unsignedTransaction;
@@ -195,12 +195,7 @@ module.exports = class COA {
   }
 
   async getContract(name, signer) {
-    const _signer = await this.getSigner(signer);
-    const { abi, bytecode } = await readArtifact(
-      this.env.config.paths.artifacts,
-      name
-    );
-    return new ContractFactory(abi, bytecode, _signer);
+    return this.env.deployments.getContractFactory(name, signer);
   }
 
   async getContractAt(name, address, signer) {
@@ -377,13 +372,7 @@ module.exports = class COA {
   }
 
   async getSigner(account) {
-    if (account === undefined) {
-      return (await this.env.ethers.signers())[0];
-    }
-    if (typeof account === 'string') {
-      return this.env.ethers.provider.getSigner(account);
-    }
-    return account;
+    return this.env.deployments.getSigner(account);
   }
 
   isDeployed(state, chainId, name) {
@@ -405,15 +394,10 @@ module.exports = class COA {
    * @param {Array} args
    */
   async getUnsignedTransaction(contract, functionName, args) {
-    const data = contract.interface.functions[functionName].encode(args);
-    const estimateGas = await contract.estimate[functionName](...args);
-    const minimumGas = await this.env.ethers.provider.getGasPrice();
-    return {
-      to: contract.address,
-      gasLimit: Number(estimateGas),
-      gasPrice: Number(minimumGas),
-      data
-    };
+    const utx = await contract.populateTransaction[functionName](...args);
+    utx.gasLimit = Number(await contract.estimateGas[functionName](...args));
+    utx.gasPrice = Number(await this.env.ethers.provider.getGasPrice());
+    return utx;
   }
 
   /**

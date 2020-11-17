@@ -6,6 +6,7 @@ const {
   web3,
   ethers
 } = require('@nomiclabs/buidler');
+const { assert } = require('chai');
 
 const { throwsAsync, waitForEvent } = require('./testHelpers');
 
@@ -90,7 +91,7 @@ const checkNewSubmittedProposal = async (
   return proposal;
 };
 
-contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
+contract('DAO.sol & SuperDAO.sol', ([creator, founder, daoCreator, curator, notMember]) => {
   let coa;
   let dao;
   let superDao;
@@ -98,23 +99,29 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
   beforeEach('deploy contracts', async () => {
     await run('deploy', { reset: true });
     [coa] = await deployments.getDeployedContracts('COA');
-    await coa.createDAO('the dao', creator);
+    await coa.createDAO('the dao', daoCreator);
     const superDaoAddress = await coa.daos(0);
     const daosLength = await coa.getDaosLength();
     const daoAddress = await coa.daos(daosLength - 1);
-    dao = await deployments.getContractInstance('DAO', daoAddress);
+    dao = await deployments.getContractInstance('DAO', daoAddress, daoCreator);
     superDao = await deployments.getContractInstance(
       'SuperDAO',
       superDaoAddress
     );
   });
 
+  it('DAO amount', async () => {
+    const daosLength = await coa.getDaosLength();
+    assert.equal(daosLength, 2);
+  });
+
   it('DAO summoner is the one that created the contract', async () => {
-    const summoner = await dao.members(creator);
+    const summoner = await dao.members(daoCreator);
     assert.equal(summoner.exists, true);
   });
 
   describe('Proposal submission', async () => {
+
     it('Single proposal', async () => {
       const proposalsBeforeSubmitting = await dao.getProposalQueueLength();
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
@@ -133,7 +140,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
 
       const proposal = await checkNewSubmittedProposal(
         dao,
-        creator,
+        daoCreator,
         ProposalType.NewMember,
         'carlos',
         founder
@@ -145,7 +152,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
         proposalIndex.toNumber(),
         proposalsAfterSubmitting.sub(1).toNumber()
       );
-      assert.equal(memberAddress, creator);
+      assert.equal(memberAddress, daoCreator);
       assert.equal(applicant, founder);
       assert.equal(proposalType, ProposalType.NewMember);
     });
@@ -159,7 +166,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       assert.equal(proposalsLength, 2);
       const proposal = await checkNewSubmittedProposal(
         dao,
-        creator,
+        daoCreator,
         ProposalType.NewMember,
         'luis',
         curator
@@ -169,7 +176,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
     });
 
     it('Should fail when a non member is sending a proposal', async () => {
-      const signers = await ethers.signers();
+      const signers = await ethers.getSigners();
       await throwsAsync(
         // We are using the first few signers
         dao
@@ -180,7 +187,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
     });
 
     it('Should fail when a non member is voting', async () => {
-      const signers = await ethers.signers();
+      const signers = await ethers.getSigners();
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       await throwsAsync(
         // We are using the first few signers
@@ -197,11 +204,13 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       );
     });
 
+    // TODO: Exception must be other
     it('Should fail when sending an invalid vote type', async () => {
       await dao.submitProposal(founder, ProposalType.NewMember, 'carlos');
       await throwsAsync(
         dao.submitVote(0, 4),
-        'VM Exception while processing transaction: invalid opcode'
+        'Transaction reverted without a reason'
+        //'VM Exception while processing transaction: invalid opcode'
       );
     });
 
@@ -283,7 +292,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
 
         // Event was properly emitted
         assert.equal(proposalIndex, proposalToVoteIndex);
-        assert.equal(memberAddress, creator);
+        assert.equal(memberAddress, daoCreator);
         assert.equal(vote, voteType);
       });
     });
@@ -371,15 +380,14 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
       let proposal = await superDao.proposalQueue(proposalIndex);
       await moveForwardPeriodsUntilProcessingEnabled(dao, proposal);
       await superDao.processProposal(proposalIndex);
-
       const daosAfterProposal = await coa.getDaosLength();
       const newDaoAddress = await coa.daos(daosAfterProposal - 1);
       const newDao = await deployments.getContractInstance(
         'DAO',
-        newDaoAddress
+        newDaoAddress,
+        founder
       );
       proposal = await superDao.proposalQueue(proposalIndex);
-
       assert.equal(proposal.didPass, true);
       assert.equal(
         daosAfterProposal.toNumber(),
@@ -414,7 +422,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
     assignRoleTests.map(({ proposalTypeName, proposalType, expectedRole }) => {
       it(`Should process an ${proposalTypeName} proposal`, async () => {
         // Creator is being used as it's the only member already added to the DAO
-        await dao.submitProposal(creator, proposalType, 'carlos');
+        await dao.submitProposal(daoCreator, proposalType, 'carlos');
         const proposalIndex = (await dao.getProposalQueueLength()) - 1;
         await moveForwardPeriods(1);
         await dao.submitVote(proposalIndex, VoteType.Yes);
@@ -431,7 +439,7 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
         const proposalAfterProcessing = await dao.proposalQueue(proposalIndex);
         assert.equal(proposalAfterProcessing.didPass, true);
         // And member was assigned the role
-        const member = await dao.members(creator);
+        const member = await dao.members(daoCreator);
         assert.equal(member.exists, true);
         assert.equal(member.role, expectedRole);
         assert.equal(member.shares, 1);
@@ -443,11 +451,11 @@ contract('DAO.sol & SuperDAO.sol', ([creator, founder, curator, notMember]) => {
     it('should revert when sending a tx to the contract', async () => {
       await throwsAsync(
         web3.eth.sendTransaction({
-          from: creator,
+          from: notMember,
           to: dao.address,
           value: '0x16345785d8a0000'
         }),
-        'Returned error: VM Exception while processing transaction: revert'
+        "Returned error: Transaction reverted without a reason"
       );
     });
   });

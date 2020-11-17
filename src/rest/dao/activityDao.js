@@ -58,5 +58,11 @@ module.exports = {
   async getTaskByIdWithMilestone(id) {
     const task = await this.model.findOne({ id }).populate('milestone');
     return task;
+  },
+
+  getTaskByMilestones(milestoneIds) {
+    return this.model.find({
+      where: { milestone: { in: milestoneIds } }
+    });
   }
 };

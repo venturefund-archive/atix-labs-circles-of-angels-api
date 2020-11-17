@@ -10,5 +10,9 @@ module.exports = {
   async addCandidate({ project, user }) {
     const followerCreated = await this.model.create({ project, user });
     return followerCreated;
+  },
+  async removeCandidatesByProps(filter) {
+    const deletedOracles = await this.model.destroy(filter).fetch();
+    return deletedOracles.map(oracle => oracle.user);
   }
 };

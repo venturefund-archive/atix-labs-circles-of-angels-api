@@ -5,7 +5,7 @@ import '@openzeppelin/upgrades/contracts/Initializable.sol';
  * @title This contract holds information about claims made buy COA members
  * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
  */
-contract ClaimsRegistry is Initializable{
+contract ClaimsRegistryV2 is Initializable{
     struct Claim {
         bool approved;
         bytes32 proof;
@@ -25,7 +25,7 @@ contract ClaimsRegistry is Initializable{
         uint256 verifiedAt,
         uint256 milestone
     );
-
+    string public test;
     function initialize() public initializer {
     }
 
@@ -82,5 +82,9 @@ contract ClaimsRegistry is Initializable{
         return true;
     }
 
-    uint256[50] private _gap;
+    function setTest(string memory _test) public {
+        test = _test;
+    }
+
+    uint256[49] private _gap;
 }

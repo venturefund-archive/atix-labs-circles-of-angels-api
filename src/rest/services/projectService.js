@@ -1209,6 +1209,14 @@ module.exports = {
             status: newStatus
           });
 
+          const removedOracles = await this.removeOraclesWithoutActivitiesFromProject(
+            project.id
+          );
+          logger.info(
+            '[ProjectService] :: Oracles removed from project:',
+            removedOracles
+          );
+
           const milestones = await this.milestoneService.getAllMilestonesByProject(
             project.id
           );
@@ -1365,6 +1373,29 @@ module.exports = {
   },
 
   /**
+   * Remove all candidates oracles
+   * without Milestones' activities.
+   *
+   * Returns a list of users ids that were removed
+   *
+   * @param {number} projectId
+   */
+  async removeOraclesWithoutActivitiesFromProject(projectId) {
+    logger.info(
+      '[ProjectService] :: Entering removeOraclesWithoutActivitiesFromProject method'
+    );
+    const oraclesWithActivities = await this.getAllOraclesWithTasksFromProject(
+      projectId
+    );
+    if (!oraclesWithActivities.length) {
+      return [];
+    }
+    return this.oracleDao.removeCandidatesByProps({
+      and: [{ project: projectId }, { user: { '!=': oraclesWithActivities } }]
+    });
+  },
+
+  /**
    * Returns the address of an existing project in COA contract
    *
    * @param {number} projectId
@@ -1443,5 +1474,24 @@ module.exports = {
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
       agreement: undefined // TODO: add when ipfs is implemented
     };
+  },
+  /**
+   * Returns the oracles assigned at least one transfer
+   * @param {number} project
+   */
+  async getAllOraclesWithTasksFromProject(project) {
+    const oracles = [];
+    const milestones = await this.milestoneService.getMilestones({ project });
+    if (!milestones.length) {
+      return [];
+    }
+    milestones.forEach(({ tasks }) => {
+      tasks.forEach(({ oracle }) => {
+        if (!oracles.includes(oracle)) {
+          oracles.push(oracle);
+        }
+      });
+    });
+    return oracles;
   }
 };

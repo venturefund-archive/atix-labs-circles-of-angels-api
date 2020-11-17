@@ -4,6 +4,8 @@ const {
   readArtifactSync
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
+const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
+const ProxyAdmin = require('@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json');
 const {
   artifacts,
   ethereum,
@@ -11,8 +13,12 @@ const {
   web3,
   run,
   config,
-  ethers
+  ethers,
+  upgrades
 } = require('@nomiclabs/buidler');
+
+// const { ethers } = require('@nomiclabs/buidler-ethers');
+
 const {
   ensureFileSync,
   existsSync,
@@ -50,7 +56,7 @@ class DeploymentSetup {
 
   async deploy() {
     const contracts = {};
-    const signer = (await ethers.signers())[0];
+    const signer = await getSigner();
     // console.log('About to deploy', this.setup.contracts.length, 'contracts')
     for (const cfg of this.setup.contracts) {
       // console.log('Deploying', cfg.name)
@@ -140,6 +146,8 @@ async function getDeployedContracts(name, chainId) {
   const factory = await getContractFactory(name);
   const addresses = await getDeployedAddresses(name, chainId);
   const artifact = readArtifactSync(config.paths.artifacts, name);
+  // This slot was recollected from @openzeppelin/upgrades-core/artifacts/BaseUpgradeabilityProxy.json
+  const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
   // TODO : should use deployedBytecode instead?
   if (artifact.bytecode !== factory.bytecode) {
@@ -155,6 +163,13 @@ async function getDeployedContracts(name, chainId) {
     const code = await ethers.provider.getCode(addr);
     if (code === artifact.deployedBytecode) {
       contracts.push(factory.attach(addr));
+    } else if (code === AdminUpgradeabilityProxy.deployedBytecode) {
+      const storageAddr = await ethers.provider.getStorageAt(addr, IMPLEMENTATION_SLOT);
+      const implAddr = '0x' + storageAddr.substring(storageAddr.length - 40, storageAddr.length);
+      const implCode = await ethers.provider.getCode(implAddr);
+      if (implCode === artifact.deployedBytecode) {
+        contracts.push(factory.attach(addr));
+      }
     }
   }
 
@@ -199,7 +214,7 @@ async function saveDeployedContract(name, instance) {
 async function deploy(contractName, params, signer) {
   const factory = await getContractFactory(
     contractName,
-    await getSigner(signer)
+    signer
   );
   // factory.connect(await getSigner(signer));
 
@@ -210,6 +225,19 @@ async function deploy(contractName, params, signer) {
   // await this.saveDeployedContract(contractName, contract);
   const receipt = await ethers.provider.getTransactionReceipt(
     contract.deployTransaction.hash
+  );
+  return [contract, receipt];
+}
+
+
+async function deployProxy(contractName, params, signer, opts) {
+  const factory = await ethers.getContractFactory(contractName, await getSigner(signer));
+
+  const contract = await upgrades.deployProxy(factory, params, { ...opts, unsafeAllowCustomTypes: true });
+  await contract.deployed();
+
+  const receipt = await ethers.provider.getTransactionReceipt(
+      contract.deployTransaction.hash
   );
   return [contract, receipt];
 }
@@ -261,11 +289,13 @@ async function getChainId(chainId) {
 
 async function getSigner(account) {
   if (account === undefined) {
-    return (await ethers.signers())[0];
-  }
-  if (typeof account === 'string') {
+    return (await ethers.getSigners())[0];
+  } else if (typeof account === "number") {
+    return (await ethers.getSigners())[account];
+  } else if (typeof account === 'string') {
     return ethers.provider.getSigner(account);
   }
+  // TODO: Is it okay return account?
   return account;
 }
 
@@ -279,9 +309,12 @@ function isDeployed(state, chainId, name) {
 
 module.exports = {
   deploy,
+  deployProxy,
+  getSigner,
   getDeployedContracts,
   saveDeployedContract,
   getLastDeployedContract,
   getContractInstance,
+  getContractFactory,
   getDeploymentSetup
 };

@@ -1,10 +1,11 @@
 pragma solidity ^0.5.8;
 
-import '@openzeppelin/contracts/ownership/Ownable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
+import '@openzeppelin/upgrades/contracts/Initializable.sol';
 
 /// @title A DAO contract based on MolochDAO ideas
-contract AbstractDAO {
+contract AbstractDAO is Initializable {
     using SafeMath for uint256;
 
     /// DAO members
@@ -25,11 +26,10 @@ contract AbstractDAO {
     enum Role {Normal, Bank, Curator}
 
     /// TODO: actually define these numbers
-    uint256 public periodDuration = 17280; /// seconds
-    uint256 public votingPeriodLength = 35; /// periods
-    uint256 public gracePeriodLength = 35;
-    uint256 public processingPeriodLength = votingPeriodLength +
-        gracePeriodLength;
+    uint256 public periodDuration; /// seconds
+    uint256 public votingPeriodLength; /// periods
+    uint256 public gracePeriodLength;
+    uint256 public processingPeriodLength;
 
     /// Emitted then a proposal was successfuly submitted
     event SubmitProposal(
@@ -78,12 +78,18 @@ contract AbstractDAO {
      * @param _name DAO name
      * @param _creator User that will be assigned as the first member
      */
-    constructor(string memory _name, address _creator) public {
+    function initialize(
+        string memory _name,
+        address _creator
+    ) public initializer {
         name = _name;
         creationTime = now;
         addMember(_creator);
+        periodDuration = 17280;
+        votingPeriodLength = 35; /// periods
+        gracePeriodLength = 35;
+        processingPeriodLength = votingPeriodLength + gracePeriodLength;
     }
-
     /**
      * @notice Function to be invoked in order to create a new proposal.
      *
@@ -152,7 +158,6 @@ contract AbstractDAO {
             'Moloch::submitVote - proposal does not exist'
         );
         Proposal storage proposal = proposalQueue[_proposalIndex];
-
         Vote vote = Vote(_vote);
         require(
             vote == Vote.Yes || vote == Vote.No,
@@ -323,4 +328,6 @@ contract AbstractDAO {
      */
     function processNewDaoProposal(string memory _name, address _applicant)
         internal;
+
+    uint256[50] private _gap;
 }
