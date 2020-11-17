@@ -1,15 +1,14 @@
 const { run, coa, ethereum } = require('@nomiclabs/buidler');
-const COAError = require('../../rest/errors/COAError');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const daoService = require('../../rest/services/daoService');
 const { injectMocks } = require('../../rest/util/injection');
-const { userRoles } = require('../../rest/util/constants');
-
 const {
+  userRoles,
   proposalTypeEnum,
   voteEnum,
   daoMemberRoleEnum,
-  daoMemberRoleNames
+  daoMemberRoleNames,
+  txProposalStatus
 } = require('../../rest/util/constants');
 
 let mockedDaoService = Object.assign({}, daoService);
@@ -56,6 +55,28 @@ describe('Testing daoService', () => {
   let superDaoAddress;
   let superUserAddress;
 
+  const applicantAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568778D';
+  const proposerAddress = '0xf828EaDD69a8A5936d863a1621Fe2c3dC568558D';
+
+  const newProposalTx = {
+    daoId: 0,
+    description: 'A description',
+    applicant: applicantAddress,
+    proposer: proposerAddress,
+    type: proposalTypeEnum.NEW_MEMBER,
+    txHash: '0x111',
+    status: txProposalStatus.SENT
+  };
+
+  const newVoteTx = {
+    daoId: 0,
+    proposalId: 0,
+    vote: true,
+    voter: proposerAddress,
+    txHash: '0x111',
+    status: txProposalStatus.SENT
+  };
+
   beforeEach(async () => {
     ({
       coaContract,
@@ -79,15 +100,98 @@ describe('Testing daoService', () => {
     hasFailed: jest.fn(() => false)
   };
 
+  let dbVote = [];
+  let dbProposal = [];
   let dbUser = [];
   const resetDb = () => {
     dbUser = [];
+    dbProposal = [];
+    dbVote = [];
   };
 
   const userService = {
     getUsers: () => dbUser
   };
 
+  const voteDao = {
+    findById: id => dbVote.find(proposal => proposal.id === id),
+    findByTxHash: hash => dbVote.find(proposal => proposal.txHash === hash),
+    addVote: ({ daoId, proposalId, vote, voter, txHash, status }) => {
+      const newVoteId =
+        dbVote.length > 0 ? dbVote[dbVote.length - 1].id + 1 : 1;
+
+      const newVote = {
+        id: newVoteId,
+        daoId,
+        proposalId,
+        vote,
+        voter,
+        txHash,
+        status
+      };
+
+      dbVote.push(newVote);
+      return newVote;
+    },
+    updateVoteByTxHash: (hash, { status }) => {
+      const found = dbVote.find(e => e.txHash === hash);
+      if (!found) return;
+      const updated = { ...found, status };
+      dbVote[dbVote.indexOf(found)] = updated;
+      return updated;
+    },
+    findAllSentTxs: () =>
+      dbVote
+        .filter(ev => ev.status === txProposalStatus.SENT)
+        .map(({ id, txHash }) => ({ id, txHash }))
+  };
+
+  const proposalDao = {
+    findById: id => dbProposal.find(proposal => proposal.id === id),
+    findByTxHash: hash => dbProposal.find(proposal => proposal.txHash === hash),
+    addProposal: ({
+      daoId,
+      applicant,
+      proposer,
+      type,
+      description,
+      txHash,
+      status
+    }) => {
+      const newProposalId =
+        dbProposal.length > 0 ? dbProposal[dbProposal.length - 1].id + 1 : 1;
+
+      const newProposal = {
+        id: newProposalId,
+        daoId,
+        applicant,
+        proposer,
+        type,
+        description,
+        txHash,
+        status
+      };
+
+      dbProposal.push(newProposal);
+      return newProposal;
+    },
+    updateProposalByTxHash: (hash, { proposalId, status }) => {
+      const found = dbProposal.find(p => p.txHash === hash);
+      if (!found) return;
+      const updated = { ...found, proposalId, status };
+      dbProposal[dbProposal.indexOf(found)] = updated;
+      return updated;
+    },
+    findAllSentTxs: () => {
+      dbProposal
+        .filter(p => p.status === txProposalStatus.SENT)
+        .map(({ id, txHash }) => ({ id, txHash }));
+    },
+    findAllSentTxsByDaoId: daoId =>
+      dbProposal.filter(
+        p => p.status === txProposalStatus.SENT && p.daoId === daoId
+      )
+  };
   describe('Testing submitProposal method', () => {
     it(
       'should create a new proposal in the specified DAO ' +
@@ -549,18 +653,25 @@ describe('Testing daoService', () => {
 
     beforeAll(() => {
       injectMocks(mockedDaoService, {
-        transactionService
+        transactionService,
+        proposalDao
       });
     });
 
     afterAll(() => restoreMockedDaoService());
 
     it('should send the signed tx to the contract, save it and return the daoId', async () => {
+      const applicant = userWallet.address;
+      const description = 'A description';
+      const type = proposalTypeEnum.NEW_MEMBER;
       coa.sendNewTransaction.mockReturnValueOnce({
         hash: '0x148Ea11233'
       });
       const response = await mockedDaoService.sendNewProposalTransaction({
         daoId: superDaoId,
+        applicant,
+        description,
+        type,
         signedTransaction,
         userWallet
       });
@@ -637,23 +748,28 @@ describe('Testing daoService', () => {
 
     beforeAll(() => {
       injectMocks(mockedDaoService, {
-        transactionService
+        transactionService,
+        voteDao
       });
     });
 
     afterAll(() => restoreMockedDaoService());
 
     it('should send the signed vote tx to the contract, save it and return the daoId', async () => {
-      const createdProposalIndex = await run('propose-member-to-dao', {
+      const applicant = userWallet.address;
+      const vote = true;
+      const proposalId = await run('propose-member-to-dao', {
         daoaddress: superDaoAddress,
-        applicant: userWallet.address
+        applicant
       });
       coa.sendNewTransaction.mockReturnValueOnce({
         hash: '0x148Ea11233'
       });
       const response = await mockedDaoService.sendNewVoteTransaction({
         daoId: superDaoId,
-        proposalId: createdProposalIndex,
+        proposalId,
+        applicant,
+        vote,
         userWallet,
         signedTransaction
       });
@@ -758,6 +874,218 @@ describe('Testing daoService', () => {
       ).rejects.toThrow(
         errors.common.RequiredParamsMissing('sendProcessProposalTransaction')
       );
+    });
+  });
+  describe('Testing updateProposalStatusByTxHash method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        proposalDao
+      });
+    });
+    beforeEach(() => {
+      resetDb();
+      dbProposal.push(newProposalTx);
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should update the proposal status and return its id', async () => {
+      const proposalId = dbProposal.length - 1;
+      const response = await mockedDaoService.updateProposalByTxHash(
+        newProposalTx.txHash,
+        txProposalStatus.CONFIRMED,
+        proposalId
+      );
+      expect(response).toEqual({ proposalId });
+      const updated = proposalDao.findByTxHash(newProposalTx.txHash);
+      expect(updated.status).toEqual(txProposalStatus.CONFIRMED);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        mockedDaoService.updateProposalByTxHash(newProposalTx.txHash)
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('updateProposalByTxHash')
+      );
+    });
+    it('should throw an error if the proposal does not exist', async () => {
+      const proposalId = dbProposal.length - 1;
+      await expect(
+        mockedDaoService.updateProposalByTxHash(
+          '0x0',
+          txProposalStatus.CONFIRMED,
+          proposalId
+        )
+      ).rejects.toThrow(
+        errors.common.CantFindModelWithTxHash('proposal', '0x0')
+      );
+    });
+    it('should throw an error if the status is not valid', async () => {
+      const proposalId = dbProposal.length - 1;
+      await expect(
+        mockedDaoService.updateProposalByTxHash(
+          newProposalTx.txHash,
+          'wrong status',
+          proposalId
+        )
+      ).rejects.toThrow(errors.dao.ProposalStatusNotValid('wrong status'));
+    });
+    it('should throw an error if the proposal status cannot be changed', async () => {
+      const proposalId = dbProposal.length - 1;
+      dbProposal = [{ ...newProposalTx, status: txProposalStatus.CONFIRMED }];
+      await expect(
+        mockedDaoService.updateProposalByTxHash(
+          newProposalTx.txHash,
+          txProposalStatus.FAILED,
+          proposalId
+        )
+      ).rejects.toThrow(
+        errors.dao.ProposalStatusCannotChange(txProposalStatus.CONFIRMED)
+      );
+    });
+  });
+  describe('Testing updateFailedProposalTransactions method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbProposal.push(newProposalTx);
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should update all failed proposals and return an array with their ids', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(true);
+      await mockedDaoService.updateFailedProposalTransactions();
+      const updated = dbProposal.find(p => p.id === newProposalTx.id);
+      expect(updated.status).toEqual(txProposalStatus.FAILED);
+    });
+    it('should return an empty array if no txs failed', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(false);
+      const response = await mockedDaoService.updateFailedProposalTransactions();
+      expect(response).toEqual([]);
+    });
+  });
+  describe('Testing updateVoteStatusByTxHash method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        voteDao
+      });
+    });
+    beforeEach(() => {
+      resetDb();
+      dbVote.push(newVoteTx);
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should update the vote status and return its id', async () => {
+      const response = await mockedDaoService.updateVoteByTxHash(
+        newVoteTx.txHash,
+        txProposalStatus.CONFIRMED
+      );
+      expect(response).toEqual({ proposalId: newVoteTx.proposalId });
+      const updated = voteDao.findByTxHash(newVoteTx.txHash);
+      expect(updated.status).toEqual(txProposalStatus.CONFIRMED);
+    });
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        mockedDaoService.updateVoteByTxHash(newProposalTx.txHash)
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('updateVoteByTxHash')
+      );
+    });
+    it('should throw an error if the vote does not exist', async () => {
+      await expect(
+        mockedDaoService.updateVoteByTxHash('0x0', txProposalStatus.CONFIRMED)
+      ).rejects.toThrow(errors.common.CantFindModelWithTxHash('vote', '0x0'));
+    });
+    it('should throw an error if the status is not valid', async () => {
+      await expect(
+        mockedDaoService.updateVoteByTxHash(newVoteTx.txHash, 'wrong status')
+      ).rejects.toThrow(errors.dao.VoteStatusNotValid('wrong status'));
+    });
+    it('should throw an error if the vote status cannot be changed', async () => {
+      dbVote = [{ ...newVoteTx, status: txProposalStatus.CONFIRMED }];
+      await expect(
+        mockedDaoService.updateVoteByTxHash(
+          newVoteTx.txHash,
+          txProposalStatus.FAILED
+        )
+      ).rejects.toThrow(
+        errors.dao.VoteStatusCannotChange(txProposalStatus.CONFIRMED)
+      );
+    });
+  });
+  describe('Testing updateFailedVoteTransactions method', () => {
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        voteDao
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+      dbVote.push(newVoteTx);
+    });
+
+    afterAll(() => restoreMockedDaoService());
+
+    it('should update all failed votes and return an array with their ids', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(true);
+      await mockedDaoService.updateFailedVoteTransactions();
+      const updated = dbVote.find(v => v.id === newVoteTx.id);
+      expect(updated.status).toEqual(txProposalStatus.FAILED);
+    });
+    it('should return an empty array if no txs failed', async () => {
+      transactionService.hasFailed.mockReturnValueOnce(false);
+      const response = await mockedDaoService.updateFailedVoteTransactions();
+      expect(response).toEqual([]);
+    });
+  });
+  describe('Testing getSentProposals method', () => {
+    const superDaoId = 0;
+
+    beforeAll(() => {
+      injectMocks(mockedDaoService, {
+        transactionService,
+        proposalDao
+      });
+    });
+
+    beforeEach(() => {
+      resetDb();
+    });
+
+    it('should return an empty array if no txs where sent', async () => {
+      const sentProposals = await mockedDaoService.getSentProposals(superDaoId);
+      expect(sentProposals.length).toEqual(0);
+    });
+    it('should return a size of 2 proposals after adding two proposals to the DAO', async () => {
+      dbProposal.push(newProposalTx);
+      dbProposal.push(newProposalTx);
+      const sentProposals = await mockedDaoService.getSentProposals(superDaoId);
+      expect(sentProposals.length).toEqual(2);
+    });
+    it('should return a size of 1 proposal after adding one proposal to one DAO, and 1 to another DAO', async () => {
+      const anotherProposalTx = {
+        daoId: 1,
+        description: 'A description',
+        applicant: applicantAddress,
+        proposer: proposerAddress,
+        type: proposalTypeEnum.NEW_MEMBER,
+        txHash: '0x111',
+        status: txProposalStatus.SENT
+      };
+      dbProposal.push(newProposalTx);
+      dbProposal.push(anotherProposalTx);
+      const sentProposals = await mockedDaoService.getSentProposals(superDaoId);
+      expect(sentProposals.length).toEqual(1);
     });
   });
 });

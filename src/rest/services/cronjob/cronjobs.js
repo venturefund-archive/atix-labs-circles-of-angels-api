@@ -30,6 +30,8 @@ module.exports = {
       logger.info('[CronJobService] :: Executing checkFailedTransactionsJob');
       await this.transferService.updateFailedTransactions();
       await this.activityService.updateFailedEvidenceTransactions();
+      await this.daoService.updateFailedProposalTransactions();
+      await this.daoService.updateFailedVoteTransactions();
     },
     onComplete() {
       logger.info('[CronJobService] :: checkFailedTransactionsJob has stopped');

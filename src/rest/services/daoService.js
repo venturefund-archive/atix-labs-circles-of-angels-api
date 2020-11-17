@@ -6,7 +6,8 @@ const logger = require('../logger');
 const {
   voteEnum,
   daoMemberRoleNames,
-  proposalTypeEnum
+  proposalTypeEnum,
+  txProposalStatus
 } = require('../util/constants');
 
 module.exports = {
@@ -154,12 +155,22 @@ module.exports = {
   /*
    * Sends the signed transaction to the blockchain
    */
-  async sendNewProposalTransaction({ daoId, signedTransaction, userWallet }) {
+  async sendNewProposalTransaction({
+    daoId,
+    applicant,
+    description,
+    type,
+    signedTransaction,
+    userWallet
+  }) {
     logger.info('[DAOService] :: Entering sendNewProposalTransaction method');
     validateRequiredParams({
       method: 'sendNewProposalTransaction',
       params: {
         daoId,
+        applicant,
+        description,
+        type,
         signedTransaction,
         userWallet
       }
@@ -173,6 +184,20 @@ module.exports = {
 
     const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[DAOService] :: New proposal transaction sent', tx);
+
+    // Saving the tx on the DB
+    const proposal = {
+      daoId,
+      applicant,
+      proposer: userAddress,
+      description,
+      type,
+      txHash: tx.hash,
+      status: txProposalStatus.SENT
+    };
+
+    logger.info('[DAOService] :: Saving proposal in database', proposal);
+    await this.proposalDao.addProposal(proposal);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
     await this.transactionService.save({
@@ -226,6 +251,7 @@ module.exports = {
   async sendNewVoteTransaction({
     daoId,
     proposalId,
+    vote,
     signedTransaction,
     userWallet
   }) {
@@ -235,6 +261,7 @@ module.exports = {
       params: {
         daoId,
         proposalId,
+        vote,
         signedTransaction,
         userWallet
       }
@@ -250,6 +277,19 @@ module.exports = {
 
     const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[DAOService] :: New vote transaction sent', tx);
+
+    // Saving the tx on the DB
+    const newVote = {
+      daoId,
+      proposalId,
+      vote,
+      voter: userAddress,
+      txHash: tx.hash,
+      status: txProposalStatus.SENT
+    };
+
+    logger.info('[DAOService] :: Saving vote in database', newVote);
+    await this.voteDao.addVote(newVote);
 
     logger.info('[DAOService] :: Saving transaction in database', tx);
     await this.transactionService.save({
@@ -358,26 +398,16 @@ module.exports = {
       daoId
     });
     try {
-      const proposals = await coa.getAllProposalsByDaoId(daoId);
-      const daoCurrentPeriod = await coa.getCurrentPeriod(daoId, user.wallet.address);
-      const daoCreationTime = await coa.getCreationTime(daoId, user.wallet.address);
-      // TODO: should be able to filter by something?
-      const formattedProposals = proposals.map(async (proposal, index) => ({
-        proposer: proposal.proposer,
-        applicant: proposal.applicant,
-        proposalType: proposal.proposalType,
-        yesVotes: Number(proposal.yesVotes),
-        noVotes: Number(proposal.noVotes),
-        didPass: proposal.didPass,
-        description: proposal.description,
-        daoCreationTime: Number(daoCreationTime),
-        startingPeriod: Number(proposal.startingPeriod),
-        currentPeriod: Number(daoCurrentPeriod),
-        votingPeriodExpired: await coa.votingPeriodExpired(daoId, index),
-        processed: proposal.processed,
-        id: index
-      }));
-      return await Promise.all(formattedProposals);
+      const signer = user.wallet.address;
+      const notConfirmedProposals = await this.getSentProposals(daoId);
+      const confirmedProposals = await coa.getAllProposalsByDaoId(daoId);
+      const proposals = [...confirmedProposals, ...notConfirmedProposals];
+      const formattedProposals = await this.formatProposals(
+        daoId,
+        proposals,
+        signer
+      );
+      return formattedProposals;
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);
       throw new COAError(errors.dao.ErrorGettingProposals(daoId));
@@ -437,6 +467,7 @@ module.exports = {
         name: await dao.name(),
         address: await dao.address,
         proposalsAmount: await dao.getProposalQueueLength(),
+        proposalsOpen: await coa.getOpenProposalsFromDao(dao.id, userAddress),
         id: dao.id
         // TODO: add dao.getMembers() in COA plugin
       }));
@@ -445,5 +476,225 @@ module.exports = {
       logger.error('[DAOService] :: Error getting Daos', error);
       throw new COAError(errors.dao.ErrorGettingDaos());
     }
+  },
+  async getSentProposals(daoId) {
+    logger.info('[DAOService] :: Entering getSentProposals method');
+    validateRequiredParams({
+      method: 'getSentProposals',
+      params: { daoId }
+    });
+
+    const proposals = await this.proposalDao.findAllSentTxsByDaoId(daoId);
+    if (!proposals) {
+      logger.error(
+        `[DAOService] :: Proposals with daoId ${daoId} could not be found`
+      );
+      throw new COAError(errors.dao.ErrorGettingDaos());
+    }
+    return proposals;
+  },
+  async formatProposals(daoId, proposals, signer) {
+    logger.info('[DAOService] :: Entering formatProposals method');
+    validateRequiredParams({
+      method: 'formatProposals',
+      params: { proposals, signer, daoId }
+    });
+    const daoCurrentPeriod = await coa.getCurrentPeriod(daoId, signer);
+    const daoCreationTime = await coa.getCreationTime(daoId, signer);
+    const {
+      periodDuration,
+      votingPeriodLength,
+      gracePeriodLength,
+      processingPeriodLength
+    } = await coa.getDaoPeriodLengths(daoId, signer);
+
+    const formattedProposals = proposals.map(async (proposal, index) => ({
+      proposalType:
+        proposal.status !== txProposalStatus.SENT
+          ? proposal.proposalType
+          : proposal.type,
+      proposer: proposal.proposer,
+      applicant: proposal.applicant,
+      description: proposal.description,
+      yesVotes: proposal.yesVotes ? Number(proposal.yesVotes) : 0,
+      noVotes: proposal.noVotes ? Number(proposal.noVotes) : 0,
+      didPass: proposal.didPass,
+      processed: proposal.processed,
+      daoCreationTime: Number(daoCreationTime),
+      startingPeriod: proposal.startingPeriod
+        ? Number(proposal.startingPeriod)
+        : 0,
+      currentPeriod: Number(daoCurrentPeriod),
+      periodDuration: Number(periodDuration),
+      votingPeriodLength: Number(votingPeriodLength),
+      gracePeriodLength: Number(gracePeriodLength),
+      processingPeriodLength: Number(processingPeriodLength),
+      votingPeriodExpired:
+        proposal.status !== txProposalStatus.SENT
+          ? await coa.votingPeriodExpired(daoId, index)
+          : null,
+      txStatus: proposal.status ? proposal.status : txProposalStatus.CONFIRMED,
+      id: proposal.status ? null : index
+    }));
+
+    return Promise.all(formattedProposals);
+  },
+  async updateFailedProposalTransactions() {
+    logger.info(
+      '[DAOService] :: Entering updateFailedProposalTransactions method'
+    );
+    const sentTxs = await this.proposalDao.findAllSentTxs();
+    logger.info(`[DAOService] :: Found ${sentTxs.length} sent transactions`);
+    const updated = await Promise.all(
+      sentTxs.map(async ({ txHash }) => {
+        const hasFailed = await this.transactionService.hasFailed(txHash);
+        if (hasFailed) {
+          try {
+            const { proposalId } = await this.updateProposalByTxHash(
+              txHash,
+              txProposalStatus.FAILED,
+              null
+            );
+            return proposalId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              "[DAOService] :: Couldn't update failed transaction status",
+              txHash
+            );
+          }
+        }
+      })
+    );
+    const failed = updated.filter(tx => !!tx);
+    if (failed.length > 0) {
+      logger.info(
+        `[DAOService] :: Updated status to ${
+          txProposalStatus.FAILED
+        } for proposals ${failed}`
+      );
+    } else {
+      logger.info('[DAOService] :: No failed transactions found');
+    }
+    return failed;
+  },
+  async updateProposalByTxHash(txHash, status, proposalId) {
+    logger.info('[DAOService] :: Entering updateProposalByTxHash method');
+    validateRequiredParams({
+      method: 'updateProposalByTxHash',
+      params: { txHash, status, proposalId }
+    });
+
+    const proposal = await this.proposalDao.findByTxHash(txHash);
+    if (!proposal) {
+      logger.error(
+        `[DAOService] :: Proposal with txHash ${txHash} could not be found`
+      );
+      throw new COAError(
+        errors.common.CantFindModelWithTxHash('proposal', txHash)
+      );
+    }
+
+    if (!Object.values(txProposalStatus).includes(status)) {
+      logger.error(`[DAOService] :: Proposal status '${status}' is not valid`);
+      throw new COAError(errors.dao.ProposalStatusNotValid(status));
+    }
+
+    if (
+      [txProposalStatus.CONFIRMED, txProposalStatus.FAILED].includes(
+        proposal.status
+      )
+    ) {
+      logger.error('[DAOService] :: Proposal status cannot be changed', {
+        id: proposal.id,
+        status: proposal.status
+      });
+      throw new COAError(
+        errors.dao.ProposalStatusCannotChange(proposal.status)
+      );
+    }
+
+    logger.info(
+      `[DAOService] :: Updating Proposal to status ${status} and id ${proposalId}`
+    );
+    const updated = await this.proposalDao.updateProposalByTxHash(txHash, {
+      proposalId,
+      status
+    });
+    return { proposalId: updated.proposalId };
+  },
+  async updateFailedVoteTransactions() {
+    logger.info('[DAOService] :: Entering updateFailedVoteTransactions method');
+    const sentTxs = await this.voteDao.findAllSentTxs();
+    logger.info(`[DAOService] :: Found ${sentTxs.length} sent transactions`);
+    const updated = await Promise.all(
+      sentTxs.map(async ({ txHash }) => {
+        const hasFailed = await this.transactionService.hasFailed(txHash);
+        if (hasFailed) {
+          try {
+            const { proposalId } = await this.updateVoteByTxHash(
+              txHash,
+              txProposalStatus.FAILED
+            );
+            return proposalId;
+          } catch (error) {
+            // if fails proceed to the next one
+            logger.error(
+              "[DAOService] :: Couldn't update failed transaction status",
+              txHash
+            );
+          }
+        }
+      })
+    );
+    const failed = updated.filter(tx => !!tx);
+    if (failed.length > 0) {
+      logger.info(
+        `[DAOService] :: Updated status to ${
+          txProposalStatus.FAILED
+        } for proposals ${failed}`
+      );
+    } else {
+      logger.info('[DAOService] :: No failed transactions found');
+    }
+    return failed;
+  },
+  async updateVoteByTxHash(txHash, status) {
+    logger.info('[DAOService] :: Entering updateVoteByTxHash method');
+    validateRequiredParams({
+      method: 'updateVoteByTxHash',
+      params: { txHash, status }
+    });
+
+    const vote = await this.voteDao.findByTxHash(txHash);
+    if (!vote) {
+      logger.error(
+        `[DAOService] :: Vote with txHash ${txHash} could not be found`
+      );
+      throw new COAError(errors.common.CantFindModelWithTxHash('vote', txHash));
+    }
+
+    if (!Object.values(txProposalStatus).includes(status)) {
+      logger.error(`[DAOService] :: Vote status '${status}' is not valid`);
+      throw new COAError(errors.dao.VoteStatusNotValid(status));
+    }
+
+    if (
+      [txProposalStatus.CONFIRMED, txProposalStatus.FAILED].includes(
+        vote.status
+      )
+    ) {
+      logger.error('[DAOService] :: Vote status cannot be changed', {
+        id: vote.id,
+        status: vote.status
+      });
+      throw new COAError(errors.dao.VoteStatusCannotChange(vote.status));
+    }
+
+    logger.info(`[DAOService] :: Updating Vote to status ${status}`);
+    const updated = await this.voteDao.updateVoteByTxHash(txHash, {
+      status
+    });
+    return { proposalId: updated.proposalId };
   }
 };

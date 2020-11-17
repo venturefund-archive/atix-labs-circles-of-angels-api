@@ -53,10 +53,14 @@ module.exports = {
   sendNewProposalTransaction: () => async (request, reply) => {
     const { daoId } = request.params;
     const { wallet: userWallet } = request.user;
-    const { signedTransaction } = request.body || {};
+    const { signedTransaction, applicant, description, type } =
+      request.body || {};
 
     const response = await daoService.sendNewProposalTransaction({
       daoId,
+      applicant,
+      description,
+      type,
       signedTransaction,
       userWallet
     });
@@ -77,11 +81,12 @@ module.exports = {
   sendNewVoteTransaction: () => async (request, reply) => {
     const { daoId, proposalId } = request.params;
     const { wallet: userWallet } = request.user;
-    const { signedTransaction } = request.body || {};
+    const { signedTransaction, vote } = request.body || {};
 
     const response = await daoService.sendNewVoteTransaction({
       daoId,
       proposalId,
+      vote,
       signedTransaction,
       userWallet
     });
