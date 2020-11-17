@@ -15,6 +15,7 @@ module.exports = {
     category: { type: 'string', required: true },
     description: { type: 'string', required: true },
     claimStatus: { type: 'string', defaultsTo: claimMilestoneStatus.PENDING },
+    claimReceiptPath: { type: 'string', required: false, allowNull: true },
     project: {
       columnName: 'projectId',
       model: 'project'

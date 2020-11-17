@@ -422,7 +422,7 @@ module.exports = {
     const claim = sha3(projectId, oracle, taskId);
     const proof = sha3(filePath); // TODO: this should be an ipfs hash
 
-    await coa.addClaim(
+    const tx = await coa.addClaim(
       address,
       claim,
       proof,
@@ -435,7 +435,8 @@ module.exports = {
       description,
       proof: filePath,
       task: taskId,
-      approved
+      approved,
+      txHash: tx.hash
     };
 
     const evidenceCreated = await this.taskEvidenceDao.addTaskEvidence(

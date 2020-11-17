@@ -12,5 +12,6 @@ module.exports = {
   },
   buidler: {
     defaultNetwork: 'buidlerevm'
-  }
+  },
+  frontendUrl: '//test'
 };

@@ -27,11 +27,14 @@ module.exports = {
     domain: 'localhost'
   },
   frontendUrl: 'http://localhost:3000',
-  support: {
-    service: 'Gmail',
-    email: 'circlesofangelshelp@gmail.com',
-    password: 'coasupport1',
-    recoveryTime: 1 // in hours
+  email: {
+    recoveryTime: 1, // in hours
+    host: 'smtp.example.com',
+    port: 587,
+    user: 'username',
+    pass: 'password',
+    apiKey: undefined, // sendgrid apikey, when undefined uses smtp
+    from: 'from@example.com'
   },
 
   jwt: {

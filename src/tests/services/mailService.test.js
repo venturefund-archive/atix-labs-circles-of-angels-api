@@ -7,47 +7,119 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
+
 const { injectMocks } = require('../../rest/util/injection');
-const mailService = require('../../rest/services/mailService');
+const errors = require('../../rest/errors/exporter/ErrorExporter');
+const originalMailService = require('../../rest/services/mailService');
+const templateParser = require('../../rest/services/helpers/templateParser');
+
+let mailService = Object.assign({}, originalMailService);
+const restoreMailService = () => {
+  mailService = Object.assign({}, originalMailService);
+};
+
+const invalidEmail = 'invalid@notfound.com';
 
 describe('Testing mailService', () => {
   const email = {
-    from: 'coa@support.com',
     to: 'user@test.com',
+    from: 'coa@support.com',
     subject: 'Hello from COA',
     text: 'Welcome to',
-    hmtl: '<b>COA</b>'
+    html: '<b>COA</b>'
   };
+
+  beforeAll(() => {
+    templateParser.completeTemplate = jest.fn();
+  });
+
+  afterEach(() => restoreMailService());
 
   const emailClient = {
     sendMail: args => {
-      if (!args) throw Error('mailerror');
-      if (!args.to) return { rejected: 'rejected' };
+      if (args.to === invalidEmail) return { rejected: 'rejected' };
       return args;
     }
   };
 
-  describe('sendMail method', () => {
-    beforeAll(() => {
+  describe('Test sendMail method', () => {
+    beforeEach(() => {
       injectMocks(mailService, {
         emailClient
       });
     });
 
-    it('should send an email and return the info', async () => {
-      const response = await mailService.sendMail(email);
-      expect(response).toEqual(email);
-    });
-
-    it('should throw an error if the email was rejected', async () => {
-      expect(mailService.sendMail({ ...email, to: undefined })).rejects.toThrow(
-        'Invalid email'
+    it('should resolve and return the info', async () => {
+      await expect(mailService.sendMail(email)).resolves.toEqual(
+        expect.anything()
       );
     });
 
-    it('should throw an error if the email service fails', async () => {
-      await expect(mailService.sendMail({})).rejects.toThrow(
-        'An error has occurred sending an email'
+    it('should throw an error if any required param is missing', async () => {
+      await expect(mailService.sendMail({ text: 'optional' })).rejects.toThrow(
+        errors.common.RequiredParamsMissing('sendMail')
+      );
+    });
+
+    it('should throw an error if the email was rejected', async () => {
+      await expect(
+        mailService.sendMail({ ...email, to: invalidEmail })
+      ).rejects.toThrow(errors.mail.InvalidAccount);
+    });
+  });
+
+  describe('Test sendSignUpMail method', () => {
+    beforeEach(() => {
+      injectMocks(mailService, {
+        sendMail: jest.fn()
+      });
+    });
+
+    it('should resolve and call completeTemplate and sendMail', async () => {
+      const bodyContent = { param: 'Email Param' };
+      await expect(
+        mailService.sendSignUpMail({
+          ...email,
+          bodyContent
+        })
+      ).resolves.toBeUndefined();
+
+      expect(templateParser.completeTemplate).toHaveBeenCalled();
+      expect(mailService.sendMail).toHaveBeenCalled();
+    });
+
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        mailService.sendSignUpMail({ text: 'optional' })
+      ).rejects.toThrow(errors.common.RequiredParamsMissing('sendSignUpMail'));
+    });
+  });
+
+  describe('Test sendProjectStatusChangeMail method', () => {
+    beforeEach(() => {
+      injectMocks(mailService, {
+        sendMail: jest.fn()
+      });
+    });
+
+    it('should resolve and call completeTemplate and sendMail', async () => {
+      const bodyContent = { param: 'Email Param' };
+      await expect(
+        mailService.sendProjectStatusChangeMail({
+          ...email,
+          bodyContent
+        })
+      ).resolves.toBeUndefined();
+
+      expect(templateParser.completeTemplate).toHaveBeenCalled();
+      expect(mailService.sendMail).toHaveBeenCalled();
+    });
+
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        mailService.sendProjectStatusChangeMail({ text: 'optional' })
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('sendProjectStatusChangeMail')
       );
     });
   });

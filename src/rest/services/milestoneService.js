@@ -21,6 +21,7 @@ const {
   claimMilestoneStatus,
   userRoles
 } = require('../util/constants');
+const files = require('../util/files');
 
 const logger = require('../logger');
 
@@ -609,13 +610,14 @@ module.exports = {
    *
    * @param {number} milestoneId
    * @param {number} userId
-   * @returns
+   * @param {File} receiptFile
+   * @returns {{ milestoneId: number }}
    */
-  async transferredMilestone({ milestoneId, userId }) {
+  async transferredMilestone({ milestoneId, userId, claimReceiptFile }) {
     logger.info('[MilestoneService] :: Entering transferredMilestone method');
     validateRequiredParams({
       method: 'transferredMilestone',
-      params: { milestoneId, userId }
+      params: { milestoneId, userId, claimReceiptFile }
     });
 
     const user = await this.userService.getUserById(userId);
@@ -651,14 +653,26 @@ module.exports = {
 
     if (claimStatus !== claimMilestoneStatus.CLAIMED) {
       logger.error(
-        `[MilestoneService] :: Can't set as transferred a milestone when is in ${status} status`
+        `[MilestoneService] :: Can't set as transferred a milestone when is in ${claimStatus} status`
       );
       throw new COAError(errors.common.InvalidStatus('milestone', claimStatus));
     }
 
+    logger.info('[MilestoneService] :: Uploading claim receipt');
+    const claimReceiptPath = await files.validateAndSaveFile(
+      files.TYPES.milestoneClaim,
+      claimReceiptFile
+    );
+    logger.info(
+      `[MilestoneService] :: Setting milestone ${milestoneId} as ${
+        claimMilestoneStatus.TRANSFERRED
+      }`
+    );
+
     const milestoneUpdated = await this.milestoneDao.updateMilestone(
       {
-        claimStatus: claimMilestoneStatus.TRANSFERRED
+        claimStatus: claimMilestoneStatus.TRANSFERRED,
+        claimReceiptPath
       },
       milestoneId
     );
