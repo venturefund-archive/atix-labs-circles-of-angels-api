@@ -14,13 +14,11 @@ before_script:
   - npm install
 
 stages:
-  - lint
-  - test_contracts
   - test
 
 lint:
   image: node:10.15.3
-  stage: lint
+  stage: test
   script:
     - npm run lint
   except:
@@ -28,7 +26,7 @@ lint:
 
 test_contracts:
   image: node:10.15.3
-  stage: test_contracts
+  stage: test
   script:
     - npm run node > /dev/null &
     - sleep 5
@@ -36,7 +34,7 @@ test_contracts:
   except:
     - schedules
 
-test:
+test_be:
   image: node:10.15.3
   stage: test
   script:
