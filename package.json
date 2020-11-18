@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint src/**/*.js",
     "lint-fix": "eslint --fix src/**/*.js",
-    "test": "export NODE_ENV=test && buidler compile && jest",
+    "test": "export NODE_ENV=test && buidler compile && jest --silent",
     "test:contracts": "buidler test",
     "test:coverage": "npm test -- --coverage",
     "start": "export NODE_ENV=development && node index",
