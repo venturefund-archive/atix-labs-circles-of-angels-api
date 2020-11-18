@@ -92,7 +92,8 @@ module.exports = {
       const hashedPwd = await bcrypt.hash(password, 10);
       const user = {
         password: hashedPwd,
-        encryptedWallet
+        encryptedWallet,
+        forcePasswordChange: false
       };
       const updated = await this.userDao.updateUserByEmail(email, user);
       if (!updated) {
