@@ -41,14 +41,11 @@ module.exports = {
       return email;
     }
 
-    const info = this.mailService.sendMail({
-      from: '"Circles of Angels Support" <coa@support.com>',
+    const info = await this.mailService.sendEmailRecoveryPassword({
       to: email,
-      subject: 'Circles of Angels - Recovery Password',
-      text: 'Password recovery',
-      html: `<p>Recovery password proccess started for your Circles Of Angels account </br></p>
-        <p>Enter to the follow link to set a new password: </br></p>
-        <a href='${frontendUrl}/forgot-password?token=${token}'>Recovery Link</a>`
+      bodyContent: {
+        token
+      }
     });
 
     if (!info || !isEmpty(info.rejected)) {
