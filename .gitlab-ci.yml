@@ -1,11 +1,14 @@
+variables:
 
-# To make npm test to not to start in watch mode
-# https://create-react-app.dev/docs/running-tests/#continuous-integration
-CI: "true"
+  # To make npm test to not to start in watch mode
+  # https://create-react-app.dev/docs/running-tests/#continuous-integration
+  CI: "true"
 
 cache:
   paths:
     - node_modules/
+    - .artifacts/
+    - .cache/
 
 stages:
   - test
