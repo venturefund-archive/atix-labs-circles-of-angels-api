@@ -10,19 +10,36 @@ cache:
     - .artifacts/
     - .cache/
 
+before_script:
+  - npm install
+
 stages:
+  - lint
+  - test_contracts
   - test
+
+lint:
+  image: node:10.15.3
+  stage: lint
+  script:
+    - npm run lint
+  except:
+    - schedules
+
+test_contracts:
+  image: node:10.15.3
+  stage: test_contracts
+  script:
+    - npm run node > /dev/null &
+    - sleep 5
+    - npm run test:contracts
+  except:
+    - schedules
 
 test:
   image: node:10.15.3
   stage: test
-  before_script:
-    - npm install
   script:
-    - npm run node > /dev/null &
-    - sleep 5
-    - npm run lint
-    - npm run test:contracts
     - npm run test
   except:
     - schedules
