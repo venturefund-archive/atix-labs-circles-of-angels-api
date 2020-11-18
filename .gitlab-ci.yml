@@ -17,9 +17,9 @@ test:
   image: node:10.15.3
   stage: test
   before_script:
+    - npm install
     - npm run node
   script:
-    - npm install
     - npm run lint
     - npm run test:contracts
     - npm run test
