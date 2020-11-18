@@ -7,8 +7,8 @@ variables:
 cache:
   paths:
     - node_modules/
-    - .artifacts/
-    - .cache/
+    - artifacts/
+    - cache/
 
 before_script:
   - npm install
