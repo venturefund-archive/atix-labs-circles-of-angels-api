@@ -832,7 +832,7 @@ module.exports = {
           try {
             const { evidenceId } = await this.updateEvidenceStatusByTxHash(
               txHash,
-              txFunderStatus.CONFIRMED
+              txEvidenceStatus.CONFIRMED
             );
             return evidenceId;
           } catch (error) {
