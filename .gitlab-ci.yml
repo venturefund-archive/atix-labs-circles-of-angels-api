@@ -1,0 +1,24 @@
+
+# To make npm test to not to start in watch mode
+# https://create-react-app.dev/docs/running-tests/#continuous-integration
+CI: "true"
+
+cache:
+  paths:
+    - node_modules/
+
+stages:
+  - test
+
+test:
+  image: node:10.15.3
+  stage: test
+  before_script:
+    - npm run node
+  script:
+    - npm install
+    - npm run lint
+    - npm run test:contracts
+    - npm run test
+  except:
+    - schedules

@@ -7,6 +7,7 @@
     "lint": "eslint src/**/*.js",
     "lint-fix": "eslint --fix src/**/*.js",
     "test": "export NODE_ENV=test && jest",
+    "test:contracts": "buidler test",
     "test:coverage": "npm test -- --coverage",
     "start": "export NODE_ENV=development && node index",
     "prod": "export NODE_ENV=production && node index",
@@ -16,7 +17,9 @@
     "migrate": "flyway -configFiles=flyway.conf -locations=filesystem:db/migrations migrate",
     "clean": "flyway -configFiles=flyway.conf -locations=filesystem:db/migrations clean",
     "contracts-coverage": "SOLIDITY_COVERAGE=true scripts/test.sh",
-    "ganache": "ganache-cli -g 60000000"
+    "ganache": "ganache-cli -g 60000000",
+    "node": "buidler node",
+    "deploy": "buidler deploy"
   },
   "author": "Atix Labs S.R.L",
   "license": "ISC",
