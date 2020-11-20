@@ -1131,9 +1131,12 @@ module.exports = {
         if (
           newStatus === projectStatuses.REJECTED &&
           !this.hasTimePassed(project)
-        )
+        ) {
+          logger.info(
+            `[ProjectService] :: Has no time passed for project ${project.id}`
+          );
           return;
-
+        }
         logger.info(
           `[Project Service] :: Updating project ${project.id} from ${
             project.status
@@ -1193,9 +1196,12 @@ module.exports = {
         if (
           newStatus === projectStatuses.CONSENSUS &&
           !this.hasTimePassed(project)
-        )
+        ) {
+          logger.info(
+            `[ProjectService] :: Has no time passed for project ${project.id}`
+          );
           return;
-
+        }
         logger.info(
           `[ProjectService] :: Updating project ${project.id} from ${
             project.status
