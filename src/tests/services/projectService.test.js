@@ -231,7 +231,12 @@ const projectDao = {
     return undefined;
   },
   updateProject: (fields, projectId) => {
-    if (projectId === 1 || projectId === 3 || projectId === 4) {
+    if (
+      projectId === 1 ||
+      projectId === 3 ||
+      projectId === 4 ||
+      projectId === 10
+    ) {
       return {
         projectName: 'projectUpdateado',
         ...fields,
@@ -299,12 +304,21 @@ const milestoneService = {
     if (projectId === 1) {
       return [milestone];
     }
+    if (projectId === 10) {
+      return [milestone];
+    }
   },
   getAllMilestonesByProject: projectId => {
     if (projectId === 3 || projectId === 15) {
       return [milestone];
     }
     return undefined;
+  },
+
+  removeMilestonesFromProject: projectId => {
+    if (projectId === 10) {
+      return [milestone];
+    }
   }
 };
 
@@ -1001,13 +1015,12 @@ describe('Project Service Test', () => {
         })
       ).rejects.toThrow(errors.file.MilestoneFileTypeNotValid);
     });
-    it('Should not create milestones and activities to an existent project if it already has a milestone file', async () => {
-      await expect(
-        projectService.processMilestoneFile(10, {
-          file: { name: 'project.xls', size: 1234 },
-          ownerId: 2
-        })
-      ).rejects.toThrow(errors.project.MilestoneFileHasBeenAlreadyUploaded);
+    it('Should remove previuos milestones to an existent project if it already has a milestone file', async () => {
+      const { projectId } = await projectService.processMilestoneFile(10, {
+        file: { name: 'project.xls', size: 1234 },
+        ownerId: 2
+      });
+      expect(projectId).toEqual(10);
     });
   });
 

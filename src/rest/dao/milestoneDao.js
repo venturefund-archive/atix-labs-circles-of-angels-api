@@ -70,5 +70,10 @@ module.exports = {
   },
   async updateCreationTransactionHash(milestoneId, transactionHash) {
     this.model.updateOne({ id: milestoneId }).set({ transactionHash });
+  },
+
+  async removeMilestonesByProps(filter) {
+    const deletedMilestones = await this.model.destroy(filter).fetch();
+    return deletedMilestones.map(oracle => oracle.id);
   }
 };

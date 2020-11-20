@@ -841,5 +841,8 @@ module.exports = {
       return;
     }
     return this.setClaimable(nextMilestoneId);
+  },
+  async removeMilestonesFromProject(projectId) {
+    return this.milestoneDao.removeMilestonesByProps({ project: projectId });
   }
 };
