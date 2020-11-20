@@ -87,6 +87,7 @@ module.exports = {
       required: false
     },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
-    txHash: { type: 'string', required: false, allowNull: true }
+    txHash: { type: 'string', required: false, allowNull: true },
+    rejectionReason: { type: 'string', required: false, allowNull: true }
   }
 };

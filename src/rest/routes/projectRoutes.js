@@ -619,6 +619,9 @@ const projectStatusRoutes = {
             status: {
               type: 'string',
               enum: Object.values(projectStatuses)
+            },
+            rejectionReason: {
+              type: 'string'
             }
           },
           required: ['status'],
@@ -979,6 +982,26 @@ const adminRoutes = {
       }
     },
     handler: handlers.setProjectAsFunding
+  },
+
+  deleteProject: {
+    method: 'delete',
+    path: `${basePath}/:projectId`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.PROJECT.name, routeTags.DELETE.name],
+        description: 'Deletes a project',
+        summary: 'Deletes a project',
+        params: projectIdParam,
+        response: {
+          ...successResponse(successWithProjectIdResponse),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.deleteProject
   }
 };
 

@@ -191,12 +191,13 @@ module.exports = {
   updateProjectStatus: () => async (request, reply) => {
     const { projectId } = request.params;
     const { user } = request;
-    const { status } = request.body;
+    const { status, rejectionReason } = request.body;
 
     const response = await projectService.updateProjectStatus(
       user,
       projectId,
-      status
+      status,
+      rejectionReason
     );
 
     reply.send(response);

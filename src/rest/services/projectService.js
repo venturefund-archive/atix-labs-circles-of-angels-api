@@ -518,7 +518,7 @@ module.exports = {
    * @param {number} projectId project to update
    * @param {string} newStatus new project status
    */
-  async updateProjectStatus(user, projectId, newStatus) {
+  async updateProjectStatus(user, projectId, newStatus, rejectionReason) {
     logger.info('[ProjectService] :: Entering updateProjectStatus method');
     validateRequiredParams({
       method: 'updateProjectStatus',
@@ -536,9 +536,17 @@ module.exports = {
       project
     });
 
-    const updatedProjectId = await this.updateProject(projectId, {
-      status: newStatus
-    });
+    const toUpdate = { status: newStatus, rejectionReason: null };
+    if (newStatus === projectStatuses.REJECTED) {
+      if (!rejectionReason) {
+        logger.error(
+          `[ProjectService] :: RejectionReason is required to update project id ${projectId} to rejected`
+        );
+        throw new COAError(errors.project.RejectionReasonEmpty(projectId));
+      }
+      toUpdate.rejectionReason = rejectionReason;
+    }
+    const updatedProjectId = await this.updateProject(projectId, toUpdate);
 
     const skipNotificationStatus = [
       projectStatuses.NEW,

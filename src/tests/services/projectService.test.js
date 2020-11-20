@@ -1289,6 +1289,22 @@ describe('Project Service Test', () => {
         )
       ).rejects.toThrow(errors.project.IsNotCompleted);
     });
+    it('should throw an error if rejectionReason is undefined for rejected status', async () => {
+      validators.fromNew.mockImplementation(() => {
+        throw new COAError(errors.project.IsNotCompleted);
+      });
+
+      await expect(
+        projectService.updateProjectStatus(
+          entrepreneurUser,
+          consensusProject.id,
+          projectStatuses.REJECTED,
+          undefined
+        )
+      ).rejects.toThrow(
+        errors.project.RejectionReasonEmpty(consensusProject.id)
+      );
+    });
   });
 
   describe('Get featured projects', () => {

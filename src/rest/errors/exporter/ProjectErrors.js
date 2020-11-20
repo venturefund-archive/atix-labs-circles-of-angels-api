@@ -116,5 +116,9 @@ module.exports = {
   BlockchainInfoNotFound: projectId => ({
     message: `Project ${projectId} doesn't have blockchain information`,
     statusCode: 400
+  }),
+  RejectionReasonEmpty: projectId => ({
+    message: `RejectionReason is required to update project with id ${projectId} to rejected`,
+    statusCode: 400
   })
 };
