@@ -540,7 +540,9 @@ module.exports = {
     const toUpdate = { status: newStatus, rejectionReason: null };
     if (newStatus === projectStatuses.REJECTED) {
       if (!rejectionReason) {
-        logger.error('[ProjectService] :: User already  follow this project');
+        logger.error(
+          `[ProjectService] :: RejectionReason is required to update project id ${projectId} to rejected`
+        );
         throw new COAError(errors.project.RejectionReasonEmpty(projectId));
       }
       toUpdate.rejectionReason = rejectionReason;
