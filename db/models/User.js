@@ -62,7 +62,7 @@ module.exports = {
       columnName: 'countryId',
       model: 'country'
     },
-    phoneNumber: { type: 'string', required: true },
+    phoneNumber: { type: 'string', allowNull: true },
     answers: { type: 'string', required: true },
     company: { type: 'string', required: false, allowNull: true },
     forcePasswordChange: {

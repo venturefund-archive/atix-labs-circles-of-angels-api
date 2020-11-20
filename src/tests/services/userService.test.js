@@ -290,6 +290,18 @@ describe('Testing userService', () => {
         userService.createUser({ ...newUser, country: 0 })
       ).rejects.toThrow(errors.common.CantFindModelWithId('country', 0));
     });
+    it("should return an object with the new user's information with phoneNumber null", async () => {
+      bcrypt.hash.mockReturnValueOnce(newUser.password);
+      const userWithNoPhoneNumber = Object.assign(newUser, {
+        phoneNumber: null
+      });
+      console.log(userWithNoPhoneNumber);
+      const response = await userService.createUser(userWithNoPhoneNumber);
+      expect(response).toEqual({
+        ...newUser,
+        id: 1
+      });
+    });
   });
 
   describe('Testing getUsers', () => {
