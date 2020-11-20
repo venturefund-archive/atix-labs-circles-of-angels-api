@@ -271,7 +271,6 @@ const routes = {
             'email',
             'password',
             'role',
-            'phoneNumber',
             'country',
             'answers',
             'address',
