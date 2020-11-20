@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Api-rest for circle of angels",
   "main": "main.js",
+  "dockerImage": "docker.atixlabs.com/circle-of-angels/backend",
   "scripts": {
     "lint": "eslint src/**/*.js",
     "lint-fix": "eslint --fix src/**/*.js",
@@ -19,7 +20,11 @@
     "contracts-coverage": "SOLIDITY_COVERAGE=true scripts/test.sh",
     "ganache": "ganache-cli -g 60000000",
     "node": "buidler node",
-    "deploy": "buidler deploy"
+    "deploy": "buidler deploy",
+    "build": "buidler compile",
+    "index": "node index",
+    "docker:build": "docker build -t $npm_package_dockerImage:$npm_package_version-$CI_COMMIT_SHORT_SHA .",
+    "docker:push": "docker push $npm_package_dockerImage:$npm_package_version-$CI_COMMIT_SHORT_SHA"
   },
   "author": "Atix Labs S.R.L",
   "license": "ISC",
