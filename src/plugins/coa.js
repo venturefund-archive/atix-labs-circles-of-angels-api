@@ -316,7 +316,9 @@ module.exports = class COA {
 
   async getOpenProposalsFromDao(daoId, signer) {
     const proposals = await this.getAllProposalsByDaoId(daoId, signer);
-    const open = proposals.filter(proposal => !proposal.processed).length;
+    const open = proposals.filter(
+      proposal => !proposal.processed && !proposal.votingPeriodExpired
+    ).length;
     return open;
   }
 
