@@ -1345,6 +1345,16 @@ describe('Project Service Test', () => {
       status: projectStatuses.CONSENSUS,
       owner: 1
     };
+    const consensusToRejected = {
+      id: 2,
+      status: projectStatuses.CONSENSUS,
+      owner: 1
+    };
+    const consensusTimeNoPassed = {
+      id: 3,
+      status: projectStatuses.CONSENSUS,
+      owner: 1
+    };
     beforeEach(() => {
       dbProject = [];
     });
@@ -1368,7 +1378,14 @@ describe('Project Service Test', () => {
             }
           }
         ),
-        hasTimePassed: jest.fn(),
+        hasTimePassed: project => {
+          if (project.id === 3) return false;
+          return true;
+        },
+        getNextValidStatus: (project, successStatus, failStatus) => {
+          if (project.id === 1) return successStatus;
+          return failStatus;
+        },
         notifyProjectStatusChange: jest.fn()
       });
       coa.createProject = jest.fn(() => ({ hash: '0x01' }));
@@ -1384,7 +1401,6 @@ describe('Project Service Test', () => {
         'without updating the status in db',
       async () => {
         dbProject.push(consensusToFunding);
-        projectService.hasTimePassed.mockReturnValueOnce(true);
         coa.createProject.mockReturnValueOnce({ hash: '0x00' });
         const response = await projectService.transitionConsensusProjects();
         expect(response).toHaveLength(1);
@@ -1407,8 +1423,7 @@ describe('Project Service Test', () => {
       'should change the project status to rejected if the validator fails ' +
         'call notifyProjectStatusChange once',
       async () => {
-        dbProject.push(consensusToFunding);
-        projectService.hasTimePassed.mockReturnValueOnce(true);
+        dbProject.push(consensusToRejected);
         validators.fromConsensus.mockImplementationOnce(({ project }) => {
           throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
         });
@@ -1416,12 +1431,12 @@ describe('Project Service Test', () => {
         expect(response).toHaveLength(1);
         expect(response).toEqual([
           {
-            projectId: consensusToFunding.id,
+            projectId: consensusToRejected.id,
             newStatus: projectStatuses.REJECTED
           }
         ]);
         const updated = dbProject.find(
-          project => project.id === consensusToFunding.id
+          project => project.id === consensusToRejected.id
         );
         expect(updated.status).toEqual(projectStatuses.REJECTED);
         expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
@@ -1429,12 +1444,11 @@ describe('Project Service Test', () => {
     );
 
     it('should not update the project if the consensus time has not passed', async () => {
-      dbProject.push(consensusToFunding);
-      projectService.hasTimePassed.mockReturnValueOnce(false);
+      dbProject.push(consensusTimeNoPassed);
       const response = await projectService.transitionConsensusProjects();
       expect(response).toHaveLength(0);
       const notUpdated = dbProject.find(
-        project => project.id === consensusToFunding.id
+        project => project.id === consensusTimeNoPassed.id
       );
       expect(notUpdated.status).toEqual(projectStatuses.CONSENSUS);
       expect(projectService.notifyProjectStatusChange).not.toHaveBeenCalled();
@@ -1447,13 +1461,9 @@ describe('Project Service Test', () => {
       async () => {
         dbProject.push(
           consensusToFunding,
-          { ...consensusToFunding, id: 2 },
-          { ...consensusToFunding, id: 3 }
+          consensusToRejected,
+          consensusTimeNoPassed
         );
-        projectService.hasTimePassed
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true)
-          .mockReturnValueOnce(true);
 
         validators.fromConsensus.mockImplementationOnce(({ project }) => {
           throw new COAError(errors.project.NotAllOraclesAssigned(project.id));
@@ -1462,12 +1472,12 @@ describe('Project Service Test', () => {
         expect(response).toHaveLength(2);
         expect(response).toEqual([
           {
-            projectId: 2,
-            newStatus: projectStatuses.REJECTED
+            projectId: 1,
+            newStatus: projectStatuses.FUNDING
           },
           {
-            projectId: 3,
-            newStatus: projectStatuses.FUNDING
+            projectId: 2,
+            newStatus: projectStatuses.REJECTED
           }
         ]);
 
@@ -1484,6 +1494,14 @@ describe('Project Service Test', () => {
       status: projectStatuses.FUNDING,
       projectName: 'toExecutingProject',
       owner: 1
+    };
+    const fundingToConsensus = {
+      id: 2,
+      status: projectStatuses.FUNDING
+    };
+    const fundingTimeNoPassed = {
+      id: 3,
+      status: projectStatuses.FUNDING
     };
 
     beforeEach(async () => {
@@ -1519,8 +1537,14 @@ describe('Project Service Test', () => {
           getAllMilestonesByProject: jest.fn(),
           setClaimable: jest.fn()
         },
-        hasTimePassed: jest.fn(),
-        getNextValidStatus: jest.fn(),
+        hasTimePassed: project => {
+          if (project.id === 3) return false;
+          return true;
+        },
+        getNextValidStatus: (project, successStatus, failStatus) => {
+          if (project.id === 1) return successStatus;
+          return failStatus;
+        },
         removeFundersWithNoTransfersFromProject: jest.fn(),
         removeOraclesWithoutActivitiesFromProject: jest.fn(),
         generateProjectAgreement: jest.fn(() => 'agreementJson'),
@@ -1536,10 +1560,6 @@ describe('Project Service Test', () => {
         'when changing to executing',
       async () => {
         dbProject.push(fundingToExecuting);
-        projectService.hasTimePassed.mockReturnValueOnce(true);
-        projectService.getNextValidStatus.mockReturnValueOnce(
-          projectStatuses.EXECUTING
-        );
         projectService.milestoneService.getAllMilestonesByProject.mockReturnValueOnce(
           [{ id: 1 }, { id: 2 }]
         );
@@ -1563,21 +1583,17 @@ describe('Project Service Test', () => {
       'should change the project status to consensus ' +
         'if the validator fails and call notifyProjectStatusChange',
       async () => {
-        dbProject.push(fundingToExecuting);
-        projectService.hasTimePassed.mockReturnValueOnce(true);
-        projectService.getNextValidStatus.mockReturnValueOnce(
-          projectStatuses.CONSENSUS
-        );
+        dbProject.push(fundingToConsensus);
         const response = await projectService.transitionFundingProjects();
         expect(response).toHaveLength(1);
         expect(response).toEqual([
           {
-            projectId: fundingToExecuting.id,
+            projectId: fundingToConsensus.id,
             newStatus: projectStatuses.CONSENSUS
           }
         ]);
         const updated = dbProject.find(
-          project => project.id === fundingToExecuting.id
+          project => project.id === fundingToConsensus.id
         );
         expect(updated.status).toEqual(projectStatuses.CONSENSUS);
         expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
@@ -1585,12 +1601,11 @@ describe('Project Service Test', () => {
     );
 
     it('should not update the project if the consensus time has not passed', async () => {
-      dbProject.push(fundingToExecuting);
-      projectService.hasTimePassed.mockReturnValueOnce(false);
+      dbProject.push(fundingTimeNoPassed);
       const response = await projectService.transitionFundingProjects();
       expect(response).toHaveLength(0);
       const updated = dbProject.find(
-        project => project.id === fundingToExecuting.id
+        project => project.id === fundingTimeNoPassed.id
       );
       expect(updated.status).toEqual(projectStatuses.FUNDING);
       expect(projectService.notifyProjectStatusChange).not.toHaveBeenCalled();
@@ -1603,26 +1618,18 @@ describe('Project Service Test', () => {
       async () => {
         dbProject.push(
           fundingToExecuting,
-          { ...fundingToExecuting, id: 2 },
-          { ...fundingToExecuting, id: 3 }
+          fundingToConsensus,
+          fundingTimeNoPassed
         );
-        projectService.hasTimePassed
-          .mockReturnValueOnce(false)
-          .mockReturnValueOnce(true)
-          .mockReturnValueOnce(true);
-
-        projectService.getNextValidStatus
-          .mockReturnValueOnce(projectStatuses.EXECUTING)
-          .mockReturnValueOnce(projectStatuses.CONSENSUS);
         const response = await projectService.transitionFundingProjects();
         expect(response).toHaveLength(2);
         expect(response).toEqual([
           {
-            projectId: 2,
+            projectId: 1,
             newStatus: projectStatuses.EXECUTING
           },
           {
-            projectId: 3,
+            projectId: 2,
             newStatus: projectStatuses.CONSENSUS
           }
         ]);

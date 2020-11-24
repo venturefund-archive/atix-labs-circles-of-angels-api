@@ -1130,12 +1130,20 @@ module.exports = {
           '[ProjectService] :: Checking if consensus time has passed for project',
           project.id
         );
-        if (!this.hasTimePassed(project)) return;
         const newStatus = await this.getNextValidStatus(
           project,
           projectStatuses.FUNDING,
           projectStatuses.REJECTED
         );
+        if (
+          newStatus === projectStatuses.REJECTED &&
+          !this.hasTimePassed(project)
+        ) {
+          logger.info(
+            `[ProjectService] :: Has no time passed for project ${project.id}`
+          );
+          return;
+        }
         logger.info(
           `[Project Service] :: Updating project ${project.id} from ${
             project.status
@@ -1187,12 +1195,20 @@ module.exports = {
           '[ProjectService] :: Checking if funding time has passed for project',
           project.id
         );
-        if (!this.hasTimePassed(project)) return;
         const newStatus = await this.getNextValidStatus(
           project,
           projectStatuses.EXECUTING,
           projectStatuses.CONSENSUS
         );
+        if (
+          newStatus === projectStatuses.CONSENSUS &&
+          !this.hasTimePassed(project)
+        ) {
+          logger.info(
+            `[ProjectService] :: Has no time passed for project ${project.id}`
+          );
+          return;
+        }
         logger.info(
           `[ProjectService] :: Updating project ${project.id} from ${
             project.status
