@@ -6,7 +6,10 @@ CREATE TABLE public.user_wallet
     "encryptedWallet" json,
     mnemonic character varying(200),
     active boolean NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    CONSTRAINT fk_user
+      FOREIGN KEY("userId") 
+	  REFERENCES public.user(id)
 );
 
 CREATE UNIQUE INDEX "onlyActive" ON public.user_wallet("userId") where (active);
