@@ -89,10 +89,20 @@ module.exports = {
         logger.error('[Pass Recovery Service] :: Token not found: ', token);
         throw new COAError(errors.user.InvalidToken);
       }
+      let user = await this.userDao.getUserByEmail(email);
+      if (!user) {
+        logger.error(
+          '[UserService] :: There is no user associated with that email',
+          id
+        );
+        throw new COAError(errors.user.InvalidEmail);
+      }
       const hashedPwd = await bcrypt.hash(password, 10);
-      const user = {
+      user = {
         password: hashedPwd,
         encryptedWallet,
+        address: user.address,
+        mnemonic: user.mnemonic,
         forcePasswordChange: false
       };
       const updated = await this.userDao.updateUserByEmail(email, user);

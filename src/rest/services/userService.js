@@ -359,7 +359,7 @@ module.exports = {
 
   async updatePassword(id, currentPassword, newPassword, encryptedWallet) {
     logger.info('[UserService] :: Entering updatePassword method');
-    let user = await this.userDao.getUserById(id);
+    let user = await this.userDao.findById(id);
 
     if (!user) {
       logger.info(
@@ -381,6 +381,8 @@ module.exports = {
     user = {
       password: hashedPwd,
       encryptedWallet,
+      address: user.address,
+      mnemonic: user.mnemonic,
       forcePasswordChange: false
     };
     const updated = await this.userDao.updateUser(id, user);
