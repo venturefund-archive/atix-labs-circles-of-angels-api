@@ -24,7 +24,7 @@ stages:
   - package
 
 lint:
-  image: node:10.15.3-alpine
+  image: docker.atixlabs.com/node:10.15.3-alpine
   stage: test
   script:
     - npm run lint
@@ -32,7 +32,7 @@ lint:
     - schedules
 
 test_contracts:
-  image: node:10.15.3-alpine
+  image: docker.atixlabs.com/node:10.15.3-alpine
   stage: test
   script:
     - npm run node > /dev/null &
@@ -42,7 +42,7 @@ test_contracts:
     - schedules
 
 test_be:
-  image: node:10.15.3
+  image: docker.atixlabs.com/node:10.15.3
   stage: test
   script:
     - npm run test
@@ -50,7 +50,7 @@ test_be:
     - schedules
 
 package:
-  image: node:10.15.3-alpine
+  image: docker.atixlabs.com/node:10.15.3-alpine
   stage: package
   services:
     - docker.atixlabs.com/docker:19.03.1-dind
