@@ -24,7 +24,7 @@ stages:
   - package
 
 lint:
-  image: node:10.15.3
+  image: node:10.15.3-alpine
   stage: test
   script:
     - npm run lint
@@ -32,7 +32,7 @@ lint:
     - schedules
 
 test_contracts:
-  image: node:10.15.3
+  image: node:10.15.3-alpine
   stage: test
   script:
     - npm run node > /dev/null &
@@ -50,10 +50,10 @@ test_be:
     - schedules
 
 package:
-  image: node:10.15.3
+  image: node:10.15.3-alpine
   stage: package
   services:
-    - docker:19.03.12-dind
+    - docker.atixlabs.com/docker:19.03.1-dind
   script:
     - apk add docker git
     - docker login -u gitlabci -p $CI_JOB_TOKEN $CI_REGISTRY
