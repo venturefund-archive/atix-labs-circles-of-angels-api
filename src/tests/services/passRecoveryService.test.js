@@ -28,7 +28,7 @@ describe('Testing PassRecoveryService startPassRecoveryProcess', () => {
       createRecovery: () => passRecovery
     };
     mailService = {
-      sendMail: () => ({ accepted: ['dummy@email.com'] })
+      sendEmailRecoveryPassword: () => ({ accepted: ['dummy@email.com'] })
     };
     injectMocks(passRecoveryService, { passRecoveryDao, userDao, mailService });
     bcrypt.compare = jest.fn();
