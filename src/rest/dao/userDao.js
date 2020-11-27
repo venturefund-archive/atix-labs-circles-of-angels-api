@@ -27,7 +27,11 @@ module.exports = {
   },
 
   async createUser(user) {
-    const createdUser = await this.model.create(user);
+    const newUser = {
+      id: parseInt(`${Date.now()}${Math.floor(Math.random() * 1000)}`, 10),
+      ...user
+    };
+    const createdUser = await this.model.create(newUser);
     return createdUser;
   },
 

@@ -30,7 +30,7 @@ module.exports = {
     password: { type: 'string', required: true },
     address: { type: 'string', allowNull: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    id: { type: 'number', required: true },
     role: {
       type: 'string',
       validations: { isIn: Object.values(userRoles) },
