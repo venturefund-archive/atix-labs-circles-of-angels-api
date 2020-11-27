@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "eslint src/**/*.js",
     "lint-fix": "eslint --fix src/**/*.js",
-    "test": "export NODE_ENV=test && jest",
+    "test": "export NODE_ENV=test && buidler compile && jest --silent",
+    "test:contracts": "buidler test",
     "test:coverage": "npm test -- --coverage",
     "start": "export NODE_ENV=development && node index",
     "prod": "export NODE_ENV=production && node index",
@@ -16,14 +17,18 @@
     "migrate": "flyway -configFiles=flyway.conf -locations=filesystem:db/migrations migrate",
     "clean": "flyway -configFiles=flyway.conf -locations=filesystem:db/migrations clean",
     "contracts-coverage": "SOLIDITY_COVERAGE=true scripts/test.sh",
-    "ganache": "ganache-cli -g 60000000"
+    "ganache": "ganache-cli -g 60000000",
+    "node": "buidler node",
+    "deploy": "buidler deploy"
   },
   "author": "Atix Labs S.R.L",
   "license": "ISC",
-  "//": "TODO: fix forked lib problems",
-  "//": "Should add this dependency if you want to deploy contracts to RSK",
-  "//": "\"@ethersproject/providers\": \"git+https://github.com/atixlabs/ethers-providers.git#v5.0.19\"",
-  "//": "If you want to remove this dep, please run npx buidler clean and delete node_modules/ and package-lock.json",
+  "//": {
+    "1": "TODO: fix forked lib problems",
+    "2": "Should add this dependency if you want to deploy contracts to RSK",
+    "3": "\"@ethersproject/providers\": \"git+https://github.com/atixlabs/ethers-providers.git#v5.0.19\"",
+    "4": "If you want to remove this dep, please run npx buidler clean and delete node_modules/ and package-lock.json"
+  },
   "dependencies": {
     "@nomiclabs/buidler": "1.3.7",
     "@nomiclabs/buidler-truffle5": "1.1.2",

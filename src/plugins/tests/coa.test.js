@@ -65,38 +65,6 @@ describe('COA plugin tests', () => {
     });
   });
 
-  describe('Testing sendAddClaimTransaction method', () => {
-    let signedTx;
-    const unsignedTx = {
-      to: '0x7c2C195CD6D34B8F845992d380aADB2730bB9C6F',
-      gasLimit: 67381,
-      data:
-        '0x0472aa82000000000000000000000000ea51cfb26e6547725' +
-        '835b4138ba96c0b5de9e54ade838e9e0a4b3e84cad3a9d39f9f' +
-        'e437c20f318b30d3166f08c0cdbee96032ab16133cefb93b739' +
-        '7e265a1aa1b1272a8561f9686d97b422a8c53b90247c5a1b600' +
-        '000000000000000000000000000000000000000000000000000' +
-        '000000000010000000000000000000000000000000000000000' +
-        '000000000000000000000001'
-    };
-    beforeAll(async () => {
-      const wallet = Wallet.createRandom();
-      signedTx = await wallet.signTransaction(unsignedTx);
-    });
-
-    it(
-      'should send the signed tx to the contract and ' +
-        'return the transaction response',
-      async () => {
-        const response = await coa.sendNewTransaction(signedTx);
-        expect(response).toHaveProperty('hash', expect.any(String));
-        expect(response.to).toEqual(unsignedTx.to);
-        expect(response.data).toEqual(unsignedTx.data);
-        expect(Number(response.gasLimit)).toEqual(unsignedTx.gasLimit);
-      }
-    );
-  });
-
   describe('Testing createProject method', () => {
     it('should send the project to the COA contract', async () => {
       const response = await coa.createProject(1, 'Test Project');
