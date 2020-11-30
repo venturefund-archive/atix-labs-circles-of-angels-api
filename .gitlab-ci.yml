@@ -17,8 +17,7 @@ cache:
     - cache/
 
 before_script:
-  - apk add git
-  - npm install
+  - apk add --no-cache --virtual .gyp python make g++ && npm install && apk del .gyp
 
 stages:
   - test
