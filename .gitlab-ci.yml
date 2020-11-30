@@ -17,7 +17,10 @@ cache:
     - cache/
 
 before_script:
-  - apk add --no-cache --virtual .gyp python make g++ && npm install && apk del .gyp
+  - >-
+    run apk --no-cache add --virtual native-deps \ g++ gcc libgcc libstdc++
+    linux-headers make python && \ npm install --quiet node-gyp -g &&\ npm
+    install --quiet && \ apk del native-deps
 
 stages:
   - test
