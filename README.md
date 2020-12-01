@@ -56,3 +56,25 @@ Clone the repository by running `git@gitlab.com:atixlabs-oss/circles-of-angels-a
   - The `buidler` configuration can be found in [buidler.config.js](./buidler.config.js).
   - Modify the `network` object inside this file to include any other blockchain configuration you may need.
   - Use the `--network` option along with `npx builder` commands to use a different network (e.g, `npx builder deploy --network testnet` to deploy in a testnet specified in the buidler configuration file).
+
+## Smart Contract Verified in RSK
+  -AdminUpgradaProxy_ClaimsRegistry
+  https://explorer.rsk.co/address/0xc61f0392d5170214b5d93c0bc4c4354163abc1f7
+
+  -Project:
+  https://explorer.rsk.co/address/0x7d77b6da03b49a4c0075549466bda4b504538675
+
+  -DAO
+  https://explorer.rsk.co/address/0xd33771b35fcf81a6919ab0790baa77a694c036a9
+
+  -SuperDAO
+  https://explorer.rsk.co/address/0x36a5d791897469b724992a3fd9d55082da4b4442
+
+  -ClaimsRegistry
+  https://explorer.rsk.co/address/0xb0b33c4887f73d809bc8e0ec7ee4da896916ae76
+
+  -COA
+  https://explorer.rsk.co/address/0x9c9b25e2c9921f167ac3e22359a422a99c503bb9
+
+  -ProxyAdmin
+  https://explorer.rsk.co/address/0x9bfd61162ac3e957fb16ccaf9740bf0e959691f8
