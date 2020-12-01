@@ -1,8 +1,4 @@
 variables:
-  # Common variables to be able to build and push docker images
-  # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-disabled
-  DOCKER_HOST: tcp://docker:2375
-  #
   # This will instruct Docker not to start over TLS.
   DOCKER_TLS_CERTDIR: ""
 
@@ -55,7 +51,7 @@ package:
   services:
     - docker.atixlabs.com/docker:19.03.1-dind
   script:
-    - apk add docker
+    - apt install docker
     - docker login -u gitlabci -p $CI_JOB_TOKEN $CI_REGISTRY
     - npm run docker:build
     - npm run docker:push
