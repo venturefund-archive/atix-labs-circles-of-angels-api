@@ -89,7 +89,7 @@ module.exports = {
         logger.error('[Pass Recovery Service] :: Token not found: ', token);
         throw new COAError(errors.user.InvalidToken);
       }
-      let user = await this.userDao.getUserByEmail(email);
+      const user = await this.userDao.getUserByEmail(email);
       if (!user) {
         logger.error(
           '[UserService] :: There is no user associated with that email',
@@ -98,14 +98,20 @@ module.exports = {
         throw new COAError(errors.user.InvalidEmail);
       }
       const hashedPwd = await bcrypt.hash(password, 10);
-      user = {
+      const updated = await this.userDao.updateUserByEmail(email, {
         password: hashedPwd,
+        forcePasswordChange: false
+      });
+      const savedUserWallet = await this.userWalletDao.createUserWallet({
+        user: id,
         encryptedWallet,
         address: user.address,
-        mnemonic: user.mnemonic,
-        forcePasswordChange: false
-      };
-      const updated = await this.userDao.updateUserByEmail(email, user);
+        mnemonic: user.mnemonic
+      });
+      if (!savedUserWallet) {
+        await this.userDao.removeUserById(savedUser.id);
+        throw new COAError(errors.user.NewWalletNotSaved);
+      }
       if (!updated) {
         logger.error(
           '[Pass Recovery Service] :: Error updating password in database for user: ',
@@ -113,6 +119,7 @@ module.exports = {
         );
         throw new COAError(errors.user.UserUpdateError);
       }
+
       await this.passRecoveryDao.deleteRecoverByToken(token);
       return updated;
     } catch (error) {

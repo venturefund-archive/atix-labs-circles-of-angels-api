@@ -1,9 +1,9 @@
 CREATE TABLE public.user_wallet
 (
-    id integer NOT NULL DEFAULT nextval('user_id_seq'::regclass),
+    id integer SERIAL NOT NULL,
     "userId" integer NOT NULL,
-    address character varying(42),
-    "encryptedWallet" json,
+    address character varying(42) NOT NULL,
+    "encryptedWallet" json NOT NULL,
     mnemonic character varying(200),
     active boolean NOT NULL,
     "createdAt" date,

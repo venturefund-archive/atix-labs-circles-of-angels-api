@@ -7,7 +7,6 @@
  */
 
 const { userRoles } = require('../util/constants');
-const userWalletDao = require('./userWalletDao');
 
 module.exports = {
   async findById(id) {
@@ -40,32 +39,9 @@ module.exports = {
     return { address, encryptedWallet, mnemonic, ...user };
   },
 
-  async findByAddress(addressFiltered) {
-    const userWallet = await userWalletDao.findByAddress(addressFiltered);
-    if (!userWallet) {
-      return;
-    }
-    const { user, address, encryptedWallet, mnemonic } = userWallet;
-    return { address, encryptedWallet, mnemonic, ...user };
-  },
-
-  async createUser({ address, encryptedWallet, mnemonic, ...user }) {
-    let userId;
-    try {
-      const createdUser = await this.model.create(user);
-      userId = createdUser.id;
-      await userWalletDao.createUserWallet({
-        user: userId,
-        address,
-        encryptedWallet,
-        mnemonic
-      });
-      return { address, encryptedWallet, mnemonic, ...createdUser };
-    } catch (e) {
-      if (userId) {
-        await this.removeUserById(userId);
-      }
-    }
+  async createUser(user) {
+    const createdUser = await this.model.create(user);
+    return createdUser;
   },
 
   async getFollowedProjects(id) {
@@ -79,35 +55,24 @@ module.exports = {
       .populate('monitoring');
   },
 
-  async updateUser(id, { address, encryptedWallet, mnemonic, ...user }) {
-    const userWallet = {};
-    Object.assign(
-      userWallet,
-      { user: id },
-      address && { address },
-      encryptedWallet && { encryptedWallet },
-      mnemonic && { mnemonic }
-    );
-    await userWalletDao.createUserWallet(userWallet);
-    const updatedUser = await this.model.updateOne({ id }).set(user);
-    return { address, encryptedWallet, mnemonic, ...updatedUser };
+  async updateUser(id, user) {
+    const updatedUser = await this.model.updateOne({ id }).set({ ...user });
+    return updatedUser;
   },
 
-  async updateUserByEmail(
-    email,
-    { address, encryptedWallet, mnemonic, ...user }
-  ) {
-    const userWallet = {};
-    Object.assign(
-      userWallet,
-      address && { address },
-      encryptedWallet && { encryptedWallet },
-      mnemonic && { mnemonic }
-    );
-    await userWalletDao.createUserWallet(userWallet);
-    const updatedUser = await this.model.updateOne({ email }).set(user);
-    return { address, encryptedWallet, mnemonic, ...updatedUser };
+  async updateUserByEmail(email, user) {
+    const updatedUser = await this.model
+      .updateOne({ where: { email: email.toLowerCase() } })
+      .set({ ...user });
+    return updatedUser;
   },
+
+  async updatePasswordByMail(email, pwd) {
+    return this.model
+      .updateOne({ where: { email: email.toLowerCase() } })
+      .set({ pwd });
+  },
+
   /* eslint-disable no-param-reassign */
   async getUsers() {
     const users = await this.model
@@ -127,12 +92,6 @@ module.exports = {
       delete user.wallets;
       return { address, encryptedWallet, mnemonic, ...user };
     });
-  },
-
-  async updatePasswordByMail(email, pwd) {
-    return this.model
-      .updateOne({ where: { email: email.toLowerCase() } })
-      .set({ pwd });
   },
 
   async updateTransferBlockchainStatus(userId, status) {

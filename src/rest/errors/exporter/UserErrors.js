@@ -73,5 +73,9 @@ module.exports = {
   NotConfirmedEmail: {
     message: 'User needs confirm email address',
     statusCode: 403
+  },
+  NewWalletNotSaved: {
+    message: 'Wallet was not saved correctly',
+    statusCode: 400
   }
 };

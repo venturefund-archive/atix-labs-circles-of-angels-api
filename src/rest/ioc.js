@@ -78,6 +78,7 @@ module.exports = fastify => {
   function configureUserService(service) {
     const dependencies = {
       userDao,
+      userWalletDao,
       mailService,
       projectService,
       countryService,

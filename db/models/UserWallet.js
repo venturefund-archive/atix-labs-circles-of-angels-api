@@ -23,7 +23,7 @@ module.exports = {
       columnName: 'userId',
       model: 'user'
     },
-    address: { type: 'string', allowNull: true },
+    address: { type: 'string', required: true },
     encryptedWallet: { type: 'json', required: true },
     mnemonic: { type: 'string', required: true },
     active: { type: 'boolean', defaultsTo: false, required: false },

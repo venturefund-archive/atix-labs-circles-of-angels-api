@@ -32,7 +32,7 @@ module.exports = {
    */
   async getUserByAddress(address) {
     logger.info('[UserService] :: Entering getUserByAddress method');
-    const user = await this.userDao.findByAddress(address);
+    const user = await this.userWalletDao.findByAddress(address);
     if (user) {
       logger.info('[UserService] :: User found');
       return user;
@@ -200,8 +200,18 @@ module.exports = {
     await coa.migrateMember(profile, address);
 
     const savedUser = await this.userDao.createUser(user);
-    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
 
+    const savedUserWallet = await this.userWalletDao.createUserWallet({
+      user: savedUser.id,
+      address,
+      encryptedWallet,
+      mnemonic
+    });
+    if (!savedUserWallet) {
+      await this.userDao.removeUserById(savedUser.id);
+      throw new COAError(errors.user.NewWalletNotSaved);
+    }
+    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
     await this.mailService.sendEmailVerification({
       to: email,
       bodyContent: {
@@ -211,7 +221,7 @@ module.exports = {
       userId: savedUser.id
     });
 
-    return savedUser;
+    return { address, encryptedWallet, mnemonic, ...savedUser };
   },
 
   async validateUserEmail(userId) {
@@ -225,6 +235,7 @@ module.exports = {
       );
       throw new COAError(errors.user.UserUpdateError);
     }
+
     return true;
   },
 
@@ -359,7 +370,7 @@ module.exports = {
 
   async updatePassword(id, currentPassword, newPassword, encryptedWallet) {
     logger.info('[UserService] :: Entering updatePassword method');
-    let user = await this.userDao.findById(id);
+    const user = await this.userDao.findById(id);
 
     if (!user) {
       logger.info(
@@ -376,23 +387,27 @@ module.exports = {
       );
       throw new COAError(errors.user.InvalidPassword);
     }
-
     const hashedPwd = await bcrypt.hash(newPassword, encryption.saltOrRounds);
-    user = {
+    const updated = await this.userDao.updateUser(id, {
       password: hashedPwd,
-      encryptedWallet,
-      address: user.address,
-      mnemonic: user.mnemonic,
       forcePasswordChange: false
-    };
-    const updated = await this.userDao.updateUser(id, user);
-
+    });
     if (!updated) {
       logger.error(
         '[UserService] :: Error updating password in database for user: ',
         id
       );
       throw new COAError(errors.user.UserUpdateError);
+    }
+    const savedUserWallet = await this.userWalletDao.createUserWallet({
+      user: id,
+      encryptedWallet,
+      address: user.address,
+      mnemonic: user.mnemonic
+    });
+    if (!savedUserWallet) {
+      await this.userDao.removeUserById(savedUser.id);
+      throw new COAError(errors.user.NewWalletNotSaved);
     }
     return updated;
   }

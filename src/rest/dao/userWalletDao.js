@@ -30,11 +30,17 @@ module.exports = {
     });
     return createdUserWallet;
   },
-  // all user wallets
+
   async findByAddress(address) {
-    return this.model.findOne({ address }).populate('user');
+    const userWallet = await this.model.findOne({ address }).populate('user');
+    if (!userWallet) {
+      return;
+    }
+    const { user, encryptedWallet, mnemonic } = userWallet;
+    return { address, encryptedWallet, mnemonic, ...user };
   },
 
+  // all user wallets
   async getUserWalletsByUserId(userId) {
     return this.model
       .find({ userId })

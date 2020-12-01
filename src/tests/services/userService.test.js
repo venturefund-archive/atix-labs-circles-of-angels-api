@@ -35,11 +35,13 @@ describe('Testing userService', () => {
   let dbProject = [];
   let dbUser = [];
   let dbCountry = [];
+  let dbUserWallet = [];
 
   const resetDb = () => {
     dbProject = [];
     dbUser = [];
     dbCountry = [];
+    dbUserWallet = [];
   };
 
   // USERS
@@ -54,9 +56,16 @@ describe('Testing userService', () => {
     lastName: 'SupporterLastName',
     role: userRoles.PROJECT_SUPPORTER,
     email: 'supporter@test.com',
-    blocked: false,
     address: '0x222',
+    blocked: false,
     emailConfirmation: true
+  };
+
+  const userSupporterWallet = {
+    user: 2,
+    address: '0x222',
+    encryptedWallet: '{}',
+    mnemonic: 'test'
   };
 
   const userAdmin = {
@@ -94,7 +103,6 @@ describe('Testing userService', () => {
 
   const userDao = {
     findById: id => dbUser.find(user => user.id === id),
-    findByAddress: address => dbUser.find(user => user.address === address),
     getFollowedProjects: id => {
       const userFound = dbUser.find(user => user.id === id);
       if (!userFound) {
@@ -121,6 +129,24 @@ describe('Testing userService', () => {
     getUsers: () => dbUser.filter(user => user.role !== userRoles.COA_ADMIN)
   };
 
+  const userWalletDao = {
+    createUserWallet: wallet => {
+      const created = { ...wallet, id: dbUserWallet.length + 1 };
+      dbUserWallet.push(created);
+      return created;
+    },
+    findByAddress: address => {
+      const userWalletSelected = dbUserWallet.find(
+        userWallet => userWallet.address === address
+      );
+      if (!userWalletSelected) {
+        return undefined;
+      }
+      const user = dbUser.find(us => us.id === userWalletSelected.user);
+      return user;
+    }
+  };
+
   const projectService = {
     getProjectsByOwner: owner =>
       dbProject.filter(project => project.owner === owner)
@@ -140,11 +166,12 @@ describe('Testing userService', () => {
 
   describe('Testing getUserById', () => {
     beforeAll(() => {
-      injectMocks(userService, { userDao });
+      injectMocks(userService, { userDao, userWalletDao });
     });
     afterAll(() => restoreUserService());
 
     beforeEach(() => {
+      dbUserWallet.push(userSupporterWallet);
       dbUser.push(userSupporter);
     });
 
@@ -164,7 +191,8 @@ describe('Testing userService', () => {
     beforeAll(() => {
       injectMocks(userService, {
         userDao,
-        daoService
+        daoService,
+        userWalletDao
       });
       bcrypt.compare = jest.fn();
     });
@@ -250,7 +278,12 @@ describe('Testing userService', () => {
           sendTransaction
         }
       ]);
-      injectMocks(userService, { userDao, mailService, countryService });
+      injectMocks(userService, {
+        userDao,
+        mailService,
+        countryService,
+        userWalletDao
+      });
     });
     afterAll(() => restoreUserService());
 
@@ -307,7 +340,8 @@ describe('Testing userService', () => {
   describe('Testing getUsers', () => {
     beforeAll(() => {
       injectMocks(userService, {
-        userDao
+        userDao,
+        userWalletDao
       });
     });
     afterAll(() => restoreUserService());
@@ -329,7 +363,8 @@ describe('Testing userService', () => {
     beforeAll(() => {
       injectMocks(userService, {
         projectService,
-        userDao
+        userDao,
+        userWalletDao
       });
     });
     afterAll(() => restoreUserService());
@@ -358,12 +393,13 @@ describe('Testing userService', () => {
 
   describe('Testing getFollowedProjects', () => {
     beforeAll(() => {
-      injectMocks(userService, { userDao });
+      injectMocks(userService, { userDao, userWalletDao });
     });
     afterAll(() => restoreUserService());
 
     beforeEach(() => {
       dbUser.push(userSupporter);
+      dbUserWallet.push(userSupporterWallet);
     });
 
     it('should return the array of followed projects belonging to the user', async () => {
@@ -383,10 +419,11 @@ describe('Testing userService', () => {
 
   describe('Testing getAppliedProjects', () => {
     beforeAll(() => {
-      injectMocks(userService, { userDao });
+      injectMocks(userService, { userDao, userWalletDao });
     });
 
     beforeEach(() => {
+      dbUserWallet.push(userSupporterWallet);
       dbUser.push(userSupporter);
     });
 
@@ -409,7 +446,8 @@ describe('Testing userService', () => {
   describe('Testing validUser', () => {
     beforeAll(() => {
       injectMocks(userService, {
-        userDao
+        userDao,
+        userWalletDao
       });
     });
     afterAll(() => restoreUserService());
@@ -455,15 +493,16 @@ describe('Testing userService', () => {
 
   describe('Testing getUserByAddress method', () => {
     beforeAll(() => {
-      injectMocks(userService, { userDao });
+      injectMocks(userService, { userDao, userWalletDao });
     });
     afterAll(() => restoreUserService());
     beforeEach(() => {
       dbUser.push(userSupporter);
+      dbUserWallet.push(userSupporterWallet);
     });
     it('should return the existing user', async () => {
       const response = await userService.getUserByAddress(
-        userSupporter.address
+        userSupporterWallet.address
       );
       expect(response).toEqual(userSupporter);
     });
@@ -481,7 +520,7 @@ describe('Testing userService', () => {
       getUserById: id => dbUser.find(user => user.id === id)
     };
     beforeAll(() => {
-      injectMocks(userService, { userDao: userDao2 });
+      injectMocks(userService, { userDao: userDao2, userWalletDao });
     });
     afterAll(() => restoreUserService());
 
