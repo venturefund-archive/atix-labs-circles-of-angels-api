@@ -1,4 +1,11 @@
 variables:
+  # Common variables to be able to build and push docker images
+  # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-disabled
+  DOCKER_HOST: tcp://docker:2375
+  #
+  # This will instruct Docker not to start over TLS.
+  DOCKER_TLS_CERTDIR: ""
+
   # To make npm test to not to start in watch mode
   # https://create-react-app.dev/docs/running-tests/#continuous-integration
   CI: "true"
@@ -55,6 +62,7 @@ package:
   only:
     refs:
       # Only run on develop, release/x.y.x and hotfix/xxxx
+      - COA-1766-fix-gitlab-pipeline
       - develop
       - /^release.*$/
       - /^hotfix.*$/
