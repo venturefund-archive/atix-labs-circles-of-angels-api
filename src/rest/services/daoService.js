@@ -17,7 +17,7 @@ module.exports = {
       method: 'getUsers',
       params: { daoId }
     });
-
+    /* eslint-disable no-await-in-loop */
     logger.info('[DAOService] :: Getting users of DAO');
     try {
       const users = await this.userService.getUsers();
@@ -400,13 +400,32 @@ module.exports = {
     try {
       const signer = user.wallet.address;
       const notConfirmedProposals = await this.getSentProposals(daoId);
+      const notConfirmedFields = notConfirmedProposals.map(
+        ({ proposer, applicant, description }) => ({
+          proposer,
+          applicant,
+          description
+        })
+      );
       const confirmedProposals = await coa.getAllProposalsByDaoId(daoId);
-      const proposals = [...confirmedProposals, ...notConfirmedProposals];
       const formattedProposals = await this.formatProposals(
         daoId,
-        proposals,
+        confirmedProposals,
         signer
       );
+      /* eslint-disable array-callback-return */
+      formattedProposals.map(proposal => {
+        const { proposer, applicant, description } = proposal;
+        if (
+          !notConfirmedFields.includes({
+            proposer,
+            applicant,
+            description
+          })
+        ) {
+          return proposal;
+        }
+      });
       return formattedProposals;
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);
