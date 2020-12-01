@@ -1,7 +1,4 @@
 variables:
-  # This will instruct Docker not to start over TLS.
-  DOCKER_TLS_CERTDIR: ""
-
   # To make npm test to not to start in watch mode
   # https://create-react-app.dev/docs/running-tests/#continuous-integration
   CI: "true"

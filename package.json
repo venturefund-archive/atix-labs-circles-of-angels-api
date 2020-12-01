@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Api-rest for circle of angels",
   "main": "main.js",
-  "dockerImage": "docker.atixlabs.com/circle-of-angels/backend",
+  "dockerImage": "docker.atixlabs.com/coa/backend",
   "scripts": {
     "lint": "eslint src/**/*.js",
     "lint-fix": "eslint --fix src/**/*.js",
