@@ -59,7 +59,7 @@ Clone the repository by running `git@gitlab.com:atixlabs-oss/circles-of-angels-a
 
 ## Smart Contract Verified in RSK
   -AdminUpgradaProxy_ClaimsRegistry
-  https://explorer.rsk.co/address/0xc61f0392d5170214b5d93c0bc4c4354163abc1f7
+  https://explorer.rsk.co/address/0x6A87f359e522105581b3d0C66C6f033B16D49593
 
   -Project:
   https://explorer.rsk.co/address/0x7d77b6da03b49a4c0075549466bda4b504538675
