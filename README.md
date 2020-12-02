@@ -58,7 +58,7 @@ Clone the repository by running `git@gitlab.com:atixlabs-oss/circles-of-angels-a
   - Use the `--network` option along with `npx builder` commands to use a different network (e.g, `npx builder deploy --network testnet` to deploy in a testnet specified in the buidler configuration file).
 
 ## Smart Contract Verified in RSK
-  -AdminUpgradaProxy_ClaimsRegistry
+  -AdminUpgradaProxy ClaimsRegistry
   https://explorer.rsk.co/address/0x6A87f359e522105581b3d0C66C6f033B16D49593
 
   -Project:
@@ -76,5 +76,10 @@ Clone the repository by running `git@gitlab.com:atixlabs-oss/circles-of-angels-a
   -COA
   https://explorer.rsk.co/address/0x9c9b25e2c9921f167ac3e22359a422a99c503bb9
 
+  -AdminUpgradeabilityProxy COA
+  https://explorer.rsk.co/address/0x317b137d8b1b83e3ce15382044a1d9d3e6503068
+
   -ProxyAdmin
   https://explorer.rsk.co/address/0x9bfd61162ac3e957fb16ccaf9740bf0e959691f8
+
+  
