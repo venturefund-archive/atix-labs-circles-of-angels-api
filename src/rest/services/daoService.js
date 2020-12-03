@@ -414,7 +414,7 @@ module.exports = {
         signer
       );
       /* eslint-disable array-callback-return */
-      formattedProposals.map(proposal => {
+      return formattedProposals.map(proposal => {
         const { proposer, applicant, description } = proposal;
         if (
           !notConfirmedFields.includes({
@@ -426,7 +426,6 @@ module.exports = {
           return proposal;
         }
       });
-      return formattedProposals;
     } catch (error) {
       logger.error('[DAOService] :: Error getting proposals', error);
       throw new COAError(errors.dao.ErrorGettingProposals(daoId));
