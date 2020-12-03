@@ -80,6 +80,15 @@ const entrepreneurUser = {
   address: '0x02222222'
 };
 
+const adminUser = {
+  id: 2,
+  firstName: 'Admin',
+  lastName: 'user',
+  role: userRoles.COA_ADMIN,
+  email: 'admin@email.com',
+  address: '0x02222222'
+};
+
 const anotherSupporterUser = {
   id: 3,
   firstName: 'Project',
@@ -209,6 +218,21 @@ const projectWithTransfer = {
   status: projectStatuses.FUNDING
 };
 
+const toReviewProject = {
+  id: 8,
+  projectName,
+  location,
+  timeframe,
+  goalAmount,
+  owner: ownerId,
+  cardPhotoPath: 'cardPhotoPath',
+  coverPhotoPath,
+  problemAddressed,
+  proposal,
+  mission,
+  status: projectStatuses.TO_REVIEW
+};
+
 const userService = {
   getUserById: id => {
     if (id === 2 || id === 3) {
@@ -235,7 +259,8 @@ const projectDao = {
       projectId === 1 ||
       projectId === 3 ||
       projectId === 4 ||
-      projectId === 10
+      projectId === 10 ||
+      projectId === 8
     ) {
       return {
         projectName: 'projectUpdateado',
@@ -251,6 +276,7 @@ const projectDao = {
     if (id === 4) return consensusProject;
     if (id === 10) return draftProjectWithMilestone;
     if (id === 15) return executingProject;
+    if (id === 8) return toReviewProject;
     return undefined;
   },
   findOneByProps: (filters, populate) => {
@@ -1305,6 +1331,19 @@ describe('Project Service Test', () => {
         errors.project.RejectionReasonEmpty(consensusProject.id)
       );
     });
+    it(
+      'should update a project from to review to consensus if the status transition is valid and user is Admin ' +
+        'and call notifyProjectStatusChange',
+      async () => {
+        const response = await projectService.updateProjectStatus(
+          adminUser,
+          toReviewProject.id,
+          projectStatuses.CONSENSUS
+        );
+        expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
+        expect(response).toEqual({ projectId: toReviewProject.id });
+      }
+    );
   });
 
   describe('Get featured projects', () => {
