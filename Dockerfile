@@ -16,5 +16,5 @@ COPY . .
 RUN npm run build
 
 # Running the app
-CMD [ "npm", "index" ]
+CMD [ "npm", "run", "index" ]
 
