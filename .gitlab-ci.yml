@@ -53,10 +53,10 @@ package:
   image: docker.atixlabs.com/node:10.15.3
   stage: package
   services:
-    - docker.atixlabs.com/docker:19.03.1-dind
+    - docker:19.03.1-dind
   script:
-    - apt install docker
     - docker login -u gitlabci -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker info
     - npm run docker:build
     - npm run docker:push
   only:
