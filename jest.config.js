@@ -17,5 +17,5 @@ module.exports = {
     '<rootDir>/rest/services/helper.js', // not being used anymore
     '<rootDir>/rest/services/helpers/buidlerTasks.js'
   ],
-  testTimeout: 60000
+  testTimeout: 30000
 };
