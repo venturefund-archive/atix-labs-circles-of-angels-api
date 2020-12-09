@@ -174,6 +174,7 @@ module.exports = {
 
     const hashedPwd = await bcrypt.hash(password, encryption.saltOrRounds);
 
+    // TODO: remove address, encryptedWallet and mnemonic after migrate user wallets in PROD.
     const user = {
       firstName,
       lastName,
@@ -188,6 +189,8 @@ module.exports = {
       encryptedWallet,
       mnemonic
     };
+    const savedUser = await this.userDao.createUser(user);
+
     const accounts = await ethers.getSigners();
     const tx = {
       to: address,
@@ -198,8 +201,6 @@ module.exports = {
     const profile = `${firstName} ${lastName}`;
     // using migrateMember instead of createMember for now
     await coa.migrateMember(profile, address);
-
-    const savedUser = await this.userDao.createUser(user);
 
     const savedUserWallet = await this.userWalletDao.createUserWallet({
       user: savedUser.id,
