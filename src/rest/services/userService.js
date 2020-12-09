@@ -209,7 +209,6 @@ module.exports = {
       mnemonic
     });
     if (!savedUserWallet) {
-      await this.userDao.removeUserById(savedUser.id);
       throw new COAError(errors.user.NewWalletNotSaved);
     }
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
