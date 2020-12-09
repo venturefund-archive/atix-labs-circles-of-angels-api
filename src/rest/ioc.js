@@ -160,7 +160,8 @@ module.exports = fastify => {
     const dependencies = {
       mailService,
       passRecoveryDao,
-      userDao
+      userDao,
+      userWalletDao
     };
     injectDependencies(service, dependencies);
   }

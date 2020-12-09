@@ -16,14 +16,16 @@ module.exports = {
     return this.model.findOne({ userId, active: true }).populate('user');
   },
 
-  async createUserWallet(userWallet) {
-    await this.model
-      .updateOne({
-        user: userWallet.userId,
-        active: true
-      })
-      .set({ active: false });
+  async updateWallet(filter, data) {
+    try {
+      const disabledUserWallet = await this.model.updateOne(filter).set(data);
+      return disabledUserWallet;
+    } catch (e) {
+      const a = 2;
+    }
+  },
 
+  async createUserWallet(userWallet) {
     const createdUserWallet = await this.model.create({
       active: true,
       ...userWallet

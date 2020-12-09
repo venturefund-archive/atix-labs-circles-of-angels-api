@@ -190,6 +190,16 @@ module.exports = {
       mnemonic
     };
     const savedUser = await this.userDao.createUser(user);
+    const savedUserWallet = await this.userWalletDao.createUserWallet({
+      user: savedUser.id,
+      address,
+      encryptedWallet,
+      mnemonic
+    });
+    if (!savedUserWallet) {
+      await this.userDao.removeUserById(savedUser.id);
+      throw new COAError(errors.user.NewWalletNotSaved);
+    }
 
     const accounts = await ethers.getSigners();
     const tx = {
@@ -201,16 +211,6 @@ module.exports = {
     const profile = `${firstName} ${lastName}`;
     // using migrateMember instead of createMember for now
     await coa.migrateMember(profile, address);
-
-    const savedUserWallet = await this.userWalletDao.createUserWallet({
-      user: savedUser.id,
-      address,
-      encryptedWallet,
-      mnemonic
-    });
-    if (!savedUserWallet) {
-      throw new COAError(errors.user.NewWalletNotSaved);
-    }
     logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
     await this.mailService.sendEmailVerification({
       to: email,
@@ -399,6 +399,11 @@ module.exports = {
       );
       throw new COAError(errors.user.UserUpdateError);
     }
+    const disabledWallet = await this.userWalletDao.updateWallet(
+      { user: id, active: true },
+      { active: false }
+    );
+
     const savedUserWallet = await this.userWalletDao.createUserWallet({
       user: id,
       encryptedWallet,
@@ -406,7 +411,13 @@ module.exports = {
       mnemonic: user.mnemonic
     });
     if (!savedUserWallet) {
-      await this.userDao.removeUserById(savedUser.id);
+      if (disabledWallet) {
+        // Rollback
+        await this.userWalletDao.updateWallet(
+          { id: disabledWallet.id },
+          { active: true }
+        );
+      }
       throw new COAError(errors.user.NewWalletNotSaved);
     }
     return updated;

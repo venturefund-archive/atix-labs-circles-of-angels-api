@@ -130,6 +130,7 @@ describe('Testing userService', () => {
   };
 
   const userWalletDao = {
+    updateWallet: jest.fn(),
     createUserWallet: wallet => {
       const created = { ...wallet, id: dbUserWallet.length + 1 };
       dbUserWallet.push(created);

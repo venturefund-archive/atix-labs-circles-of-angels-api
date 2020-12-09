@@ -82,7 +82,7 @@ module.exports = {
     return mnemonic;
   },
 
-  async updatePassword(token, password, encryptedWallet) {
+  async updatePassword(address, token, password, encryptedWallet, mnemonic) {
     try {
       const { email } = await this.passRecoveryDao.findRecoverBytoken(token);
       if (!email) {
@@ -93,23 +93,35 @@ module.exports = {
       if (!user) {
         logger.error(
           '[UserService] :: There is no user associated with that email',
-          id
+          email
         );
         throw new COAError(errors.user.InvalidEmail);
       }
+      const { id } = user;
       const hashedPwd = await bcrypt.hash(password, 10);
       const updated = await this.userDao.updateUserByEmail(email, {
         password: hashedPwd,
         forcePasswordChange: false
       });
+      const disabledWallet = await this.userWalletDao.updateWallet(
+        { user: id, active: true },
+        { active: false }
+      );
+
       const savedUserWallet = await this.userWalletDao.createUserWallet({
         user: id,
         encryptedWallet,
-        address: user.address,
-        mnemonic: user.mnemonic
+        address,
+        mnemonic
       });
       if (!savedUserWallet) {
-        await this.userDao.removeUserById(savedUser.id);
+        if (disabledWallet) {
+          // Rollback
+          await this.userWalletDao.updateWallet(
+            { id: disabledWallet.id },
+            { active: true }
+          );
+        }
         throw new COAError(errors.user.NewWalletNotSaved);
       }
       if (!updated) {
