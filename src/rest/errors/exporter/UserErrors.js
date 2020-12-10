@@ -71,7 +71,7 @@ module.exports = {
     statusCode: 403
   },
   NotConfirmedEmail: {
-    message: 'User needs confirm email address',
+    message: 'The user needs to confirm email address',
     statusCode: 403
   }
 };
