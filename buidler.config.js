@@ -2,14 +2,16 @@ usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
-// const deployments = ;
 const config = require('config');
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
 require('./src/rest/services/helpers/buidlerTasks');
 const COA = require('./src/plugins/coa');
 
-const INFURA_API_KEY = '';
-const ROPSTEN_PRIVATE_KEY = '';
+const testnetUrl = config.buidler.testnet_url;
+const testnetAccount = config.buidler.testnet_account;
+
+const mainnetUrl = config.buidler.mainnet_url;
+const mainnetAccount = config.buidler.mainnet_account;
 
 // const Deployments = require("./scripts/deployments");
 
@@ -121,12 +123,13 @@ module.exports = {
     develop: {
       url: 'http://localhost:8545'
     },
-    ropsten: {
-      url: `https://ropsten.infura.io/v3/${INFURA_API_KEY}`,
-      accounts: [ROPSTEN_PRIVATE_KEY]
+    testnet: {
+      url: config.buidler.testnet_url,
+      accounts: [config.buidler.testnet_account]
     },
     mainnet: {
-      url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`
+      url: config.buidler.mainnet_url,
+      accounts: [config.buidler.mainnet_account]
     },
     coverage: {
       url: 'http://localhost:8555'
