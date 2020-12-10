@@ -7,11 +7,11 @@ const { lazyObject } = require('@nomiclabs/buidler/plugins');
 require('./src/rest/services/helpers/buidlerTasks');
 const COA = require('./src/plugins/coa');
 
-const testnetUrl = process.env.TESTNET_URL;
-const testnetAccount = process.env.TESTNET_ACCOUNT;
+const testnetUrl = config.buidler.testnet_url;
+const testnetAccount = config.buidler.testnet_account;
 
-const mainnetUrl = process.env.MAINNET_URL;
-const mainnetAccount = process.env.MAINNET_ACCOUNT;
+const mainnetUrl = config.buidler.mainnet_url;
+const mainnetAccount = config.buidler.mainnet_account;
 
 // const Deployments = require("./scripts/deployments");
 
@@ -130,6 +130,9 @@ module.exports = {
     mainnet: {
       url: mainnetUrl,
       accounts: [mainnetAccount]
+    },
+    coverage: {
+      url: 'http://localhost:8555'
     },
     buidlerevm: {
       loggingEnabled: true,

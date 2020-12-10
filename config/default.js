@@ -110,7 +110,11 @@ module.exports = {
   },
 
   buidler: {
-    defaultNetwork: 'develop'
+    defaultNetwork: 'develop',
+    mainnet_url: process.env.MAINNET_URL || '',
+    mainnet_account: process.env.MAINNET_ACCOUNT || '',
+    testnet_url: process.env.TESTNET_URL || '',
+    testnet_account: process.env.TESTNET_ACCOUNT || ''
   },
   explorerLink: 'https://explorer.testnet.rsk.co'
 };
