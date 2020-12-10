@@ -86,7 +86,7 @@ module.exports = {
       });
     return users.map(user => {
       if (!user.wallets.length) {
-        return;
+        return user;
       }
       const { address, encryptedWallet, mnemonic } = user.wallets[0];
       delete user.wallets;
