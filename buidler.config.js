@@ -124,12 +124,12 @@ module.exports = {
       url: 'http://localhost:8545'
     },
     testnet: {
-      url: testnetUrl,
-      accounts: [testnetAccount]
+      url: config.buidler.testnet_url,
+      accounts: [config.buidler.testnet_account]
     },
     mainnet: {
-      url: mainnetUrl,
-      accounts: [mainnetAccount]
+      url: config.buidler.mainnet_url,
+      accounts: [config.buidler.mainnet_account]
     },
     coverage: {
       url: 'http://localhost:8555'
