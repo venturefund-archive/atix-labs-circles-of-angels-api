@@ -546,8 +546,17 @@ module.exports = {
       }
       toUpdate.rejectionReason = rejectionReason;
     }
-    const updatedProjectId = await this.updateProject(projectId, toUpdate);
-
+    try {
+      if (newStatus === projectStatuses.EXECUTING) {
+        await updateProjectAsExecuting(project);
+      } else if (newStatus === projectStatuses.FUNDING) {
+        await this.updateProjectAsfunding(project);
+      } else {
+        await this.updateProject(projectId, toUpdate);
+      }
+    } catch (error) {
+      throw error;
+    }
     const skipNotificationStatus = [
       projectStatuses.NEW,
       projectStatuses.TO_REVIEW,
@@ -565,7 +574,7 @@ module.exports = {
       );
     }
 
-    return { projectId: updatedProjectId };
+    return { projectId };
   },
 
   /**
@@ -1156,14 +1165,7 @@ module.exports = {
           });
           await this.notifyProjectStatusChange(project, newStatus);
         } else if (newStatus === projectStatuses.FUNDING) {
-          logger.info(
-            `[ProjectService] :: Sending project ${project.id} to blockchain`
-          );
-          // TODO: do we need an extra status while waiting for the tx confirmation?
-          const tx = await coa.createProject(project.id, project.projectName);
-          await this.updateProject(project.id, {
-            txHash: tx.hash
-          });
+          await this.updateProjectAsfunding(project);
         }
         return { projectId: project.id, newStatus };
       })
@@ -1227,40 +1229,7 @@ module.exports = {
             status: newStatus
           });
         } else if (newStatus === projectStatuses.EXECUTING) {
-          const agreement = await this.generateProjectAgreement(project.id);
-          logger.info(
-            `[ProjectService] :: Saving agreement for project ${project.id}`
-          );
-          await this.updateProject(project.id, {
-            agreementJson: agreement,
-            status: newStatus
-          });
-
-          const removedOracles = await this.removeOraclesWithoutActivitiesFromProject(
-            project.id
-          );
-          logger.info(
-            '[ProjectService] :: Oracles removed from project:',
-            removedOracles
-          );
-
-          const milestones = await this.milestoneService.getAllMilestonesByProject(
-            project.id
-          );
-          // set first milestone as claimable
-          if (milestones && milestones.length && milestones[0]) {
-            await this.milestoneService.setClaimable(milestones[0].id);
-          }
-
-          logger.info(
-            `[ProjectService] :: Uploading agreement of project ${
-              project.id
-            } to blockchain`
-          );
-          await coa.addProjectAgreement(
-            project.address,
-            sha3(agreement) // TODO: this should be a ipfs hash
-          );
+          await this.updateProjectAsExecuting(project);
         }
         await this.notifyProjectStatusChange(project, newStatus);
         return { projectId: project.id, newStatus };
@@ -1269,6 +1238,64 @@ module.exports = {
     return updatedProjects.filter(updated => !!updated);
   },
 
+  async updateProjectAsExecuting(project) {
+    try {
+      const agreement = await this.generateProjectAgreement(project.id);
+      logger.info(
+        `[ProjectService] :: Saving agreement for project ${project.id}`
+      );
+      await this.updateProject(project.id, {
+        agreementJson: agreement,
+        status: projectStatuses.EXECUTING
+      });
+
+      const removedOracles = await this.removeOraclesWithoutActivitiesFromProject(
+        project.id
+      );
+      logger.info(
+        '[ProjectService] :: Oracles removed from project:',
+        removedOracles
+      );
+
+      const removedFunders = await this.removeFundersWithNoTransfersFromProject(
+        project
+      );
+      logger.info(
+        '[ProjectService] :: Funders removed from project:',
+        removedFunders
+      );
+
+      const milestones = await this.milestoneService.getAllMilestonesByProject(
+        project.id
+      );
+      // set first milestone as claimable
+      if (milestones && milestones.length && milestones[0]) {
+        await this.milestoneService.setClaimable(milestones[0].id);
+      }
+
+      logger.info(
+        `[ProjectService] :: Uploading agreement of project ${
+          project.id
+        } to blockchain`
+      );
+      await coa.addProjectAgreement(
+        project.address,
+        sha3(agreement) // TODO: this should be a ipfs hash
+      );
+    } catch (e) {
+      throw e;
+    }
+  },
+
+  async updateProjectAsfunding(project) {
+    logger.info(
+      `[ProjectService] :: Sending project ${project.id} to blockchain`
+    );
+    const tx = await coa.createProject(project.id, project.projectName);
+    await this.updateProject(project.id, {
+      txHash: tx.hash
+    });
+  },
   /**
    * Checks if the established time has passed
    * for the phase the project is currently in.
