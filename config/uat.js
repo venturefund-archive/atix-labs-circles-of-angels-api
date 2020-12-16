@@ -11,7 +11,7 @@ const cronExpressions = require('../src/rest/services/cronjob/cronExpressions');
 module.exports = {
   server: {
     isHttps: true,
-    domain: 'frontend.staging.coa.atixlabs.xyz'
+    domain: 'frontend.uat.coa.atixlabs.xyz'
   },
   crons: {
     disableAll: false,
