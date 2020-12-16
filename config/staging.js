@@ -22,5 +22,12 @@ module.exports = {
     minimumUnit: 'seconds',
     consensusSeconds: 300,
     fundingSeconds: 300
+  },
+  buidler: {
+    defaultNetwork: 'testnet'
+  },
+  server: {
+    isHttps: true,
+    domain: 'frontend.staging.coa.atixlabs.xyz'
   }
 };
