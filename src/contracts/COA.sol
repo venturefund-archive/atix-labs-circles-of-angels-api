@@ -5,6 +5,7 @@ import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol';
 import '@openzeppelin/upgrades/contracts/upgradeability/InitializableUpgradeabilityProxy.sol';
 import '@openzeppelin/upgrades/contracts/upgradeability/ProxyAdmin.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
 import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
@@ -12,7 +13,7 @@ import './SuperDAO.sol';
 
 import '@nomiclabs/buidler/console.sol';
 /// @title COA main contract to store projects related information
-contract COA is Initializable, Ownable {
+contract COA is Initializable, Ownable, GSNRecipient {
     struct Member {
         string profile;
     }
@@ -46,6 +47,7 @@ contract COA is Initializable, Ownable {
         address _implDao
     ) public initializer {
         Ownable.initialize(msg.sender);
+        GSNRecipient.initialize();
         registry = ClaimsRegistry(_registryAddress);
         proxyAdmin = _proxyAdmin;
         implProject = _implProject;
@@ -140,5 +142,25 @@ contract COA is Initializable, Ownable {
         return projects.length;
     }
 
+    function acceptRelayedCall(
+        address relay,
+        address from,
+        bytes calldata encodedFunction,
+        uint256 transactionFee,
+        uint256 gasPrice,
+        uint256 gasLimit,
+        uint256 nonce,
+        bytes calldata approvalData,
+        uint256 maxPossibleCharge
+    ) external view returns (uint256, bytes memory) {
+        return _approveRelayedCall();
+    }
+
+    function _preRelayedCall(bytes memory context) internal returns (bytes32) {
+    }
+
+    function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
+    }
+    
     uint256[50] private _gap;
 }
