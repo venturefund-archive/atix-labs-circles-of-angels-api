@@ -17,17 +17,14 @@ cache:
     - cache/
 
 before_script:
-  - >-
-    run apk --no-cache add --virtual native-deps \ g++ gcc libgcc libstdc++
-    linux-headers make python && \ npm install --quiet node-gyp -g &&\ npm
-    install --quiet && \ apk del native-deps
+  - npm install
 
 stages:
   - test
   - package
 
 lint:
-  image: docker.atixlabs.com/node:10.15.3-alpine
+  image: docker.atixlabs.com/node:10.15.3
   stage: test
   script:
     - npm run lint
@@ -35,7 +32,7 @@ lint:
     - schedules
 
 test_contracts:
-  image: docker.atixlabs.com/node:10.15.3-alpine
+  image: docker.atixlabs.com/node:10.15.3
   stage: test
   script:
     - npm run node > /dev/null &
@@ -45,7 +42,7 @@ test_contracts:
     - schedules
 
 test_be:
-  image: docker.atixlabs.com/node:10.15.3-alpine
+  image: docker.atixlabs.com/node:10.15.3
   stage: test
   script:
     - npm run test
@@ -53,18 +50,21 @@ test_be:
     - schedules
 
 package:
-  image: docker.atixlabs.com/node:10.15.3-alpine
+  image: docker.atixlabs.com/node:10.15.3
   stage: package
   services:
-    - docker.atixlabs.com/docker:19.03.1-dind
+    - docker:19.03.1-dind
   script:
-    - apk add docker
+    - curl -fsSL https://get.docker.com -o get-docker.sh
+    - sh get-docker.sh
     - docker login -u gitlabci -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker info
     - npm run docker:build
     - npm run docker:push
   only:
     refs:
       # Only run on develop, release/x.y.x and hotfix/xxxx
+      - COA-1766-fix-gitlab-pipeline
       - develop
       - /^release.*$/
       - /^hotfix.*$/

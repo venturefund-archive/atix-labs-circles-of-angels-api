@@ -11,8 +11,8 @@ const {
 
 const isOwner = (user, ownerId) => validateOwnership(ownerId, user.id);
 
-const isCurator = user => {
-  if (user.role !== userRoles.PROJECT_CURATOR)
+const isCuratorOrAdmin = user => {
+  if (![userRoles.PROJECT_CURATOR, userRoles.COA_ADMIN].includes(user.role))
     throw new COAError(errors.user.IsNotProjectCurator);
   return true;
 };
@@ -43,7 +43,7 @@ module.exports = {
   },
 
   async fromToReview({ user }) {
-    return isCurator(user);
+    return isCuratorOrAdmin(user);
   },
   async fromRejected({ user, project }) {
     // TODO: add validations for REJECTED -> DELETED transition if needed
