@@ -20,7 +20,7 @@ contract UsersWhitelist is Initializable, Ownable {
     }
 
     function removeUser(address _user) public onlyOwner {
-        delete items[_user];
+        delete users[_user];
         emit RemovedFromWhitelist(_user);
     }
 }
