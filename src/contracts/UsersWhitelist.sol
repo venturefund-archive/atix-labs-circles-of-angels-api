@@ -10,7 +10,7 @@ contract UsersWhitelist is Initializable, Ownable {
     event AddedToWhitelist(address indexed account);
     event RemovedFromWhitelist(address indexed account);
 
-    function initialize() public initialized {
+    function initialize() public initializer {
         Ownable.initialize(msg.sender);
     }
 
