@@ -7,30 +7,27 @@
  */
 
 module.exports = {
-  // only active user wallet
   async findActiveById(id) {
     return this.model.findOne({ id }).populate('user');
   },
 
-  async findActiveByUser(userId) {
+  findActiveByUserId(userId) {
     return this.model.findOne({ userId, active: true }).populate('user');
   },
 
-  async updateWallet(filter, data) {
+  updateWallet(filter, data) {
     try {
-      const disabledUserWallet = await this.model.updateOne(filter).set(data);
-      return disabledUserWallet;
-    } catch (e) {
-      const a = 2;
+      return this.model.updateOne(filter).set(data);
+    } catch (error) {
+      throw error;
     }
   },
 
-  async createUserWallet(userWallet) {
-    const createdUserWallet = await this.model.create({
+  createUserWallet(userWallet) {
+    return this.model.create({
       active: true,
       ...userWallet
     });
-    return createdUserWallet;
   },
 
   async findByAddress(address) {
@@ -43,14 +40,14 @@ module.exports = {
   },
 
   // all user wallets
-  async getUserWalletsByUserId(userId) {
+  getUserWalletsByUserId(userId) {
     return this.model
       .find({ userId })
       .populate('user')
       .sort('createdAt ASC');
   },
 
-  async getAllUserWallets(userFilters) {
+  getAllUserWallets(userFilters) {
     return this.model
       .find()
       .populate('user', userFilters)

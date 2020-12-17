@@ -198,7 +198,7 @@ module.exports = {
     });
     if (!savedUserWallet) {
       await this.userDao.removeUserById(savedUser.id);
-      throw new COAError(errors.user.NewWalletNotSaved);
+      throw new COAError(errors.userWallet.NewWalletNotSaved);
     }
 
     const accounts = await ethers.getSigners();
@@ -418,7 +418,7 @@ module.exports = {
           { active: true }
         );
       }
-      throw new COAError(errors.user.NewWalletNotSaved);
+      throw new COAError(errors.userWallet.NewWalletNotSaved);
     }
     return updated;
   }

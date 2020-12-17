@@ -122,7 +122,7 @@ module.exports = {
             { active: true }
           );
         }
-        throw new COAError(errors.user.NewWalletNotSaved);
+        throw new COAError(errors.userWallet.NewWalletNotSaved);
       }
       if (!updated) {
         logger.error(
