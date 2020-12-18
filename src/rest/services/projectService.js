@@ -546,16 +546,12 @@ module.exports = {
       }
       toUpdate.rejectionReason = rejectionReason;
     }
-    try {
-      if (newStatus === projectStatuses.EXECUTING) {
-        await updateProjectAsExecuting(project);
-      } else if (newStatus === projectStatuses.FUNDING) {
-        await this.updateProjectAsfunding(project);
-      } else {
-        await this.updateProject(projectId, toUpdate);
-      }
-    } catch (error) {
-      throw error;
+    if (newStatus === projectStatuses.EXECUTING) {
+      await this.updateProjectAsExecuting(project);
+    } else if (newStatus === projectStatuses.FUNDING) {
+      await this.updateProjectAsfunding(project);
+    } else {
+      await this.updateProject(projectId, toUpdate);
     }
     const skipNotificationStatus = [
       projectStatuses.NEW,
@@ -1268,7 +1264,6 @@ module.exports = {
       const milestones = await this.milestoneService.getAllMilestonesByProject(
         project.id
       );
-      // set first milestone as claimable
       if (milestones && milestones.length && milestones[0]) {
         await this.milestoneService.setClaimable(milestones[0].id);
       }
