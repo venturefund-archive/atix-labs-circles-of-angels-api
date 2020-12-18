@@ -14,6 +14,7 @@ COPY . .
 
 # Building app
 RUN npm run build
+EXPOSE 3001
 
 # Running the app
 CMD [ "npm", "run", "index" ]

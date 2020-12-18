@@ -11,7 +11,7 @@ const cronExpressions = require('../src/rest/services/cronjob/cronExpressions');
 module.exports = {
   server: {
     isHttps: true,
-    domain: 'frontend.staging.coa.atixlabs.xyz'
+    domain: 'frontend.uat.coa.atixlabs.xyz'
   },
   crons: {
     disableAll: false,
@@ -31,11 +31,11 @@ module.exports = {
     defaultNetwork: 'testnet'
   },
   contractAddresses: {
-    Project: ['0xBa2071DDF40549AE8aA861F61DEe90F124b0b8DC'],
-    SuperDAO: ['0xe5F354D8E41f62fc7E32a3E5F45F32Ebc6FcD8F7'],
-    DAO: ['0x7d0029dc5001323dc4fF4422556B52e4a56Dab26'],
-    ProxyAdmin: ['0x44fD102013e634829d00153bBB161983210b4706'],
-    ClaimsRegistry: ['0xBC29A4d403b6BA26c31Db00db06fac64c636Bbae'],
-    COA: ['0x85D0fd533C1c561817ae24044e5EfC304C0298F0']
+    Project: ['0x420476619173B4a3fBf68D595E4463084Cf68fa3'],
+    SuperDAO: ['0xd9FEC1D3235c455CEA7925C233E068B77805Bf5B'],
+    DAO: ['0x659423d72F3d6057c57a07974673D5fFe69E2B95'],
+    ProxyAdmin: ['0x9a06426bccfa22fE1958bf9923b48C890FA0E9d1'],
+    ClaimsRegistry: ['0x93870E888e4742b767b46e305E5fD4C201F9E970'],
+    COA: ['0x86039e987cb82CA44f0035D0C7C99fef4b7Ed879']
   }
 };

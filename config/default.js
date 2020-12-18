@@ -34,7 +34,7 @@ module.exports = {
     pass: process.env.EMAIL_PASS,
     apiKey: process.env.EMAIL_API_KEY, // sendgrid apikey, when undefined uses smtp
     from: process.env.EMAIL_FROM,
-    disabled: process.env.EMAIL_DISABLED || false
+    disabled: process.env.EMAIL_DISABLED === 'true'
   },
 
   support: {
