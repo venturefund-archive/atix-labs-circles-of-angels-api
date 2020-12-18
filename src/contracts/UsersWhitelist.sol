@@ -20,7 +20,7 @@ contract UsersWhitelist is Initializable, Ownable {
     }
 
     function removeUser(address _user) public onlyOwner {
-        requite(users[_user] != 0, "The user is not in the whitelist.");
+        require(users[_user] != 0, "The user is not in the whitelist.");
         delete users[_user];
         emit RemovedFromWhitelist(_user);
     }
