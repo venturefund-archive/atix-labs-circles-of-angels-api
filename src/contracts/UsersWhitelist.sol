@@ -15,12 +15,13 @@ contract UsersWhitelist is Initializable, Ownable {
     }
 
     function addUser(address _user) public onlyOwner {
+        require(users[_user] == false, "The user already exists in the whitelist.");
         users[_user] = true;
         emit AddedToWhitelist(_user);
     }
 
     function removeUser(address _user) public onlyOwner {
-        require(users[_user] != 0, "The user is not in the whitelist.");
+        require(users[_user] == true, "The user is not in the whitelist.");
         delete users[_user];
         emit RemovedFromWhitelist(_user);
     }
