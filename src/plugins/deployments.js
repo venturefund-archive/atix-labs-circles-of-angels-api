@@ -5,20 +5,13 @@ const {
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
-const ProxyAdmin = require('@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json');
 const {
-  artifacts,
   ethereum,
   network,
-  web3,
-  run,
   config,
   ethers,
   upgrades
 } = require('@nomiclabs/buidler');
-
-// const { ethers } = require('@nomiclabs/buidler-ethers');
-
 const {
   ensureFileSync,
   existsSync,
@@ -28,6 +21,7 @@ const {
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
+const { contractAddresses } = require('config');
 
 // TODO : this can be placed into the buidler's config.
 const stateFilename = 'state.json';
@@ -127,6 +121,9 @@ function getDeploymentSetup(setup, deployer) {
 }
 
 async function getDeployedAddresses(name, chainId) {
+  if (contractAddresses) {
+    return contractAddresses[name]
+  }
   const state = readState();
   chainId = await getChainId(chainId);
 
@@ -271,29 +268,7 @@ async function deployProxy(contractName, params, signer, opts) {
   return [contract, receipt];
 }
 
-// function getContractConfig(name) {
-//   const config = this.setup.contracts.find(c => c.name === name);
-//   if (config === undefined) {
-//     throw new Error('unknown contract' + name);
-//   }
-//   return config;
-// }
-
 async function getContractInstance(name, address, signer) {
-  // const config = this.getContractConfig(name);
-
-  // if (address === undefined) {
-  //   if (address === undefined) {
-  //     const contract = await this.getLastDeployedContract(name);
-  //     address = contract.address;
-  //   } else {
-  //     address = config.address;
-  //   }
-  // }
-  // if (address === undefined) {
-  //   throw new Error('unable to resolve' + name + 'contract address');
-  // }
-
   const factory = await getContractFactory(name, signer);
 
   return factory.attach(address);

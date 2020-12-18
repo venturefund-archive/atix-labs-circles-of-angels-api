@@ -1216,13 +1216,6 @@ module.exports = {
         );
 
         if (newStatus === projectStatuses.CONSENSUS) {
-          const removedFunders = await this.removeFundersWithNoTransfersFromProject(
-            project
-          );
-          logger.info(
-            '[ProjectService] :: Funders removed from project:',
-            removedFunders
-          );
           await this.updateProject(project.id, {
             status: newStatus
           });
@@ -1242,6 +1235,14 @@ module.exports = {
           logger.info(
             '[ProjectService] :: Oracles removed from project:',
             removedOracles
+          );
+
+          const removedFunders = await this.removeFundersWithNoTransfersFromProject(
+            project
+          );
+          logger.info(
+            '[ProjectService] :: Funders removed from project:',
+            removedFunders
           );
 
           const milestones = await this.milestoneService.getAllMilestonesByProject(
