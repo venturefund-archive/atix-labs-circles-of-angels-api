@@ -37,20 +37,5 @@ module.exports = {
     }
     const { user, encryptedWallet, mnemonic } = userWallet;
     return { address, encryptedWallet, mnemonic, ...user };
-  },
-
-  // all user wallets
-  getUserWalletsByUserId(userId) {
-    return this.model
-      .find({ userId })
-      .populate('user')
-      .sort('createdAt ASC');
-  },
-
-  getAllUserWallets(userFilters) {
-    return this.model
-      .find()
-      .populate('user', userFilters)
-      .sort('createdAt ASC');
   }
 };
