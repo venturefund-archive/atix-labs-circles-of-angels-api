@@ -24,4 +24,6 @@ contract UsersWhitelist is Initializable, Ownable {
         delete users[_user];
         emit RemovedFromWhitelist(_user);
     }
+
+    uint256[50] private _gap;
 }
