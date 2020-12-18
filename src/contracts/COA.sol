@@ -10,6 +10,7 @@ import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
 import './SuperDAO.sol';
+import './UsersWhitelist.sol'
 
 import '@nomiclabs/buidler/console.sol';
 /// @title COA main contract to store projects related information
@@ -38,6 +39,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
     address internal implProject;
     address internal implSuperDao;
     address internal implDao;
+    UsersWhitelist public whitelist;
 
     function coaInitialize(
         address _registryAddress,
@@ -142,6 +144,10 @@ contract COA is Initializable, Ownable, GSNRecipient {
         return projects.length;
     }
 
+    function setWhitelist(address _whitelist) public onlyOwner() {
+
+    }
+
     function acceptRelayedCall(
         address relay,
         address from,
@@ -162,5 +168,6 @@ contract COA is Initializable, Ownable, GSNRecipient {
     function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
     }
     
-    uint256[50] private _gap;
+
+    uint256[49] private _gap;
 }
