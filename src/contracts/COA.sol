@@ -10,7 +10,7 @@ import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
 import './SuperDAO.sol';
-import './UsersWhitelist.sol'
+import './UsersWhitelist.sol';
 
 import '@nomiclabs/buidler/console.sol';
 /// @title COA main contract to store projects related information
@@ -145,7 +145,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
     }
 
     function setWhitelist(address _whitelist) public onlyOwner() {
-
+        whitelist = UsersWhitelist(_whitelist);
     }
 
     function acceptRelayedCall(
@@ -159,7 +159,11 @@ contract COA is Initializable, Ownable, GSNRecipient {
         bytes calldata approvalData,
         uint256 maxPossibleCharge
     ) external view returns (uint256, bytes memory) {
-        return _approveRelayedCall();
+        if (whitelist.users()[_msgSender()]) {
+            return _approveRelayedCall();
+        } else {
+            return _rejectRelayedCall(errorCode);
+        }
     }
 
     function _preRelayedCall(bytes memory context) internal returns (bytes32) {

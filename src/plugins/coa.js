@@ -373,6 +373,18 @@ module.exports = class COA {
     return this.contracts.registry;
   }
 
+  async getwhitelist() {
+    if (this.contracts.registry === undefined) {
+      const contract = await this.env.deployments.getLastDeployedContract(
+        'UsersWhitelist'
+      );
+
+      this.contracts.registry = contract;
+    }
+
+    return this.contracts.registry;
+  }
+
   async getSigner(account) {
     return this.env.deployments.getSigner(account);
   }

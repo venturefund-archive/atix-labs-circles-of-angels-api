@@ -41,6 +41,8 @@
     "@nomiclabs/buidler-web3": "1.1.2",
     "@openzeppelin/contracts": "2.5.1",
     "@openzeppelin/contracts-ethereum-package": "2.5.0",
+    "@openzeppelin/gsn-helpers": "0.2.4",
+    "@openzeppelin/gsn-provider": "0.1.11",
     "@openzeppelin/network": "^0.4.3",
     "@openzeppelin/upgrades": "2.8.0",
     "@sendgrid/mail": "6.5.4",
