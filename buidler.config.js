@@ -2,18 +2,61 @@ usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
+
+const { ethers, upgrades } = require('@nomiclabs/buidler');
+const { readArtifactSync, lazyObject } = require('@nomiclabs/buidler/plugins');
+
 const config = require('config');
-const { lazyObject } = require('@nomiclabs/buidler/plugins');
-require('./src/rest/services/helpers/buidlerTasks');
 const COA = require('./src/plugins/coa');
+const logger = require('./src/rest/logger');
 
-const testnetUrl = config.buidler.testnet_url;
-const testnetAccount = config.buidler.testnet_account;
+async function getOrDeployContract(contractName, params, reset, env) {
+  logger.info(
+    `[buidler.config] :: Entering getOrDeployContract. Contract ${contractName} with args ${params}.`
+  );
+  let [contract] = await env.deployments.getDeployedContracts(contractName);
+  if (contract === undefined || reset === true) {
+    logger.info(`[buidler.config] :: ${contractName} not found, deploying...`);
+    [contract] = await env.deployments.deploy(contractName, params);
+    await env.deployments.saveDeployedContract(contractName, contract);
+    logger.info(`[buidler.config] :: ${contractName} deployed.`);
+  }
+}
 
-const mainnetUrl = config.buidler.mainnet_url;
-const mainnetAccount = config.buidler.mainnet_account;
+async function getOrDeployUpgradeableContract(
+  contractName,
+  params,
+  signer,
+  options,
+  reset,
+  env
+) {
+  let [contract] = await env.deployments.getDeployedContracts(contractName);
+  if (contract === undefined || reset === true) {
+    logger.info(`[buidler.config] :: ${contractName} not found, deploying...`);
+    [contract] = await env.deployments.deployProxy(
+      contractName,
+      params,
+      signer,
+      options
+    );
+    await env.deployments.saveDeployedContract(contractName, contract);
+    logger.info(`[buidler.config] :: ${contractName} deployed.`);
+  } else {
+    const implContract = await env.deployments.getImplContract(
+      contract,
+      contractName
+    );
+    const artifact = readArtifactSync(config.paths.artifacts, contractName);
 
-// const Deployments = require("./scripts/deployments");
+    const implCode = await ethers.provider.getCode(implContract.address);
+    if (implCode !== artifact.deployedBytecode) {
+      const factory = env.deployments.getContractFactory(contractName, signer);
+      const nextImpl = upgrades.prepareUpgrade(contract.address, factory);
+      await contract.upgradeTo(nextImpl);
+    }
+  }
+}
 
 task('deploy', 'Deploys COA contracts')
   // eslint-disable-next-line no-undef
@@ -25,64 +68,37 @@ task('deploy', 'Deploys COA contracts')
     // TODO: check if reset condition is needed
     if (reset) env.coa.clearContracts();
 
-    let [implProject] = await env.deployments.getDeployedContracts('Project');
-    if (implProject === undefined || reset === true) {
-      [implProject] = await env.deployments.deploy('Project', []);
-      await env.deployments.saveDeployedContract('Project', implProject);
-      // console.log('implProject deployed. Address:', implProject.address);
-    }
+    const implProject = await getOrDeployContract('Project', [], reset, env);
 
-    let [implSuperDao] = await env.deployments.getDeployedContracts('SuperDAO');
-    if (implSuperDao === undefined || reset === true) {
-      [implSuperDao] = await env.deployments.deploy('SuperDAO', []);
-      await env.deployments.saveDeployedContract('SuperDAO', implSuperDao);
-      // console.log('implSuperDao deployed. Address:', implSuperDao.address);
-    }
+    const implSuperDao = await getOrDeployContract('SuperDAO', [], reset, env);
 
-    let [implDao] = await env.deployments.getDeployedContracts('DAO');
-    if (implDao === undefined || reset === true) {
-      [implDao] = await env.deployments.deploy('DAO', []);
-      await env.deployments.saveDeployedContract('DAO', implDao);
-      // console.log('implDao deployed. Address:', implDao.address);
-    }
+    const implDao = await getOrDeployContract('DAO', [], reset, env);
 
-    let [proxyAdmin] = await env.deployments.getDeployedContracts('ProxyAdmin');
-    if (proxyAdmin === undefined || reset === true) {
-      [proxyAdmin] = await env.deployments.deploy('ProxyAdmin', []);
-      await env.deployments.saveDeployedContract('ProxyAdmin', proxyAdmin);
-      // console.log('ProxyAdmin deployed. Address:', proxyAdmin.address);
-    }
+    const proxyAdmin = await getOrDeployContract('proxyAdmin', [], reset, env);
 
-    let [registry] = await env.deployments.getDeployedContracts(
-      'ClaimsRegistry'
+    const registry = await getOrDeployUpgradeableContract(
+      'ClaimsRegistry',
+      [],
+      undefined,
+      undefined,
+      reset,
+      env
     );
-    if (registry === undefined || reset === true) {
-      [registry] = await env.deployments.deployProxy('ClaimsRegistry', []);
-      await env.deployments.saveDeployedContract('ClaimsRegistry', registry);
-      // console.log('ClaimsRegistry deployed. Address:', registry.address);
-    }
 
-    let [coa] = await env.deployments.getDeployedContracts('COA');
-    if (coa === undefined || reset === true) {
-      [coa] = await env.deployments.deployProxy(
-        'COA',
-        [
-          registry.address,
-          proxyAdmin.address,
-          implProject.address,
-          implSuperDao.address,
-          implDao.address
-        ],
-        undefined,
-        { initializer: 'coaInitialize' }
-      );
-      await env.deployments.saveDeployedContract('COA', coa);
-      // console.log('COA deployed. Address:', coa.address);
-    }
-
-    // console.log('ProxyAdmin attached to', proxyAdmin.address);
-    // console.log('Registry attached to', registry.address);
-    // console.log('COA attached to', coa.address);
+    await getOrDeployUpgradeableContract(
+      'COA',
+      [
+        registry.address,
+        proxyAdmin.address,
+        implProject.address,
+        implSuperDao.address,
+        implDao.address
+      ],
+      undefined,
+      { initializer: 'coaInitialize' },
+      reset,
+      env
+    );
   });
 
 const coaDeploySetup = {

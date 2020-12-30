@@ -144,7 +144,6 @@ async function getDeployedContracts(name, chainId) {
   const addresses = await getDeployedAddresses(name, chainId);
   const artifact = readArtifactSync(config.paths.artifacts, name);
 
-  // TODO : should use deployedBytecode instead?
   if (artifact.bytecode !== factory.bytecode) {
     console.warn(
       'Deployed contract',
@@ -157,18 +156,11 @@ async function getDeployedContracts(name, chainId) {
   for (const addr of addresses) {
     const code = await ethers.provider.getCode(addr);
     const contract = factory.attach(addr);
-    if (code === artifact.deployedBytecode) {
+    if (code === artifact.deployedBytecode || code === AdminUpgradeabilityProxy.deployedBytecode) {
       contracts.push(contract);
-    } else if (code === AdminUpgradeabilityProxy.deployedBytecode) {
-      const implContract = await getImplContract(contract, name);
-      const implCode = await ethers.provider.getCode(implContract.address);
-      if (implCode === artifact.deployedBytecode) {
-        contracts.push(contract);
-      }
     }
   }
 
-  // return addresses.map(addr => factory.attach(addr));
   return contracts;
 }
 
