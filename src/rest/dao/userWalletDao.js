@@ -16,11 +16,7 @@ module.exports = {
   },
 
   updateWallet(filter, data) {
-    try {
-      return this.model.updateOne(filter).set(data);
-    } catch (error) {
-      throw error;
-    }
+    return this.model.updateOne(filter).set(data);
   },
 
   createUserWallet(userWallet) {
