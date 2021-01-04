@@ -1214,13 +1214,6 @@ module.exports = {
         );
 
         if (newStatus === projectStatuses.CONSENSUS) {
-          const removedFunders = await this.removeFundersWithNoTransfersFromProject(
-            project
-          );
-          logger.info(
-            '[ProjectService] :: Funders removed from project:',
-            removedFunders
-          );
           await this.updateProject(project.id, {
             status: newStatus
           });
