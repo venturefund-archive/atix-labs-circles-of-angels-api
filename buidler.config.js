@@ -21,6 +21,7 @@ async function getOrDeployContract(contractName, params, reset, env) {
     await env.deployments.saveDeployedContract(contractName, contract);
     logger.info(`[buidler.config] :: ${contractName} deployed.`);
   }
+  return contract;
 }
 
 async function getOrDeployUpgradeableContract(
@@ -43,6 +44,9 @@ async function getOrDeployUpgradeableContract(
     await env.deployments.saveDeployedContract(contractName, contract);
     logger.info(`[buidler.config] :: ${contractName} deployed.`);
   } else {
+    logger.info(
+      `[buidler.config] :: ${contractName} found, checking if an upgrade is needed`
+    );
     const implContract = await env.deployments.getImplContract(
       contract,
       contractName
@@ -51,11 +55,16 @@ async function getOrDeployUpgradeableContract(
 
     const implCode = await ethers.provider.getCode(implContract.address);
     if (implCode !== artifact.deployedBytecode) {
+      logger.info(
+        `[buidler.config] :: ${contractName} need an upgrade, upgrading to new implementation`
+      );
       const factory = env.deployments.getContractFactory(contractName, signer);
       const nextImpl = upgrades.prepareUpgrade(contract.address, factory);
       await contract.upgradeTo(nextImpl);
+      logger.info(`[buidler.config] :: ${contractName} upgraded`);
     }
   }
+  return contract;
 }
 
 task('deploy', 'Deploys COA contracts')
