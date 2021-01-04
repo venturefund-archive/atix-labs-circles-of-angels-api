@@ -3,69 +3,10 @@ usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
 
-const { ethers, upgrades } = require('@nomiclabs/buidler');
-const { readArtifactSync, lazyObject } = require('@nomiclabs/buidler/plugins');
+const { lazyObject } = require('@nomiclabs/buidler/plugins');
 
 const config = require('config');
 const COA = require('./src/plugins/coa');
-const logger = require('./src/rest/logger');
-
-async function getOrDeployContract(contractName, params, reset, env) {
-  logger.info(
-    `[buidler.config] :: Entering getOrDeployContract. Contract ${contractName} with args ${params}.`
-  );
-  let [contract] = await env.deployments.getDeployedContracts(contractName);
-  if (contract === undefined || reset === true) {
-    logger.info(`[buidler.config] :: ${contractName} not found, deploying...`);
-    [contract] = await env.deployments.deploy(contractName, params);
-    await env.deployments.saveDeployedContract(contractName, contract);
-    logger.info(`[buidler.config] :: ${contractName} deployed.`);
-  }
-  return contract;
-}
-
-async function getOrDeployUpgradeableContract(
-  contractName,
-  params,
-  signer,
-  options,
-  reset,
-  env
-) {
-  let [contract] = await env.deployments.getDeployedContracts(contractName);
-  if (contract === undefined || reset === true) {
-    logger.info(`[buidler.config] :: ${contractName} not found, deploying...`);
-    [contract] = await env.deployments.deployProxy(
-      contractName,
-      params,
-      signer,
-      options
-    );
-    await env.deployments.saveDeployedContract(contractName, contract);
-    logger.info(`[buidler.config] :: ${contractName} deployed.`);
-  } else {
-    logger.info(
-      `[buidler.config] :: ${contractName} found, checking if an upgrade is needed`
-    );
-    const implContract = await env.deployments.getImplContract(
-      contract,
-      contractName
-    );
-    const artifact = readArtifactSync(config.paths.artifacts, contractName);
-
-    const implCode = await ethers.provider.getCode(implContract.address);
-    if (implCode !== artifact.deployedBytecode) {
-      logger.info(
-        `[buidler.config] :: ${contractName} need an upgrade, upgrading to new implementation`
-      );
-      const factory = env.deployments.getContractFactory(contractName, signer);
-      const nextImpl = upgrades.prepareUpgrade(contract.address, factory);
-      await contract.upgradeTo(nextImpl);
-      logger.info(`[buidler.config] :: ${contractName} upgraded`);
-    }
-  }
-  return contract;
-}
 
 task('deploy', 'Deploys COA contracts')
   // eslint-disable-next-line no-undef
@@ -77,15 +18,35 @@ task('deploy', 'Deploys COA contracts')
     // TODO: check if reset condition is needed
     if (reset) env.coa.clearContracts();
 
-    const implProject = await getOrDeployContract('Project', [], reset, env);
+    const implProject = await env.deployments.getOrDeployContract(
+      'Project',
+      [],
+      reset,
+      env
+    );
 
-    const implSuperDao = await getOrDeployContract('SuperDAO', [], reset, env);
+    const implSuperDao = await env.deployments.getOrDeployContract(
+      'SuperDAO',
+      [],
+      reset,
+      env
+    );
 
-    const implDao = await getOrDeployContract('DAO', [], reset, env);
+    const implDao = await env.deployments.getOrDeployContract(
+      'DAO',
+      [],
+      reset,
+      env
+    );
 
-    const proxyAdmin = await getOrDeployContract('proxyAdmin', [], reset, env);
+    const proxyAdmin = await env.deployments.getOrDeployContract(
+      'ProxyAdmin',
+      [],
+      reset,
+      env
+    );
 
-    const registry = await getOrDeployUpgradeableContract(
+    const registry = await env.deployments.getOrDeployUpgradeableContract(
       'ClaimsRegistry',
       [],
       undefined,
@@ -94,7 +55,7 @@ task('deploy', 'Deploys COA contracts')
       env
     );
 
-    await getOrDeployUpgradeableContract(
+    await env.deployments.getOrDeployUpgradeableContract(
       'COA',
       [
         registry.address,

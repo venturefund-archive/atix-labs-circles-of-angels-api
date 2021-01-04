@@ -22,6 +22,7 @@ const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
 const { contractAddresses } = require('config');
+const logger = require('../rest/logger')
 
 // TODO : this can be placed into the buidler's config.
 const stateFilename = 'state.json';
@@ -260,6 +261,64 @@ async function deployProxy(contractName, params, signer, opts) {
   return [contract, receipt];
 }
 
+
+async function getOrDeployContract(contractName, params, reset, env) {
+  logger.info(
+      `[deployments] :: Entering getOrDeployContract. Contract ${contractName} with args ${params}.`
+  );
+  let [contract] = await env.deployments.getDeployedContracts(contractName);
+  if (contract === undefined || reset === true) {
+    logger.info(`[deployments] :: ${contractName} not found, deploying...`);
+    [contract] = await env.deployments.deploy(contractName, params);
+    await env.deployments.saveDeployedContract(contractName, contract);
+    logger.info(`[deployments] :: ${contractName} deployed.`);
+  }
+  return contract;
+}
+
+async function getOrDeployUpgradeableContract(
+    contractName,
+    params,
+    signer,
+    options,
+    reset,
+    env
+) {
+  let [contract] = await env.deployments.getDeployedContracts(contractName);
+  if (contract === undefined || reset === true) {
+    logger.info(`[deployments] :: ${contractName} not found, deploying...`);
+    [contract] = await env.deployments.deployProxy(
+        contractName,
+        params,
+        signer,
+        options
+    );
+    await env.deployments.saveDeployedContract(contractName, contract);
+    logger.info(`[deployments] :: ${contractName} deployed.`);
+  } else {
+    logger.info(
+        `[deployments] :: ${contractName} found, checking if an upgrade is needed`
+    );
+    const implContract = await env.deployments.getImplContract(
+        contract,
+        contractName
+    );
+    const artifact = readArtifactSync(config.paths.artifacts, contractName);
+
+    const implCode = await ethers.provider.getCode(implContract.address);
+    if (implCode !== artifact.deployedBytecode) {
+      logger.info(
+          `[deployments] :: ${contractName} need an upgrade, upgrading to new implementation`
+      );
+      const factory = env.deployments.getContractFactory(contractName, signer);
+      const nextImpl = upgrades.prepareUpgrade(contract.address, factory);
+      await contract.upgradeTo(nextImpl);
+      logger.info(`[deployments] :: ${contractName} upgraded`);
+    }
+  }
+  return contract;
+}
+
 async function getContractInstance(name, address, signer) {
   const factory = await getContractFactory(name, signer);
 
@@ -314,5 +373,7 @@ module.exports = {
   getContractFactory,
   getImplContract,
   isProxy,
-  getDeploymentSetup
+  getDeploymentSetup,
+  getOrDeployContract,
+  getOrDeployUpgradeableContract
 };
