@@ -7,6 +7,7 @@ const { lazyObject } = require('@nomiclabs/buidler/plugins');
 
 const config = require('config');
 const COA = require('./src/plugins/coa');
+require('./src/rest/services/helpers/buidlerTasks');
 
 task('deploy', 'Deploys COA contracts')
   // eslint-disable-next-line no-undef

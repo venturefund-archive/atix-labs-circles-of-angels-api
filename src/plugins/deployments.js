@@ -264,7 +264,7 @@ async function deployProxy(contractName, params, signer, opts) {
 
 async function getOrDeployContract(contractName, params, reset, env) {
   logger.info(
-      `[deployments] :: Entering getOrDeployContract. Contract ${contractName} with args ${params}.`
+      `[deployments] :: Entering getOrDeployContract. Contract ${contractName} with args [${params}].`
   );
   let [contract] = await env.deployments.getDeployedContracts(contractName);
   if (contract === undefined || reset === true) {
