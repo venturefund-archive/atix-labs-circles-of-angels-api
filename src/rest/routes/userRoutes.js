@@ -357,11 +357,19 @@ const routes = {
         body: {
           type: 'object',
           properties: {
+            address: { type: 'string' },
             token: { type: 'string' },
             password: { type: 'string' },
-            encryptedWallet: { type: 'string' }
+            encryptedWallet: { type: 'string' },
+            mnemonic: { type: 'string' }
           },
-          required: ['token', 'password', 'encryptedWallet'],
+          required: [
+            'address',
+            'token',
+            'password',
+            'encryptedWallet',
+            'mnemonic'
+          ],
           description: 'New password and new encrypted wallet'
         },
         response: {

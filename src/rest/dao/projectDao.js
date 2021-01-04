@@ -73,7 +73,7 @@ module.exports = {
 
   /* eslint no-param-reassign: ["error", { "props": false }] */
   async addUserInfoOnProject(project) {
-    const user = await userDao.getUserById(project.ownerId);
+    const user = await userDao.findById(project.ownerId);
     if (!user) return project;
     project.ownerName = user.username;
     project.ownerEmail = user.email;
@@ -129,7 +129,7 @@ module.exports = {
   async getUserOwnerOfProject(projectId) {
     try {
       const project = await this.getProjectById({ projectId });
-      const owner = await userDao.getUserById(project.ownerId);
+      const owner = await userDao.findById(project.ownerId);
       return owner;
     } catch (error) {
       throw Error('Error getting User');
