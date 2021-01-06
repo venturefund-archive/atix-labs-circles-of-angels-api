@@ -33,5 +33,23 @@ module.exports = {
     }
     const { user, encryptedWallet, mnemonic } = userWallet;
     return { address, encryptedWallet, mnemonic, ...user };
+  },
+
+  async findByAddresses(addresses) {
+    const userWallets = await this.model
+      .find({ address: addresses })
+      .populate('user');
+    if (!userWallets) {
+      return;
+    }
+    const users = userWallets.map(
+      ({ user, encryptedWallet, address, mnemonic }) => ({
+        address,
+        encryptedWallet,
+        mnemonic,
+        ...user
+      })
+    );
+    return users;
   }
 };

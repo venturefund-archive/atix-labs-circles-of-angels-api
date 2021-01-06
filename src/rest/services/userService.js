@@ -42,6 +42,22 @@ module.exports = {
   },
 
   /**
+   * Returns the user which the specified address belongs to
+   * @param {[String]} addresses
+   */
+  async getVotersByAddresses(addresses) {
+    logger.info('[UserService] :: Entering getUserByAddress method');
+    const users = await this.userWalletDao.findByAddresses(addresses);
+    if (!users) {
+      return [];
+    }
+    const userNames = users.map(
+      ({ firstName, lastName }) => firstName.charAt(0) + lastName.charAt(0)
+    );
+    return userNames;
+  },
+
+  /**
    * Receives the user's email and password and tries to authenticate
    *
    * @param {string} email user's email
