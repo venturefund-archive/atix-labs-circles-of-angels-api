@@ -9,21 +9,34 @@
 const { userRoles } = require('../util/constants');
 
 module.exports = {
-  async getUserById(id) {
-    // TODO delete this
-    return this.model.findOne({ id });
-  },
-
   async findById(id) {
-    return this.model.findOne({ id });
-  },
-
-  async findByAddress(address) {
-    return this.model.findOne({ address });
+    const user = await this.model.findOne({ id }).populate('wallets', {
+      where: { active: true }
+    });
+    if (!user) {
+      return;
+    }
+    if (!user.wallets.length) {
+      return;
+    }
+    const { address, encryptedWallet, mnemonic } = user.wallets[0];
+    delete user.wallets;
+    return { address, encryptedWallet, mnemonic, ...user };
   },
 
   async getUserByEmail(email) {
-    return this.model.findOne({ email: email.toLowerCase() });
+    const user = await this.model.findOne({ email }).populate('wallets', {
+      where: { active: true }
+    });
+    if (!user) {
+      return;
+    }
+    if (!user.wallets.length) {
+      return;
+    }
+    const { address, encryptedWallet, mnemonic } = user.wallets[0];
+    delete user.wallets;
+    return { address, encryptedWallet, mnemonic, ...user };
   },
 
   async createUser(user) {
@@ -48,14 +61,10 @@ module.exports = {
   },
 
   async updateUserByEmail(email, user) {
-    const updatedUser = await this.model.updateOne({ email }).set({ ...user });
+    const updatedUser = await this.model
+      .updateOne({ where: { email: email.toLowerCase() } })
+      .set({ ...user });
     return updatedUser;
-  },
-
-  async getUsers() {
-    return this.model
-      .find({ where: { role: { '!=': userRoles.COA_ADMIN } } })
-      .sort('createdAt ASC');
   },
 
   async updatePasswordByMail(email, pwd) {
@@ -64,9 +73,34 @@ module.exports = {
       .set({ pwd });
   },
 
+  /* eslint-disable no-param-reassign */
+  async getUsers() {
+    const users = await this.model
+      .find({
+        where: {
+          role: { '!=': userRoles.COA_ADMIN }
+        }
+      })
+      .populate('wallets', {
+        where: { active: true }
+      });
+    return users.map(user => {
+      if (!user.wallets.length) {
+        return user;
+      }
+      const { address, encryptedWallet, mnemonic } = user.wallets[0];
+      delete user.wallets;
+      return { address, encryptedWallet, mnemonic, ...user };
+    });
+  },
+
   async updateTransferBlockchainStatus(userId, status) {
     return this.model
       .updateOne({ id: userId })
       .set({ transferBlockchainStatus: status });
+  },
+
+  async removeUserById(id) {
+    return this.model.destroy({ id });
   }
 };
