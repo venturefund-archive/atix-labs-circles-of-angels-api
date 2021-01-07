@@ -3,6 +3,7 @@ usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
 
+const { run } = require('@nomiclabs/buidler');
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
 
 const config = require('config');
@@ -16,60 +17,24 @@ task('deploy', 'Deploys COA contracts')
     // Make sure everything is compiled
     // await run('compile');
 
-    // TODO: check if reset condition is needed
     if (reset) env.coa.clearContracts();
 
-    const implProject = await env.deployments.getOrDeployContract(
-      'Project',
-      [],
-      reset,
-      env
-    );
+    await env.deployments.deployAll(undefined, reset, false);
+  });
 
-    const implSuperDao = await env.deployments.getOrDeployContract(
-      'SuperDAO',
-      [],
-      reset,
-      env
-    );
+task(
+  'upgradeContracts',
+  'Deploys and Upgrades (if necessary) upgradeable COA contracts'
+)
+  // eslint-disable-next-line no-undef
+  .addOptionalParam('reset', 'force deploy', false, types.boolean)
+  .setAction(async ({ reset }, env) => {
+    // Make sure everything is compiled
+    await run('compile');
 
-    const implDao = await env.deployments.getOrDeployContract(
-      'DAO',
-      [],
-      reset,
-      env
-    );
+    if (reset) env.coa.clearContracts();
 
-    const proxyAdmin = await env.deployments.getOrDeployContract(
-      'ProxyAdmin',
-      [],
-      reset,
-      env
-    );
-
-    const registry = await env.deployments.getOrDeployUpgradeableContract(
-      'ClaimsRegistry',
-      [],
-      undefined,
-      undefined,
-      reset,
-      env
-    );
-
-    await env.deployments.getOrDeployUpgradeableContract(
-      'COA',
-      [
-        registry.address,
-        proxyAdmin.address,
-        implProject.address,
-        implSuperDao.address,
-        implDao.address
-      ],
-      undefined,
-      { initializer: 'coaInitialize' },
-      reset,
-      env
-    );
+    await env.deployments.deployAll(undefined, reset, true);
   });
 
 const coaDeploySetup = {
