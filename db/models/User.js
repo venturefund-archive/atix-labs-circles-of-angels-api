@@ -71,7 +71,8 @@ module.exports = {
       defaultsTo: false,
       required: false
     },
-    emailConfirmation: { type: 'boolean', defaultsTo: false, required: false }
+    emailConfirmation: { type: 'boolean', defaultsTo: false, required: false },
+    mnemonic: { type: 'string', required: false } // Remove once the prod users reovery them passwords
   },
   customToJSON: function toJson() {
     return omit(this, ['password']);
