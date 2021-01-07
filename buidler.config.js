@@ -3,7 +3,6 @@ usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
 
-const { run } = require('@nomiclabs/buidler');
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
 
 const config = require('config');
@@ -15,7 +14,7 @@ task('deploy', 'Deploys COA contracts')
   .addOptionalParam('reset', 'force deploy', false, types.boolean)
   .setAction(async ({ reset }, env) => {
     // Make sure everything is compiled
-    // await run('compile');
+    await run('compile');
 
     if (reset) env.coa.clearContracts();
 
