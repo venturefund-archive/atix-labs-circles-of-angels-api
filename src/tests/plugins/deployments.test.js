@@ -1,67 +1,42 @@
-const { describe, it, beforeEach, beforeAll, expect } = global;
-const { ethereum, config, upgrades } = require('@nomiclabs/buidler');
+const { describe, it, beforeAll, beforeEach, expect } = global;
+const { config } = require('@nomiclabs/buidler');
 const { readArtifactSync } = require('@nomiclabs/buidler/plugins');
 const {
   getOrDeployContract,
   getOrDeployUpgradeableContract,
   buildGetOrDeployUpgradeableContract,
-  readState,
-  writeState,
   getSigner,
   getContractFactory
 } = require('../../plugins/deployments');
 
-async function revertSnapshot(snapshot) {
-  writeState(snapshot.state);
-  return ethereum.send('evm_revert', [snapshot.evm]);
-}
-
-async function createSnapshot() {
-  return {
-    evm: await ethereum.send('evm_snapshot', []),
-    state: readState()
-  };
-}
-
 describe('Deployments tests', () => {
-  let snapshot;
   let creator;
-  let otherUser;
 
   beforeAll(async () => {
-    snapshot = await createSnapshot();
     creator = await getSigner(0);
-    otherUser = await getSigner(1);
   });
-
-  beforeEach(() => revertSnapshot(snapshot));
 
   const validContractName = 'ClaimsRegistry';
   const invalidContractName = 'NotContractName';
 
   describe('Static functions', () => {
-    beforeEach(() => revertSnapshot(snapshot));
+    describe('with a contract deployed', () => {
+      let contract1;
 
-    describe('getOrDeployContract tests', () => {
-      beforeEach(() => revertSnapshot(snapshot));
-
-      it("getOrDeployContract should deploy if the contract doesn't exists", async () => {
-        const contract = await getOrDeployContract(
+      beforeAll(async () => {
+        contract1 = await getOrDeployContract(
           validContractName,
           [],
           creator,
-          false
+          true
         );
-        expect(contract).toBeDefined();
+      });
+
+      it("getOrDeployContract should deploy if the contract doesn't exists", async () => {
+        expect(contract1).toBeDefined();
       });
 
       it('getOrDeployContract should return the deployed contract if the contract was already deployed', async () => {
-        const contract1 = await getOrDeployContract(
-          validContractName,
-          [],
-          creator,
-          false
-        );
         const contract2 = await getOrDeployContract(
           validContractName,
           [],
@@ -78,27 +53,25 @@ describe('Deployments tests', () => {
       });
     });
 
-    describe('getOrDeployUpgradeableContract tests', () => {
-      beforeEach(() => {
-        jest.resetModules();
-        revertSnapshot(snapshot);
+    describe('with an upgradeable contract deployed', () => {
+      let contract1;
+
+      beforeEach(async () => {
+        contract1 = await getOrDeployUpgradeableContract(
+          validContractName,
+          [],
+          creator,
+          false,
+          undefined,
+          true
+        );
       });
 
       it("getOrDeployUpgradeableContract should deploy if the contract doesn't exists", async () => {
-        const contract = await getOrDeployUpgradeableContract(
-          validContractName,
-          [],
-          creator
-        );
-        expect(contract).toBeDefined();
+        expect(contract1).toBeDefined();
       });
 
       it('getOrDeployUpgradeableContract should return the deployed contract if the contract was already deployed', async () => {
-        const contract1 = await getOrDeployUpgradeableContract(
-          validContractName,
-          [],
-          creator
-        );
         const contract2 = await getOrDeployUpgradeableContract(
           validContractName,
           [],
@@ -109,13 +82,18 @@ describe('Deployments tests', () => {
 
       it('getOrDeployUpgradeableContract should throw an error if the contractName is invalid', () => {
         expect(
-          getOrDeployUpgradeableContract(invalidContractName, [], creator)
+          getOrDeployUpgradeableContract(
+            invalidContractName,
+            [],
+            creator,
+            false,
+            undefined,
+            true
+          )
         ).rejects.toThrow();
       });
 
       it('getOrDeployUpgradeableContract should upgrade the implementation if there is a new implementation', async () => {
-        await getOrDeployUpgradeableContract(validContractName, [], creator);
-
         // Mocking readArtifactSync
         const mockedClaimsRegistryArtifactFun = () =>
           readArtifactSync(config.paths.artifacts, 'ClaimsRegistryV2');
@@ -124,7 +102,7 @@ describe('Deployments tests', () => {
         const mockedClaimsRegistryFactFun = () =>
           getContractFactory('ClaimsRegistryV2', creator);
 
-        const contract = await buildGetOrDeployUpgradeableContract(
+        const contract2 = await buildGetOrDeployUpgradeableContract(
           mockedClaimsRegistryArtifactFun,
           mockedClaimsRegistryFactFun
         )(validContractName, [], creator, true, {
@@ -132,13 +110,11 @@ describe('Deployments tests', () => {
         });
 
         const testingWord = 'Testing';
-        await contract.setTest(testingWord);
-        expect(await contract.test()).toEqual(testingWord);
+        await contract2.setTest(testingWord);
+        expect(await contract2.test()).toEqual(testingWord);
       });
 
       it('getOrDeployUpgradeableContract should throw an error if the doUpgrade param is not passed or false', async () => {
-        await getOrDeployUpgradeableContract(validContractName, [], creator);
-
         // Mocking readArtifactSync
         const mockedClaimsRegistryArtifactFun = () =>
           readArtifactSync(config.paths.artifacts, 'ClaimsRegistryV2');
