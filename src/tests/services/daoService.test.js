@@ -1,4 +1,3 @@
-const { describe, beforeEach, beforeAll, afterAll, it } = global;
 const { run, coa, ethereum } = require('@nomiclabs/buidler');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const daoService = require('../../rest/services/daoService');
