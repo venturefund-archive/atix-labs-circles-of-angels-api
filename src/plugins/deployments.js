@@ -286,6 +286,9 @@ function buildGetOrDeployUpgradeableContract(
     options = undefined,
     reset = false
   ) {
+    logger.info(
+      `[deployments] :: Entering getOrDeployUpgradeableContract. Contract ${contractName} with args [${params}].`
+    );
     let [contract] = await getDeployedContracts(contractName);
     if (contract === undefined || reset === true) {
       logger.info(`[deployments] :: ${contractName} not found, deploying...`);
