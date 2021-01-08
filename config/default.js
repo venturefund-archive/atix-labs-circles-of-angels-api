@@ -116,5 +116,9 @@ module.exports = {
     testnet_url: process.env.TESTNET_URL || '',
     testnet_account: process.env.TESTNET_ACCOUNT || ''
   },
-  explorerLink: 'https://explorer.testnet.rsk.co'
+  explorerLink: 'https://explorer.testnet.rsk.co',
+  crypto: {
+    key: process.env.CRYPTO_KEY,
+    nonce: process.env.CRYPTO_NONCE
+  }
 };

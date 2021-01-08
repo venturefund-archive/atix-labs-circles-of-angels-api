@@ -9,10 +9,11 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
-const { frontendUrl, support } = require('config');
+const { support } = require('config');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
+const { encrypt, decrypt } = require('../util/crypto');
 
 module.exports = {
   async startPassRecoveryProcess(email) {
@@ -71,7 +72,7 @@ module.exports = {
     }
 
     const { email } = recover;
-    const { mnemonic } = await this.userDao.getUserByEmail(email);
+    const { mnemonic, iv } = await this.userDao.getUserByEmail(email);
     if (!mnemonic) {
       logger.error(
         '[Pass Recovery Service] :: Mnemonic not found of user with email: ',
@@ -79,7 +80,12 @@ module.exports = {
       );
       throw new COAError(errors.user.InvalidEmail);
     }
-    return mnemonic;
+    if (!iv) {
+      return mnemonic;
+    }
+
+    const decryptedMnemonic = decrypt(mnemonic, iv);
+    return decryptedMnemonic;
   },
 
   async updatePassword(address, token, password, encryptedWallet, mnemonic) {
@@ -108,11 +114,14 @@ module.exports = {
         { active: false }
       );
 
+      const { encryptedData, iv } = encrypt(mnemonic);
+
       const savedUserWallet = await this.userWalletDao.createUserWallet({
         user: id,
         encryptedWallet,
         address,
-        mnemonic
+        mnemonic: encryptedData,
+        iv
       });
       if (!savedUserWallet) {
         if (disabledWallet) {
