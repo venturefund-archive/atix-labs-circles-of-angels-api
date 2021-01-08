@@ -185,7 +185,7 @@ async function getImplContract(contract, contractName) {
     const contractFactory = await ethers.getContractFactory(contractName);
     return contractFactory.attach(implAddr);
   }
-  return undefined;
+  throw new Error("The contract is not a Proxy")
 }
 
 async function isProxy(contract) {
@@ -434,7 +434,5 @@ module.exports = {
   getOrDeployContract,
   buildGetOrDeployUpgradeableContract,
   getOrDeployUpgradeableContract,
-  readState,
-  writeState,
   deployAll
 };
