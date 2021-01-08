@@ -1,5 +1,5 @@
 const { describe, it, beforeAll, beforeEach, expect } = global;
-const { config } = require('@nomiclabs/buidler');
+const { config, ethereum} = require('@nomiclabs/buidler');
 const { readArtifactSync } = require('@nomiclabs/buidler/plugins');
 const {
   getOrDeployContract,
@@ -9,10 +9,20 @@ const {
   getContractFactory
 } = require('../../plugins/deployments');
 
+async function revertSnapshot(snapshot) {
+  return ethereum.send('evm_revert', [snapshot]);
+}
+
+async function createSnapshot() {
+  return ethereum.send('evm_snapshot', []);
+}
+
 describe('Deployments tests', () => {
   let creator;
+  let snapshot;
 
   beforeAll(async () => {
+    snapshot = await createSnapshot();
     creator = await getSigner(0);
   });
 
@@ -20,6 +30,8 @@ describe('Deployments tests', () => {
   const invalidContractName = 'NotContractName';
 
   describe('Static functions', () => {
+    beforeEach(async () => revertSnapshot(snapshot));
+
     describe('with a contract deployed', () => {
       let contract1;
 
