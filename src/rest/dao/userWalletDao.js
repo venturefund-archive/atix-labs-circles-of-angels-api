@@ -39,17 +39,13 @@ module.exports = {
     const userWallets = await this.model
       .find({ address: addresses })
       .populate('user');
-    if (!userWallets) {
-      return;
-    }
-    const users = userWallets.map(
-      ({ user, encryptedWallet, address, mnemonic }) => ({
-        address,
-        encryptedWallet,
-        mnemonic,
-        ...user
-      })
-    );
-    return users;
+    return userWallets
+      ? userWallets.map(({ user, encryptedWallet, address, mnemonic }) => ({
+          address,
+          encryptedWallet,
+          mnemonic,
+          ...user
+        }))
+      : [];
   }
 };

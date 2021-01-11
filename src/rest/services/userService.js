@@ -48,13 +48,11 @@ module.exports = {
   async getVotersByAddresses(addresses) {
     logger.info('[UserService] :: Entering getUserByAddress method');
     const users = await this.userWalletDao.findByAddresses(addresses);
-    if (!users) {
-      return [];
-    }
-    const userNames = users.map(
-      ({ firstName, lastName }) => firstName.charAt(0) + lastName.charAt(0)
-    );
-    return userNames;
+    return users
+      ? users.map(
+          ({ firstName, lastName }) => firstName.charAt(0) + lastName.charAt(0)
+        )
+      : [];
   },
 
   /**
