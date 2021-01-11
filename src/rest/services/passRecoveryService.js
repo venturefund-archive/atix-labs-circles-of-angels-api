@@ -10,6 +10,10 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
 const { support } = require('config');
+const config = require('config');
+
+const { key } = config.crypto;
+
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
@@ -80,11 +84,10 @@ module.exports = {
       );
       throw new COAError(errors.user.InvalidEmail);
     }
-    if (!iv) {
+    if (!iv || !key) {
       return mnemonic;
     }
-
-    const decryptedMnemonic = decrypt(mnemonic, iv);
+    const decryptedMnemonic = decrypt(mnemonic, key, iv);
     return decryptedMnemonic;
   },
 
@@ -103,6 +106,7 @@ module.exports = {
         );
         throw new COAError(errors.user.InvalidEmail);
       }
+      let encryptedMnemonic;
       const { id } = user;
       const hashedPwd = await bcrypt.hash(password, 10);
       const updated = await this.userDao.updateUserByEmail(email, {
@@ -113,15 +117,17 @@ module.exports = {
         { user: id, active: true },
         { active: false }
       );
-
-      const { encryptedData, iv } = encrypt(mnemonic);
-
+      if (key) {
+        encryptedMnemonic = encrypt(mnemonic, key);
+      }
       const savedUserWallet = await this.userWalletDao.createUserWallet({
         user: id,
         encryptedWallet,
         address,
-        mnemonic: encryptedData,
-        iv
+        mnemonic: encryptedMnemonic
+          ? encryptedMnemonic.encryptedData
+          : mnemonic,
+        iv: encryptedMnemonic ? encryptedMnemonic.iv : null
       });
       if (!savedUserWallet) {
         if (disabledWallet) {

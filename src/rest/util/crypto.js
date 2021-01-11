@@ -1,10 +1,7 @@
-const config = require('config');
 const crypto = require('crypto');
 
-const { key } = config.crypto;
-
 module.exports = {
-  encrypt(data) {
+  encrypt(data, key) {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
     let encryptedText = cipher.update(data);
@@ -15,7 +12,7 @@ module.exports = {
     };
   },
 
-  decrypt(encryptedData, iv) {
+  decrypt(encryptedData, key, iv) {
     const ivBuff = Buffer.from(iv, 'hex');
     const encryptedDataBuff = Buffer.from(encryptedData, 'hex');
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, ivBuff);

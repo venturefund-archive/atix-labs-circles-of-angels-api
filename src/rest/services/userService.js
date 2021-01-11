@@ -9,6 +9,9 @@
 const { coa, ethers } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
 const { Wallet, utils } = require('ethers');
+const config = require('config');
+
+const { key } = config.crypto;
 
 const { userRoles, encryption } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -177,7 +180,7 @@ module.exports = {
     }
     await this.countryService.getCountryById(country);
     // TODO: check phoneNumber format
-
+    let encryptedMnemonic;
     const hashedPwd = await bcrypt.hash(password, encryption.saltOrRounds);
     const user = {
       firstName,
@@ -190,14 +193,16 @@ module.exports = {
       answers,
       company
     };
-    const { encryptedData, iv } = encrypt(mnemonic);
+    if (key) {
+      encryptedMnemonic = encrypt(mnemonic, key);
+    }
     const savedUser = await this.userDao.createUser(user);
     const savedUserWallet = await this.userWalletDao.createUserWallet({
       user: savedUser.id,
       address,
       encryptedWallet,
-      mnemonic: encryptedData,
-      iv
+      mnemonic: encryptedMnemonic ? encryptedMnemonic.encryptedData : mnemonic,
+      iv: encryptedMnemonic ? encryptedMnemonic.iv : null
     });
     if (!savedUserWallet) {
       await this.userDao.removeUserById(savedUser.id);
