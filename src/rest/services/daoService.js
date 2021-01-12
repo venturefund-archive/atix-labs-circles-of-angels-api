@@ -526,37 +526,46 @@ module.exports = {
       processingPeriodLength
     } = await coa.getDaoPeriodLengths(daoId, signer);
 
-    const formattedProposals = proposals.map(async (proposal, index) => ({
-      proposalType:
-        proposal.status !== txProposalStatus.SENT
-          ? proposal.proposalType
-          : proposal.type,
-      proposer: proposal.proposer,
-      applicant: proposal.applicant,
-      description: proposal.description,
-      yesVotes: proposal.yesVotes ? Number(proposal.yesVotes) : 0,
-      noVotes: proposal.noVotes ? Number(proposal.noVotes) : 0,
-      didPass: proposal.didPass,
-      processed: proposal.processed,
-      daoCreationTime: Number(daoCreationTime),
-      startingPeriod: proposal.startingPeriod
-        ? Number(proposal.startingPeriod)
-        : 0,
-      currentPeriod: Number(daoCurrentPeriod),
-      periodDuration: Number(periodDuration),
-      votingPeriodLength: Number(votingPeriodLength),
-      gracePeriodLength: Number(gracePeriodLength),
-      processingPeriodLength: Number(processingPeriodLength),
-      votingPeriodExpired:
-        proposal.status !== txProposalStatus.SENT
-          ? await coa.votingPeriodExpired(daoId, index)
-          : null,
-      txStatus: proposal.status ? proposal.status : txProposalStatus.CONFIRMED,
-      voters: proposal.status
-        ? []
-        : await this.voteDao.findByDaoAndProposalId(daoId, index),
-      id: proposal.status ? null : index
-    }));
+    const formattedProposals = proposals.map(async (proposal, index) => {
+      const voterAddresses = await this.voteDao.findByDaoAndProposalId(
+        daoId,
+        index
+      );
+      return {
+        proposalType:
+          proposal.status !== txProposalStatus.SENT
+            ? proposal.proposalType
+            : proposal.type,
+        proposer: proposal.proposer,
+        applicant: proposal.applicant,
+        description: proposal.description,
+        yesVotes: proposal.yesVotes ? Number(proposal.yesVotes) : 0,
+        noVotes: proposal.noVotes ? Number(proposal.noVotes) : 0,
+        didPass: proposal.didPass,
+        processed: proposal.processed,
+        daoCreationTime: Number(daoCreationTime),
+        startingPeriod: proposal.startingPeriod
+          ? Number(proposal.startingPeriod)
+          : 0,
+        currentPeriod: Number(daoCurrentPeriod),
+        periodDuration: Number(periodDuration),
+        votingPeriodLength: Number(votingPeriodLength),
+        gracePeriodLength: Number(gracePeriodLength),
+        processingPeriodLength: Number(processingPeriodLength),
+        votingPeriodExpired:
+          proposal.status !== txProposalStatus.SENT
+            ? await coa.votingPeriodExpired(daoId, index)
+            : null,
+        txStatus: proposal.status
+          ? proposal.status
+          : txProposalStatus.CONFIRMED,
+        voters: proposal.status ? [] : voterAddresses,
+        voterNames: proposal.status
+          ? []
+          : await this.userService.getVotersByAddresses(voterAddresses),
+        id: proposal.status ? null : index
+      };
+    });
 
     return Promise.all(formattedProposals);
   },

@@ -145,6 +145,14 @@ describe('Testing userService', () => {
       }
       const user = dbUser.find(us => us.id === userWalletSelected.user);
       return user;
+    },
+    findByAddresses: addresses => {
+      if (!dbUserWallet.length) return [];
+      const userIds = dbUserWallet
+        .filter(userWallet => addresses.includes(userWallet.address))
+        .map(userWallet => userWallet.userId);
+      const users = dbUser.filter(us => userIds.includes(us.id));
+      return users;
     }
   };
 
@@ -532,6 +540,67 @@ describe('Testing userService', () => {
         {}
       );
       expect(response).toBe(false);
+    });
+  });
+
+  describe('Testing getVotersByAddresses', () => {
+    const voterUser1 = {
+      id: 1,
+      firstName: 'voter',
+      lastName: '1'
+    };
+    const voterUser2 = {
+      id: 2,
+      firstName: 'voter',
+      lastName: '2'
+    };
+    const voterUser3 = {
+      id: 3,
+      firstName: 'voter',
+      lastName: '3'
+    };
+    const userWallet1 = {
+      id: 10,
+      userId: 1,
+      address: '0x221'
+    };
+    const userWallet2 = {
+      id: 11,
+      userId: 2,
+      address: '0x222'
+    };
+    const userWallet3 = {
+      id: 12,
+      userId: 3,
+      address: '0x223'
+    };
+    const userAddresses = [
+      userWallet1.address,
+      userWallet2.address,
+      userWallet3.address
+    ];
+    beforeEach(() => {
+      dbUser.push(voterUser1, voterUser2, voterUser3);
+      dbUserWallet.push(userWallet1, userWallet2, userWallet3);
+    });
+    beforeAll(() => {
+      injectMocks(userService, { userDao, userWalletDao });
+    });
+    afterAll(() => restoreUserService());
+
+    it('should return all user short names', async () => {
+      const response = await userService.getVotersByAddresses(userAddresses);
+      expect(response).toEqual(['v1', 'v2', 'v3']);
+    });
+
+    it('should return only first user short name', async () => {
+      const response = await userService.getVotersByAddresses(['0x221']);
+      expect(response).toEqual(['v1']);
+    });
+
+    it('should return empty array', async () => {
+      const response = await userService.getVotersByAddresses(['0x0001']);
+      expect(response).toEqual([]);
     });
   });
 });
