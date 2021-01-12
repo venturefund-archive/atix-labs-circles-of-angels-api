@@ -180,7 +180,6 @@ module.exports = {
     }
     await this.countryService.getCountryById(country);
     // TODO: check phoneNumber format
-    let encryptedMnemonic;
     const hashedPwd = await bcrypt.hash(password, encryption.saltOrRounds);
     const user = {
       firstName,
@@ -193,16 +192,18 @@ module.exports = {
       answers,
       company
     };
-    if (key) {
-      encryptedMnemonic = encrypt(mnemonic, key);
+    const encryptedMnemonic = encrypt(mnemonic, key);
+    if (!encryptedMnemonic) {
+      logger.error('[User Service] :: Mnemonic could not be encrypted');
+      throw new COAError(errors.user.MnemonicNotEncrypted);
     }
     const savedUser = await this.userDao.createUser(user);
     const savedUserWallet = await this.userWalletDao.createUserWallet({
       user: savedUser.id,
       address,
       encryptedWallet,
-      mnemonic: encryptedMnemonic ? encryptedMnemonic.encryptedData : mnemonic,
-      iv: encryptedMnemonic ? encryptedMnemonic.iv : null
+      mnemonic: encryptedMnemonic.encryptedData,
+      iv: encryptedMnemonic.iv
     });
     if (!savedUserWallet) {
       await this.userDao.removeUserById(savedUser.id);

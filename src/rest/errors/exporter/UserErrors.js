@@ -73,5 +73,13 @@ module.exports = {
   NotConfirmedEmail: {
     message: 'The user needs to confirm email address',
     statusCode: 403
+  },
+  MnemonicNotEncrypted: {
+    message: 'Mnemonic could not be encrypted',
+    statusCode: 500
+  },
+  MnemonicNotDecrypted: {
+    message: 'Mnemonic could not be decrypted',
+    statusCode: 500
   }
 };

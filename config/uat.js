@@ -37,9 +37,5 @@ module.exports = {
     ProxyAdmin: ['0x9a06426bccfa22fE1958bf9923b48C890FA0E9d1'],
     ClaimsRegistry: ['0x93870E888e4742b767b46e305E5fD4C201F9E970'],
     COA: ['0x86039e987cb82CA44f0035D0C7C99fef4b7Ed879']
-  },
-  crypto: {
-    key: process.env.CRYPTO_KEY,
-    nonce: process.env.CRYPTO_NONCE
   }
 };

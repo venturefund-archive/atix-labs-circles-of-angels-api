@@ -118,7 +118,6 @@ module.exports = {
   },
   explorerLink: 'https://explorer.testnet.rsk.co',
   crypto: {
-    key: process.env.CRYPTO_KEY,
-    nonce: process.env.CRYPTO_NONCE
+    key: process.env.CRYPTO_KEY || '3c50cffcdce9a802a26f5293aa4dc689' // added to run tests
   }
 };

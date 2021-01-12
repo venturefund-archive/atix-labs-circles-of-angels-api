@@ -84,10 +84,15 @@ module.exports = {
       );
       throw new COAError(errors.user.InvalidEmail);
     }
-    if (!iv || !key) {
-      return mnemonic;
-    }
     const decryptedMnemonic = decrypt(mnemonic, key, iv);
+    if (!decryptedMnemonic) {
+      logger.error(
+        '[Pass Recovery Service] :: Mnemonic could not be decrypted',
+        mnemonic,
+        iv
+      );
+      throw new COAError(errors.user.MnemonicNotDecrypted);
+    }
     return decryptedMnemonic;
   },
 
@@ -106,7 +111,6 @@ module.exports = {
         );
         throw new COAError(errors.user.InvalidEmail);
       }
-      let encryptedMnemonic;
       const { id } = user;
       const hashedPwd = await bcrypt.hash(password, 10);
       const updated = await this.userDao.updateUserByEmail(email, {
@@ -117,8 +121,10 @@ module.exports = {
         { user: id, active: true },
         { active: false }
       );
-      if (key) {
-        encryptedMnemonic = encrypt(mnemonic, key);
+      const encryptedMnemonic = encrypt(mnemonic, key);
+      if (!encryptedMnemonic) {
+        logger.error('[User Service] :: Mnemonic could not be encrypted');
+        throw new COAError(errors.user.MnemonicNotEncrypted);
       }
       const savedUserWallet = await this.userWalletDao.createUserWallet({
         user: id,
