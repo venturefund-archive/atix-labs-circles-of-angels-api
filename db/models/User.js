@@ -28,7 +28,6 @@ module.exports = {
     lastName: { type: 'string', required: true },
     email: { type: 'string', required: true },
     password: { type: 'string', required: true },
-    address: { type: 'string', allowNull: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
     role: {
@@ -37,8 +36,6 @@ module.exports = {
       required: true
     },
     blocked: { type: 'boolean', defaultsTo: false, required: false },
-    encryptedWallet: { type: 'json', required: true },
-    mnemonic: { type: 'string', required: true },
     projects: {
       collection: 'project',
       via: 'owner'
@@ -62,6 +59,10 @@ module.exports = {
       columnName: 'countryId',
       model: 'country'
     },
+    wallets: {
+      collection: 'user_wallet',
+      via: 'user'
+    },
     phoneNumber: { type: 'string', allowNull: true },
     answers: { type: 'string', required: true },
     company: { type: 'string', required: false, allowNull: true },
@@ -70,7 +71,8 @@ module.exports = {
       defaultsTo: false,
       required: false
     },
-    emailConfirmation: { type: 'boolean', defaultsTo: false, required: false }
+    emailConfirmation: { type: 'boolean', defaultsTo: false, required: false },
+    mnemonic: { type: 'string', required: false } // Remove once the prod users reovery them passwords
   },
   customToJSON: function toJson() {
     return omit(this, ['password']);

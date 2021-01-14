@@ -83,8 +83,15 @@ module.exports = {
   },
 
   changeRecoverPassword: () => async (request, reply) => {
-    const { token, password, encryptedWallet } = request.body || {};
-    await passRecoveryService.updatePassword(token, password, encryptedWallet);
+    const { address, token, password, encryptedWallet, mnemonic } =
+      request.body || {};
+    await passRecoveryService.updatePassword(
+      address,
+      token,
+      password,
+      encryptedWallet,
+      mnemonic
+    );
     reply.status(200).send({ success: 'Password updated successfully' });
   },
 

@@ -82,20 +82,48 @@ module.exports = {
     return mnemonic;
   },
 
-  async updatePassword(token, password, encryptedWallet) {
+  async updatePassword(address, token, password, encryptedWallet, mnemonic) {
     try {
       const { email } = await this.passRecoveryDao.findRecoverBytoken(token);
       if (!email) {
         logger.error('[Pass Recovery Service] :: Token not found: ', token);
         throw new COAError(errors.user.InvalidToken);
       }
+      const user = await this.userDao.getUserByEmail(email);
+      if (!user) {
+        logger.error(
+          '[UserService] :: There is no user associated with that email',
+          email
+        );
+        throw new COAError(errors.user.InvalidEmail);
+      }
+      const { id } = user;
       const hashedPwd = await bcrypt.hash(password, 10);
-      const user = {
+      const updated = await this.userDao.updateUserByEmail(email, {
         password: hashedPwd,
-        encryptedWallet,
         forcePasswordChange: false
-      };
-      const updated = await this.userDao.updateUserByEmail(email, user);
+      });
+      const disabledWallet = await this.userWalletDao.updateWallet(
+        { user: id, active: true },
+        { active: false }
+      );
+
+      const savedUserWallet = await this.userWalletDao.createUserWallet({
+        user: id,
+        encryptedWallet,
+        address,
+        mnemonic
+      });
+      if (!savedUserWallet) {
+        if (disabledWallet) {
+          // Rollback
+          await this.userWalletDao.updateWallet(
+            { id: disabledWallet.id },
+            { active: true }
+          );
+        }
+        throw new COAError(errors.userWallet.NewWalletNotSaved);
+      }
       if (!updated) {
         logger.error(
           '[Pass Recovery Service] :: Error updating password in database for user: ',
@@ -103,6 +131,7 @@ module.exports = {
         );
         throw new COAError(errors.user.UserUpdateError);
       }
+
       await this.passRecoveryDao.deleteRecoverByToken(token);
       return updated;
     } catch (error) {
