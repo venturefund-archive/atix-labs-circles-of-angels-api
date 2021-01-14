@@ -62,6 +62,19 @@ task('deploy', 'Deploys COA contracts')
       // console.log('ClaimsRegistry deployed. Address:', registry.address);
     }
 
+    let [implWhitelist] = await env.deployments.getDeployedContracts(
+      'UsersWhitelist'
+    );
+    if (implWhitelist === undefined || reset === true) {
+      [implWhitelist] = await env.deployments.deployProxy(
+        'UsersWhitelist', 
+        [],
+        undefined,
+        { initializer: 'whitelistInitialize' }
+      );
+      await env.deployments.saveDeployedContract('UsersWhitelist', implWhitelist);
+    }
+
     let [coa] = await env.deployments.getDeployedContracts('COA');
     if (coa === undefined || reset === true) {
       [coa] = await env.deployments.deployProxy(
@@ -80,17 +93,6 @@ task('deploy', 'Deploys COA contracts')
       // console.log('COA deployed. Address:', coa.address);
     }
 
-    let [implWhitelist] = await env.deployments.getDeployedContracts(
-      'UsersWhitelist'
-    );
-    if (implWhitelist === undefined || reset === true) {
-      [implWhitelist] = await env.deployments.deploy('UsersWhitelist', []);
-      await env.deployments.saveDeployedContract(
-        'UsersWhitelist',
-        implWhitelist
-      );
-      // console.log('implSuperDao deployed. Address:', implSuperDao.address);
-    }
     // console.log('ProxyAdmin attached to', proxyAdmin.address);
     // console.log('Registry attached to', registry.address);
     // console.log('COA attached to', coa.address);

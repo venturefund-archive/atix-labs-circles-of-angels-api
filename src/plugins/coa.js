@@ -373,7 +373,7 @@ module.exports = class COA {
     return this.contracts.registry;
   }
 
-  async getwhitelist() {
+  async getWhitelist() {
     if (this.contracts.registry === undefined) {
       const contract = await this.env.deployments.getLastDeployedContract(
         'UsersWhitelist'

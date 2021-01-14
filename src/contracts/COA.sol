@@ -41,6 +41,10 @@ contract COA is Initializable, Ownable, GSNRecipient {
     address internal implDao;
     UsersWhitelist public whitelist;
 
+    enum GSNCoaRecipientErrorCodes {
+        INVALID_SIGNER
+    }
+
     function coaInitialize(
         address _registryAddress,
         address _proxyAdmin,
@@ -91,6 +95,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
         public
         returns (uint256)
     {
+        console.log('Create project');
         bytes memory payload = abi.encodeWithSignature("initialize(string)", _name);
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implProject, owner(), payload);
         projects.push(proxy);
@@ -159,17 +164,22 @@ contract COA is Initializable, Ownable, GSNRecipient {
         bytes calldata approvalData,
         uint256 maxPossibleCharge
     ) external view returns (uint256, bytes memory) {
-        if (whitelist.users()[_msgSender()]) {
+        console.log('Call acceptRelayedCall.');
+        if (whitelist.users(_msgSender())) {
+            console.log('Call approved.');
             return _approveRelayedCall();
         } else {
-            return _rejectRelayedCall(errorCode);
+            console.log('Call rejected.');
+            return _rejectRelayedCall(uint256(GSNCoaRecipientErrorCodes.INVALID_SIGNER));
         }
     }
 
     function _preRelayedCall(bytes memory context) internal returns (bytes32) {
+        console.log('Call _preRelayedCall.');
     }
 
     function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
+        console.log('Call _postRelayedCall.');
     }
     
 
