@@ -108,7 +108,15 @@ describe('Testing daoService', () => {
   };
 
   const userService = {
-    getUsers: () => dbUser
+    getUsers: () => dbUser,
+    getVotersByAddresses: addresses => {
+      if (!dbUser.length) return [];
+      const users = dbUser.find(user => addresses.includes(user.address));
+      if (!users) return [];
+      return users.map(
+        user => user.firstName.charAt(0) + user.lastName.charAt(0)
+      );
+    }
   };
 
   const voteDao = {
@@ -262,7 +270,8 @@ describe('Testing daoService', () => {
       injectMocks(mockedDaoService, {
         transactionService,
         proposalDao,
-        voteDao
+        voteDao,
+        userService
       });
     });
     beforeEach(() => {
@@ -300,6 +309,8 @@ describe('Testing daoService', () => {
       );
       expect(response[firstCreatedProposalIndex].voters.length).toEqual(0);
       expect(response[secondCreatedProposalIndex].voters.length).toEqual(0);
+      expect(response[firstCreatedProposalIndex].voterNames.length).toEqual(0);
+      expect(response[secondCreatedProposalIndex].voterNames.length).toEqual(0);
     });
     it('should throw an error if any required parameters are missing', async () => {
       await expect(
