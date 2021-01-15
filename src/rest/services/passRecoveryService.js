@@ -84,6 +84,10 @@ module.exports = {
       );
       throw new COAError(errors.user.InvalidEmail);
     }
+    // TODO: remove this validation when it's already migrated all users
+    if (!iv) {
+      return mnemonic;
+    }
     const decryptedMnemonic = decrypt(mnemonic, key, iv);
     if (!decryptedMnemonic) {
       logger.error(
