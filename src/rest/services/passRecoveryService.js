@@ -9,10 +9,15 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
-const { frontendUrl, support } = require('config');
+const { support } = require('config');
+const config = require('config');
+
+const { key } = config.crypto;
+
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
+const { encrypt, decrypt } = require('../util/crypto');
 
 module.exports = {
   async startPassRecoveryProcess(email) {
@@ -71,7 +76,7 @@ module.exports = {
     }
 
     const { email } = recover;
-    const { mnemonic } = await this.userDao.getUserByEmail(email);
+    const { mnemonic, iv } = await this.userDao.getUserByEmail(email);
     if (!mnemonic) {
       logger.error(
         '[Pass Recovery Service] :: Mnemonic not found of user with email: ',
@@ -79,7 +84,16 @@ module.exports = {
       );
       throw new COAError(errors.user.InvalidEmail);
     }
-    return mnemonic;
+    const decryptedMnemonic = decrypt(mnemonic, key, iv);
+    if (!decryptedMnemonic) {
+      logger.error(
+        '[Pass Recovery Service] :: Mnemonic could not be decrypted',
+        mnemonic,
+        iv
+      );
+      throw new COAError(errors.user.MnemonicNotDecrypted);
+    }
+    return decryptedMnemonic;
   },
 
   async updatePassword(address, token, password, encryptedWallet, mnemonic) {
@@ -107,12 +121,21 @@ module.exports = {
         { user: id, active: true },
         { active: false }
       );
-
+      const encryptedMnemonic = encrypt(mnemonic, key);
+      if (
+        !encryptedMnemonic ||
+        !encryptedMnemonic.encryptedData ||
+        !encryptedMnemonic.iv
+      ) {
+        logger.error('[User Service] :: Mnemonic could not be encrypted');
+        throw new COAError(errors.user.MnemonicNotEncrypted);
+      }
       const savedUserWallet = await this.userWalletDao.createUserWallet({
         user: id,
         encryptedWallet,
         address,
-        mnemonic
+        mnemonic: encryptedMnemonic.encryptedData,
+        iv: encryptedMnemonic.iv
       });
       if (!savedUserWallet) {
         if (disabledWallet) {

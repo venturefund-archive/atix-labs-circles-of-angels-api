@@ -9,6 +9,9 @@
 const { coa, ethers } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
 const { Wallet, utils } = require('ethers');
+const config = require('config');
+
+const { key } = config.crypto;
 
 const { userRoles, encryption } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -17,6 +20,7 @@ const checkExistence = require('./helpers/checkExistence');
 const logger = require('../logger');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
+const { encrypt } = require('../util/crypto');
 
 module.exports = {
   async getUserById(id) {
@@ -190,10 +194,7 @@ module.exports = {
     }
     await this.countryService.getCountryById(country);
     // TODO: check phoneNumber format
-
     const hashedPwd = await bcrypt.hash(password, encryption.saltOrRounds);
-
-    // TODO: remove address, encryptedWallet and mnemonic after migrate user wallets in PROD.
     const user = {
       firstName,
       lastName,
@@ -203,17 +204,24 @@ module.exports = {
       phoneNumber,
       country,
       answers,
-      company,
-      address,
-      encryptedWallet,
-      mnemonic
+      company
     };
+    const encryptedMnemonic = encrypt(mnemonic, key);
+    if (
+      !encryptedMnemonic ||
+      !encryptedMnemonic.encryptedData ||
+      !encryptedMnemonic.iv
+    ) {
+      logger.error('[User Service] :: Mnemonic could not be encrypted');
+      throw new COAError(errors.user.MnemonicNotEncrypted);
+    }
     const savedUser = await this.userDao.createUser(user);
     const savedUserWallet = await this.userWalletDao.createUserWallet({
       user: savedUser.id,
       address,
       encryptedWallet,
-      mnemonic
+      mnemonic: encryptedMnemonic.encryptedData,
+      iv: encryptedMnemonic.iv
     });
     if (!savedUserWallet) {
       await this.userDao.removeUserById(savedUser.id);

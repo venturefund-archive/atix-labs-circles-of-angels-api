@@ -19,9 +19,9 @@ module.exports = {
     if (!user.wallets.length) {
       return;
     }
-    const { address, encryptedWallet, mnemonic } = user.wallets[0];
+    const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
     delete user.wallets;
-    return { address, encryptedWallet, mnemonic, ...user };
+    return { address, encryptedWallet, mnemonic, iv, ...user };
   },
 
   async getUserByEmail(email) {
@@ -34,9 +34,10 @@ module.exports = {
     if (!user.wallets.length) {
       return { withNoWallets: true, ...user };
     }
-    const { address, encryptedWallet, mnemonic } = user.wallets[0];
+    const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
     delete user.wallets;
-    return { address, encryptedWallet, mnemonic, ...user };
+    delete user.mnemonic;
+    return { address, encryptedWallet, mnemonic, iv, ...user };
   },
 
   async createUser(user) {
@@ -88,9 +89,9 @@ module.exports = {
       if (!user.wallets.length) {
         return user;
       }
-      const { address, encryptedWallet, mnemonic } = user.wallets[0];
+      const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
       delete user.wallets;
-      return { address, encryptedWallet, mnemonic, ...user };
+      return { address, encryptedWallet, mnemonic, iv, ...user };
     });
   },
 
