@@ -193,7 +193,11 @@ module.exports = {
       company
     };
     const encryptedMnemonic = encrypt(mnemonic, key);
-    if (!encryptedMnemonic) {
+    if (
+      !encryptedMnemonic ||
+      !encryptedMnemonic.encryptedData ||
+      !encryptedMnemonic.iv
+    ) {
       logger.error('[User Service] :: Mnemonic could not be encrypted');
       throw new COAError(errors.user.MnemonicNotEncrypted);
     }

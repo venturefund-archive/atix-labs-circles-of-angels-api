@@ -14,5 +14,8 @@ module.exports = {
   buidler: {
     defaultNetwork: 'buidlerevm'
   },
-  frontendUrl: '//test'
+  frontendUrl: '//test',
+  crypto: {
+    key: '3c50cffcdce9a802a26f5293aa4dc689' // added to run tests
+  }
 };
