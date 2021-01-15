@@ -26,6 +26,7 @@ module.exports = {
     address: { type: 'string', required: true },
     encryptedWallet: { type: 'json', required: true },
     mnemonic: { type: 'string', required: true },
+    iv: { type: 'string', required: true },
     active: { type: 'boolean', defaultsTo: false, required: false },
     id: { type: 'number', autoMigrations: { autoIncrement: true } },
     createdAt: { type: 'string', autoCreatedAt: true, required: false }
