@@ -216,13 +216,16 @@ module.exports = {
       throw new COAError(errors.user.MnemonicNotEncrypted);
     }
     const savedUser = await this.userDao.createUser(user);
-    const savedUserWallet = await this.userWalletDao.createUserWallet({
-      user: savedUser.id,
-      address,
-      encryptedWallet,
-      mnemonic: encryptedMnemonic.encryptedData,
-      iv: encryptedMnemonic.iv
-    });
+    const savedUserWallet = await this.userWalletDao.createUserWallet(
+      {
+        user: savedUser.id,
+        address,
+        encryptedWallet,
+        mnemonic: encryptedMnemonic.encryptedData,
+        iv: encryptedMnemonic.iv
+      },
+      true
+    );
     if (!savedUserWallet) {
       await this.userDao.removeUserById(savedUser.id);
       throw new COAError(errors.userWallet.NewWalletNotSaved);
@@ -431,12 +434,15 @@ module.exports = {
       { active: false }
     );
 
-    const savedUserWallet = await this.userWalletDao.createUserWallet({
-      user: id,
-      encryptedWallet,
-      address: user.address,
-      mnemonic: user.mnemonic
-    });
+    const savedUserWallet = await this.userWalletDao.createUserWallet(
+      {
+        user: id,
+        encryptedWallet,
+        address: user.address,
+        mnemonic: user.mnemonic
+      },
+      true
+    );
     if (!savedUserWallet) {
       if (disabledWallet) {
         // Rollback

@@ -19,9 +19,9 @@ module.exports = {
     return this.model.updateOne(filter).set(data);
   },
 
-  createUserWallet(userWallet) {
+  createUserWallet(userWallet, isActive) {
     return this.model.create({
-      active: true,
+      active: isActive,
       ...userWallet
     });
   },
