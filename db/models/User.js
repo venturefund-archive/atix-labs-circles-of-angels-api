@@ -73,9 +73,9 @@ module.exports = {
     },
     emailConfirmation: { type: 'boolean', defaultsTo: false, required: false },
     // Remove once the prod users reovery them passwords
-    address: { type: 'string', required: false },
+    address: { type: 'string', required: false, allowNull: true },
     encryptedWallet: { type: 'json', required: false },
-    mnemonic: { type: 'string', required: false }
+    mnemonic: { type: 'string', required: false, allowNull: true }
   },
   customToJSON: function toJson() {
     return omit(this, ['password']);

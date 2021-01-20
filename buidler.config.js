@@ -104,7 +104,7 @@ task('deploy2').setAction(async (args, env) => {
   const setup = env.deployments.getDeploymentSetup(coaDeploySetup);
   await setup.deploy();
 });
-
+// eslint-disable prefer-destructuring
 // eslint-disable-next-line no-undef
 extendEnvironment(env => {
   // eslint-disable-next-line no-param-reassign

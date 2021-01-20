@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+/* eslint-disable prefer-destructuring */
 module.exports = {
   async findActiveById(id) {
     return this.model.findOne({ id }).populate('user');
@@ -27,11 +28,20 @@ module.exports = {
   },
 
   async findByAddress(address) {
-    const userWallet = await this.model.findOne({ address }).populate('user');
-    if (!userWallet) {
+    let userWalletSelected;
+    const userWallets = await this.model
+      .find({ address })
+      .sort({ createdAt: 'desc' })
+      .populate('user');
+    if (!userWallets.length) {
       return;
     }
-    const { user, encryptedWallet, mnemonic } = userWallet;
+    if (userWallets.some(wallet => wallet.active)) {
+      userWalletSelected = userWallets.find(wallet => wallet.active);
+    } else {
+      userWalletSelected = userWallets[0];
+    }
+    const { user, encryptedWallet, mnemonic } = userWalletSelected;
     return { address, encryptedWallet, mnemonic, ...user };
   },
 
