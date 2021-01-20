@@ -20,7 +20,10 @@ module.exports = {
       return;
     }
     const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
+    delete user.address;
+    delete user.encryptedWallet;
     delete user.wallets;
+    delete user.mnemonic;
     return { address, encryptedWallet, mnemonic, iv, ...user };
   },
 
@@ -35,6 +38,8 @@ module.exports = {
       return { withNoWallets: true, ...user };
     }
     const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
+    delete user.address;
+    delete user.encryptedWallet;
     delete user.wallets;
     delete user.mnemonic;
     return { address, encryptedWallet, mnemonic, iv, ...user };
