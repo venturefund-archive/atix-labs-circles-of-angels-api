@@ -543,7 +543,7 @@ module.exports = {
 
     logger.info('[ActivityService] :: Getting add claim transaction');
     const unsignedTx = await coa.getAddClaimTransaction(
-      address.toLowerCase(),
+      address,
       claim,
       proof,
       approved,
