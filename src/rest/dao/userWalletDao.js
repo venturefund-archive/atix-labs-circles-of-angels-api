@@ -31,7 +31,7 @@ module.exports = {
     let userWalletSelected;
     const userWallets = await this.model
       .find({ address })
-      .sort({ createdAt: 'desc' })
+      .sort([{ createdAt: 'desc' }])
       .populate('user');
     if (!userWallets.length) {
       return;

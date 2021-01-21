@@ -75,11 +75,6 @@ module.exports = {
       throw new COAError(errors.user.InvalidUserOrPassword);
     }
 
-    if (user.withNoWallets) {
-      logger.error('[User Service] :: User was not found');
-      throw new COAError(errors.user.InvalidUserOrPassword);
-    }
-
     logger.info(`[User Service] :: User email ${email} found`);
     const match = await bcrypt.compare(pwd, user.password);
 

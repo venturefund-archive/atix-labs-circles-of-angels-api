@@ -17,7 +17,7 @@ module.exports = {
       return;
     }
     if (!user.wallets.length) {
-      return;
+      return { withNoWallets: true, ...user };
     }
     const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
     delete user.address;
