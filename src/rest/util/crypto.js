@@ -1,8 +1,8 @@
 const crypto = require('crypto');
 
 module.exports = {
-  encrypt(data, key) {
-    const iv = crypto.randomBytes(16);
+  async encrypt(data, key) {
+    const iv = await crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
     let encryptedText = cipher.update(data);
     encryptedText = Buffer.concat([encryptedText, cipher.final()]);

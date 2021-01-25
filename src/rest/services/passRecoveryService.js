@@ -8,7 +8,7 @@
 
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-const { isEmpty } = require('lodash');
+const { isEmpty, update } = require('lodash');
 const { support } = require('config');
 const config = require('config');
 
@@ -102,28 +102,14 @@ module.exports = {
   },
 
   async updatePassword(
-    newAddress,
-    token,
+    user,
     password,
+    newAddress,
     newEncryptedWallet,
     newMnemonic
   ) {
     try {
-      const { email } = await this.passRecoveryDao.findRecoverBytoken(token);
-      if (!email) {
-        logger.error('[Pass Recovery Service] :: Token not found: ', token);
-        throw new COAError(errors.user.InvalidToken);
-      }
-      const user = await this.userDao.getUserByEmail(email);
-      if (!user) {
-        logger.error(
-          '[UserService] :: There is no user associated with that email',
-          email
-        );
-        throw new COAError(errors.user.InvalidEmail);
-      }
-      const { id, address, encryptedWallet } = user;
-
+      const { id, address, email, encryptedWallet } = user;
       // Only for old users with no mnemonic
       // TODO: remove this validation when it's already migrated all users
       if (address && address !== newAddress) {
@@ -136,7 +122,6 @@ module.exports = {
           false
         );
       }
-
       const hashedPwd = await bcrypt.hash(password, 10);
       const updated = await this.userDao.updateUserByEmail(email, {
         password: hashedPwd,
@@ -146,7 +131,7 @@ module.exports = {
         { user: id, active: true },
         { active: false }
       );
-      const newEncryptedMnemonic = encrypt(newMnemonic, key);
+      const newEncryptedMnemonic = await encrypt(newMnemonic, key);
       if (
         !newEncryptedMnemonic ||
         !newEncryptedMnemonic.encryptedData ||
@@ -182,12 +167,78 @@ module.exports = {
         );
         throw new COAError(errors.user.UserUpdateError);
       }
+      return updated;
+    } catch (error) {
+      logger.error('[Pass Recovery Service] :: Error updating password', error);
+      throw Error('Error updating password');
+    }
+  },
 
+  async updatePasswordByToken(
+    token,
+    password,
+    address,
+    encryptedWallet,
+    mnemonic
+  ) {
+    const { email } = await this.passRecoveryDao.findRecoverBytoken(token);
+    if (!email) {
+      logger.error('[Pass Recovery Service] :: Token not found: ', token);
+      throw new COAError(errors.user.InvalidToken);
+    }
+    const user = await this.userDao.getUserByEmail(email);
+    if (!user) {
+      logger.error(
+        '[UserService] :: There is no user associated with that email',
+        email
+      );
+      throw new COAError(errors.user.InvalidEmail);
+    }
+    try {
+      const updated = await this.updatePassword(
+        user,
+        password,
+        address,
+        encryptedWallet,
+        mnemonic
+      );
       await this.passRecoveryDao.deleteRecoverByToken(token);
       return updated;
     } catch (error) {
-      logger.error('[Pass Recovery Service] :: Error updating password');
-      throw Error('Error updating password');
+      throw Error(error);
     }
+  },
+
+  async updatePasswordById(
+    id,
+    currentPassword,
+    newPassword,
+    address,
+    encryptedWallet,
+    mnemonic
+  ) {
+    const user = await this.userDao.findById(id);
+    if (!user) {
+      logger.error(
+        '[UserService] :: There is no user associated with that email',
+        email
+      );
+      throw new COAError(errors.user.InvalidEmail);
+    }
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      logger.error(
+        '[User Service] :: Update password failed. Current password is incorrect'
+      );
+      throw new COAError(errors.user.InvalidPassword);
+    }
+    return this.updatePassword(
+      user,
+      newPassword,
+      address,
+      encryptedWallet,
+      mnemonic
+    );
   }
 };
