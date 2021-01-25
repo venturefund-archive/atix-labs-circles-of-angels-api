@@ -139,6 +139,39 @@ async function getLastDeployedContract(name, chainId) {
   return (await getDeployedContracts(name, chainId))[0];
 }
 
+async function getDeployedContracts2(name, signer) {
+  const factory = await getContractFactory(name, signer);
+  const addresses = await getDeployedAddresses(name);
+  const artifact = readArtifactSync(config.paths.artifacts, name);
+
+  // TODO : should use deployedBytecode instead?
+  if (artifact.bytecode !== factory.bytecode) {
+    console.warn(
+      'Deployed contract',
+      name,
+      ' does not match compiled local contract'
+    );
+  }
+
+  const contracts = [];
+  for (const addr of addresses) {
+    const code = await ethers.provider.getCode(addr);
+    const contract = factory.attach(addr);
+    if (code === artifact.deployedBytecode) {
+      contracts.push(contract);
+    } else if (code === AdminUpgradeabilityProxy.deployedBytecode) {
+      const implContract = await getImplContract(contract, name);
+      const implCode = await ethers.provider.getCode(implContract.address);
+      if (implCode === artifact.deployedBytecode) {
+        contracts.push(contract);
+      }
+    }
+  }
+
+  // return addresses.map(addr => factory.attach(addr));
+  return contracts;
+}
+
 async function getDeployedContracts(name, chainId) {
   const factory = await getContractFactory(name);
   const addresses = await getDeployedAddresses(name, chainId);
@@ -316,6 +349,7 @@ module.exports = {
   deployProxy,
   getSigner,
   getDeployedContracts,
+  getDeployedContracts2,
   saveDeployedContract,
   getLastDeployedContract,
   getContractInstance,
