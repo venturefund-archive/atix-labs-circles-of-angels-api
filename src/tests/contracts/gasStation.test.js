@@ -1,8 +1,9 @@
+/* eslint-disable no-console */
 const {
   ethereum,
   run,
   deployments,
-  //web3,
+  // web3,
   ethers
 } = require('@nomiclabs/buidler');
 const {
@@ -15,10 +16,15 @@ const {
 
 const { fromConnection } = require('@openzeppelin/network');
 
-const Web3 = require("web3");
+const Web3 = require('web3');
 
-const { GSNProvider, GSNDevProvider, utils } = require("@openzeppelin/gsn-provider");
-const Web3HttpProvider = require( 'web3-providers-http');
+const {
+  GSNProvider,
+  GSNDevProvider,
+  utils
+} = require('@openzeppelin/gsn-provider');
+const Web3HttpProvider = require('web3-providers-http');
+
 const { isRelayHubDeployedForRecipient, getRecipientFunds } = utils;
 
 const PROVIDER_URL = 'http://localhost:8545';
@@ -33,8 +39,17 @@ async function getProjectAt(address, consultant) {
   return project;
 }
 
-contract('UsersWhitelist.sol', (accounts) => {
-  const [creator, userRelayer, userWhitelist, other] = accounts;
+contract('UsersWhitelist.sol', accounts => {
+  const [
+    creator,
+    userRelayer,
+    userWhitelist,
+    other,
+    ownerAddress,
+    relayerAddress,
+    signerAddress,
+    directSenderAddress
+  ] = accounts;
   let coa;
   let whitelist;
   let subprocess;
@@ -42,70 +57,64 @@ contract('UsersWhitelist.sol', (accounts) => {
   let hubAddress;
   let deploymentProvider;
   let provider;
-  let tempAccount;
   let gsnDevProvider;
-  let signer;
-  before('Gsn provider run' , async function() {
+  before('Gsn provider run', async function before() {
     gsnWeb3 = new Web3(PROVIDER_URL);
     hubAddress = await deployRelayHub(gsnWeb3, {
       from: userRelayer
     });
-    console.log("Run relayed hub", hubAddress);
-    subprocess = await runRelayer( { quiet: true, relayHubAddress: hubAddress});
+    console.log('Run relayed hub', hubAddress);
+    subprocess = await runRelayer({ quiet: true, relayHubAddress: hubAddress });
     const web3provider = new Web3HttpProvider(PROVIDER_URL);
-    deploymentProvider = new ethers.providers.Web3Provider(web3provider)
-    console.log("Provider", deploymentProvider);
+    deploymentProvider = new ethers.providers.Web3Provider(web3provider);
+    console.log('Provider', deploymentProvider);
   });
 
-  beforeEach('deploy contracts', async function() {
+  beforeEach('deploy contracts', async function beforeEach() {
     this.timeout(1 * 60 * 1000);
-    
-    console.log("Parte 1");
+
+    console.log('Parte 1');
     await run('deploy', { reset: true });
-    console.log("Parte 2");
+    console.log('Parte 2');
     [coa] = await deployments.getDeployedContracts2('COA');
-    console.log("Parte 3");
+    console.log('Parte 3');
     [whitelist] = await deployments.getDeployedContracts2('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
-    console.log("Parte 4");
-    
-    //whitelist.addUser(userWhitelist);
-    //coa.setWhitelist(whitelist);
-    
-    await fundRecipient(gsnWeb3, { recipient:coa.address, amount: 0, relayHubAddress: hubAddress});
-    console.log("Parte 5");
-    signer = new ethers.Wallet.createRandom();
+    console.log('Parte 4');
 
-    const web3provider = new Web3HttpProvider(PROVIDER_URL);
-    const web3 = new Web3(web3provider);
+    // whitelist.addUser(userWhitelist);
+    // coa.setWhitelist(whitelist);
 
-    //tempAccount = await web3.eth.personal.privateKeyToAccount(signer.privateKey);
-    console.log("Provider web3", await web3.eth.personal.currentProvider);
-    console.log("Provider web3", await web3.eth.getAccounts());
+    await fundRecipient(gsnWeb3, {
+      recipient: coa.address,
+      amount: '100000000000000000',
+      relayHubAddress: hubAddress
+    });
+    console.log('Parte 5');
 
-    gsnDevProvider = new GSNDevProvider(web3provider, {
-      ownerAddress: creator,
-      relayerAddress: hubAddress,
+    // tempAccount = await web3.eth.personal.privateKeyToAccount(signer.privateKey);
+
+    gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
+      ownerAddress,
+      relayerAddress,
       useGSN: true
     });
-    console.log("Parte 6");
-    
+    console.log('Parte 6');
+
     provider = new ethers.providers.Web3Provider(gsnDevProvider);
-    
-    //gsnDevProvider.addAccount(signer.privateKey);
 
-    //coa = coa.connect(provider.getSigner(signer.address));
-    console.log("Parte 7", coa);
-    //console.log("Parte 5", provider);
+    // gsnDevProvider.addAccount(signer.privateKey);
+
+    // coa = coa.connect(provider.getSigner(signer.address));
+    // console.log("Parte 5", provider);
   });
 
-  after('finish process', async function(){
-    console.log("Finish process relayer hub");
-    if (subprocess) 
-      subprocess.kill();
+  after('finish process', async function after() {
+    console.log('Finish process relayer hub');
+    if (subprocess) subprocess.kill();
   });
 
-  describe('Members method', () => {
+  describe.only('Members method', () => {
     const singletonRelayHub = '0xD216153c06E857cD7f72665E0aF1d7D82172F494';
 
     /*
@@ -121,21 +130,26 @@ contract('UsersWhitelist.sol', (accounts) => {
         id: 1,
         name: 'a good project'
       };
-      //const wallet = new ethers.Wallet(creator, provider);
-      //console.log("Parte 4", wallet);
-      
+      // const wallet = new ethers.Wallet(creator, provider);
+      // console.log("Parte 4", wallet);
 
-      //console.log("Account", tempAccount);
-      //whitelist.addUser(temp.address);
-      
-      console.log("Signer", signer);
-      coa = await deployments.getContractInstance('COA', coa.address, provider.getSigner(signer.address));
-      //coa = coa.connect(provider);
-      //const signer = await ethers.provider.getSigner(temp);
-      //coa = coa.connect(temp);
-      //console.log("Coa", coa);
+      // console.log("Account", tempAccount);
+      await whitelist.addUser();
+      console.log(other);
+      coa = await deployments.getContractInstance(
+        'COA',
+        coa.address,
+        provider.getSigner(signerAddress)
+      );
+      // coa = coa.connect(provider);
+      // const signer = await ethers.provider.getSigner(temp);
+      // coa = coa.connect(temp);
+      // console.log("Coa", coa);
       await coa.createProject(project.id, project.name);
-      const instance = await getProjectAt(await coa.projects(0), provider.getSigner(signer.address));
+      const instance = await getProjectAt(
+        await coa.projects(0),
+        provider.getSigner(signerAddress)
+      );
       assert.equal(await instance.name(), project.name);
     });
   });
