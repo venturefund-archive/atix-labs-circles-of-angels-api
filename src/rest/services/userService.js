@@ -201,7 +201,7 @@ module.exports = {
       answers,
       company
     };
-    const encryptedMnemonic = encrypt(mnemonic, key);
+    const encryptedMnemonic = await encrypt(mnemonic, key);
     if (
       !encryptedMnemonic ||
       !encryptedMnemonic.encryptedData ||

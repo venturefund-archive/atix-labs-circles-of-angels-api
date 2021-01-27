@@ -95,10 +95,30 @@ module.exports = {
     reply.status(200).send({ success: 'Password updated successfully' });
   },
 
+  changeForcePassword: () => async (request, reply) => {
+    const { currentPassword, newPassword, address, encryptedWallet, mnemonic } =
+      request.body || {};
+    const { id } = request.user;
+    await passRecoveryService.updatePasswordById(
+      id,
+      currentPassword,
+      newPassword,
+      address,
+      encryptedWallet,
+      mnemonic
+    );
+    reply.status(200).send({ success: 'Password updated successfully' });
+  },
+
   getWallet: () => async (request, reply) => {
-    const { wallet } = request.user;
-    const { encryptedWallet } = wallet;
-    reply.status(200).send(encryptedWallet);
+    const { id, wallet } = request.user;
+    const { mnemonic } = await userService.getUserById(id);
+    if (!mnemonic) {
+      reply.status(200).send();
+    } else {
+      const { encryptedWallet } = wallet;
+      reply.status(200).send(encryptedWallet);
+    }
   },
 
   getMnemonicFromToken: () => async (request, reply) => {

@@ -382,6 +382,44 @@ const routes = {
     handler: handlers.changeRecoverPassword
   },
 
+  changeForcePassword: {
+    method: 'put',
+    path: `${basePath}/me/force-password`,
+    options: {
+      beforeHandler: ['generalAuth', 'withUser'],
+      schema: {
+        tags: [routeTags.USER.name, routeTags.PUT.name],
+        description:
+          'Modifies the password and wallet of an existing user when it is forced to change it',
+        summary: 'Update user password and wallet',
+        body: {
+          type: 'object',
+          properties: {
+            currentPassword: { type: 'string' },
+            newPassword: { type: 'string' },
+            address: { type: 'string' },
+            encryptedWallet: { type: 'string' },
+            mnemonic: { type: 'string' }
+          },
+          required: [
+            'currentPassword',
+            'newPassword',
+            'address',
+            'encryptedWallet',
+            'mnemonic'
+          ],
+          description: 'New password and new encrypted wallet'
+        },
+        response: {
+          ...successResponse(successPasswordUpdated),
+          ...clientErrorResponse(),
+          ...serverErrorResponse()
+        }
+      }
+    },
+    handler: handlers.changeForcePassword
+  },
+
   getWallet: {
     method: 'get',
     path: `${basePath}/me/wallet`,
