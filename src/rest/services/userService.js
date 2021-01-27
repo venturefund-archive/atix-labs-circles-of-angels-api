@@ -201,7 +201,7 @@ module.exports = {
       answers,
       company
     };
-    const encryptedMnemonic = encrypt(mnemonic, key);
+    const encryptedMnemonic = await encrypt(mnemonic, key);
     if (
       !encryptedMnemonic ||
       !encryptedMnemonic.encryptedData ||
@@ -393,10 +393,16 @@ module.exports = {
     return { address, encryptedWallet };
   },
 
-  async updatePassword(id, currentPassword, newPassword, encryptedWallet) {
+  async updatePassword(
+    id,
+    currentPassword,
+    newPassword,
+    encryptedWallet,
+    address,
+    mnemonic
+  ) {
     logger.info('[UserService] :: Entering updatePassword method');
     const user = await this.userDao.findById(id);
-
     if (!user) {
       logger.info(
         '[UserService] :: There is no user associated with that email',
@@ -428,13 +434,19 @@ module.exports = {
       { user: id, active: true },
       { active: false }
     );
-
+    let encryptedMnemonic;
+    if (mnemonic) {
+      encryptedMnemonic = await encrypt(mnemonic, key);
+    }
     const savedUserWallet = await this.userWalletDao.createUserWallet(
       {
         user: id,
         encryptedWallet,
-        address: user.address,
-        mnemonic: user.mnemonic
+        address: address || user.address,
+        mnemonic: encryptedMnemonic
+          ? encryptedMnemonic.encryptedData
+          : user.mnemonic,
+        iv: encryptedMnemonic ? encryptedMnemonic.iv : user.iv
       },
       true
     );
