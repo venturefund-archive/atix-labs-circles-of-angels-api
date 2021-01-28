@@ -26,7 +26,7 @@ module.exports = {
       ...userWallet
     });
   },
-
+  /* eslint-disable no-param-reassign */
   async findByAddress(address) {
     let userWalletSelected;
     const userWallets = await this.model
@@ -42,20 +42,36 @@ module.exports = {
       userWalletSelected = userWallets[0];
     }
     const { user, encryptedWallet, mnemonic } = userWalletSelected;
+    delete user.address;
+    delete user.encryptedWallet;
+    delete user.mnemonic;
     return { address, encryptedWallet, mnemonic, ...user };
   },
 
   async findByAddresses(addresses) {
+    const uniqueAddresses = [];
     const userWallets = await this.model
       .find({ address: addresses })
       .populate('user');
     return userWallets
-      ? userWallets.map(({ user, encryptedWallet, address, mnemonic }) => ({
-          address,
-          encryptedWallet,
-          mnemonic,
-          ...user
-        }))
+      ? userWallets.reduce(
+          (result, { user, encryptedWallet, address, mnemonic }) => {
+            if (!uniqueAddresses.includes(address)) {
+              uniqueAddresses.push(address);
+              delete user.address;
+              delete user.encryptedWallet;
+              delete user.mnemonic;
+              result.push({
+                address,
+                encryptedWallet,
+                mnemonic,
+                ...user
+              });
+            }
+            return result;
+          },
+          []
+        )
       : [];
   }
 };
