@@ -5,7 +5,7 @@ const sendgrid = require('@sendgrid/mail');
 const logger = require('../../logger');
 
 let emailClient;
-const { host, port, user, pass, apiKey } = config.email;
+const { host, port, user, pass, apiKey, pool, debug, log, name } = config.email;
 if (apiKey) {
   sendgrid.setApiKey(apiKey);
   emailClient = sendgrid;
@@ -13,6 +13,10 @@ if (apiKey) {
   emailClient = nodemailer.createTransport({
     host,
     port,
+    pool,
+    debug,
+    logger: log,
+    name,
     secure: port === 465, // true for 465, false for other ports
     auth: {
       user,
@@ -31,5 +35,8 @@ module.exports = {
     return !emailClient.transporter
       ? emailClient.send(args)
       : emailClient.sendMail(args);
+  },
+  isNodeMailer() {
+    return !!emailClient.transporter;
   }
 };

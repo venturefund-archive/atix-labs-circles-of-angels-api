@@ -39,7 +39,8 @@ describe('Testing mailService', () => {
     sendMail: args => {
       if (args.to === invalidEmail) return { rejected: 'rejected' };
       return args;
-    }
+    },
+    isNodeMailer: () => true
   };
 
   describe('Test sendMail method', () => {
