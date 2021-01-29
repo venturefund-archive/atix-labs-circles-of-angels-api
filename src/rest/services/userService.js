@@ -238,15 +238,6 @@ module.exports = {
       // using migrateMember instead of createMember for now
       await coa.migrateMember(profile, address);
       logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
-      await this.mailService.sendEmailVerification({
-        to: email,
-        bodyContent: {
-          userName: firstName,
-          userId: savedUser.id
-        },
-        userId: savedUser.id
-      });
-      return { address, encryptedWallet, mnemonic, ...savedUser };
     } catch (error) {
       await this.userWalletDao.removeUserWalletByUser(savedUser.id);
       await this.userDao.removeUserById(savedUser.id);
@@ -259,6 +250,19 @@ module.exports = {
       }
       throw new COAError({ message: error.message, statusCode: 500 });
     }
+    try {
+      await this.mailService.sendEmailVerification({
+        to: email,
+        bodyContent: {
+          userName: firstName,
+          userId: savedUser.id
+        },
+        userId: savedUser.id
+      });
+    } catch (error) {
+      logger.error('[UserService] :: Error to send verification email', error);
+    }
+    return { address, encryptedWallet, mnemonic, ...savedUser };
   },
 
   async validateUserEmail(userId) {
