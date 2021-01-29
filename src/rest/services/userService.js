@@ -430,36 +430,41 @@ module.exports = {
       );
       throw new COAError(errors.user.UserUpdateError);
     }
-    const disabledWallet = await this.userWalletDao.updateWallet(
-      { user: id, active: true },
-      { active: false }
-    );
-    let encryptedMnemonic;
-    if (mnemonic) {
-      encryptedMnemonic = await encrypt(mnemonic, key);
-    }
-    const savedUserWallet = await this.userWalletDao.createUserWallet(
-      {
-        user: id,
-        encryptedWallet,
-        address: address || user.address,
-        mnemonic: encryptedMnemonic
-          ? encryptedMnemonic.encryptedData
-          : user.mnemonic,
-        iv: encryptedMnemonic ? encryptedMnemonic.iv : user.iv
-      },
-      true
-    );
-    if (!savedUserWallet) {
-      if (disabledWallet) {
-        // Rollback
-        await this.userWalletDao.updateWallet(
-          { id: disabledWallet.id },
-          { active: true }
-        );
+    if (!mnemonic && !address) {
+      const updatedWallet = await this.userWalletDao.updateWallet(
+        { user: id, active: true },
+        { encryptedWallet }
+      );
+      if (!updatedWallet) {
+        throw new COAError(errors.userWallet.WalletNotUpdated);
       }
-      throw new COAError(errors.userWallet.NewWalletNotSaved);
+    } else {
+      const disabledWallet = await this.userWalletDao.updateWallet(
+        { user: id, active: true },
+        { active: false }
+      );
+      const encryptedMnemonic = await encrypt(mnemonic, key);
+      const savedUserWallet = await this.userWalletDao.createUserWallet(
+        {
+          user: id,
+          encryptedWallet,
+          address,
+          mnemonic: encryptedMnemonic.encryptedData,
+          iv: encryptedMnemonic.iv
+        },
+        true
+      );
+      if (!savedUserWallet) {
+        if (disabledWallet) {
+          // Rollback
+          await this.userWalletDao.updateWallet(
+            { id: disabledWallet.id },
+            { active: true }
+          );
+        }
+        throw new COAError(errors.userWallet.NewWalletNotSaved);
+      }
+      return updated;
     }
-    return updated;
   }
 };
