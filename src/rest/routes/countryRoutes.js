@@ -21,7 +21,8 @@ const countriesResponse = {
     type: 'object',
     properties: {
       id: { type: 'number' },
-      name: { type: 'string' }
+      name: { type: 'string' },
+      callingCode: { type: 'number' }
     }
   },
   description: 'Returns all countries'
