@@ -201,7 +201,7 @@ module.exports = {
       answers,
       company
     };
-    const encryptedMnemonic = encrypt(mnemonic, key);
+    const encryptedMnemonic = await encrypt(mnemonic, key);
     if (
       !encryptedMnemonic ||
       !encryptedMnemonic.encryptedData ||
@@ -393,10 +393,16 @@ module.exports = {
     return { address, encryptedWallet };
   },
 
-  async updatePassword(id, currentPassword, newPassword, encryptedWallet) {
+  async updatePassword(
+    id,
+    currentPassword,
+    newPassword,
+    encryptedWallet,
+    address,
+    mnemonic
+  ) {
     logger.info('[UserService] :: Entering updatePassword method');
     const user = await this.userDao.findById(id);
-
     if (!user) {
       logger.info(
         '[UserService] :: There is no user associated with that email',
@@ -424,30 +430,41 @@ module.exports = {
       );
       throw new COAError(errors.user.UserUpdateError);
     }
-    const disabledWallet = await this.userWalletDao.updateWallet(
-      { user: id, active: true },
-      { active: false }
-    );
-
-    const savedUserWallet = await this.userWalletDao.createUserWallet(
-      {
-        user: id,
-        encryptedWallet,
-        address: user.address,
-        mnemonic: user.mnemonic
-      },
-      true
-    );
-    if (!savedUserWallet) {
-      if (disabledWallet) {
-        // Rollback
-        await this.userWalletDao.updateWallet(
-          { id: disabledWallet.id },
-          { active: true }
-        );
+    if (!mnemonic && !address) {
+      const updatedWallet = await this.userWalletDao.updateWallet(
+        { user: id, active: true },
+        { encryptedWallet }
+      );
+      if (!updatedWallet) {
+        throw new COAError(errors.userWallet.WalletNotUpdated);
       }
-      throw new COAError(errors.userWallet.NewWalletNotSaved);
+    } else {
+      const disabledWallet = await this.userWalletDao.updateWallet(
+        { user: id, active: true },
+        { active: false }
+      );
+      const encryptedMnemonic = await encrypt(mnemonic, key);
+      const savedUserWallet = await this.userWalletDao.createUserWallet(
+        {
+          user: id,
+          encryptedWallet,
+          address,
+          mnemonic: encryptedMnemonic.encryptedData,
+          iv: encryptedMnemonic.iv
+        },
+        true
+      );
+      if (!savedUserWallet) {
+        if (disabledWallet) {
+          // Rollback
+          await this.userWalletDao.updateWallet(
+            { id: disabledWallet.id },
+            { active: true }
+          );
+        }
+        throw new COAError(errors.userWallet.NewWalletNotSaved);
+      }
+      return updated;
     }
-    return updated;
   }
 };

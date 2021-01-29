@@ -71,13 +71,15 @@ module.exports = {
 
   changePassword: () => async (request, reply) => {
     const { id } = request.user;
-    const { currentPassword, newPassword, encryptedWallet } =
+    const { currentPassword, newPassword, encryptedWallet, address, mnemonic } =
       request.body || {};
     await userService.updatePassword(
       id,
       currentPassword,
       newPassword,
-      encryptedWallet
+      encryptedWallet,
+      address,
+      mnemonic
     );
     reply.status(200).send({ success: 'Password updated successfully' });
   },
@@ -96,9 +98,16 @@ module.exports = {
   },
 
   getWallet: () => async (request, reply) => {
-    const { wallet } = request.user;
-    const { encryptedWallet } = wallet;
-    reply.status(200).send(encryptedWallet);
+    const { id, wallet } = request.user;
+    const { mnemonic } = await userService.getUserById(id);
+    if (!mnemonic) {
+      reply.status(404).send({
+        error: `Cannot find mnemonic for user id: ${id}`
+      });
+    } else {
+      const { encryptedWallet } = wallet;
+      reply.status(200).send(encryptedWallet);
+    }
   },
 
   getMnemonicFromToken: () => async (request, reply) => {

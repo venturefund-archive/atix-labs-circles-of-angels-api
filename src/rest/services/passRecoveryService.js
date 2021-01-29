@@ -146,7 +146,7 @@ module.exports = {
         { user: id, active: true },
         { active: false }
       );
-      const newEncryptedMnemonic = encrypt(newMnemonic, key);
+      const newEncryptedMnemonic = await encrypt(newMnemonic, key);
       if (
         !newEncryptedMnemonic ||
         !newEncryptedMnemonic.encryptedData ||
