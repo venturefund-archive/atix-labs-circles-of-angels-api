@@ -63,7 +63,6 @@ module.exports = {
       return info;
     } catch (error) {
       logger.error('[MailService] :: Email was not sent', error);
-      throw new COAError(errors.mail.EmailNotSent);
     }
   },
 
