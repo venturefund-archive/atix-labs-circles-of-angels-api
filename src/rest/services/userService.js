@@ -225,28 +225,40 @@ module.exports = {
       await this.userDao.removeUserById(savedUser.id);
       throw new COAError(errors.userWallet.NewWalletNotSaved);
     }
+    try {
+      // TODO: Uncomment after it's implemented GSN
+      /* const accounts = await ethers.getSigners();
+      const tx = {
+        to: address,
+        value: utils.parseEther('0.001')
+      };
+      await accounts[0].sendTransaction(tx); */
 
-    const accounts = await ethers.getSigners();
-    const tx = {
-      to: address,
-      value: utils.parseEther('0.001')
-    };
-    await accounts[0].sendTransaction(tx);
-
-    const profile = `${firstName} ${lastName}`;
-    // using migrateMember instead of createMember for now
-    await coa.migrateMember(profile, address);
-    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
-    await this.mailService.sendEmailVerification({
-      to: email,
-      bodyContent: {
-        userName: firstName,
+      const profile = `${firstName} ${lastName}`;
+      // using migrateMember instead of createMember for now
+      await coa.migrateMember(profile, address);
+      logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
+      await this.mailService.sendEmailVerification({
+        to: email,
+        bodyContent: {
+          userName: firstName,
+          userId: savedUser.id
+        },
         userId: savedUser.id
-      },
-      userId: savedUser.id
-    });
-
-    return { address, encryptedWallet, mnemonic, ...savedUser };
+      });
+      return { address, encryptedWallet, mnemonic, ...savedUser };
+    } catch (error) {
+      await this.userWalletDao.removeUserWalletByUser(savedUser.id);
+      await this.userDao.removeUserById(savedUser.id);
+      logger.error(
+        `[UserService] :: Error to create user with email ${email}: `,
+        error
+      );
+      if (error.statusCode) {
+        throw error;
+      }
+      throw new COAError({ message: error.message, statusCode: 500 });
+    }
   },
 
   async validateUserEmail(userId) {
