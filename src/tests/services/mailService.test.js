@@ -64,7 +64,7 @@ describe('Testing mailService', () => {
     it('should throw an error if the email was rejected', async () => {
       await expect(
         mailService.sendMail({ ...email, to: invalidEmail })
-      ).rejects.toThrow(errors.mail.InvalidAccount);
+      ).rejects.toThrow(errors.mail.EmailNotSent);
     });
   });
 

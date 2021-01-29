@@ -47,20 +47,24 @@ module.exports = {
       method: 'sendMail',
       params: { to, from, subject, html }
     });
-    const info = await this.emailClient.sendMail({
-      to,
-      from,
-      subject,
-      text,
-      html,
-      attachments
-    });
-    // why isEmpty?
-    if (!isEmpty(info.rejected)) {
-      logger.info('[MailService] :: Invalid email account', info.rejected);
-      throw new COAError(errors.mail.InvalidAccount);
+    try {
+      const info = await this.emailClient.sendMail({
+        to,
+        from,
+        subject,
+        text,
+        html,
+        attachments
+      });
+      // why isEmpty?
+      if (!isEmpty(info.rejected)) {
+        throw new Error('Invalid email account');
+      }
+      return info;
+    } catch (error) {
+      logger.error('[MailService] :: Email was not sent', error);
+      throw new COAError(errors.mail.EmailNotSent);
     }
-    return info;
   },
 
   async sendSignUpMail({
