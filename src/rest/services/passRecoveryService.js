@@ -31,7 +31,7 @@ module.exports = {
         '[PassRecovery Service] :: There is no user associated with that email',
         email
       );
-      return email;
+      throw new COAError(errors.user.EmailNotExists(email));
     }
 
     const hash = await crypto.randomBytes(25);
