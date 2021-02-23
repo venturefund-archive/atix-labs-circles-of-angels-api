@@ -38,6 +38,10 @@ module.exports = {
     message: 'The user is not the project´s owner',
     statusCode: 403
   },
+  EmailNotExists: email => ({
+    message: `There is no user associated with email ${email}`,
+    statusCode: 400
+  }),
   UnauthorizedUserRole: role => ({
     message: `User of role ${role} is not allowed to execute this operation`,
     statusCode: 403

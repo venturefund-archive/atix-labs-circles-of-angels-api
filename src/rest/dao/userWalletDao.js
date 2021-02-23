@@ -73,5 +73,9 @@ module.exports = {
           []
         )
       : [];
+  },
+
+  async removeUserWalletByUser(userId) {
+    return this.model.destroy({ user: userId });
   }
 };

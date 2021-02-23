@@ -31,7 +31,7 @@ module.exports = {
         '[PassRecovery Service] :: There is no user associated with that email',
         email
       );
-      return email;
+      throw new COAError(errors.user.EmailNotExists(email));
     }
 
     const hash = await crypto.randomBytes(25);
@@ -146,7 +146,7 @@ module.exports = {
         { user: id, active: true },
         { active: false }
       );
-      const newEncryptedMnemonic = encrypt(newMnemonic, key);
+      const newEncryptedMnemonic = await encrypt(newMnemonic, key);
       if (
         !newEncryptedMnemonic ||
         !newEncryptedMnemonic.encryptedData ||
