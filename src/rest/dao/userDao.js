@@ -6,7 +6,6 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const uuid = require('uuid');
 const { userRoles } = require('../util/constants');
 
 module.exports = {
@@ -47,10 +46,8 @@ module.exports = {
   },
 
   async createUser(user) {
-    return this.model.create({
-      id: uuid.v4(),
-      ...user
-    });
+    const createdUser = await this.model.create(user);
+    return createdUser;
   },
 
   async getFollowedProjects(id) {
