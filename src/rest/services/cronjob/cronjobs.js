@@ -1,11 +1,12 @@
 const config = require('config');
 const logger = require('../../logger');
 
-const { EVERY_FIVE_MINUTES, EVERY_HOUR } = require('./cronExpressions');
+const { EVERY_DAY_AT_MIDNIGHT, EVERY_HOUR } = require('./cronExpressions');
 
 module.exports = {
   transitionProjectStatusJob: {
-    cronTime: EVERY_FIVE_MINUTES,
+    cronTime:
+      config.crons.transitionProjectStatusJob.cronTime || EVERY_DAY_AT_MIDNIGHT,
     async onTick() {
       logger.info('[CronJobService] :: Executing transitionProjectStatusJob');
       const updatedConsensusProjects = await this.projectService.transitionConsensusProjects();
@@ -13,7 +14,8 @@ module.exports = {
       const updatedFinsihedProjects = await this.projectService.transitionFinishedProjects();
       const updatedProjects = [
         ...updatedConsensusProjects,
-        ...updatedFundingProjects
+        ...updatedFundingProjects,
+        ...updatedFinsihedProjects
       ];
       logger.info('[CronJobService] :: Updated projects:', updatedProjects);
     },
