@@ -1535,5 +1535,35 @@ module.exports = {
       });
     });
     return oracles;
+  },
+
+  async transitionFinishedProjects(projectId) {
+    logger.info(
+      '[ProjectService] :: Entering transitionFinishedProjects method'
+    );
+    const projects = await this.projectDao.findAllByProps(
+      {
+        id: projectId,
+        status: projectStatuses.EXECUTING
+      },
+      { funders: true }
+    );
+
+    const updatedProjects = await Promise.all(
+      projects.map(async project => {
+        logger.info(
+          '[ProjectService] :: Checking if all milestones have transferred status',
+          project.id
+        );
+        if (!this.milestoneService.hasAllTransferredMilestones(project.id)) {
+          return;
+        }
+        await this.updateProject(project.id, {
+          status: projectStatuses.FINISHED
+        });
+        return { projectId: project.id, newStatus: projectStatuses.FINISHED };
+      })
+    );
+    return updatedProjects.filter(updated => !!updated);
   }
 };
