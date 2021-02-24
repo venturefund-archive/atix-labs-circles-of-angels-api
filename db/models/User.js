@@ -29,7 +29,7 @@ module.exports = {
     email: { type: 'string', required: true },
     password: { type: 'string', required: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    id: { type: 'number', required: true },
     role: {
       type: 'string',
       validations: { isIn: Object.values(userRoles) },
