@@ -123,5 +123,10 @@ module.exports = {
   explorerLink: 'https://explorer.testnet.rsk.co',
   crypto: {
     key: process.env.CRYPTO_KEY
+  },
+  rifStorageOptions: {
+    protocol: process.env.RS_PROTOCOL,
+    host: process.env.RS_HOST,
+    port: process.env.RS_PORT,
   }
 };
