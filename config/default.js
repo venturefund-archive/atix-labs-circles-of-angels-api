@@ -32,6 +32,10 @@ module.exports = {
     port: process.env.EMAIL_PORT,
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
+    pool: true,
+    debug: false,
+    log: false,
+    name: 'app.circlesofangels.com',
     apiKey: process.env.EMAIL_API_KEY, // sendgrid apikey, when undefined uses smtp
     from: process.env.EMAIL_FROM,
     disabled: process.env.EMAIL_DISABLED === 'true'

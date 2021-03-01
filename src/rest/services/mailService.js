@@ -20,13 +20,20 @@ const logger = require('../logger');
 const image = fs
   .readFileSync(path.join(__dirname, '../../../assets/public/logoemail.png'))
   .toString('base64');
-const attachments = [
+const sendGridAttachments = [
   {
     filename: 'logoemail.png',
     type: 'image/png',
     content: image,
     content_id: 'imageLogo',
     disposition: 'inline'
+  }
+];
+const nodeMailerAttachments = [
+  {
+    filename: 'logoemail.png',
+    path: path.join(__dirname, '../../../assets/public/logoemail.png'),
+    cid: 'imageLogo'
   }
 ];
 
@@ -42,11 +49,18 @@ module.exports = {
    * @returns
    */
   async sendMail({ to, from = config.email.from, subject, text, html }) {
+    let attachments;
     logger.info(`[MailService] :: Sending email to: ${to} subject: ${subject}`);
     validateRequiredParams({
       method: 'sendMail',
       params: { to, from, subject, html }
     });
+
+    if (this.emailClient.isNodeMailer()) {
+      attachments = nodeMailerAttachments;
+    } else {
+      attachments = sendGridAttachments;
+    }
     try {
       const info = await this.emailClient.sendMail({
         to,
