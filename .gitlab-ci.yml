@@ -24,7 +24,7 @@ stages:
   - package
 
 lint:
-  image: docker.atixlabs.com/node:10.15.3
+  image: docker.atixlabs.com/node:12.21.0
   stage: test
   script:
     - npm run lint
@@ -32,7 +32,7 @@ lint:
     - schedules
 
 test_contracts:
-  image: docker.atixlabs.com/node:10.15.3
+  image: docker.atixlabs.com/node:12.21.0
   stage: test
   script:
     - npm run node > /dev/null &
@@ -50,7 +50,7 @@ test_be:
     - schedules
 
 package:
-  image: docker.atixlabs.com/node:10.15.3
+  image: docker.atixlabs.com/node:12.21.0
   stage: package
   services:
     - docker:19.03.1-dind
