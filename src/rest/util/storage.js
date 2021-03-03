@@ -31,8 +31,7 @@ module.exports = {
     logger.info('[Storage] :: Entering getStorageData method');
     try {
       const retrievedData = await storageIPFS.get(fileHash);
-      console.log(retrievedData);
-      return a;
+      return retrievedData;
     } catch (error) {
       logger.error('[Storage] :: An error has occurred', error);
       throw error;
