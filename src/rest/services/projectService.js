@@ -1549,7 +1549,7 @@ module.exports = {
       { funders: true }
     );
 
-    const updatedProjects = await Promise.all(
+    const projectResults = await Promise.all(
       projects.map(async project => {
         logger.info(
           '[ProjectService] :: Checking if all milestones have transferred status',
@@ -1564,6 +1564,6 @@ module.exports = {
         return { projectId: project.id, newStatus: projectStatuses.FINISHED };
       })
     );
-    return updatedProjects.filter(updated => !!updated);
+    return projectResults.filter(updated => !!updated);
   }
 };
