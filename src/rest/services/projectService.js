@@ -19,6 +19,7 @@ const {
   txFunderStatus
 } = require('../util/constants');
 const files = require('../util/files');
+const storage = require('../util/storage');
 const {
   validateExistence,
   validateParams
@@ -228,14 +229,14 @@ module.exports = {
       coverPhoto
     );
 
-    let agreementFilePath;
+    let agreementFileHash;
     let proposalFilePath;
 
     if (agreementFile) {
       logger.info('[ProjectService] :: Uploading agreement file');
-      agreementFilePath = await files.validateAndSaveFile(
-        files.TYPES.agreementFile,
-        agreementFile
+      agreementFileHash = await storage.generateStorageHash(
+        agreementFile,
+        files.TYPES.agreementFile
       );
     }
 
@@ -251,7 +252,7 @@ module.exports = {
       mission,
       problemAddressed,
       coverPhotoPath,
-      agreementFilePath,
+      agreementFileHash,
       proposalFilePath
     };
 
@@ -298,7 +299,7 @@ module.exports = {
       throw new COAError(errors.project.ProjectCantBeUpdated(status));
     }
 
-    let { coverPhotoPath, agreementFilePath, proposalFilePath } = project;
+    let { coverPhotoPath, agreementFileHash, proposalFilePath } = project;
 
     if (coverPhoto) {
       logger.info('[ProjectService] :: Updating cover photo');
@@ -309,9 +310,9 @@ module.exports = {
     }
     if (agreementFile) {
       logger.info('[ProjectService] :: Updating agreement file');
-      agreementFilePath = await files.validateAndSaveFile(
-        files.TYPES.agreementFile,
-        agreementFile
+      agreementFileHash = await storage.generateStorageHash(
+        agreementFile,
+        files.TYPES.agreementFile
       );
     }
     if (proposalFile) {
@@ -328,7 +329,7 @@ module.exports = {
       mission,
       problemAddressed,
       coverPhotoPath,
-      agreementFilePath,
+      agreementFileHash,
       proposalFilePath
     });
     logger.info(`[ProjectService] :: Project of id ${projectId} updated`);
@@ -1230,6 +1231,7 @@ module.exports = {
   async updateProjectAsExecuting(project) {
     try {
       const agreement = await this.generateProjectAgreement(project.id);
+      const agreementHash = await storage.generateStorageHash(agreement);
       logger.info(
         `[ProjectService] :: Saving agreement for project ${project.id}`
       );
@@ -1268,7 +1270,7 @@ module.exports = {
       );
       await coa.addProjectAgreement(
         project.address,
-        sha3(agreement) // TODO: this should be a ipfs hash
+        agreementHash
       );
     } catch (e) {
       throw e;
@@ -1476,8 +1478,7 @@ module.exports = {
     logger.info('[ProjectService] :: Entering getBlockchainInfo method');
     const project = await checkExistence(this.projectDao, projectId, 'project');
 
-    // TODO: add agreement ipfs hash
-    const { address, txHash } = project;
+    const { address, txHash, agreementFileHash } = project;
 
     if (!txHash) {
       logger.info(
@@ -1514,7 +1515,7 @@ module.exports = {
         : undefined,
       blockNumber,
       blockNumberUrl: blockNumber ? buildBlockURL(blockNumber) : undefined,
-      agreement: undefined // TODO: add when ipfs is implemented
+      agreement: agreementFileHash
     };
   },
   /**

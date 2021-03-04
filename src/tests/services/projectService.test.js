@@ -1,3 +1,4 @@
+require('jest-fetch-mock').enableMocks();
 const { coa } = require('@nomiclabs/buidler');
 const COAError = require('../../rest/errors/COAError');
 const { sha3 } = require('../../rest/util/hash');
@@ -16,6 +17,7 @@ const validators = require('../../rest/services/helpers/projectStatusValidators/
 
 const { injectMocks } = require('../../rest/util/injection');
 
+const storage = require('../../rest/util/storage');
 const files = require('../../rest/util/files');
 const originalProjectService = require('../../rest/services/projectService');
 
@@ -369,6 +371,13 @@ describe('Project Service Test', () => {
       validateMtype(type, fileToSave);
       validatePhotoSize(fileToSave);
       return '/path/to/file';
+    });
+    storage.generateStorageHash = jest.fn((fileToSave, type) => {
+      if (type) {
+        validateMtype(type, fileToSave);
+        validatePhotoSize(fileToSave);
+      }
+      return 'fileHash';
     });
     // mock all validators
     Object.keys(validators).forEach(validator => {
