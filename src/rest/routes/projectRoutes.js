@@ -131,7 +131,7 @@ const successWithApplyingResponse = {
 };
 
 const userProperties = {
-  id: { type: 'integer' },
+  id: { type: 'string' },
   firstName: { type: 'string' },
   lastName: { type: 'string' },
   role: { type: 'string' },
