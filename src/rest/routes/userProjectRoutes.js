@@ -140,7 +140,7 @@ const routes = {
         body: {
           type: 'object',
           properties: {
-            userId: { type: 'integer' },
+            userId: { type: 'string' },
             projectId: { type: 'integer' }
           },
           description: 'Funder id and project id to create the relation'

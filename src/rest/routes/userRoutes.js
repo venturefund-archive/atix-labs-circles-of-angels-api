@@ -34,7 +34,7 @@ const userResponse = {
     address: { type: 'string' },
     createdAt: { type: 'string' },
     role: { type: 'string' },
-    id: { type: 'integer' },
+    id: { type: 'string' },
     hasDaos: { type: 'boolean' },
     forcePasswordChange: { type: 'boolean' },
     blocked: { type: 'boolean' },
@@ -115,7 +115,7 @@ const projectResponse = {
   cardPhotoPath: { type: 'string' },
   goalAmount: { type: 'number' },
   status: { type: 'string' },
-  owner: { type: 'number' },
+  owner: { type: 'string' },
   createdAt: { type: 'string' },
   transactionHash: { type: 'string' },
   id: { type: 'number' }
@@ -153,7 +153,7 @@ const routes = {
           type: 'object',
           properties: {
             userId: {
-              type: 'integer',
+              type: 'string',
               description: 'User to get the information'
             }
           }
@@ -168,7 +168,7 @@ const routes = {
               address: { type: 'string' },
               createdAt: { type: 'string' },
               updatedAt: { type: 'string' },
-              id: { type: 'integer' },
+              id: { type: 'string' },
               role: {
                 type: 'object',
                 properties: {

@@ -273,6 +273,9 @@ ALTER TABLE public."user_wallet"
 ALTER TABLE public."user_wallet"
     ALTER COLUMN "userId_old" drop not null;
 
+
+ALTER TABLE public.task
+    ALTER COLUMN "oracleId" DROP NOT NULL;
 -------------------------------------
 ---- TODO: remove old user Ids ------
 -------------------------------------

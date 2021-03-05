@@ -29,7 +29,7 @@ const taskProperties = {
 };
 
 const oracleProperties = {
-  oracleId: { type: 'number' }
+  oracleId: { type: 'string' }
 };
 
 const successWithTaskIdResponse = {
