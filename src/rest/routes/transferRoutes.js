@@ -30,7 +30,7 @@ const projectIdParam = idParam('Project unique id');
 
 const transferProperties = {
   transferId: { type: 'string' },
-  senderId: { type: 'integer' },
+  senderId: { type: 'string' },
   destinationAccount: { type: 'string' },
   amount: { type: 'number' },
   currency: { type: 'string' },
@@ -57,7 +57,7 @@ const userResponse = {
     email: { type: 'string' },
     address: { type: 'string' },
     createdAt: { type: 'string' },
-    id: { type: 'integer' },
+    id: { type: 'string' },
     role: { type: 'string' },
     blocked: { type: 'boolean' }
   },

@@ -59,7 +59,7 @@ const taskResponse = {
     keyPersonnel: { type: 'string' },
     budget: { type: 'string' },
     createdAt: { type: 'string' },
-    oracle: { type: ['integer', 'null'] },
+    oracle: { type: ['string', 'null'] },
     id: { type: 'number' }
   }
 };
