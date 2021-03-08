@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 
 # Installing dependencies
 COPY package.json ./
-RUN rm -r node_modules/
+
 RUN npm install
 
 # Copying source files
