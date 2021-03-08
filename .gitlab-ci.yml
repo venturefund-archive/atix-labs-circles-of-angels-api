@@ -65,6 +65,7 @@ package:
     refs:
       # Only run on develop, release/x.y.x and hotfix/xxxx
       - COA-1766-fix-gitlab-pipeline
+      - COA-1878-gitlab-error-pipeline
       - develop
       - /^release.*$/
       - /^hotfix.*$/
