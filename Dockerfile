@@ -5,8 +5,8 @@ FROM docker.atixlabs.com/node:10.15.3
 WORKDIR /usr/src/app
 
 # Installing dependencies
-COPY package*.json ./
-
+COPY package.json ./
+RUN rm -r node_modules/
 RUN npm install
 
 # Copying source files
