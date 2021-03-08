@@ -17,7 +17,6 @@ cache:
     - cache/
 
 before_script:
-  - rm -r node_modules/
   - npm install
 
 stages:
