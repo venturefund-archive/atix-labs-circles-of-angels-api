@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+const uuid = require('uuid');
 const { userRoles } = require('../util/constants');
 
 module.exports = {
@@ -17,11 +18,14 @@ module.exports = {
       return;
     }
     if (!user.wallets.length) {
-      return;
+      return { withNoWallets: true, ...user };
     }
-    const { address, encryptedWallet, mnemonic } = user.wallets[0];
+    const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
+    delete user.address;
+    delete user.encryptedWallet;
     delete user.wallets;
-    return { address, encryptedWallet, mnemonic, ...user };
+    delete user.mnemonic;
+    return { address, encryptedWallet, mnemonic, iv, ...user };
   },
 
   async getUserByEmail(email) {
@@ -34,14 +38,19 @@ module.exports = {
     if (!user.wallets.length) {
       return { withNoWallets: true, ...user };
     }
-    const { address, encryptedWallet, mnemonic } = user.wallets[0];
+    const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
+    delete user.address;
+    delete user.encryptedWallet;
     delete user.wallets;
-    return { address, encryptedWallet, mnemonic, ...user };
+    delete user.mnemonic;
+    return { address, encryptedWallet, mnemonic, iv, ...user };
   },
 
   async createUser(user) {
-    const createdUser = await this.model.create(user);
-    return createdUser;
+    return this.model.create({
+      id: uuid.v4(),
+      ...user
+    });
   },
 
   async getFollowedProjects(id) {
@@ -88,9 +97,12 @@ module.exports = {
       if (!user.wallets.length) {
         return user;
       }
-      const { address, encryptedWallet, mnemonic } = user.wallets[0];
+      const { address, encryptedWallet, mnemonic, iv } = user.wallets[0];
+      delete user.address;
+      delete user.encryptedWallet;
       delete user.wallets;
-      return { address, encryptedWallet, mnemonic, ...user };
+      delete user.mnemonic;
+      return { address, encryptedWallet, mnemonic, iv, ...user };
     });
   },
 

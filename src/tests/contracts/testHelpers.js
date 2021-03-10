@@ -12,7 +12,11 @@ const throwsAsync = async (promise, errMsg) => {
     await promise;
   } catch (err) {
     if (env.network.name === 'coverage') return; // coverage vm does not return the error msg 🤦
-    assert.equal(err.message, errMsg, 'Expected exception failed');
+    assert.equal(
+      err.message ? err.message : err.error,
+      errMsg,
+      'Expected exception failed'
+    );
     return;
   }
   assert.fail(`Expected ${errMsg} to have been thrown`);

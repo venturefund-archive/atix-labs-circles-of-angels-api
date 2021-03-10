@@ -38,6 +38,10 @@ module.exports = {
     message: 'The user is not the project´s owner',
     statusCode: 403
   },
+  EmailNotExists: email => ({
+    message: `There is no user associated with email ${email}`,
+    statusCode: 400
+  }),
   UnauthorizedUserRole: role => ({
     message: `User of role ${role} is not allowed to execute this operation`,
     statusCode: 403
@@ -73,5 +77,13 @@ module.exports = {
   NotConfirmedEmail: {
     message: 'The user needs to confirm email address',
     statusCode: 403
+  },
+  MnemonicNotEncrypted: {
+    message: 'Mnemonic could not be encrypted',
+    statusCode: 500
+  },
+  MnemonicNotDecrypted: {
+    message: 'Mnemonic could not be decrypted',
+    statusCode: 500
   }
 };

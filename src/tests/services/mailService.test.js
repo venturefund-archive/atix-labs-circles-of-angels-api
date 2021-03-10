@@ -39,7 +39,8 @@ describe('Testing mailService', () => {
     sendMail: args => {
       if (args.to === invalidEmail) return { rejected: 'rejected' };
       return args;
-    }
+    },
+    isNodeMailer: () => true
   };
 
   describe('Test sendMail method', () => {
@@ -64,7 +65,7 @@ describe('Testing mailService', () => {
     it('should throw an error if the email was rejected', async () => {
       await expect(
         mailService.sendMail({ ...email, to: invalidEmail })
-      ).rejects.toThrow(errors.mail.InvalidAccount);
+      ).rejects.toThrow(errors.mail.EmailNotSent);
     });
   });
 

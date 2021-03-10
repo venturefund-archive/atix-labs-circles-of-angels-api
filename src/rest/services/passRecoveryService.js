@@ -9,10 +9,15 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { isEmpty } = require('lodash');
-const { frontendUrl, support } = require('config');
+const { support } = require('config');
+const config = require('config');
+
+const { key } = config.crypto;
+
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
+const { encrypt, decrypt } = require('../util/crypto');
 
 module.exports = {
   async startPassRecoveryProcess(email) {
@@ -26,7 +31,7 @@ module.exports = {
         '[PassRecovery Service] :: There is no user associated with that email',
         email
       );
-      return email;
+      throw new COAError(errors.user.EmailNotExists(email));
     }
 
     const hash = await crypto.randomBytes(25);
@@ -71,18 +76,38 @@ module.exports = {
     }
 
     const { email } = recover;
-    const { mnemonic } = await this.userDao.getUserByEmail(email);
-    if (!mnemonic) {
+    const { mnemonic, iv } = await this.userDao.getUserByEmail(email);
+    // TODO: uncomment this validation when it's already migrated all users
+    /* if (!mnemonic) {
       logger.error(
         '[Pass Recovery Service] :: Mnemonic not found of user with email: ',
         email
       );
       throw new COAError(errors.user.InvalidEmail);
+    } */
+    // TODO: remove this validation when it's already migrated all users
+    if (!iv) {
+      return mnemonic;
     }
-    return mnemonic;
+    const decryptedMnemonic = decrypt(mnemonic, key, iv);
+    if (!decryptedMnemonic) {
+      logger.error(
+        '[Pass Recovery Service] :: Mnemonic could not be decrypted',
+        mnemonic,
+        iv
+      );
+      throw new COAError(errors.user.MnemonicNotDecrypted);
+    }
+    return decryptedMnemonic;
   },
 
-  async updatePassword(address, token, password, encryptedWallet, mnemonic) {
+  async updatePassword(
+    newAddress,
+    token,
+    password,
+    newEncryptedWallet,
+    newMnemonic
+  ) {
     try {
       const { email } = await this.passRecoveryDao.findRecoverBytoken(token);
       if (!email) {
@@ -97,7 +122,21 @@ module.exports = {
         );
         throw new COAError(errors.user.InvalidEmail);
       }
-      const { id } = user;
+      const { id, address, encryptedWallet } = user;
+
+      // Only for old users with no mnemonic
+      // TODO: remove this validation when it's already migrated all users
+      if (address && address !== newAddress) {
+        await this.userWalletDao.createUserWallet(
+          {
+            user: id,
+            encryptedWallet,
+            address
+          },
+          false
+        );
+      }
+
       const hashedPwd = await bcrypt.hash(password, 10);
       const updated = await this.userDao.updateUserByEmail(email, {
         password: hashedPwd,
@@ -107,13 +146,25 @@ module.exports = {
         { user: id, active: true },
         { active: false }
       );
-
-      const savedUserWallet = await this.userWalletDao.createUserWallet({
-        user: id,
-        encryptedWallet,
-        address,
-        mnemonic
-      });
+      const newEncryptedMnemonic = await encrypt(newMnemonic, key);
+      if (
+        !newEncryptedMnemonic ||
+        !newEncryptedMnemonic.encryptedData ||
+        !newEncryptedMnemonic.iv
+      ) {
+        logger.error('[User Service] :: Mnemonic could not be encrypted');
+        throw new COAError(errors.user.MnemonicNotEncrypted);
+      }
+      const savedUserWallet = await this.userWalletDao.createUserWallet(
+        {
+          user: id,
+          encryptedWallet: newEncryptedWallet,
+          address: newAddress,
+          mnemonic: newEncryptedMnemonic.encryptedData,
+          iv: newEncryptedMnemonic.iv
+        },
+        true
+      );
       if (!savedUserWallet) {
         if (disabledWallet) {
           // Rollback

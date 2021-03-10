@@ -67,12 +67,15 @@ task('deploy', 'Deploys COA contracts')
     );
     if (implWhitelist === undefined || reset === true) {
       [implWhitelist] = await env.deployments.deployProxy(
-        'UsersWhitelist', 
+        'UsersWhitelist',
         [],
         undefined,
         { initializer: 'whitelistInitialize' }
       );
-      await env.deployments.saveDeployedContract('UsersWhitelist', implWhitelist);
+      await env.deployments.saveDeployedContract(
+        'UsersWhitelist',
+        implWhitelist
+      );
     }
 
     let [coa] = await env.deployments.getDeployedContracts('COA');
@@ -120,7 +123,7 @@ task('deploy2').setAction(async (args, env) => {
   const setup = env.deployments.getDeploymentSetup(coaDeploySetup);
   await setup.deploy();
 });
-
+// eslint-disable prefer-destructuring
 // eslint-disable-next-line no-undef
 extendEnvironment(env => {
   // eslint-disable-next-line no-param-reassign

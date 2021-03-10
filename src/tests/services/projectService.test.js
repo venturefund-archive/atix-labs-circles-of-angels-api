@@ -1,3 +1,4 @@
+require('jest-fetch-mock').enableMocks();
 const { coa } = require('@nomiclabs/buidler');
 const COAError = require('../../rest/errors/COAError');
 const { sha3 } = require('../../rest/util/hash');
@@ -5,7 +6,8 @@ const {
   userRoles,
   projectStatuses,
   txFunderStatus,
-  supporterRoles
+  supporterRoles,
+  claimMilestoneStatus
 } = require('../../rest/util/constants');
 const errors = require('../../rest/errors/exporter/ErrorExporter');
 const validateMtype = require('../../rest/services/helpers/validateMtype');
@@ -15,6 +17,7 @@ const validators = require('../../rest/services/helpers/projectStatusValidators/
 
 const { injectMocks } = require('../../rest/util/injection');
 
+const storage = require('../../rest/util/storage');
 const files = require('../../rest/util/files');
 const originalProjectService = require('../../rest/services/projectService');
 
@@ -368,6 +371,13 @@ describe('Project Service Test', () => {
       validateMtype(type, fileToSave);
       validatePhotoSize(fileToSave);
       return '/path/to/file';
+    });
+    storage.generateStorageHash = jest.fn((fileToSave, type) => {
+      if (type) {
+        validateMtype(type, fileToSave);
+        validatePhotoSize(fileToSave);
+      }
+      return 'fileHash';
     });
     // mock all validators
     Object.keys(validators).forEach(validator => {
@@ -2337,5 +2347,88 @@ describe('Project Service Test', () => {
       const response = await projectService.getProjectsWithTransfers();
       expect(response).toEqual([projectWithTransfer]);
     });
+  });
+
+  describe('Transition Finished Projects', () => {
+    let dbProject = [];
+    let dbMilestones = [];
+    const executingWithNoCompletedMilestones = {
+      id: 1,
+      status: projectStatuses.EXECUTING
+    };
+    const executingToFinished = {
+      id: 2,
+      status: projectStatuses.EXECUTING
+    };
+    const pendingMilestone = {
+      id: 1,
+      projectId: 1,
+      claimStatus: 'pending'
+    };
+    const transferredMilestone = {
+      id: 1,
+      projectId: 2,
+      claimStatus: 'transferred'
+    };
+
+    beforeEach(() => {
+      dbProject = [];
+      dbMilestones = [];
+    });
+
+    beforeAll(() => {
+      restoreProjectService();
+      injectMocks(projectService, {
+        milestoneService: {
+          hasAllTransferredMilestones: projectId => {
+            const milestoneNotTransferred = dbMilestones.find(
+              findedMilestone =>
+                findedMilestone.projectId === projectId &&
+                findedMilestone.claimStatus !== claimMilestoneStatus.TRANSFERRED
+            );
+            if (!milestoneNotTransferred) return true;
+            return false;
+          }
+        },
+        projectDao: Object.assign(
+          {},
+          {
+            findAllByProps: () =>
+              dbProject.filter(
+                project => project.status === projectStatuses.EXECUTING
+              ),
+            updateProject: (toUpdate, id) => {
+              const found = dbProject.find(project => project.id === id);
+              if (!found) return;
+              const updated = { ...found, ...toUpdate };
+              dbProject[dbProject.indexOf(found)] = updated;
+              return updated;
+            }
+          }
+        )
+      });
+    });
+
+    afterAll(() => {
+      jest.clearAllMocks();
+    });
+
+    it(
+      'should change project to Finished status ' +
+        'when it has all transferred milestones.',
+
+      async () => {
+        dbProject.push(executingToFinished, executingWithNoCompletedMilestones);
+        dbMilestones.push(pendingMilestone, transferredMilestone);
+        const response = await projectService.transitionFinishedProjects();
+        expect(response).toHaveLength(1);
+        expect(response).toEqual([
+          {
+            projectId: executingToFinished.id,
+            newStatus: projectStatuses.FINISHED
+          }
+        ]);
+      }
+    );
   });
 });

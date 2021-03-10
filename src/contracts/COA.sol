@@ -167,25 +167,21 @@ contract COA is Initializable, Ownable, GSNRecipient {
         bytes calldata approvalData,
         uint256 maxPossibleCharge
     ) external view returns (uint256, bytes memory) {
-        console.log('Call acceptRelayedCall.');
-
-        if (true) {
-            console.log('Call approved.');
+        if (whitelist.users(from)) {
             return _approveRelayedCall();
         } else {
-            console.log('Call rejected.');
             return _rejectRelayedCall(uint256(GSNCoaRecipientErrorCodes.INVALID_SIGNER));
         }
     }
 
     function _preRelayedCall(bytes memory context) internal returns (bytes32) {
-        console.log('Call _preRelayedCall.');
+        
     }
 
     function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
-        console.log('Call _postRelayedCall.');
+        
     }
     
 
-    uint256[49] private _gap;
+    uint256[48] private _gap;
 }
