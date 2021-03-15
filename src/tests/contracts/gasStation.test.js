@@ -57,31 +57,23 @@ contract('UsersWhitelist.sol', accounts => {
     hubAddress = await deployRelayHub(gsnWeb3, {
       from: userRelayer
     });
-    console.log('Run relayed hub', hubAddress);
     subprocess = await runRelayer({ quiet: true, relayHubAddress: hubAddress });
     const web3provider = new Web3HttpProvider(PROVIDER_URL);
     deploymentProvider = new ethers.providers.Web3Provider(web3provider);
-    console.log('Provider', deploymentProvider);
   });
 
   beforeEach('deploy contracts', async function beforeEach() {
     this.timeout(1 * 60 * 1000);
-
-    console.log('Parte 1');
     await run('deploy', { reset: true });
-    console.log('Parte 2');
     [coa] = await deployments.getDeployedContracts('COA');
-    console.log('Parte 3');
     [whitelist] = await deployments.getDeployedContracts('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
-    console.log('Parte 4');
 
     await fundRecipient(gsnWeb3, {
       recipient: coa.address,
       amount: '100000000000000000',
       relayHubAddress: hubAddress
     });
-    console.log('Parte 5');
   });
 
   after('finish process', async function after() {
@@ -100,7 +92,6 @@ contract('UsersWhitelist.sol', accounts => {
       relayerAddress,
       useGSN: true
     });
-    console.log('Parte 6');
 
     const provider = new ethers.providers.Web3Provider(gsnDevProvider);
     const project = {
@@ -115,10 +106,7 @@ contract('UsersWhitelist.sol', accounts => {
         coa.address,
         provider.getSigner(signerAddress)
       );
-      console.log('Sender', signerAddress);
-      console.log('Sender', provider.getSigner(signerAddress));
       const oldBalance = await coa.provider.getBalance(signerAddress);
-      console.log('old balance', oldBalance);
       await coa.createProject(project.id, project.name);
       const instance = await getProjectAt(
         await coa.projects(0),
@@ -126,7 +114,6 @@ contract('UsersWhitelist.sol', accounts => {
       );
       assert.equal(await instance.name(), project.name);
       const newBalance = await coa.provider.getBalance(signerAddress);
-      console.log('new balance', newBalance.toString());
       assert.equal(oldBalance.toString(), newBalance.toString());
     });
 
@@ -137,14 +124,11 @@ contract('UsersWhitelist.sol', accounts => {
         provider.getSigner(signerAddress)
       );
       const oldBalance = await coa.provider.getBalance(signerAddress);
-      console.log('old balance', oldBalance.toString());
-
       await throwsAsync(
         coa.createProject(project.id, project.name),
         'Error: Recipient canRelay call was rejected with error 11'
       );
       const newBalance = await coa.provider.getBalance(signerAddress);
-      console.log('new balance', newBalance.toString());
       assert.equal(oldBalance.toString(), newBalance.toString());
     });
 
@@ -155,14 +139,12 @@ contract('UsersWhitelist.sol', accounts => {
         provider.getSigner(signerAddress)
       );
       const oldBalance = await coa.provider.getBalance(signerAddress);
-      console.log('old balance', oldBalance.toString());
 
       await throwsAsync(
         coa.createProject(project.id, project.name),
         'Error: Recipient canRelay call was rejected with error 11'
       );
       const newBalance = await coa.provider.getBalance(signerAddress);
-      console.log('new balance', newBalance.toString());
       assert.equal(oldBalance.toString(), newBalance.toString());
     });
   });
@@ -188,10 +170,8 @@ contract('UsersWhitelist.sol', accounts => {
         provider.getSigner(signerAddress)
       );
       const oldBalance = await coa.provider.getBalance(signerAddress);
-      console.log('old balance', oldBalance.toString());
       await coa.createProject(project.id, project.name);
       const newBalance = await coa.provider.getBalance(signerAddress);
-      console.log('new balance', newBalance.toString());
       assert.isTrue(newBalance.lt(oldBalance));
     });
   });

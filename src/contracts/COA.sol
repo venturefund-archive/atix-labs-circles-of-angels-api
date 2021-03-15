@@ -98,7 +98,6 @@ contract COA is Initializable, Ownable, GSNRecipient {
         public
         returns (uint256)
     {
-        console.log('Create project');
         bytes memory payload = abi.encodeWithSignature("initialize(string)", _name);
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implProject, owner(), payload);
         projects.push(proxy);
