@@ -6,6 +6,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
+/* eslint-disable prefer-destructuring */
 module.exports = {
   async findActiveById(id) {
     return this.model.findOne({ id }).populate('user');
@@ -19,19 +20,62 @@ module.exports = {
     return this.model.updateOne(filter).set(data);
   },
 
-  createUserWallet(userWallet) {
+  createUserWallet(userWallet, isActive) {
     return this.model.create({
-      active: true,
+      active: isActive,
       ...userWallet
     });
   },
-
+  /* eslint-disable no-param-reassign */
   async findByAddress(address) {
-    const userWallet = await this.model.findOne({ address }).populate('user');
-    if (!userWallet) {
+    let userWalletSelected;
+    const userWallets = await this.model
+      .find({ address })
+      .sort([{ createdAt: 'desc' }])
+      .populate('user');
+    if (!userWallets.length) {
       return;
     }
-    const { user, encryptedWallet, mnemonic } = userWallet;
+    if (userWallets.some(wallet => wallet.active)) {
+      userWalletSelected = userWallets.find(wallet => wallet.active);
+    } else {
+      userWalletSelected = userWallets[0];
+    }
+    const { user, encryptedWallet, mnemonic } = userWalletSelected;
+    delete user.address;
+    delete user.encryptedWallet;
+    delete user.mnemonic;
     return { address, encryptedWallet, mnemonic, ...user };
+  },
+
+  async findByAddresses(addresses) {
+    const uniqueAddresses = [];
+    const userWallets = await this.model
+      .find({ address: addresses })
+      .populate('user');
+    return userWallets
+      ? userWallets.reduce(
+          (result, { user, encryptedWallet, address, mnemonic }) => {
+            if (!uniqueAddresses.includes(address)) {
+              uniqueAddresses.push(address);
+              delete user.address;
+              delete user.encryptedWallet;
+              delete user.mnemonic;
+              result.push({
+                address,
+                encryptedWallet,
+                mnemonic,
+                ...user
+              });
+            }
+            return result;
+          },
+          []
+        )
+      : [];
+  },
+
+  async removeUserWalletByUser(userId) {
+    return this.model.destroy({ user: userId });
   }
 };

@@ -62,6 +62,12 @@ const responseProposalProperties = {
       type: 'string'
     }
   },
+  voterNames: {
+    type: 'array',
+    items: {
+      type: 'string'
+    }
+  },
   id: { type: 'integer' }
 };
 

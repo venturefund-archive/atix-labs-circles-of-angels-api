@@ -29,7 +29,7 @@ module.exports = {
     email: { type: 'string', required: true },
     password: { type: 'string', required: true },
     createdAt: { type: 'string', autoCreatedAt: true, required: false },
-    id: { type: 'number', autoMigrations: { autoIncrement: true } },
+    id: { type: 'string', required: true },
     role: {
       type: 'string',
       validations: { isIn: Object.values(userRoles) },
@@ -71,7 +71,11 @@ module.exports = {
       defaultsTo: false,
       required: false
     },
-    emailConfirmation: { type: 'boolean', defaultsTo: false, required: false }
+    emailConfirmation: { type: 'boolean', defaultsTo: false, required: false },
+    // Remove once the prod users reovery them passwords
+    address: { type: 'string', required: false, allowNull: true },
+    encryptedWallet: { type: 'json', required: false },
+    mnemonic: { type: 'string', required: false, allowNull: true }
   },
   customToJSON: function toJson() {
     return omit(this, ['password']);

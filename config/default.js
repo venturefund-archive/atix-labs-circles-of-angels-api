@@ -32,6 +32,10 @@ module.exports = {
     port: process.env.EMAIL_PORT,
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
+    pool: true,
+    debug: false,
+    log: false,
+    name: 'app.circlesofangels.com',
     apiKey: process.env.EMAIL_API_KEY, // sendgrid apikey, when undefined uses smtp
     from: process.env.EMAIL_FROM,
     disabled: process.env.EMAIL_DISABLED === 'true'
@@ -116,5 +120,13 @@ module.exports = {
     testnet_url: process.env.TESTNET_URL || '',
     testnet_account: process.env.TESTNET_ACCOUNT || ''
   },
-  explorerLink: 'https://explorer.testnet.rsk.co'
+  explorerLink: 'https://explorer.testnet.rsk.co',
+  crypto: {
+    key: process.env.CRYPTO_KEY
+  },
+  rifStorageOptions: {
+    protocol: process.env.RS_PROTOCOL,
+    host: process.env.RS_HOST,
+    port: process.env.RS_PORT,
+  }
 };

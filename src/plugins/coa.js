@@ -97,7 +97,7 @@ module.exports = class COA {
     const unsignedTransaction = await this.getUnsignedTransaction(
       registry,
       'addClaim(address,bytes32,bytes32,bool,uint256)',
-      [projectAddress, claim, proof, valid, milestoneId]
+      [projectAddress.toLowerCase(), claim, proof, valid, milestoneId]
     );
     return unsignedTransaction;
   }

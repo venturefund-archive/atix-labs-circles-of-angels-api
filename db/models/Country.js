@@ -10,6 +10,7 @@ module.exports = {
   identity: 'country',
   primaryKey: 'id',
   attributes: {
+    callingCode: { type: 'number', required: false, allowNull: true },
     name: { type: 'string', required: true },
     id: { type: 'number', autoMigrations: { autoIncrement: true } }
   }

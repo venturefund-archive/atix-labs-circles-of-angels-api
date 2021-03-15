@@ -9,6 +9,9 @@
 const { coa, ethers } = require('@nomiclabs/buidler');
 const bcrypt = require('bcrypt');
 const { Wallet, utils } = require('ethers');
+const config = require('config');
+
+const { key } = config.crypto;
 
 const { userRoles, encryption } = require('../util/constants');
 const validateRequiredParams = require('./helpers/validateRequiredParams');
@@ -17,6 +20,7 @@ const checkExistence = require('./helpers/checkExistence');
 const logger = require('../logger');
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
+const { encrypt } = require('../util/crypto');
 
 module.exports = {
   async getUserById(id) {
@@ -39,6 +43,20 @@ module.exports = {
     }
     logger.error(`[UserService] :: User with address ${address} not found`);
     throw new COAError(errors.common.CantFindModelWithAddress('user', address));
+  },
+
+  /**
+   * Returns the user which the specified address belongs to
+   * @param {[String]} addresses
+   */
+  async getVotersByAddresses(addresses) {
+    logger.info('[UserService] :: Entering getUserByAddress method');
+    const users = await this.userWalletDao.findByAddresses(addresses);
+    return users
+      ? users.map(
+          ({ firstName, lastName }) => firstName.charAt(0) + lastName.charAt(0)
+        )
+      : [];
   },
 
   /**
@@ -171,10 +189,7 @@ module.exports = {
     }
     await this.countryService.getCountryById(country);
     // TODO: check phoneNumber format
-
     const hashedPwd = await bcrypt.hash(password, encryption.saltOrRounds);
-
-    // TODO: remove address, encryptedWallet and mnemonic after migrate user wallets in PROD.
     const user = {
       firstName,
       lastName,
@@ -184,43 +199,69 @@ module.exports = {
       phoneNumber,
       country,
       answers,
-      company,
-      address,
-      encryptedWallet,
-      mnemonic
+      company
     };
+    const encryptedMnemonic = await encrypt(mnemonic, key);
+    if (
+      !encryptedMnemonic ||
+      !encryptedMnemonic.encryptedData ||
+      !encryptedMnemonic.iv
+    ) {
+      logger.error('[User Service] :: Mnemonic could not be encrypted');
+      throw new COAError(errors.user.MnemonicNotEncrypted);
+    }
     const savedUser = await this.userDao.createUser(user);
-    const savedUserWallet = await this.userWalletDao.createUserWallet({
-      user: savedUser.id,
-      address,
-      encryptedWallet,
-      mnemonic
-    });
+    const savedUserWallet = await this.userWalletDao.createUserWallet(
+      {
+        user: savedUser.id,
+        address,
+        encryptedWallet,
+        mnemonic: encryptedMnemonic.encryptedData,
+        iv: encryptedMnemonic.iv
+      },
+      true
+    );
     if (!savedUserWallet) {
       await this.userDao.removeUserById(savedUser.id);
       throw new COAError(errors.userWallet.NewWalletNotSaved);
     }
+    try {
+      // TODO: Uncomment after it's implemented GSN
+      /* const accounts = await ethers.getSigners();
+      const tx = {
+        to: address,
+        value: utils.parseEther('0.001')
+      };
+      await accounts[0].sendTransaction(tx); */
 
-    const accounts = await ethers.getSigners();
-    const tx = {
-      to: address,
-      value: utils.parseEther('0.001')
-    };
-    await accounts[0].sendTransaction(tx);
-
-    const profile = `${firstName} ${lastName}`;
-    // using migrateMember instead of createMember for now
-    await coa.migrateMember(profile, address);
-    logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
-    await this.mailService.sendEmailVerification({
-      to: email,
-      bodyContent: {
-        userName: firstName,
+      const profile = `${firstName} ${lastName}`;
+      // using migrateMember instead of createMember for now
+      await coa.migrateMember(profile, address);
+      logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
+    } catch (error) {
+      await this.userWalletDao.removeUserWalletByUser(savedUser.id);
+      await this.userDao.removeUserById(savedUser.id);
+      logger.error(
+        `[UserService] :: Error to create user with email ${email}: `,
+        error
+      );
+      if (error.statusCode) {
+        throw error;
+      }
+      throw new COAError({ message: error.message, statusCode: 500 });
+    }
+    try {
+      await this.mailService.sendEmailVerification({
+        to: email,
+        bodyContent: {
+          userName: firstName,
+          userId: savedUser.id
+        },
         userId: savedUser.id
-      },
-      userId: savedUser.id
-    });
-
+      });
+    } catch (error) {
+      logger.error('[UserService] :: Error to send verification email', error);
+    }
     return { address, encryptedWallet, mnemonic, ...savedUser };
   },
 
@@ -368,10 +409,16 @@ module.exports = {
     return { address, encryptedWallet };
   },
 
-  async updatePassword(id, currentPassword, newPassword, encryptedWallet) {
+  async updatePassword(
+    id,
+    currentPassword,
+    newPassword,
+    encryptedWallet,
+    address,
+    mnemonic
+  ) {
     logger.info('[UserService] :: Entering updatePassword method');
     const user = await this.userDao.findById(id);
-
     if (!user) {
       logger.info(
         '[UserService] :: There is no user associated with that email',
@@ -399,27 +446,41 @@ module.exports = {
       );
       throw new COAError(errors.user.UserUpdateError);
     }
-    const disabledWallet = await this.userWalletDao.updateWallet(
-      { user: id, active: true },
-      { active: false }
-    );
-
-    const savedUserWallet = await this.userWalletDao.createUserWallet({
-      user: id,
-      encryptedWallet,
-      address: user.address,
-      mnemonic: user.mnemonic
-    });
-    if (!savedUserWallet) {
-      if (disabledWallet) {
-        // Rollback
-        await this.userWalletDao.updateWallet(
-          { id: disabledWallet.id },
-          { active: true }
-        );
+    if (!mnemonic && !address) {
+      const updatedWallet = await this.userWalletDao.updateWallet(
+        { user: id, active: true },
+        { encryptedWallet }
+      );
+      if (!updatedWallet) {
+        throw new COAError(errors.userWallet.WalletNotUpdated);
       }
-      throw new COAError(errors.userWallet.NewWalletNotSaved);
+    } else {
+      const disabledWallet = await this.userWalletDao.updateWallet(
+        { user: id, active: true },
+        { active: false }
+      );
+      const encryptedMnemonic = await encrypt(mnemonic, key);
+      const savedUserWallet = await this.userWalletDao.createUserWallet(
+        {
+          user: id,
+          encryptedWallet,
+          address,
+          mnemonic: encryptedMnemonic.encryptedData,
+          iv: encryptedMnemonic.iv
+        },
+        true
+      );
+      if (!savedUserWallet) {
+        if (disabledWallet) {
+          // Rollback
+          await this.userWalletDao.updateWallet(
+            { id: disabledWallet.id },
+            { active: true }
+          );
+        }
+        throw new COAError(errors.userWallet.NewWalletNotSaved);
+      }
+      return updated;
     }
-    return updated;
   }
 };

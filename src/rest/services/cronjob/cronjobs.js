@@ -11,9 +11,11 @@ module.exports = {
       logger.info('[CronJobService] :: Executing transitionProjectStatusJob');
       const updatedConsensusProjects = await this.projectService.transitionConsensusProjects();
       const updatedFundingProjects = await this.projectService.transitionFundingProjects();
+      const updatedFinsihedProjects = await this.projectService.transitionFinishedProjects();
       const updatedProjects = [
         ...updatedConsensusProjects,
-        ...updatedFundingProjects
+        ...updatedFundingProjects,
+        ...updatedFinsihedProjects
       ];
       logger.info('[CronJobService] :: Updated projects:', updatedProjects);
     },

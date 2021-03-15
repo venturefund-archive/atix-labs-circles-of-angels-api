@@ -1,10 +1,10 @@
 module.exports = {
-  InvalidAccount: {
-    message: 'Invalid Email Account',
-    statusCode: 400
-  },
   TemplateNotFound: {
     message: 'Email template not found',
     statusCode: 400
+  },
+  EmailNotSent: {
+    message: 'An error occurred to send e-mail',
+    statusCode: 500
   }
 };
