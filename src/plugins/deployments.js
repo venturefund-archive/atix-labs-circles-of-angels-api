@@ -363,22 +363,15 @@ function buildGetOrDeployUpgradeableContract(
 
 async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
 
-  let [implWhitelist] = await env.deployments.getDeployedContracts(
-    'UsersWhitelist'
+  await getOrDeployUpgradeableContract(
+    'UsersWhitelist',
+    [],
+    signer,
+    doUpgrade,
+    { initializer: 'whitelistInitialize' },
+    reset
   );
-  if (implWhitelist === undefined || reset === true) {
-    [implWhitelist] = await env.deployments.deployProxy(
-      'UsersWhitelist',
-      [],
-      undefined,
-      { initializer: 'whitelistInitialize' }
-    );
-    await env.deployments.saveDeployedContract(
-      'UsersWhitelist',
-      implWhitelist
-    );
-  }
-  
+
   const implProject = await getOrDeployContract(
     'Project',
     [],
