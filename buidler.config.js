@@ -2,65 +2,34 @@ usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
-const config = require('config');
+
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
-require('./src/rest/services/helpers/buidlerTasks');
+
+const config = require('config');
 const COA = require('./src/plugins/coa');
-
-const testnetUrl = config.buidler.testnet_url;
-const testnetAccount = config.buidler.testnet_account;
-
-const mainnetUrl = config.buidler.mainnet_url;
-const mainnetAccount = config.buidler.mainnet_account;
-
-// const Deployments = require("./scripts/deployments");
+require('./src/rest/services/helpers/buidlerTasks');
 
 task('deploy', 'Deploys COA contracts')
   // eslint-disable-next-line no-undef
   .addOptionalParam('reset', 'force deploy', false, types.boolean)
   .setAction(async ({ reset }, env) => {
     // Make sure everything is compiled
-    // await run('compile');
+    await run('compile');
 
-    // TODO: check if reset condition is needed
     if (reset) env.coa.clearContracts();
 
-    let [implProject] = await env.deployments.getDeployedContracts('Project');
-    if (implProject === undefined || reset === true) {
-      [implProject] = await env.deployments.deploy('Project', []);
-      await env.deployments.saveDeployedContract('Project', implProject);
-      // console.log('implProject deployed. Address:', implProject.address);
-    }
+    await env.deployments.deployAll(undefined, reset, false);
+  });
 
-    let [implSuperDao] = await env.deployments.getDeployedContracts('SuperDAO');
-    if (implSuperDao === undefined || reset === true) {
-      [implSuperDao] = await env.deployments.deploy('SuperDAO', []);
-      await env.deployments.saveDeployedContract('SuperDAO', implSuperDao);
-      // console.log('implSuperDao deployed. Address:', implSuperDao.address);
-    }
-
-    let [implDao] = await env.deployments.getDeployedContracts('DAO');
-    if (implDao === undefined || reset === true) {
-      [implDao] = await env.deployments.deploy('DAO', []);
-      await env.deployments.saveDeployedContract('DAO', implDao);
-      // console.log('implDao deployed. Address:', implDao.address);
-    }
-
-    let [proxyAdmin] = await env.deployments.getDeployedContracts('ProxyAdmin');
-    if (proxyAdmin === undefined || reset === true) {
-      [proxyAdmin] = await env.deployments.deploy('ProxyAdmin', []);
-      await env.deployments.saveDeployedContract('ProxyAdmin', proxyAdmin);
-      // console.log('ProxyAdmin deployed. Address:', proxyAdmin.address);
-    }
-
-    let [registry] = await env.deployments.getDeployedContracts(
-      'ClaimsRegistry'
-    );
-    if (registry === undefined || reset === true) {
-      [registry] = await env.deployments.deployProxy('ClaimsRegistry', []);
-      await env.deployments.saveDeployedContract('ClaimsRegistry', registry);
-      // console.log('ClaimsRegistry deployed. Address:', registry.address);
-    }
+task(
+  'upgradeContracts',
+  'Deploys and Upgrades (if necessary) upgradeable COA contracts'
+)
+  // eslint-disable-next-line no-undef
+  .addOptionalParam('reset', 'force deploy', false, types.boolean)
+  .setAction(async ({ reset }, env) => {
+    // Make sure everything is compiled
+    await run('compile');
 
     let [implWhitelist] = await env.deployments.getDeployedContracts(
       'UsersWhitelist'
@@ -96,9 +65,9 @@ task('deploy', 'Deploys COA contracts')
       // console.log('COA deployed. Address:', coa.address);
     }
 
-    // console.log('ProxyAdmin attached to', proxyAdmin.address);
-    // console.log('Registry attached to', registry.address);
-    // console.log('COA attached to', coa.address);
+    if (reset) env.coa.clearContracts();
+
+    await env.deployments.deployAll(undefined, reset, true);
   });
 
 const coaDeploySetup = {
