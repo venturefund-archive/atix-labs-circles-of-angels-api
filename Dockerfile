@@ -1,4 +1,4 @@
-FROM docker.atixlabs.com/node:10.15.3
+FROM docker.atixlabs.com/node:12.21.0
 
 
 # Setting working directory. All the path will be relative to WORKDIR
