@@ -68,7 +68,7 @@ module.exports = {
    */
   async login(email, pwd) {
     logger.info(`[User Service] :: Trying to login ${email} user`);
-    const user = await this.userDao.getUserByEmail(email);
+    const user = await this.userDao.getUserByEmail(email.toLowerCase());
 
     if (!user) {
       logger.error('[User Service] :: User was not found');
