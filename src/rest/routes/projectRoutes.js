@@ -79,7 +79,7 @@ const milestonesResponse = {
             reviewCriteria: { type: 'string' },
             category: { type: 'string' },
             keyPersonnel: { type: 'string' },
-            oracle: { type: ['integer', 'null'] },
+            oracle: { type: ['string', 'null'] },
             budget: { type: 'string' },
             verified: { type: 'boolean' }
           }

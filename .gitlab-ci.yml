@@ -17,6 +17,7 @@ cache:
     - cache/
 
 before_script:
+  - rm package-lock.json
   - npm install
 
 stages:
