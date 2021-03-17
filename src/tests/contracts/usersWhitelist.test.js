@@ -1,4 +1,5 @@
 const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
+const { assert } = require('chai');
 const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
 const {
   deployRelayHub,

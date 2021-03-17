@@ -1,4 +1,5 @@
 const env = require('@nomiclabs/buidler');
+const { assert } = require('chai');
 
 /**
  * Executes an async function and checks if an error is thrown.
