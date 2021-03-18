@@ -1653,7 +1653,7 @@ describe('Project Service Test', () => {
     );
 
     it(
-      'should change the project status to consensus ' +
+      'should change the project status to consensus and remove all project funders' +
         'if the validator fails and call notifyProjectStatusChange',
       async () => {
         dbProject.push(fundingToConsensus);
@@ -1670,6 +1670,10 @@ describe('Project Service Test', () => {
         );
         expect(updated.status).toEqual(projectStatuses.CONSENSUS);
         expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
+        expect(
+          dbProjectFunder.filter(
+            funder => funder.projectId === fundingToConsensus.id)
+            ).toEqual([]);
       }
     );
 
