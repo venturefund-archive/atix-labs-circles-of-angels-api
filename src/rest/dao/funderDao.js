@@ -12,11 +12,10 @@ module.exports = {
     return followerCreated;
   },
 
-  async deleteByProjectAndFunderId({ projectId, userId }) {
-    const deleted = await this.model.destroyOne({
+  async deleteFundersByProject(projectId, filters) {
+    return this.model.destroyOne({
       project: projectId,
-      user: userId
+      ...filters
     });
-    return deleted;
   }
 };
