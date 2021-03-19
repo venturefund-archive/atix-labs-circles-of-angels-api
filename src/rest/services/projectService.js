@@ -1215,6 +1215,14 @@ module.exports = {
         );
 
         if (newStatus === projectStatuses.CONSENSUS) {
+          
+          const removedFunders = await this.funderDao.deleteFundersByProject(project.id);
+          if (!removedFunders) {
+            logger.error(
+              `[ProjectService] :: Cannot remove funders from project ${project.id}`
+            );
+            return;
+          }
           await this.updateProject(project.id, {
             status: newStatus
           });
@@ -1404,10 +1412,10 @@ module.exports = {
       : [];
     const removedFunders = await Promise.all(
       fundersWithNoTransfers.map(funder =>
-        this.funderDao.deleteByProjectAndFunderId({
-          projectId: project.id,
-          userId: funder.id
-        })
+        this.funderDao.deleteFundersByProject(
+          project.id,
+          { user: funder.id }
+        )
       )
     );
 
