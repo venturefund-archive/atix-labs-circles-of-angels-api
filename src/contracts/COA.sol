@@ -14,7 +14,6 @@ import './DAO.sol';
 import './SuperDAO.sol';
 import './UsersWhitelist.sol';
 
-import '@nomiclabs/buidler/console.sol';
 /// @title COA main contract to store projects related information
 contract COA is Initializable, Ownable, GSNRecipient {
     using ECDSA for bytes32;
@@ -43,11 +42,6 @@ contract COA is Initializable, Ownable, GSNRecipient {
     address internal implSuperDao;
     address internal implDao;
     UsersWhitelist public whitelist;
-
-    enum GSNCoaRecipientErrorCodes {
-        INVALID_SIGNER
-    }
-
     function coaInitialize(
         address _registryAddress,
         address _proxyAdmin,
@@ -169,7 +163,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
         if (whitelist.users(from)) {
             return _approveRelayedCall();
         } else {
-            return _rejectRelayedCall(uint256(GSNCoaRecipientErrorCodes.INVALID_SIGNER));
+            return _rejectRelayedCall(0);
         }
     }
 
@@ -181,6 +175,5 @@ contract COA is Initializable, Ownable, GSNRecipient {
         
     }
     
-
-    uint256[48] private _gap;
+    uint256[49] private _gap;
 }

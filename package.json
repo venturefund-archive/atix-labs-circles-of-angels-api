@@ -43,7 +43,7 @@
     "@openzeppelin/contracts-ethereum-package": "2.5.0",
     "@openzeppelin/gsn-helpers": "0.2.4",
     "@openzeppelin/gsn-provider": "0.1.11",
-    "@openzeppelin/network": "^0.4.3",
+    "@openzeppelin/network": "0.4.3",
     "@openzeppelin/upgrades": "2.8.0",
     "@rsksmart/rif-storage": "0.1.1",
     "@sendgrid/mail": "6.5.4",
