@@ -35,7 +35,7 @@ const moveForwardSeconds = async seconds => {
   await ethereum.send('evm_mine', []);
 };
 
-describe.only('Testing daoService', () => {
+describe('Testing daoService', () => {
   const defaultUser = {
     id: 1,
     wallet: undefined // uses member 0
@@ -330,7 +330,7 @@ describe.only('Testing daoService', () => {
       ).rejects.toThrow(errors.dao.ErrorGettingProposals(1));
     });
   });
-  describe.only('Testing getDaos method', () => {
+  describe('Testing getDaos method', () => {
     beforeAll(() => {
       injectMocks(mockedDaoService, {
         transactionService,
@@ -340,7 +340,7 @@ describe.only('Testing daoService', () => {
 
     afterAll(() => restoreMockedDaoService());
 
-    it.only('should have a list of 2 daos when getDaos is applied', async () => {
+    it('should have a list of 2 daos when getDaos is applied', async () => {
       const firstMemberAddress = await run('create-member');
       await run('create-dao', { account: firstMemberAddress });
       await run('create-dao', { account: firstMemberAddress });
