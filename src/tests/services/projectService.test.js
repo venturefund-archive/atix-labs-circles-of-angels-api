@@ -1555,7 +1555,18 @@ describe('Project Service Test', () => {
 
     beforeEach(async () => {
       dbProject = [];
-      dbProjectFunder = [];
+      dbProjectFunder.push(
+        {
+          id: 1,
+          project: 2,
+          user: 10
+        },
+        {
+          id: 2,
+          project: 3,
+          user: 11
+        }
+      );
     });
 
     beforeAll(() => {
@@ -1579,6 +1590,19 @@ describe('Project Service Test', () => {
               const updated = { ...found, ...toUpdate };
               dbProject[dbProject.indexOf(found)] = updated;
               return updated;
+            }
+          }
+        ),
+        funderDao: Object.assign(
+          {},
+          {
+            deleteFundersByProject: (projectId, filters ) => {
+              const found = dbProjectFunder.find(
+                funder => funder.project === projectId
+              );
+              if (!found) return;
+              dbProjectFunder.splice(dbProjectFunder.indexOf(found), 1);
+              return found;
             }
           }
         ),
@@ -1629,7 +1653,7 @@ describe('Project Service Test', () => {
     );
 
     it(
-      'should change the project status to consensus ' +
+      'should change the project status to consensus and remove all project funders' +
         'if the validator fails and call notifyProjectStatusChange',
       async () => {
         dbProject.push(fundingToConsensus);
@@ -1646,6 +1670,10 @@ describe('Project Service Test', () => {
         );
         expect(updated.status).toEqual(projectStatuses.CONSENSUS);
         expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
+        expect(
+          dbProjectFunder.filter(
+            funder => funder.projectId === fundingToConsensus.id)
+            ).toEqual([]);
       }
     );
 
@@ -1827,9 +1855,9 @@ describe('Project Service Test', () => {
         funderDao: Object.assign(
           {},
           {
-            deleteByProjectAndFunderId: ({ projectId, userId }) => {
+            deleteFundersByProject: (projectId, filters ) => {
               const found = dbProjectFunder.find(
-                funder => funder.user === userId && funder.project === projectId
+                funder => funder.user === filters.user && funder.project === projectId
               );
               if (!found) return;
               dbProjectFunder.splice(dbProjectFunder.indexOf(found), 1);
