@@ -14,6 +14,7 @@ import './DAO.sol';
 import './SuperDAO.sol';
 import './UsersWhitelist.sol';
 
+import '@nomiclabs/buidler/console.sol';
 /// @title COA main contract to store projects related information
 contract COA is Initializable, Ownable, GSNRecipient {
     using ECDSA for bytes32;
@@ -106,6 +107,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
     function createDAO(string memory _name, address _creator) public {
         require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
         bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
+        console.log('Create Dao', _name, _creator, implDao);
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));

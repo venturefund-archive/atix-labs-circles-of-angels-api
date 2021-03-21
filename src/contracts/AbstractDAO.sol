@@ -4,6 +4,7 @@ import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 
+import '@nomiclabs/buidler/console.sol';
 /// @title A DAO contract based on MolochDAO ideas
 contract AbstractDAO is Initializable {
     using SafeMath for uint256;
@@ -84,11 +85,13 @@ contract AbstractDAO is Initializable {
     ) public initializer {
         name = _name;
         creationTime = now;
+        console.log('Create Dao 1 ', _name, _creator);
         addMember(_creator);
         periodDuration = 17280;
         votingPeriodLength = 35; /// periods
         gracePeriodLength = 35;
         processingPeriodLength = votingPeriodLength + gracePeriodLength;
+        console.log('Create Dao 2 ', _name, _creator);
     }
     /**
      * @notice Function to be invoked in order to create a new proposal.
