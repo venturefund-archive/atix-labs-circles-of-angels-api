@@ -4,6 +4,7 @@ const {
   readArtifactSync
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
+const { GSNProvider } = require("@openzeppelin/gsn-provider");
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
 const {
   ethereum,
@@ -21,7 +22,7 @@ const {
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
-const { contractAddresses } = require('config');
+const { contractAddresses, gsnConfig } = require('config');
 const logger = require('../rest/logger')
 
 // TODO : this can be placed into the buidler's config.
@@ -411,15 +412,35 @@ async function getChainId(chainId) {
 }
 
 async function getSigner(account) {
-  if (account === undefined) {
-    return (await ethers.getSigners())[0];
-  } else if (typeof account === "number") {
-    return (await ethers.getSigners())[account];
-  } else if (typeof account === 'string') {
-    return ethers.provider.getSigner(account);
-  }
+  const provider = await getProvider();
+  const accounts = await provider.listAccounts();
   // TODO: Is it okay return account?
-  return account;
+  let signer = account;
+  if (account === undefined) {
+    signer = provider.getSigner(accounts[0]);
+  } else if (typeof account === "number") {
+    signer = provider.getSigner(accounts[account]);
+  } else if (typeof account === 'string') {
+    signer = provider.getSigner(account);
+  }
+  return signer;
+}
+
+async function getProvider() {
+  return gsnConfig.isEnabled ? await getGSNProvider() : ethers.provider;
+}
+
+
+async function getGSNProvider() {
+  const providerUrl = ethers.provider.connection.url;
+  const accounts = await ethers.provider.listAccounts();
+
+  const gsnProvider = new GSNProvider(providerUrl, {
+    ...accounts,
+    useGSN: true
+  });
+
+  return new ethers.providers.Web3Provider(gsnProvider);
 }
 
 function isDeployed(state, chainId, name) {
