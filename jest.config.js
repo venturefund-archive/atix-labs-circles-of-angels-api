@@ -10,8 +10,7 @@ module.exports = {
     '<rootDir>/tests/contracts/usersWhitelist.test.js',
     '<rootDir>/tests/testHelper.js',
     '<rootDir>/tests/mockModels.js',
-    '<rootDir>/tests/mockFiles',
-    '<rootDir>/test/services/helpers/gsn-provider.js'
+    '<rootDir>/tests/mockFiles'
   ],
   collectCoverageFrom: ['<rootDir>/rest/services/**'],
   coveragePathIgnorePatterns: [
