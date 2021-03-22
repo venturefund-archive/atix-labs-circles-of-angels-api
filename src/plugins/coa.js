@@ -1,5 +1,4 @@
-const { readArtifact } = require('@nomiclabs/buidler/plugins');
-const { ContractFactory, utils } = require('ethers');
+const { utils } = require('ethers');
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
@@ -362,12 +361,10 @@ module.exports = class COA {
   }
 
   async getRegistry() {
-    if (this.contracts.registry === undefined) {
-      const contract = await this.env.deployments.getLastDeployedContract(
+    if (this.contracts.whitelist === undefined) {
+      this.contracts.whitelist = await this.env.deployments.getLastDeployedContract(
         'ClaimsRegistry'
       );
-
-      this.contracts.registry = contract;
     }
 
     return this.contracts.registry;
