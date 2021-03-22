@@ -10,15 +10,15 @@ module.exports = {
     '<rootDir>/tests/contracts/usersWhitelist.test.js',
     '<rootDir>/tests/testHelper.js',
     '<rootDir>/tests/mockModels.js',
-    '<rootDir>/tests/mockFiles'
+    '<rootDir>/tests/mockFiles',
+    '<rootDir>/test/services/helpers/gsn-provider.js'
   ],
   collectCoverageFrom: ['<rootDir>/rest/services/**'],
   coveragePathIgnorePatterns: [
     '<rootDir>/rest/services/eth/',
     '<rootDir>/rest/services/cronjob/',
     '<rootDir>/rest/services/helper.js', // not being used anymore
-    '<rootDir>/rest/services/helpers/buidlerTasks.js',
-    '<rootDir>/rest/services/helpers/gsn-provider.js'
+    '<rootDir>/rest/services/helpers/buidlerTasks.js'
   ],
   testTimeout: 60000
 };
