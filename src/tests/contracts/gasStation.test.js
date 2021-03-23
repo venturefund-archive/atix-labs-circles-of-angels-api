@@ -35,7 +35,7 @@ async function getProjectAt(address, consultant) {
   return project;
 }
 
-contract('UsersWhitelist.sol', accounts => {
+contract('GSN.sol', accounts => {
   const [
     creator,
     userRelayer,
@@ -81,12 +81,12 @@ contract('UsersWhitelist.sol', accounts => {
   });
 
   it('initially returns the singleton instance address', async () => {
-    expect(await coa.getHubAddr()).to.equal(singletonRelayHub);
+    assert.equal(await coa.getHubAddr(), singletonRelayHub);
     const isCoaReady = await isRelayHubDeployedForRecipient(web3, coa.address);
     assert.equal(isCoaReady, true);
   });
 
-  describe.only('GSN enabled ', () => {
+  describe('GSN enabled ', () => {
     const gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
       ownerAddress,
       relayerAddress,
@@ -149,7 +149,7 @@ contract('UsersWhitelist.sol', accounts => {
     });
   });
 
-  describe.only('GSN disabled', () => {
+  describe('GSN disabled', () => {
     const gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
       ownerAddress,
       relayerAddress,

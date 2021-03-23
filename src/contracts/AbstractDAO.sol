@@ -3,9 +3,11 @@ pragma solidity ^0.5.8;
 import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
 
+import './UsersWhitelist.sol';
 /// @title A DAO contract based on MolochDAO ideas
-contract AbstractDAO is Initializable {
+contract AbstractDAO is Initializable, GSNRecipient {
     using SafeMath for uint256;
 
     /// DAO members
@@ -74,6 +76,7 @@ contract AbstractDAO is Initializable {
         bool processed; /// True if it has been processed, false otherwise
     }
 
+    UsersWhitelist public whitelist;
     /**
      * @param _name DAO name
      * @param _creator User that will be assigned as the first member
@@ -89,6 +92,7 @@ contract AbstractDAO is Initializable {
         votingPeriodLength = 35; /// periods
         gracePeriodLength = 35;
         processingPeriodLength = votingPeriodLength + gracePeriodLength;
+        GSNRecipient.initialize();
     }
     /**
      * @notice Function to be invoked in order to create a new proposal.
@@ -329,5 +333,34 @@ contract AbstractDAO is Initializable {
     function processNewDaoProposal(string memory _name, address _applicant)
         internal;
 
+    function setWhitelist(address _whitelist) public onlyOwner() {
+        whitelist = UsersWhitelist(_whitelist);
+    }
+
+    function acceptRelayedCall(
+        address ,
+        address from,
+        bytes calldata,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        bytes calldata ,
+        uint256
+    ) external view returns (uint256, bytes memory) {
+        if (whitelist.users(from)) {
+            return _approveRelayedCall();
+        } else {
+            return _rejectRelayedCall(0);
+        }
+    }
+
+    function _preRelayedCall(bytes memory context) internal returns (bytes32) {
+        
+    }
+
+    function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
+        
+    }
     uint256[50] private _gap;
 }
