@@ -361,8 +361,8 @@ module.exports = class COA {
   }
 
   async getRegistry() {
-    if (this.contracts.whitelist === undefined) {
-      this.contracts.whitelist = await this.env.deployments.getLastDeployedContract(
+    if (this.contracts.registry === undefined) {
+      this.contracts.registry = await this.env.deployments.getLastDeployedContract(
         'ClaimsRegistry'
       );
     }
@@ -372,11 +372,9 @@ module.exports = class COA {
 
   async getWhitelist() {
     if (this.contracts.whitelist === undefined) {
-      const contract = await this.env.deployments.getLastDeployedContract(
+      this.contracts.whitelist = await this.env.deployments.getLastDeployedContract(
         'UsersWhitelist'
       );
-
-      this.contracts.whitelist = contract;
     }
 
     return this.contracts.whitelist;
