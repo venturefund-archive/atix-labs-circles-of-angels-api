@@ -63,7 +63,7 @@ contract('UsersWhitelist.sol', accounts => {
     if (subprocess) subprocess.kill();
   });
 
-  describe.only('whitelist ', () => {
+  describe('whitelist ', () => {
     it('Deployment works', async () => {
       const daosLength = await coa.getDaosLength();
       assert.equal(daosLength, 1);
