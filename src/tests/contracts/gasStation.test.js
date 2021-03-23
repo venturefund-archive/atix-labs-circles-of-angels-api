@@ -86,7 +86,7 @@ contract('UsersWhitelist.sol', accounts => {
     assert.equal(isCoaReady, true);
   });
 
-  describe.only('GSN enabled ', () => {
+  describe('GSN enabled ', () => {
     const gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
       ownerAddress,
       relayerAddress,
@@ -149,7 +149,7 @@ contract('UsersWhitelist.sol', accounts => {
     });
   });
 
-  describe.only('GSN disabled', () => {
+  describe('GSN disabled', () => {
     const gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
       ownerAddress,
       relayerAddress,
