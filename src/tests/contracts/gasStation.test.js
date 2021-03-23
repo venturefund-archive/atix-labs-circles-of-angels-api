@@ -1,23 +1,15 @@
 /* eslint-disable no-console */
-const {
-  ethereum,
-  run,
-  deployments,
-  // web3,
-  ethers
-} = require('@nomiclabs/buidler');
+const { run, deployments, ethers } = require('@nomiclabs/buidler');
 const {
   deployRelayHub,
   runRelayer,
-  runAndRegister,
-  fundRecipient,
-  balance
+  fundRecipient
 } = require('@openzeppelin/gsn-helpers');
 
 const Web3 = require('web3');
 
 const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
-const Web3HttpProvider = require('web3-providers-http');
+
 const { assert } = require('chai');
 const { throwsAsync } = require('./testHelpers');
 
@@ -39,27 +31,21 @@ contract('Gsn', accounts => {
   const [
     creator,
     userRelayer,
-    userWhitelist,
-    other,
     ownerAddress,
     relayerAddress,
-    signerAddress,
-    directSenderAddress
+    signerAddress
   ] = accounts;
   let coa;
   let whitelist;
   let subprocess;
   let gsnWeb3;
   let hubAddress;
-  let deploymentProvider;
   before('Gsn provider run', async function before() {
     gsnWeb3 = new Web3(PROVIDER_URL);
     hubAddress = await deployRelayHub(gsnWeb3, {
       from: userRelayer
     });
     subprocess = await runRelayer({ quiet: true, relayHubAddress: hubAddress });
-    const web3provider = new Web3HttpProvider(PROVIDER_URL);
-    deploymentProvider = new ethers.providers.Web3Provider(web3provider);
   });
 
   beforeEach('deploy contracts', async function beforeEach() {
