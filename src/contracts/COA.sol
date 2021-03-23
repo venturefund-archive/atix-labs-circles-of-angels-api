@@ -150,15 +150,15 @@ contract COA is Initializable, Ownable, GSNRecipient {
     }
 
     function acceptRelayedCall(
-        address relay,
+        address ,
         address from,
-        bytes calldata encodedFunction,
-        uint256 transactionFee,
-        uint256 gasPrice,
-        uint256 gasLimit,
-        uint256 nonce,
-        bytes calldata approvalData,
-        uint256 maxPossibleCharge
+        bytes calldata,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        bytes calldata ,
+        uint256
     ) external view returns (uint256, bytes memory) {
         if (whitelist.users(from)) {
             return _approveRelayedCall();
