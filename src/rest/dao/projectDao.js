@@ -5,6 +5,7 @@
  *
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
+const { isEmpty } = require('lodash');
 const moment = require('moment');
 const { forEachPromise } = require('../util/promises');
 const {
@@ -65,10 +66,12 @@ module.exports = {
 
   async findById(id) {
     const project = await this.model.findOne({ id });
-    return {
-      ...project,
-      nextStatusUpdateAt: this.getNextStatusUpdate(project)
-    };
+    if (!isEmpty(project)) {
+      return {
+        ...project,
+        nextStatusUpdateAt: this.getNextStatusUpdate(project)
+      };
+    }
   },
 
   /* eslint no-param-reassign: ["error", { "props": false }] */
