@@ -4,7 +4,7 @@ Circles of Angels is a platform that brings Social Entrepreneurs and Funders aro
 
 ## Prerequisites
 
-- Node v10.15.3
+- See [.nvmrc](./.nvmrc) file
 
 - Configured PostgreSQL database
 
