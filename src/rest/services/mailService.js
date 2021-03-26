@@ -168,5 +168,27 @@ module.exports = {
       templateNames.RECOVERY_PASSWORD
     );
     await this.sendMail({ to, subject, text, html });
+  },
+
+  async sendLowBalanceGSNAccountEmail(to, account, balance) {
+    logger.info(
+      `[MailService] :: Sending low balance in Main account ${account} to ${to}`
+    );
+    validateRequiredParams({
+      method: 'sendLowBalanceGSNAccountEmail',
+      params: { to, account, balance }
+    });
+
+    const html = await templateParser.completeTemplate(
+      {
+        title: 'Alert COA main account is running out of balance.',
+        bodyText: `This is a reminder that the COA Gas station is running out of money, having currently ${balance} left. 
+Please add more to avoid transactions not being able to execute. 
+Remember the address to transfer the money to is: ${account}`
+      },
+      templateNames.ALERT
+    );
+    const subject = 'COA Gas Station Balance Alert';
+    await this.sendMail({ to, subject, html });
   }
 };

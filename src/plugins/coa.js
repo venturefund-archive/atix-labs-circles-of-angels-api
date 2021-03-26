@@ -296,6 +296,30 @@ module.exports = class COA {
     return coa.getDaosLength();
   }
 
+  /**
+   * @return all projects in COA
+   */
+  async getProjects() {
+    const projects = [];
+    const coa = await this.getCOA();
+    if (!coa) return projects;
+    const daosLength = await this.getProjectsLength();
+    for (let i = 0; i < daosLength; i++) {
+      const projectAddress = coa.projects(i);
+      const project = this.getProject(projectAddress);
+      projects.push(project);
+    }
+    return projects;
+  }
+
+  /**
+   * @return Length of projects
+   */
+  async getProjectsLength() {
+    const coa = await this.getCOA();
+    return coa.getProjectsLength();
+  }
+
   async getDaoPeriodLengths(daoId, signer) {
     const coa = await this.getCOA();
     await this.checkDaoExistence(daoId);
@@ -439,5 +463,21 @@ module.exports = class COA {
   async getBlock(blockHashOrNumber) {
     const block = await this.env.ethers.provider.getBlock(blockHashOrNumber);
     return block;
+  }
+
+  /**
+   * @dev get all the recipient contracts in order to verify balances, founding, etc.
+   *
+   * @return Array of recipient contracts
+   */
+  async getAllRecipientContracts() {
+    const coa = await this.getCOA();
+    const daos = await this.getDaos();
+    const projects = await this.getProjects();
+    return {
+      coa,
+      projects,
+      daos
+    };
   }
 };

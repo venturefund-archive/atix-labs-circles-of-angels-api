@@ -41,5 +41,21 @@ module.exports = {
     timezone: config.crons.checkFailedTransactionsJob.timezone || undefined,
     runOnInit: config.crons.checkFailedTransactionsJob.runOnInit || false,
     disabled: config.crons.checkFailedTransactionsJob.disabled || false
+  },
+  checkContractBalancesJob: {
+    cronTime:
+      config.crons.checkContractBalancesJob.cronTime || EVERY_DAY_AT_MIDNIGHT,
+    async onTick() {
+      logger.info('[CronJobService] :: Executing checkContractBalancesJob');
+      const contracts = await this.coa.getAllRecipientContracts();
+      await this.balanceService.checkGSNAccountBalance();
+      await this.balanceService.checkContractBalances(contracts);
+    },
+    onComplete() {
+      logger.info('[CronJobService] :: checkContractBalancesJob has stopped');
+    },
+    timezone: config.crons.checkContractBalancesJob.timezone || undefined,
+    runOnInit: config.crons.checkContractBalancesJob.runOnInit || false,
+    disabled: config.crons.checkContractBalancesJob.disabled || false
   }
 };

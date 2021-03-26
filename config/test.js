@@ -17,5 +17,29 @@ module.exports = {
   frontendUrl: '//test',
   crypto: {
     key: '3c50cffcdce9a802a26f5293aa4dc689' // added to run tests
+  },
+  crons: {
+    checkContractBalancesJob: {
+      balancesConfig: {
+        gsnAccountThreshold: 50,
+        email: 'a@fake.email',
+        default: {
+          amountToAdd: 1,
+          balanceThreshold: 5
+        },
+        coa: {
+          amountToAdd: 5,
+          balanceThreshold: 50
+        },
+        projects: {
+          amountToAdd: 10,
+          balanceThreshold: 50
+        },
+        daos: {
+          amountToAdd: 100,
+          balanceThreshold: 100
+        }
+      }
+    }
   }
 };
