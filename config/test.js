@@ -24,19 +24,19 @@ module.exports = {
         gsnAccountThreshold: 50,
         email: 'a@fake.email',
         default: {
-          amountToAdd: 1,
+          targetBalance: 1,
           balanceThreshold: 5
         },
         coa: {
-          amountToAdd: 5,
+          targetBalance: 5,
           balanceThreshold: 50
         },
         projects: {
-          amountToAdd: 10,
+          targetBalance: 10,
           balanceThreshold: 50
         },
         daos: {
-          amountToAdd: 100,
+          targetBalance: 100,
           balanceThreshold: 100
         }
       }

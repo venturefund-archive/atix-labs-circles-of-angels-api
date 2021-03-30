@@ -10,6 +10,7 @@
 
 const { balancesConfig } = require('config').crons.checkContractBalancesJob;
 const { BigNumber } = require('@ethersproject/bignumber');
+const { parseEther } = require('ethers').utils;
 const { balance, fundRecipient } = require('@openzeppelin/gsn-helpers');
 const { injectMocks } = require('../../rest/util/injection');
 const originalBalanceService = require('../../rest/services/balancesService');
@@ -142,9 +143,26 @@ describe('BalanceService tests', () => {
     });
 
     describe('GIVEN no contract have enough balance', () => {
+      const contractBalance = BigNumber.from('0');
+      const coaExpectedAmountSended = parseEther(
+        BigNumber.from(balancesConfig.coa.targetBalance)
+          .sub(contractBalance)
+          .toString()
+      );
+      const daoExpectedAmountSended = parseEther(
+        BigNumber.from(balancesConfig.daos.targetBalance)
+          .sub(contractBalance)
+          .toString()
+      );
+      const projectExpectedAmountSended = parseEther(
+        BigNumber.from(balancesConfig.projects.targetBalance)
+          .sub(contractBalance)
+          .toString()
+      );
+
       beforeAll(async () => {
         restoreAll();
-        mocks.balance.mockReturnValue(BigNumber.from('0'));
+        mocks.balance.mockReturnValue(contractBalance);
         balance.mockImplementation(mocks.balance);
         fundRecipient.mockImplementation(mocks.fundRecipient);
         injectMocks(balanceService, {
@@ -157,26 +175,33 @@ describe('BalanceService tests', () => {
         expect(mocks.fundRecipient).toHaveBeenCalledTimes(5);
         expect(mocks.fundRecipient).nthCalledWith(1, mocks.provider, {
           recipient: contracts.coa[0].address,
-          amount: balancesConfig.coa.amountToAdd,
+          amount: coaExpectedAmountSended,
           from: gsnAccount
         });
         expect(mocks.fundRecipient).nthCalledWith(2, mocks.provider, {
           recipient: contracts.daos[0].address,
-          amount: balancesConfig.daos.amountToAdd,
+          amount: daoExpectedAmountSended,
           from: gsnAccount
         });
         expect(mocks.fundRecipient).nthCalledWith(4, mocks.provider, {
           recipient: contracts.projects[0].address,
-          amount: balancesConfig.projects.amountToAdd,
+          amount: projectExpectedAmountSended,
           from: gsnAccount
         });
       });
     });
 
     describe('GIVEN only dao contracts need more balance', () => {
+      const contractBalance = BigNumber.from('60'); // @SEE thresholds in config/test.js
+      const daoExpectedAmountSended = parseEther(
+        BigNumber.from(balancesConfig.daos.targetBalance)
+          .sub(contractBalance)
+          .toString()
+      );
+
       beforeAll(async () => {
         restoreAll();
-        mocks.balance.mockReturnValue(BigNumber.from('60')); // @SEE thresholds in config/test.js
+        mocks.balance.mockReturnValue(contractBalance);
         balance.mockImplementation(mocks.balance);
         fundRecipient.mockImplementation(mocks.fundRecipient);
         injectMocks(balanceService, {
@@ -189,12 +214,12 @@ describe('BalanceService tests', () => {
         expect(mocks.fundRecipient).toHaveBeenCalledTimes(2);
         expect(mocks.fundRecipient).nthCalledWith(1, mocks.provider, {
           recipient: contracts.daos[0].address,
-          amount: balancesConfig.daos.amountToAdd,
+          amount: daoExpectedAmountSended,
           from: gsnAccount
         });
         expect(mocks.fundRecipient).nthCalledWith(2, mocks.provider, {
           recipient: contracts.daos[1].address,
-          amount: balancesConfig.daos.amountToAdd,
+          amount: daoExpectedAmountSended,
           from: gsnAccount
         });
       });

@@ -1,5 +1,6 @@
 const { balancesConfig } = require('config').crons.checkContractBalancesJob;
 const { fundRecipient, balance } = require('@openzeppelin/gsn-helpers');
+const { parseEther } = require('ethers').utils;
 const { BigNumber } = require('@ethersproject/bignumber');
 const logger = require('../logger');
 
@@ -63,11 +64,14 @@ async function _checkBalance(recipient, signer, provider, config) {
   if (contractBalance.lte(config.balanceThreshold)) {
     logger.info(
       `[BalancesService] :: Contract recipient (${recipient}) has not enough balance, 
-      sending ${config.amountToAdd}...`
+      sending ${config.targetBalance}...`
+    );
+    const amountToAdd = BigNumber.from(config.targetBalance).sub(
+      contractBalance
     );
     await fundRecipient(provider, {
       recipient,
-      amount: config.amountToAdd,
+      amount: parseEther(amountToAdd.toString()),
       from: signer
     });
   }

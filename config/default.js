@@ -114,19 +114,19 @@ module.exports = {
         gsnAccountThreshold: 500,
         email: process.env.MAIN_ACCOUNT_BALANCE_EMAIL,
         default: {
-          amountToAdd: 1,
+          targetBalance: 1,
           balanceThreshold: 5
         },
         coa: {
-          amountToAdd: 1,
+          targetBalance: 1,
           balanceThreshold: 5
         },
         projects: {
-          amountToAdd: 1,
+          targetBalance: 1,
           balanceThreshold: 5
         },
         daos: {
-          amountToAdd: 1,
+          targetBalance: 1,
           balanceThreshold: 5
         }
       }
