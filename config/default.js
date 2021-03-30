@@ -107,7 +107,7 @@ module.exports = {
     },
     checkContractBalancesJob: {
       cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT,
-      disabled: false,
+      disabled: true,
       runOnInit: false,
       timezone: undefined,
       balancesConfig: {
