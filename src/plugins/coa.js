@@ -50,9 +50,9 @@ module.exports = class COA {
     return txReceipt;
   }
 
-  async createDAO(name) {
+  async createDAO(name, creator) {
     const coa = await this.getCOA();
-    await coa.createDAO(name);
+    await coa.createDAO(name, creator);
   }
 
   async getProject(address) {
@@ -309,7 +309,7 @@ module.exports = class COA {
       const project = this.getProject(projectAddress);
       projects.push(project);
     }
-    return projects;
+    return Promise.all(projects);
   }
 
   /**
@@ -471,7 +471,7 @@ module.exports = class COA {
    * @return Array of recipient contracts
    */
   async getAllRecipientContracts() {
-    const coa = await this.getCOA();
+    const coa = [await this.getCOA()];
     const daos = await this.getDaos();
     const projects = await this.getProjects();
     return {
