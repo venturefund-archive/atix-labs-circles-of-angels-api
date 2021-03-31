@@ -251,7 +251,7 @@ async function deploy(contractName, params, signer) {
 
 async function deployProxy(contractName, params, signer, opts) {
   const factory = await ethers.getContractFactory(contractName, await getSigner(signer));
-  
+
   const contract = await upgrades.deployProxy(factory, params, { ...opts, unsafeAllowCustomTypes: true });
   await contract.deployed();
 
@@ -268,7 +268,7 @@ async function getOrDeployContract(contractName, params, signer = undefined, res
   let [contract] = await getDeployedContracts(contractName);
   if (contract === undefined || reset === true) {
     logger.info(`[deployments] :: ${contractName} not found, deploying...`);
-    [contract] = await deploy(contractName, params);
+    [contract] = await deploy(contractName, params, signer);
     await saveDeployedContract(contractName, contract, signer);
     logger.info(`[deployments] :: ${contractName} deployed.`);
   }
@@ -354,7 +354,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
     reset
   );
 
-  const implDao = await getOrDeployContract('DAO', [], reset);
+  const implDao = await getOrDeployContract('DAO', [], signer, reset);
 
   const proxyAdmin = await getOrDeployContract(
     'ProxyAdmin',

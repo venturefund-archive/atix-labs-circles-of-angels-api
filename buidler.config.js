@@ -9,6 +9,13 @@ const config = require('config');
 const COA = require('./src/plugins/coa');
 require('./src/rest/services/helpers/buidlerTasks');
 
+async function getDeploymentSigner(env) {
+  const { provider } = env.ethers;
+  const accounts = await provider.listAccounts();
+
+  return provider.getSigner(accounts[0]);
+}
+
 task('deploy', 'Deploys COA contracts')
   // eslint-disable-next-line no-undef
   .addOptionalParam('reset', 'force deploy', false, types.boolean)
@@ -18,7 +25,8 @@ task('deploy', 'Deploys COA contracts')
 
     if (reset) env.coa.clearContracts();
 
-    await env.deployments.deployAll(undefined, reset, false);
+    const signer = await getDeploymentSigner(env);
+    await env.deployments.deployAll(signer, reset, false);
   });
 
 task(
@@ -33,7 +41,8 @@ task(
 
     if (reset) env.coa.clearContracts();
 
-    await env.deployments.deployAll(undefined, reset, true);
+    const signer = await getDeploymentSigner(env);
+    await env.deployments.deployAll(signer, reset, true);
   });
 
 const coaDeploySetup = {
