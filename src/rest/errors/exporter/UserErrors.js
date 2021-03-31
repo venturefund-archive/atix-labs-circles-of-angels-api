@@ -85,5 +85,9 @@ module.exports = {
   MnemonicNotDecrypted: {
     message: 'Mnemonic could not be decrypted',
     statusCode: 500
+  },
+  UndefinedUserForOwnerId: {
+    message: 'Undefined user for provided ownerId',
+    statusCode: 500
   }
 };
