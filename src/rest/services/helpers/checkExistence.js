@@ -1,3 +1,4 @@
+const { isEmpty } = require('lodash');
 const { common } = require('../../errors/exporter/ErrorExporter');
 const COAError = require('../../errors/COAError');
 
@@ -15,11 +16,11 @@ module.exports = async (dao, id, model) => {
   logger.info(
     `[CheckExistence] :: About to check if ${model} with id ${id} exists`
   );
-  const object = await dao.findById(id);
-  if (object) {
-    logger.info(`[CheckExistence] :: ${model} found`);
-    return object;
+  const returnedObject = await dao.findById(id);
+  if (isEmpty(returnedObject)) {
+    logger.error(`[CheckExistence] :: ${model} with id ${id} not found`);
+    throw new COAError(common.CantFindModelWithId(model, id));
   }
-  logger.error(`[CheckExistence] :: ${model} with id ${id} not found`);
-  throw new COAError(common.CantFindModelWithId(model, id));
+  logger.info(`[CheckExistence] :: ${model} found`);
+  return returnedObject;
 };
