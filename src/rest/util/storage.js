@@ -1,4 +1,4 @@
-var RifStorage = require('@rsksmart/rif-storage');
+const RifStorage = require('@rsksmart/rif-storage');
 const { Provider } = require('@rsksmart/rif-storage');
 const config = require('config');
 
