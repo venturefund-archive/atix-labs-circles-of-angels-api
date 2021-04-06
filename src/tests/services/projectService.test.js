@@ -16,7 +16,8 @@ const txExplorerHelper = require('../../rest/services/helpers/txExplorerHelper')
 const validators = require('../../rest/services/helpers/projectStatusValidators/validators');
 
 const { injectMocks } = require('../../rest/util/injection');
-
+global.TextEncoder = require("util").TextEncoder;
+global.TextDecoder = require("util").TextDecoder;
 const storage = require('../../rest/util/storage');
 const files = require('../../rest/util/files');
 const originalProjectService = require('../../rest/services/projectService');
