@@ -83,7 +83,8 @@ contract AbstractDAO is Initializable, GSNRecipient {
      */
     function initialize(
         string memory _name,
-        address _creator
+        address _creator,
+        address _whitelist
     ) public initializer {
         name = _name;
         creationTime = now;
@@ -93,6 +94,7 @@ contract AbstractDAO is Initializable, GSNRecipient {
         gracePeriodLength = 35;
         processingPeriodLength = votingPeriodLength + gracePeriodLength;
         GSNRecipient.initialize();
+        whitelist = UsersWhitelist(_whitelist);
     }
     /**
      * @notice Function to be invoked in order to create a new proposal.
@@ -333,7 +335,7 @@ contract AbstractDAO is Initializable, GSNRecipient {
     function processNewDaoProposal(string memory _name, address _applicant)
         internal;
 
-    function setWhitelist(address _whitelist) public onlyOwner() {
+    function setWhitelist(address _whitelist) public onlyMembers(){
         whitelist = UsersWhitelist(_whitelist);
     }
 
@@ -348,7 +350,8 @@ contract AbstractDAO is Initializable, GSNRecipient {
         bytes calldata ,
         uint256
     ) external view returns (uint256, bytes memory) {
-        if (whitelist.users(from)) {
+        Member storage member = members[from];
+        if (whitelist.users(from) || member.exists == true) {
             return _approveRelayedCall();
         } else {
             return _rejectRelayedCall(0);
@@ -362,5 +365,5 @@ contract AbstractDAO is Initializable, GSNRecipient {
     function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
         
     }
-    uint256[50] private _gap;
+    uint256[49] private _gap;
 }

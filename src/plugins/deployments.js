@@ -330,7 +330,7 @@ function buildGetOrDeployUpgradeableContract(
 
 async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
 
-  await getOrDeployUpgradeableContract(
+  const whiteList = await getOrDeployUpgradeableContract(
     'UsersWhitelist',
     [],
     signer,
@@ -348,12 +348,12 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
 
   const implSuperDao = await getOrDeployContract(
     'SuperDAO',
-    [],
+    [whiteList.address],
     signer,
     reset
   );
 
-  const implDao = await getOrDeployContract('DAO', [], reset);
+  const implDao = await getOrDeployContract('DAO', [whiteList.address], reset);
 
   const proxyAdmin = await getOrDeployContract(
     'ProxyAdmin',
@@ -364,7 +364,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
 
   const registry = await getOrDeployUpgradeableContract(
     'ClaimsRegistry',
-    [],
+    [whiteList.address],
     signer,
     doUpgrade,
     undefined,
@@ -378,7 +378,8 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
       proxyAdmin.address,
       implProject.address,
       implSuperDao.address,
-      implDao.address
+      implDao.address,
+      whiteList.address
     ],
     signer,
     doUpgrade,

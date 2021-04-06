@@ -11,8 +11,9 @@ contract SuperDAO is AbstractDAO {
 
     function initialize(string memory _name,
         address _creator,
-        address _coaAddress) public initializer {
-        AbstractDAO.initialize(_name, _creator);
+        address _coaAddress,
+        address _whitelist) public initializer {
+        AbstractDAO.initialize(_name, _creator, _whitelist);
         coa = COA(_coaAddress);
     }
 
