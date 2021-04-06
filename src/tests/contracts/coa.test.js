@@ -1,7 +1,7 @@
 const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
 const { getSigner } = require('../../plugins/deployments');
 
-const { throwsAsync } = require('./testHelpers');
+const { throwsAsync } = require('./helpers/testHelpers');
 
 let coa;
 let registry;
@@ -16,6 +16,7 @@ async function getProjectAt(address, consultant) {
 }
 
 contract('COA.sol', ([creator, founder, other]) => {
+  // eslint-disable-next-line func-names
   beforeEach('deploy contracts', async function() {
     this.timeout(1 * 60 * 1000);
     await run('deploy', { reset: true });
@@ -102,32 +103,6 @@ contract('COA.sol', ([creator, founder, other]) => {
         }),
         "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
       );
-    });
-  });
-
-  describe('Upgrade Project contract', () => {
-    it('Should upgrade a new version of project', async () => {
-      const project = {
-        id: 1,
-        name: 'a good project'
-      };
-      await coa.createProject(project.id, project.name);
-      const factory = await ethers.getContractFactory('ProjectV2');
-      const mockContract = await factory.deploy({});
-      const instance = await deployments.getContractInstance(
-        'AdminUpgradeabilityProxy',
-        await coa.projects(0),
-        creator
-      );
-      await instance.upgradeTo(mockContract.address);
-      const newVersion = await deployments.getContractInstance(
-        'ProjectV2',
-        await coa.projects(0),
-        other
-      );
-      newVersion.setTest('test');
-      assert.equal(await newVersion.name(), project.name);
-      assert.equal(await newVersion.test(), 'test');
     });
   });
 });
