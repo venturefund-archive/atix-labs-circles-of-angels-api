@@ -51,14 +51,12 @@ test_be:
     - schedules
 
 package:
-  image: docker.atixlabs.com/node:12.21.0
+  image: docker.atixlabs.com/node:12-alpine
   stage: package
   services:
     - docker:19.03.1-dind
   script:
-    - apt-get update
-    - apt-get install curl -y curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
-    - sh get-docker.sh
+    - apk add docker git
     - docker login -u gitlabci -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker info
     - npm run docker:build
