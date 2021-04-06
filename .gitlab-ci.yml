@@ -56,7 +56,8 @@ package:
   services:
     - docker:19.03.1-dind
   script:
-    - curl -fsSL https://get.docker.com -o get-docker.sh
+    - apt-get update
+    - apt-get install curl -y curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
     - sh get-docker.sh
     - docker login -u gitlabci -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker info
