@@ -16,6 +16,7 @@ const txExplorerHelper = require('../../rest/services/helpers/txExplorerHelper')
 const validators = require('../../rest/services/helpers/projectStatusValidators/validators');
 
 const { injectMocks } = require('../../rest/util/injection');
+global.TextDecoder = require('util').TextDecoder;
 
 const storage = require('../../rest/util/storage');
 const files = require('../../rest/util/files');
@@ -1537,7 +1538,7 @@ describe('Project Service Test', () => {
 
   describe('Transition Funding Projects', () => {
     let dbProject = [];
-    let dbProjectFunder = [];
+    const dbProjectFunder = [];
     const fundingToExecuting = {
       id: 1,
       status: projectStatuses.FUNDING,
@@ -1596,7 +1597,7 @@ describe('Project Service Test', () => {
         funderDao: Object.assign(
           {},
           {
-            deleteFundersByProject: (projectId, filters ) => {
+            deleteFundersByProject: (projectId, filters) => {
               const found = dbProjectFunder.find(
                 funder => funder.project === projectId
               );
@@ -1672,8 +1673,9 @@ describe('Project Service Test', () => {
         expect(projectService.notifyProjectStatusChange).toHaveBeenCalled();
         expect(
           dbProjectFunder.filter(
-            funder => funder.projectId === fundingToConsensus.id)
-            ).toEqual([]);
+            funder => funder.projectId === fundingToConsensus.id
+          )
+        ).toEqual([]);
       }
     );
 
@@ -1855,9 +1857,10 @@ describe('Project Service Test', () => {
         funderDao: Object.assign(
           {},
           {
-            deleteFundersByProject: (projectId, filters ) => {
+            deleteFundersByProject: (projectId, filters) => {
               const found = dbProjectFunder.find(
-                funder => funder.user === filters.user && funder.project === projectId
+                funder =>
+                  funder.user === filters.user && funder.project === projectId
               );
               if (!found) return;
               dbProjectFunder.splice(dbProjectFunder.indexOf(found), 1);
