@@ -4,6 +4,7 @@ const config = require('config');
 
 const { protocol, host, port } = config.rifStorageOptions;
 const logger = require('../logger');
+
 const validateMtype = require('../services/helpers/validateMtype');
 const validatePhotoSize = require('../services/helpers/validatePhotoSize');
 
