@@ -348,12 +348,12 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
 
   const implSuperDao = await getOrDeployContract(
     'SuperDAO',
-    [whiteList.address],
+    [],
     signer,
     reset
   );
 
-  const implDao = await getOrDeployContract('DAO', [whiteList.address], reset);
+  const implDao = await getOrDeployContract('DAO', [], reset);
 
   const proxyAdmin = await getOrDeployContract(
     'ProxyAdmin',
@@ -367,7 +367,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
     [whiteList.address],
     signer,
     doUpgrade,
-    undefined,
+    { initializer: 'claimsInitialize' },
     reset
   );
 

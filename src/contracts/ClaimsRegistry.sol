@@ -30,7 +30,7 @@ contract ClaimsRegistry is Initializable, GSNRecipient{
     );
     UsersWhitelist public whitelist;
 
-    function initialize(address _whitelist) public initializer {
+    function claimsInitialize(address _whitelist) public initializer {
         GSNRecipient.initialize();
         whitelist = UsersWhitelist(_whitelist);
     }
