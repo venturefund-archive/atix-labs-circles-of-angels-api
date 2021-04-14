@@ -1,18 +1,19 @@
 const { readArtifact } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory, Wallet, utils } = require('ethers');
-const { types } = require('@nomiclabs/buidler/config');
+const { task, types } = require('@nomiclabs/buidler/config');
 
 const { sha3 } = require('../../util/hash');
 const { proposalTypeEnum, voteEnum } = require('../../util/constants');
+
+const testSetup = require('../../../../scripts/jestGlobalSetup');
+const testTeardown = require('../../../../scripts/jestGlobalTearDown');
 
 const getCOAContract = async env => {
   const [coa] = await env.deployments.getDeployedContracts('COA');
   return coa;
 };
 
-const getSigner = async (env, account) => {
-  return env.deployments.getSigner(account);
-};
+const getSigner = async (env, account) => env.deployments.getSigner(account);
 
 const getDAOContract = async (env, address, signer) => {
   const { abi, bytecode } = await readArtifact(
@@ -29,6 +30,22 @@ const getRegistryContract = async env => {
   );
   return registry;
 };
+
+task('test-contracts', 'Runs setup, tests and teardown').setAction(async () => {
+  await run('test-contracts:testSetup');
+  await run('test');
+  await run('test-contracts:testTeardown');
+});
+
+task('test-contracts:testSetup', 'Runs the test setup').setAction(async () => {
+  await testSetup();
+});
+
+task('test-contracts:testTeardown', 'Runs the test teardown').setAction(
+  async () => {
+    await testTeardown();
+  }
+);
 
 task('get-signer-zero', 'Gets signer zero address').setAction(
   async (_args, env) => {
