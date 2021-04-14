@@ -1,6 +1,7 @@
 const { describe, it, beforeAll, beforeEach, expect } = global;
 const { config, ethereum } = require('@nomiclabs/buidler');
 const { readArtifactSync } = require('@nomiclabs/buidler/plugins');
+const { gsnConfig } = require('config');
 const {
   getOrDeployContract,
   getOrDeployUpgradeableContract,
@@ -8,6 +9,8 @@ const {
   getSigner,
   getContractFactory
 } = require('../../plugins/deployments');
+
+// jest.mock('config');
 
 async function revertSnapshot(snapshot) {
   return ethereum.send('evm_revert', [snapshot]);
@@ -20,10 +23,18 @@ async function createSnapshot() {
 describe('Deployments tests', () => {
   let creator;
   let snapshot;
+  let oldGsnIsEnabled;
 
   beforeAll(async () => {
+    // We disable GSN when deploying contracts
+    oldGsnIsEnabled = gsnConfig.isEnabled;
+    gsnConfig.isEnabled = false;
     snapshot = await createSnapshot();
     creator = await getSigner(0);
+  });
+
+  afterAll(() => {
+    gsnConfig.isEnabled = oldGsnIsEnabled;
   });
 
   const validContractName = 'ClaimsRegistry';
