@@ -411,9 +411,13 @@ async function getChainId(chainId) {
   return chainId;
 }
 
+async function getAccounts() {
+  return ethers.provider.listAccounts()
+}
+
 async function getSigner(account) {
   const provider = await getProvider();
-  const accounts = await provider.listAccounts();
+  const accounts = await getAccounts();
   // TODO: Is it okay return account?
   let signer = account;
   if (account === undefined) {
@@ -433,10 +437,10 @@ async function getProvider() {
 
 async function getGSNProvider() {
   const providerUrl = ethers.provider.connection.url;
-  const accounts = await ethers.provider.listAccounts();
+  const ownerAddress = (await getAccounts())[0];
 
   const gsnProvider = new GSNProvider(providerUrl, {
-    ...accounts,
+    ownerAddress,
     useGSN: true
   });
 
@@ -457,6 +461,8 @@ module.exports = {
   deploy,
   deployProxy,
   getSigner,
+  getProvider,
+  getAccounts,
   getDeployedContracts,
   saveDeployedContract,
   getLastDeployedContract,

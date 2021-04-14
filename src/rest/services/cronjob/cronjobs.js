@@ -1,6 +1,7 @@
+const { coa } = require('@nomiclabs/buidler');
+
 const config = require('config');
 const logger = require('../../logger');
-
 const { EVERY_DAY_AT_MIDNIGHT, EVERY_HOUR } = require('./cronExpressions');
 
 module.exports = {
@@ -47,9 +48,13 @@ module.exports = {
       config.crons.checkContractBalancesJob.cronTime || EVERY_DAY_AT_MIDNIGHT,
     async onTick() {
       logger.info('[CronJobService] :: Executing checkContractBalancesJob');
-      const contracts = await this.coa.getAllRecipientContracts();
-      await this.balanceService.checkGSNAccountBalance();
-      await this.balanceService.checkContractBalances(contracts);
+      try {
+        const contracts = await coa.getAllRecipientContracts();
+        await this.balanceService.checkGSNAccountBalance();
+        await this.balanceService.checkContractBalances(contracts);
+      } catch (e) {
+        logger.error(e);
+      }
     },
     onComplete() {
       logger.info('[CronJobService] :: checkContractBalancesJob has stopped');

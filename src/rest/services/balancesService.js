@@ -1,7 +1,11 @@
 const { balancesConfig } = require('config').crons.checkContractBalancesJob;
 const { fundRecipient, balance } = require('@openzeppelin/gsn-helpers');
-const { parseEther } = require('ethers').utils;
+const { parseEther, formatEther } = require('ethers').utils;
 const { BigNumber } = require('@ethersproject/bignumber');
+const { coa, web3 } = require('@nomiclabs/buidler');
+
+const COAError = require('../errors/COAError');
+const errors = require('../errors/exporter/ErrorExporter');
 const logger = require('../logger');
 
 /**
@@ -10,12 +14,18 @@ const logger = require('../logger');
  */
 async function checkGSNAccountBalance() {
   logger.info('[BalancesService] :: Entering to checkGSNAccountBalance');
-  const provider = await this.deployments.getProvider();
-  const gsnAccount = await provider.listAccounts()[0];
+  const provider = await coa.getProvider();
+  const gsnAccount = (await provider.listAccounts())[0];
+
+  if (!gsnAccount) throw new COAError(errors.task.GSNAccountNotConfigured());
+
   const accountBalance = await provider.getBalance(gsnAccount);
 
   logger.info(`[BalancesService] :: Main account balance: ${accountBalance}`);
-  if (accountBalance.lte(BigNumber.from(balancesConfig.gsnAccountThreshold))) {
+  const gsnAccountThreshold = BigNumber.from(
+    parseEther(balancesConfig.gsnAccountThreshold)
+  );
+  if (accountBalance.lte(gsnAccountThreshold)) {
     await this.mailService.sendLowBalanceGSNAccountEmail(
       balancesConfig.email,
       gsnAccount,
@@ -35,10 +45,11 @@ async function checkGSNAccountBalance() {
 async function checkContractBalances(allContracts) {
   logger.info(
     '[BalancesService] :: Entering to checkContractBalances with contracts: ',
-    allContracts
+    Object.values(allContracts).map(contracts =>
+      contracts.map(contract => contract.address)
+    )
   );
-  const provider = await this.deployments.getProvider();
-  const signer = await this.deployments.getSigner();
+  const signer = await coa.getSigner();
 
   // eslint-disable-next-line no-restricted-syntax
   for (const key of Object.keys(allContracts)) {
@@ -47,33 +58,41 @@ async function checkContractBalances(allContracts) {
       : balancesConfig.default;
     logger.info(`[BalancesService] :: checking ${key} contract balances`);
     // eslint-disable-next-line no-await-in-loop
-    await _checkBalances(allContracts[key], signer, provider, config);
+    await _checkBalances(allContracts[key], signer, config);
   }
 }
 
-async function _checkBalances(contracts, signer, provider, config) {
+async function _checkBalances(contracts, signer, config) {
   // eslint-disable-next-line no-restricted-syntax
   for (const contract of contracts) {
     // eslint-disable-next-line no-await-in-loop
-    await _checkBalance(contract.address, signer, provider, config);
+    await _checkBalance(contract.address, signer, config);
   }
 }
 
-async function _checkBalance(recipient, signer, provider, config) {
-  const contractBalance = await balance(provider, { recipient });
-  if (contractBalance.lte(config.balanceThreshold)) {
+async function _checkBalance(recipient, signer, config) {
+  const contractBalance = BigNumber.from(await balance(web3, { recipient }));
+  const balanceThreshold = parseEther(config.balanceThreshold);
+  logger.info(
+    `[BalancesService] :: ${recipient} contract balance: ${contractBalance}`
+  );
+  if (contractBalance.lte(balanceThreshold)) {
     logger.info(
       `[BalancesService] :: Contract recipient (${recipient}) has not enough balance, 
       sending ${config.targetBalance}...`
     );
-    const amountToAdd = BigNumber.from(config.targetBalance).sub(
-      contractBalance
-    );
-    await fundRecipient(provider, {
+    const targetBalance = BigNumber.from(parseEther(config.targetBalance));
+    await fundRecipient(web3, {
       recipient,
-      amount: parseEther(amountToAdd.toString()),
-      from: signer
+      amount: targetBalance,
+      from: signer._address
     });
+    const newBalance = await balance(web3, { recipient });
+    logger.info(
+      `Contract ${recipient} founded, new balance: ${formatEther(
+        newBalance
+      )} ETH`
+    );
   }
 }
 

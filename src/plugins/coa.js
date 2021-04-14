@@ -284,7 +284,8 @@ module.exports = class COA {
     if (!coa) return daos;
     const daosLength = await coa.getDaosLength();
     for (let i = 0; i < daosLength; i++) {
-      const daoAddress = coa.daos(i);
+      // eslint-disable-next-line no-await-in-loop
+      const daoAddress = await coa.daos(i);
       const dao = this.getDaoContract(daoAddress);
       daos.push(dao);
     }
@@ -402,6 +403,10 @@ module.exports = class COA {
     }
 
     return this.contracts.whitelist;
+  }
+
+  async getProvider() {
+    return this.env.deployments.getProvider();
   }
 
   async getSigner(account) {

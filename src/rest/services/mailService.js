@@ -182,7 +182,7 @@ module.exports = {
     const html = await templateParser.completeTemplate(
       {
         title: 'Alert COA main account is running out of balance.',
-        bodyText: `This is a reminder that the COA Gas station is running out of money, having currently ${balance} left. 
+        bodyText: `This is a reminder that the COA Gas station is running out of money, having currently ${balance} WEIs left. 
 Please add more to avoid transactions not being able to execute. 
 Remember the address to transfer the money to is: ${account}`
       },
