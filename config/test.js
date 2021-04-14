@@ -12,7 +12,7 @@ module.exports = {
     maxFileSize: 5000000
   },
   buidler: {
-    defaultNetwork: 'buidlerevm'
+    defaultNetwork: 'develop'
   },
   frontendUrl: '//test',
   crypto: {
@@ -21,23 +21,23 @@ module.exports = {
   crons: {
     checkContractBalancesJob: {
       balancesConfig: {
-        gsnAccountThreshold: 50,
+        gsnAccountThreshold: '50',
         email: 'a@fake.email',
         default: {
-          targetBalance: 1,
-          balanceThreshold: 5
+          targetBalance: '1',
+          balanceThreshold: '5'
         },
         coa: {
-          targetBalance: 5,
-          balanceThreshold: 50
+          targetBalance: '5',
+          balanceThreshold: '50'
         },
         projects: {
-          targetBalance: 10,
-          balanceThreshold: 50
+          targetBalance: '10',
+          balanceThreshold: '50'
         },
         daos: {
-          targetBalance: 100,
-          balanceThreshold: 100
+          targetBalance: '100',
+          balanceThreshold: '100'
         }
       }
     }

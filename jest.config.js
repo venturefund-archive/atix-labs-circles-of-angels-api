@@ -1,5 +1,7 @@
 module.exports = {
   rootDir: 'src',
+  globalSetup: '../scripts/jestGlobalSetup.js',
+  globalTeardown: '../scripts/jestGlobalTearDown.js',
   testMatch: ['<rootDir>/tests/**/*.js', '<rootDir>/plugins/tests/**/*.js'],
   testPathIgnorePatterns: [
     '<rootDir>/tests/contracts/coa.test.js',

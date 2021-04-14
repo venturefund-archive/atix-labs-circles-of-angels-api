@@ -111,23 +111,23 @@ module.exports = {
       runOnInit: false,
       timezone: undefined,
       balancesConfig: {
-        gsnAccountThreshold: 500,
+        gsnAccountThreshold: '5',
         email: process.env.MAIN_ACCOUNT_BALANCE_EMAIL,
         default: {
-          targetBalance: 1,
-          balanceThreshold: 5
+          targetBalance: '1',
+          balanceThreshold: '5'
         },
         coa: {
-          targetBalance: 1,
-          balanceThreshold: 5
+          targetBalance: '1',
+          balanceThreshold: '5'
         },
         projects: {
-          targetBalance: 1,
-          balanceThreshold: 5
+          targetBalance: '1',
+          balanceThreshold: '5'
         },
         daos: {
-          targetBalance: 1,
-          balanceThreshold: 5
+          targetBalance: '1',
+          balanceThreshold: '5'
         }
       }
     }
@@ -156,6 +156,18 @@ module.exports = {
     port: process.env.RS_PORT
   },
   gsnConfig: {
-    isEnabled: false
+    isEnabled: true,
+  },
+  testConfig: {
+    ganache: {
+      runOnTest: true,
+      port: 8545
+    },
+    relayer: {
+      runOnTest: true,
+      port: 8546,
+      devMode: true,
+      quiet: true
+    }
   }
 };
