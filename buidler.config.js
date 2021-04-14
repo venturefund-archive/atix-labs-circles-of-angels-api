@@ -25,8 +25,11 @@ task('deploy', 'Deploys COA contracts')
 
     if (reset) env.coa.clearContracts();
 
+    const oldGSNIsEnabled = config.gsnConfig.isEnabled;
+    config.gsnConfig.isEnabled = false;
     const signer = await getDeploymentSigner(env);
     await env.deployments.deployAll(signer, reset, false);
+    config.gsnConfig.isEnabled = oldGSNIsEnabled;
   });
 
 task(
