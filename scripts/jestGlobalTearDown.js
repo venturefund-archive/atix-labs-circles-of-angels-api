@@ -3,7 +3,7 @@ const { testConfig } = require('config');
 const { stopGSN } = require('./stopDevGsn');
 const logger = require('../src/rest/logger');
 
-async function stopGanache() {
+async function stopNode() {
   // Kill the proccess that is running in the ganache port
   exec(
     `pid=$(lsof -t -i :${
@@ -18,7 +18,7 @@ module.exports = async () => {
     await stopGSN();
   }
   if (testConfig.ganache.runOnTest) {
-    await stopGanache();
+    await stopNode();
   }
   logger.info('Jest global teardown finished');
 };
