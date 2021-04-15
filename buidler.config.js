@@ -16,20 +16,24 @@ async function getDeploymentSigner(env) {
   return provider.getSigner(accounts[0]);
 }
 
+async function disableGSNAndDeployAll(env, reset, doUpgrade) {
+  // Make sure everything is compiled
+  await run('compile');
+
+  if (reset) env.coa.clearContracts();
+
+  const oldGSNIsEnabled = config.gsnConfig.isEnabled;
+  config.gsnConfig.isEnabled = false;
+  const signer = await getDeploymentSigner(env);
+  await env.deployments.deployAll(signer, reset, doUpgrade);
+  config.gsnConfig.isEnabled = oldGSNIsEnabled;
+}
+
 task('deploy', 'Deploys COA contracts')
   // eslint-disable-next-line no-undef
   .addOptionalParam('reset', 'force deploy', false, types.boolean)
   .setAction(async ({ reset }, env) => {
-    // Make sure everything is compiled
-    await run('compile');
-
-    if (reset) env.coa.clearContracts();
-
-    const oldGSNIsEnabled = config.gsnConfig.isEnabled;
-    config.gsnConfig.isEnabled = false;
-    const signer = await getDeploymentSigner(env);
-    await env.deployments.deployAll(signer, reset, false);
-    config.gsnConfig.isEnabled = oldGSNIsEnabled;
+    await disableGSNAndDeployAll(env, reset, false);
   });
 
 task(
@@ -39,13 +43,7 @@ task(
   // eslint-disable-next-line no-undef
   .addOptionalParam('reset', 'force deploy', false, types.boolean)
   .setAction(async ({ reset }, env) => {
-    // Make sure everything is compiled
-    await run('compile');
-
-    if (reset) env.coa.clearContracts();
-
-    const signer = await getDeploymentSigner(env);
-    await env.deployments.deployAll(signer, reset, true);
+    await disableGSNAndDeployAll(env, reset, true);
   });
 
 const coaDeploySetup = {
