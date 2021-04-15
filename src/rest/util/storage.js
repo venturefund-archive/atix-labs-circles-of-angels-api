@@ -1,6 +1,7 @@
-var RifStorage = require('@rsksmart/rif-storage');
+const RifStorage = require('@rsksmart/rif-storage');
 const { Provider } = require('@rsksmart/rif-storage');
 const config = require('config');
+
 const { protocol, host, port } = config.rifStorageOptions;
 const logger = require('../logger');
 const validateMtype = require('../services/helpers/validateMtype');
@@ -15,7 +16,7 @@ module.exports = {
     let options;
     if (type) {
       validateMtype(type, data);
-      validatePhotoSize(file);
+      validatePhotoSize(data);
       options = { fileName: data.name };
       dataToPut = data.data;
     }
@@ -25,7 +26,7 @@ module.exports = {
       logger.error('[Storage] :: An error has occurred', error);
       throw error;
     }
-  }, 
+  },
 
   async getStorageData(fileHash) {
     logger.info('[Storage] :: Entering getStorageData method');

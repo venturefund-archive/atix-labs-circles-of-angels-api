@@ -8,7 +8,7 @@
 
 const config = require('config');
 const path = require('path');
-const { uniqWith, unionBy } = require('lodash');
+const { uniqWith, unionBy, isEmpty } = require('lodash');
 const { coa } = require('@nomiclabs/buidler');
 const { sha3 } = require('../util/hash');
 const {
@@ -102,37 +102,44 @@ module.exports = {
     });
     const user = await this.userService.getUserById(ownerId);
 
-    if (user.role !== userRoles.ENTREPRENEUR) {
-      logger.error(
-        `[ProjectService] :: User ${user.id} is not ${userRoles.ENTREPRENEUR}`
+    if (!isEmpty(user)) {
+      if (user.role !== userRoles.ENTREPRENEUR) {
+        logger.error(
+          `[ProjectService] :: User ${user.id} is not ${userRoles.ENTREPRENEUR}`
+        );
+        throw new COAError(errors.user.UnauthorizedUserRole(user.role));
+      }
+
+      validateMtype(thumbnailType, file);
+      validatePhotoSize(file);
+
+      logger.info(`[ProjectService] :: Saving file of type '${thumbnailType}'`);
+      const cardPhotoPath = await files.saveFile(thumbnailType, file);
+      logger.info(`[ProjectService] :: File saved to: ${cardPhotoPath}`);
+
+      const project = {
+        projectName,
+        location,
+        timeframe,
+        goalAmount: 0,
+        cardPhotoPath,
+        owner: ownerId
+      };
+
+      logger.info(
+        `[ProjectService] :: Saving project ${projectName} description`
       );
-      throw new COAError(errors.user.UnauthorizedUserRole(user.role));
+      const projectId = await this.saveProject(project);
+
+      logger.info(
+        `[ProjectService] :: New project created with id ${projectId}`
+      );
+      return { projectId };
     }
-
-    validateMtype(thumbnailType, file);
-    validatePhotoSize(file);
-
-    logger.info(`[ProjectService] :: Saving file of type '${thumbnailType}'`);
-    const cardPhotoPath = await files.saveFile(thumbnailType, file);
-    logger.info(`[ProjectService] :: File saved to: ${cardPhotoPath}`);
-
-    const project = {
-      projectName,
-      location,
-      timeframe,
-      goalAmount: 0,
-      cardPhotoPath,
-      owner: ownerId
-    };
-
-    logger.info(
-      `[ProjectService] :: Saving project ${projectName} description`
+    logger.error(
+      `[ProjectService] :: Undefined user for provided ownerId: ${ownerId}`
     );
-    const projectId = await this.saveProject(project);
-
-    logger.info(`[ProjectService] :: New project created with id ${projectId}`);
-
-    return { projectId };
+    throw new COAError(errors.user.UndefinedUserForOwnerId(ownerId));
   },
 
   async updateProjectThumbnail(
@@ -1215,6 +1222,17 @@ module.exports = {
         );
 
         if (newStatus === projectStatuses.CONSENSUS) {
+          const removedFunders = await this.funderDao.deleteFundersByProject(
+            project.id
+          );
+          if (!removedFunders) {
+            logger.error(
+              `[ProjectService] :: Cannot remove funders from project ${
+                project.id
+              }`
+            );
+            return;
+          }
           await this.updateProject(project.id, {
             status: newStatus
           });
@@ -1268,10 +1286,7 @@ module.exports = {
           project.id
         } to blockchain`
       );
-      await coa.addProjectAgreement(
-        project.address,
-        agreementHash
-      );
+      await coa.addProjectAgreement(project.address, agreementHash);
     } catch (e) {
       throw e;
     }
@@ -1281,10 +1296,22 @@ module.exports = {
     logger.info(
       `[ProjectService] :: Sending project ${project.id} to blockchain`
     );
-    const tx = await coa.createProject(project.id, project.projectName);
-    await this.updateProject(project.id, {
-      txHash: tx.hash
-    });
+
+    try {
+      const tx = await coa.createProject(project.id, project.projectName);
+
+      await this.updateProject(project.id, {
+        txHash: tx.hash
+      });
+    } catch (error) {
+      logger.info(
+        `[ProjectService] :: Error when updating blockchain information for Project ${
+          project.id
+        }`,
+        error
+      );
+      throw new COAError(errors.project.BlockchainWritingError(project.id));
+    }
   },
   /**
    * Checks if the established time has passed
@@ -1404,10 +1431,7 @@ module.exports = {
       : [];
     const removedFunders = await Promise.all(
       fundersWithNoTransfers.map(funder =>
-        this.funderDao.deleteByProjectAndFunderId({
-          projectId: project.id,
-          userId: funder.id
-        })
+        this.funderDao.deleteFundersByProject(project.id, { user: funder.id })
       )
     );
 
