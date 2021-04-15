@@ -23,7 +23,7 @@ contract('UsersWhitelist.sol', accounts => {
   let subprocess;
   let gsnWeb3;
   let hubAddress;
-  before('Gsn provider run', async function before() {
+  before('Gsn provider run', async () => {
     gsnWeb3 = new Web3(PROVIDER_URL);
     hubAddress = await deployRelayHub(gsnWeb3, {
       from: userRelayer
@@ -31,7 +31,7 @@ contract('UsersWhitelist.sol', accounts => {
     subprocess = await runRelayer({ quiet: true, relayHubAddress: hubAddress });
   });
 
-  beforeEach('deploy contracts', async function beforeEach() {
+  beforeEach('deploy contracts', async () => {
     this.timeout(1 * 60 * 1000);
     await run('deploy', { reset: true });
     [coa] = await deployments.getDeployedContracts('COA');
@@ -53,7 +53,7 @@ contract('UsersWhitelist.sol', accounts => {
     const provider = new ethers.providers.Web3Provider(gsnDevProvider);
   });
 
-  after('finish process', async function after() {
+  after('finish process', async () => {
     if (subprocess) subprocess.kill();
   });
 
