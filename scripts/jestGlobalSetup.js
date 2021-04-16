@@ -6,7 +6,7 @@ const logger = require('../src/rest/logger');
 async function runNode() {
   exec('npm run node >> /dev/null');
   // Wait until buidler node is up and running
-  execSync('sleep 3');
+  execSync('sleep 5');
 }
 
 module.exports = async () => {

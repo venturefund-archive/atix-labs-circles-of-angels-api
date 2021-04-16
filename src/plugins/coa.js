@@ -476,7 +476,8 @@ module.exports = class COA {
    * @return Array of recipient contracts
    */
   async getAllRecipientContracts() {
-    const coa = [await this.getCOA()];
+    const coa =
+      (await this.getCOA()) !== undefined ? [await this.getCOA()] : [];
     const daos = await this.getDaos();
     const projects = await this.getProjects();
     return {
