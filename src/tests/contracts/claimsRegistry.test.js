@@ -1,6 +1,6 @@
-const { run, deployments, web3, upgrades } = require('@nomiclabs/buidler');
+const { run, deployments, web3 } = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
-const { throwsAsync, waitForEvent } = require('./testHelpers');
+const { throwsAsync, waitForEvent } = require('./helpers/testHelpers');
 
 const addClaim = async (
   claimsRegistry,
@@ -31,11 +31,12 @@ const addClaim = async (
   };
 };
 
-contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
+contract('ClaimsRegistry.sol', ([creator]) => {
   let coa;
   let registry;
   let project;
 
+  // eslint-disable-next-line func-names
   beforeEach('deploy contracts', async function() {
     this.timeout(1 * 60 * 1000);
     await run('deploy', { reset: true });
@@ -157,20 +158,5 @@ contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
       }),
       "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
     );
-  });
-
-  it('Should upgrade a new version of claimsregistry contract', async () => {
-    const { proofHash, claimHash } = await addClaim(registry, project);
-    const mockContract = await ethers.getContractFactory('ClaimsRegistryV2');
-    const registryV2 = await upgrades.upgradeProxy(
-      registry.address,
-      mockContract,
-      { unsafeAllowCustomTypes: true }
-    );
-    const claim = await registryV2.registry(project, creator, claimHash);
-    // Claim is stored properly
-    assert.equal(claim.proof, proofHash);
-    await registryV2.setTest('test');
-    assert.equal(await registryV2.test(), 'test');
   });
 });
