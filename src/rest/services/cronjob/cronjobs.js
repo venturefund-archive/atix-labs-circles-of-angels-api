@@ -1,4 +1,4 @@
-const { coa } = require('@nomiclabs/buidler');
+const { coa, web3 } = require('@nomiclabs/buidler');
 
 const config = require('config');
 const logger = require('../../logger');
@@ -49,9 +49,14 @@ module.exports = {
     async onTick() {
       logger.info('[CronJobService] :: Executing checkContractBalancesJob');
       try {
+        const signer = await coa.getSigner();
         const contracts = await coa.getAllRecipientContracts();
-        await this.balanceService.checkGSNAccountBalance();
-        await this.balanceService.checkContractBalances(contracts);
+        await this.balanceService.checkGSNAccountBalance(coa);
+        await this.balanceService.checkContractBalances(
+          contracts,
+          signer,
+          web3
+        );
       } catch (e) {
         logger.error(e);
       }

@@ -1,6 +1,7 @@
 const { describe, it, beforeAll, beforeEach, expect } = global;
 const { config, ethereum } = require('@nomiclabs/buidler');
 const { readArtifactSync } = require('@nomiclabs/buidler/plugins');
+const { gsnConfig } = require('config');
 const {
   getOrDeployContract,
   getOrDeployUpgradeableContract,
@@ -20,10 +21,16 @@ async function createSnapshot() {
 describe('Deployments tests', () => {
   let creator;
   let snapshot;
+  const oldGsnConfigIsEnabled = gsnConfig.isEnabled;
 
   beforeAll(async () => {
+    gsnConfig.isEnabled = false;
     snapshot = await createSnapshot();
     creator = await getSigner(0);
+  });
+
+  afterAll(() => {
+    gsnConfig.isEnabled = oldGsnConfigIsEnabled;
   });
 
   const validContractName = 'ClaimsRegistry';

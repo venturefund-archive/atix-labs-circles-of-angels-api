@@ -8,6 +8,8 @@ const { proposalTypeEnum, voteEnum } = require('../../util/constants');
 const testSetup = require('../../../../scripts/jestGlobalSetup');
 const testTeardown = require('../../../../scripts/jestGlobalTearDown');
 
+const balanceService = require('../balancesService');
+
 const getCOAContract = async env => {
   const [coa] = await env.deployments.getDeployedContracts('COA');
   return coa;
@@ -238,28 +240,22 @@ task('migrate-member', 'Migrate existing user to current contract')
     }
   });
 
-task('check-balance')
-  .addOptionalParam('address')
-  .setAction(async ({ address }, env) => {
-    const coa = await getCOAContract(env);
-    if (coa === undefined) {
-      console.error('COA contract not deployed');
-      return;
-    }
-    // this array could be used to check for several addresses
-    const addresses = [];
-    if (address) {
-      console.log(`${address}: ${await web3.eth.getBalance(address)}`);
-    } else {
-      await Promise.all(
-        addresses.map(async userAddress => {
-          console.log(
-            `${userAddress}: ${await web3.eth.getBalance(userAddress)}`
-          );
-        })
-      );
-    }
-  });
+task(
+  'check-balances',
+  'Checks the balance of all recipients contracts in COA'
+).setAction(async (_args, env) => {
+  const allContracts = await env.coa.getAllRecipientContracts();
+  const signer = await env.coa.getSigner();
+  await balanceService.checkContractBalances(allContracts, signer, env.web3);
+});
+
+task('run-dev-gsn').setAction(async () => {
+  run('test-contracts:testSetup');
+});
+
+task('stop-dev-gsn').setAction(async () => {
+  run('test-contracts:testTeardown');
+});
 
 task('encrypt-wallet')
   .addParam('pk')

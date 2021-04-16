@@ -12,7 +12,7 @@ const { balancesConfig } = require('config').crons.checkContractBalancesJob;
 const { BigNumber } = require('@ethersproject/bignumber');
 const { parseEther } = require('ethers').utils;
 const { balance, fundRecipient } = require('@openzeppelin/gsn-helpers');
-const { coa, web3 } = require('@nomiclabs/buidler');
+const { web3 } = require('@nomiclabs/buidler');
 const { injectMocks } = require('../../rest/util/injection');
 const originalBalanceService = require('../../rest/services/balancesService');
 
@@ -22,11 +22,6 @@ const restoreAll = () => {
   balanceService = Object.assign({}, originalBalanceService);
   mocks = Object.assign({}, originalMocks);
   jest.clearAllMocks();
-};
-
-const mockCoaImplementation = () => {
-  coa.getProvider.mockImplementation(mocks.coa.getProvider);
-  coa.getSigner.mockImplementation(mocks.coa.getSigner);
 };
 
 const gsnAccount = 'fakeAccount';
@@ -60,11 +55,10 @@ describe('BalanceService tests', () => {
   describe('checkGSNAccountBalance function tests', () => {
     describe('GIVEN the GSN account has enough balance', () => {
       beforeAll(async () => {
-        mockCoaImplementation();
         injectMocks(balanceService, {
           mailService: mocks.mailService
         });
-        await balanceService.checkGSNAccountBalance();
+        await balanceService.checkGSNAccountBalance(mocks.coa);
       });
 
       it('SHOULD NOT send an alert email', () => {
@@ -84,11 +78,10 @@ describe('BalanceService tests', () => {
           ...mocks.provider,
           getBalance: () => sameBalanceAmountThanThreshold
         };
-        mockCoaImplementation();
         injectMocks(balanceService, {
           mailService: mocks.mailService
         });
-        await balanceService.checkGSNAccountBalance();
+        await balanceService.checkGSNAccountBalance(mocks.coa);
       });
 
       it('SHOULD send an alert email', () => {
@@ -108,11 +101,10 @@ describe('BalanceService tests', () => {
           ...mocks.provider,
           getBalance: () => smallBalanceAmount
         };
-        mockCoaImplementation();
         injectMocks(balanceService, {
           mailService: mocks.mailService
         });
-        await balanceService.checkGSNAccountBalance();
+        await balanceService.checkGSNAccountBalance(mocks.coa);
       });
 
       it('SHOULD send an alert email', () => {
@@ -142,8 +134,11 @@ describe('BalanceService tests', () => {
         mocks.balance.mockReturnValue(enoughContractBalance);
         balance.mockImplementation(mocks.balance);
         fundRecipient.mockImplementation(mocks.fundRecipient);
-        mockCoaImplementation();
-        await balanceService.checkContractBalances(contracts);
+        await balanceService.checkContractBalances(
+          contracts,
+          mocks.coa.getSigner(),
+          web3
+        );
       });
 
       it('SHOULD NOT call fundRecipient', () => {
@@ -154,28 +149,25 @@ describe('BalanceService tests', () => {
     describe('GIVEN no contract have enough balance', () => {
       const insufficientContractBalance = '0';
       const coaExpectedAmountSended = parseEther(
-        BigNumber.from(balancesConfig.coa.targetBalance)
-          .sub(insufficientContractBalance)
-          .toString()
-      );
+        balancesConfig.coa.targetBalance
+      ).toString();
       const daoExpectedAmountSended = parseEther(
-        BigNumber.from(balancesConfig.daos.targetBalance)
-          .sub(insufficientContractBalance)
-          .toString()
-      );
+        balancesConfig.daos.targetBalance
+      ).toString();
       const projectExpectedAmountSended = parseEther(
-        BigNumber.from(balancesConfig.projects.targetBalance)
-          .sub(insufficientContractBalance)
-          .toString()
-      );
+        balancesConfig.projects.targetBalance
+      ).toString();
 
       beforeAll(async () => {
         restoreAll();
         mocks.balance.mockReturnValue(insufficientContractBalance);
         balance.mockImplementation(mocks.balance);
         fundRecipient.mockImplementation(mocks.fundRecipient);
-        mockCoaImplementation();
-        await balanceService.checkContractBalances(contracts);
+        await balanceService.checkContractBalances(
+          contracts,
+          mocks.coa.getSigner(),
+          web3
+        );
       });
 
       it('SHOULD call fundRecipient always', () => {
@@ -200,17 +192,20 @@ describe('BalanceService tests', () => {
 
     describe('GIVEN only dao contracts need more balance', () => {
       const contractBalance = BigNumber.from(parseEther('60')); // @SEE thresholds in config/test.js
-      const daoExpectedAmountSended = BigNumber.from(
-        parseEther(balancesConfig.daos.targetBalance)
-      );
+      const daoExpectedAmountSended = parseEther(
+        balancesConfig.daos.targetBalance
+      ).toString();
 
       beforeAll(async () => {
         restoreAll();
         mocks.balance.mockReturnValue(contractBalance);
         balance.mockImplementation(mocks.balance);
         fundRecipient.mockImplementation(mocks.fundRecipient);
-        mockCoaImplementation();
-        await balanceService.checkContractBalances(contracts);
+        await balanceService.checkContractBalances(
+          contracts,
+          mocks.coa.getSigner(),
+          web3
+        );
       });
 
       it('SHOULD call fundRecipient only for daos', () => {
