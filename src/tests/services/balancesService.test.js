@@ -120,9 +120,9 @@ describe('BalanceService tests', () => {
     const contracts = {
       coa: [{ address: 'coa_address' }],
       daos: [{ address: 'dao_address1' }, { address: 'dao_address2' }],
-      projects: [
-        { address: 'project_address1' },
-        { address: 'project_address2' }
+      claim_registry: [
+        { address: 'claim_registry_address1' },
+        { address: 'claim_registry_address2' }
       ]
     };
 
@@ -153,8 +153,8 @@ describe('BalanceService tests', () => {
       const daoExpectedAmountSended = parseEther(
         balancesConfig.daos.targetBalance
       ).toString();
-      const projectExpectedAmountSended = parseEther(
-        balancesConfig.projects.targetBalance
+      const claimRegistryExpectedAmountSended = parseEther(
+        balancesConfig.claim_registry.targetBalance
       ).toString();
 
       beforeAll(async () => {
@@ -182,8 +182,8 @@ describe('BalanceService tests', () => {
           from: gsnAccount
         });
         expect(mocks.fundRecipient).nthCalledWith(4, web3, {
-          recipient: contracts.projects[0].address,
-          amount: projectExpectedAmountSended,
+          recipient: contracts.claim_registry[0].address,
+          amount: claimRegistryExpectedAmountSended,
           from: gsnAccount
         });
       });

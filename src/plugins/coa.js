@@ -479,10 +479,13 @@ module.exports = class COA {
     const coa =
       (await this.getCOA()) !== undefined ? [await this.getCOA()] : [];
     const daos = await this.getDaos();
-    const projects = await this.getProjects();
+    const claimRegistry =
+      (await this.getRegistry()) !== undefined
+        ? [await this.getRegistry()]
+        : [];
     return {
       coa,
-      projects,
+      claimRegistry,
       daos
     };
   }

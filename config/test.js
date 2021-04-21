@@ -29,7 +29,7 @@ module.exports = {
       targetBalance: '1.6',
       balanceThreshold: '0.8'
     },
-    projects: {
+    claimRegistry: {
       targetBalance: '0.4',
       balanceThreshold: '0.2'
     },
