@@ -5,6 +5,7 @@ const {
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
 const { GSNProvider } = require("@openzeppelin/gsn-provider");
+const { getImplementationAddress } = require('@openzeppelin/upgrades-core');
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
 const {
   ethereum,
@@ -167,22 +168,8 @@ async function getDeployedContracts(name, chainId) {
 }
 
 async function getImplContract(contract, contractName) {
-  const addr = contract.address;
-
-  // This slot was recollected from
-  // @openzeppelin/upgrades-core/artifacts/BaseUpgradeabilityProxy.json
-  const IMPLEMENTATION_SLOT =
-      '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
-
   if (await isProxy(contract)) {
-    const storageAddr = await ethers.provider.getStorageAt(
-        addr,
-        IMPLEMENTATION_SLOT
-    );
-    const implAddr = `0x${storageAddr.substring(
-        storageAddr.length - 40,
-        storageAddr.length
-    )}`;
+    const implAddr = await getImplementationAddress(ethers.provider, contract.address);
     const contractFactory = await ethers.getContractFactory(contractName);
     return contractFactory.attach(implAddr);
   }
