@@ -1,3 +1,5 @@
+global.TextEncoder = require('util').TextEncoder;
+global.TextDecoder = require('util').TextDecoder;
 const RifStorage = require('@rsksmart/rif-storage');
 const { Provider } = require('@rsksmart/rif-storage');
 const config = require('config');
