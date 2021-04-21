@@ -27,7 +27,7 @@ async function disableGSNAndDeployAll(env, reset, doUpgrade) {
   const signer = await getDeploymentSigner(env);
   await env.deployments.deployAll(signer, reset, doUpgrade);
   config.gsnConfig.isEnabled = oldGSNIsEnabled;
-  run('check-balances');
+  await run('check-balances');
 }
 
 task('deploy', 'Deploys COA contracts')

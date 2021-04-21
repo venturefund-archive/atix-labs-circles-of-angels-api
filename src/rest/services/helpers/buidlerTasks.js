@@ -9,6 +9,7 @@ const testSetup = require('../../../../scripts/jestGlobalSetup');
 const testTeardown = require('../../../../scripts/jestGlobalTearDown');
 
 const balanceService = require('../balancesService');
+const Logger = require('../../logger');
 
 const getCOAContract = async env => {
   const [coa] = await env.deployments.getDeployedContracts('COA');
@@ -244,17 +245,21 @@ task(
   'check-balances',
   'Checks the balance of all recipients contracts in COA'
 ).setAction(async (_args, env) => {
-  const allContracts = await env.coa.getAllRecipientContracts();
-  const signer = await env.coa.getSigner();
-  await balanceService.checkContractBalances(allContracts, signer, env.web3);
+  try {
+    const allContracts = await env.coa.getAllRecipientContracts();
+    const signer = await env.coa.getSigner();
+    await balanceService.checkContractBalances(allContracts, signer, env.web3);
+  } catch (e) {
+    Logger.error(e);
+  }
 });
 
 task('run-dev-gsn').setAction(async () => {
-  run('test-contracts:testSetup');
+  await run('test-contracts:testSetup');
 });
 
 task('stop-dev-gsn').setAction(async () => {
-  run('test-contracts:testTeardown');
+  await run('test-contracts:testTeardown');
 });
 
 task('encrypt-wallet')

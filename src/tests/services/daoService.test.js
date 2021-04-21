@@ -10,6 +10,8 @@ const {
   txProposalStatus
 } = require('../../rest/util/constants');
 
+require('chai'); // needed in some tests
+
 let mockedDaoService = Object.assign({}, daoService);
 const restoreMockedDaoService = () => {
   mockedDaoService = Object.assign({}, daoService);
