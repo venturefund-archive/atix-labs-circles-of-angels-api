@@ -3,6 +3,8 @@ pragma solidity ^0.5.8;
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 
+import '@nomiclabs/buidler/console.sol';
+
 contract UsersWhitelist is Initializable, Ownable {
 
     mapping (address => bool) public users;
@@ -10,7 +12,7 @@ contract UsersWhitelist is Initializable, Ownable {
     event AddedToWhitelist(address indexed account);
     event RemovedFromWhitelist(address indexed account);
 
-    function initialize() public initializer {
+    function whitelistInitialize() public initializer {
         Ownable.initialize(msg.sender);
     }
 

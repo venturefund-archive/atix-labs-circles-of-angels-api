@@ -250,7 +250,7 @@ async function deploy(contractName, params, signer) {
 
 async function deployProxy(contractName, params, signer, opts) {
   const factory = await ethers.getContractFactory(contractName, await getSigner(signer));
-
+  
   const contract = await upgrades.deployProxy(factory, params, { ...opts, unsafeAllowCustomTypes: true });
   await contract.deployed();
 
@@ -329,6 +329,16 @@ function buildGetOrDeployUpgradeableContract(
 }
 
 async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
+
+  await getOrDeployUpgradeableContract(
+    'UsersWhitelist',
+    [],
+    signer,
+    doUpgrade,
+    { initializer: 'whitelistInitialize' },
+    reset
+  );
+
   const implProject = await getOrDeployContract(
     'Project',
     [],
