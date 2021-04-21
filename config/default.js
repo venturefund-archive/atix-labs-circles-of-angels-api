@@ -109,27 +109,27 @@ module.exports = {
       cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT,
       disabled: true,
       runOnInit: false,
-      timezone: undefined,
-      balancesConfig: {
-        gsnAccountThreshold: '5',
-        email: process.env.MAIN_ACCOUNT_BALANCE_EMAIL,
-        default: {
-          targetBalance: '0.1',
-          balanceThreshold: '0.05'
-        },
-        coa: {
-          targetBalance: '0.1',
-          balanceThreshold: '0.05'
-        },
-        projects: {
-          targetBalance: '0.01',
-          balanceThreshold: '0.005'
-        },
-        daos: {
-          targetBalance: '0.05',
-          balanceThreshold: '0.025'
-        }
-      }
+      timezone: undefined
+    }
+  },
+  balancesConfig: {
+    gsnAccountThreshold: '5',
+    email: process.env.MAIN_ACCOUNT_BALANCE_EMAIL,
+    default: {
+      targetBalance: '0.1',
+      balanceThreshold: '0.05'
+    },
+    coa: {
+      targetBalance: '0.1',
+      balanceThreshold: '0.05'
+    },
+    projects: {
+      targetBalance: '0.01',
+      balanceThreshold: '0.005'
+    },
+    daos: {
+      targetBalance: '0.05',
+      balanceThreshold: '0.025'
     }
   },
 

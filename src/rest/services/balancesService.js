@@ -1,4 +1,4 @@
-const { balancesConfig } = require('config').crons.checkContractBalancesJob;
+const { balancesConfig } = require('config');
 const { fundRecipient, balance } = require('@openzeppelin/gsn-helpers');
 const { parseEther, formatEther } = require('ethers').utils;
 const { BigNumber } = require('@ethersproject/bignumber');

@@ -8,8 +8,7 @@
  * Copyright (C) 2019 AtixLabs, S.R.L <https://www.atixlabs.com>
  */
 
-const { balancesConfig } = require('config').crons.checkContractBalancesJob;
-const { BigNumber } = require('@ethersproject/bignumber');
+const { balancesConfig } = require('config');
 const { parseEther } = require('ethers').utils;
 const { balance, fundRecipient } = require('@openzeppelin/gsn-helpers');
 const { web3 } = require('@nomiclabs/buidler');
@@ -28,7 +27,7 @@ const gsnAccount = 'fakeAccount';
 const gsnSigner = {
   _address: gsnAccount
 };
-const gsnAccountBalance = BigNumber.from(parseEther('1000'));
+const gsnAccountBalance = parseEther('10000');
 
 const originalMocks = {
   provider: {
@@ -69,7 +68,7 @@ describe('BalanceService tests', () => {
     });
 
     describe('GIVEN the GSN account has enough balance', () => {
-      const sameBalanceAmountThanThreshold = BigNumber.from(
+      const sameBalanceAmountThanThreshold = parseEther(
         balancesConfig.gsnAccountThreshold
       );
 
@@ -94,7 +93,7 @@ describe('BalanceService tests', () => {
     });
 
     describe('GIVEN the GSN account has not enough balance', () => {
-      const smallBalanceAmount = BigNumber.from(parseEther('1'));
+      const smallBalanceAmount = parseEther(balancesConfig.gsnAccountThreshold);
 
       beforeAll(async () => {
         mocks.provider = {
@@ -191,7 +190,7 @@ describe('BalanceService tests', () => {
     });
 
     describe('GIVEN only dao contracts need more balance', () => {
-      const contractBalance = BigNumber.from(parseEther('60')); // @SEE thresholds in config/test.js
+      const contractBalance = parseEther(balancesConfig.daos.balanceThreshold);
       const daoExpectedAmountSended = parseEther(
         balancesConfig.daos.targetBalance
       ).toString();
