@@ -345,6 +345,7 @@ module.exports = {
       '[TransferService] :: Sending signed tx to the blockchain for transfer',
       transferId
     );
+
     const tx = await coa.sendNewTransaction(signedTransaction);
     logger.info('[TransferService] :: Add claim transaction sent');
 
@@ -404,26 +405,31 @@ module.exports = {
       throw new COAError(errors.project.AddressNotFound(project.id));
     }
 
-    const unsignedTx = await coa.getAddClaimTransaction(
-      projectAddress,
-      claim,
-      proof,
-      approved,
-      0 // 0 because it doesn't belong to a milestone
-    );
-    const nonce = await this.transactionService.getNextNonce(
-      userWallet.address
-    );
-    const txWithNonce = { ...unsignedTx, nonce };
+    try {
+      const unsignedTx = await coa.getAddClaimTransaction(
+        projectAddress,
+        claim,
+        proof,
+        approved,
+        0 // 0 because it doesn't belong to a milestone
+      );
+      const nonce = await this.transactionService.getNextNonce(
+        userWallet.address
+      );
+      const txWithNonce = { ...unsignedTx, nonce };
 
-    logger.info(
-      '[TransferService] :: Sending unsigned transaction to client',
-      txWithNonce
-    );
-    return {
-      tx: txWithNonce,
-      encryptedWallet: userWallet.encryptedWallet
-    };
+      logger.info(
+        '[TransferService] :: Sending unsigned transaction to client',
+        txWithNonce
+      );
+      return {
+        tx: txWithNonce,
+        encryptedWallet: userWallet.encryptedWallet
+      };
+    } catch (error) {
+      logger.info(`[TransferService] :: Blockchain error :: ${error}`);
+      throw new COAError(error);
+    }
   },
 
   /**
@@ -501,8 +507,13 @@ module.exports = {
     const { blockNumber, from } = txResponse;
     let timestamp;
     if (blockNumber) {
-      const block = await coa.getBlock(blockNumber);
-      ({ timestamp } = block);
+      try {
+        const block = await coa.getBlock(blockNumber);
+        ({ timestamp } = block);
+      } catch (error) {
+        logger.info(`[TransferService] :: Blockchain error :: ${error}`);
+        throw new COAError(error);
+      }
     }
 
     return {
