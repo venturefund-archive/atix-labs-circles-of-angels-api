@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "eslint src/**/*.js",
     "lint-fix": "eslint --fix src/**/*.js",
-    "test": "export NODE_ENV=test && buidler clean && npx buidler compile && jest --silent",
+    "test": "export NODE_ENV=test && buidler clean && npx buidler compile && jest --silent --runInBand",
     "test:contracts": "buidler test",
     "test:coverage": "npm test -- --coverage",
     "start": "export NODE_ENV=development && node index",
@@ -41,6 +41,9 @@
     "@nomiclabs/buidler-web3": "1.1.2",
     "@openzeppelin/contracts": "2.5.1",
     "@openzeppelin/contracts-ethereum-package": "2.5.0",
+    "@openzeppelin/gsn-helpers": "0.2.4",
+    "@openzeppelin/gsn-provider": "0.1.11",
+    "@openzeppelin/network": "0.4.3",
     "@openzeppelin/upgrades": "2.8.0",
     "@rsksmart/rif-storage": "0.1.1",
     "@sendgrid/mail": "6.5.4",
@@ -77,6 +80,7 @@
     "sha256": "0.2.0",
     "sharp": "0.27.0",
     "uuid": "8.3.2",
+    "web3": "1.3.5",
     "websocket": "1.0.33",
     "xlsx": "0.14.1"
   },

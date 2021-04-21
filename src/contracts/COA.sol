@@ -5,14 +5,18 @@ import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol';
 import '@openzeppelin/upgrades/contracts/upgradeability/InitializableUpgradeabilityProxy.sol';
 import '@openzeppelin/upgrades/contracts/upgradeability/ProxyAdmin.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol';
+
 import './Project.sol';
 import './ClaimsRegistry.sol';
 import './DAO.sol';
 import './SuperDAO.sol';
+import './UsersWhitelist.sol';
 
-import '@nomiclabs/buidler/console.sol';
 /// @title COA main contract to store projects related information
-contract COA is Initializable, Ownable {
+contract COA is Initializable, Ownable, GSNRecipient {
+    using ECDSA for bytes32;
     struct Member {
         string profile;
     }
@@ -37,7 +41,7 @@ contract COA is Initializable, Ownable {
     address internal implProject;
     address internal implSuperDao;
     address internal implDao;
-
+    UsersWhitelist public whitelist;
     function coaInitialize(
         address _registryAddress,
         address _proxyAdmin,
@@ -46,6 +50,7 @@ contract COA is Initializable, Ownable {
         address _implDao
     ) public initializer {
         Ownable.initialize(msg.sender);
+        GSNRecipient.initialize();
         registry = ClaimsRegistry(_registryAddress);
         proxyAdmin = _proxyAdmin;
         implProject = _implProject;
@@ -140,5 +145,35 @@ contract COA is Initializable, Ownable {
         return projects.length;
     }
 
-    uint256[50] private _gap;
+    function setWhitelist(address _whitelist) public onlyOwner() {
+        whitelist = UsersWhitelist(_whitelist);
+    }
+
+    function acceptRelayedCall(
+        address ,
+        address from,
+        bytes calldata,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        uint256 ,
+        bytes calldata ,
+        uint256
+    ) external view returns (uint256, bytes memory) {
+        if (whitelist.users(from)) {
+            return _approveRelayedCall();
+        } else {
+            return _rejectRelayedCall(0);
+        }
+    }
+
+    function _preRelayedCall(bytes memory context) internal returns (bytes32) {
+        
+    }
+
+    function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
+        
+    }
+    
+    uint256[49] private _gap;
 }

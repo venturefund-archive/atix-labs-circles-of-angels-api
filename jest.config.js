@@ -6,6 +6,8 @@ module.exports = {
     '<rootDir>/tests/contracts/dao.test.js',
     '<rootDir>/tests/contracts/claimsRegistry.test.js',
     '<rootDir>/tests/contracts/testHelpers.js',
+    '<rootDir>/tests/contracts/gasStation.test.js',
+    '<rootDir>/tests/contracts/usersWhitelist.test.js',
     '<rootDir>/tests/testHelper.js',
     '<rootDir>/tests/mockModels.js',
     '<rootDir>/tests/mockFiles'

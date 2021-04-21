@@ -47,6 +47,9 @@ const coaDeploySetup = {
         context.ClaimsRegistry.address,
         context.ProxyAdmin.address
       ]
+    },
+    {
+      name: 'UsersWhitelist'
     }
   ]
 };

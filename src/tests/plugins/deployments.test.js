@@ -1,5 +1,5 @@
 const { describe, it, beforeAll, beforeEach, expect } = global;
-const { config, ethereum} = require('@nomiclabs/buidler');
+const { config, ethereum } = require('@nomiclabs/buidler');
 const { readArtifactSync } = require('@nomiclabs/buidler/plugins');
 const {
   getOrDeployContract,
