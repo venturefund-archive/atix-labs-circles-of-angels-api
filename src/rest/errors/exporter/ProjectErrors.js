@@ -117,6 +117,10 @@ module.exports = {
     message: `Project ${projectId} doesn't have blockchain information`,
     statusCode: 400
   }),
+  BlockchainWritingError: projectId => ({
+    message: `Error when updating blockchain information for Project ${projectId}`,
+    statusCode: 400
+  }),
   RejectionReasonEmpty: projectId => ({
     message: `RejectionReason is required to update project with id ${projectId} to rejected`,
     statusCode: 400

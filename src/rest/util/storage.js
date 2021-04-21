@@ -18,7 +18,7 @@ module.exports = {
     let options;
     if (type) {
       validateMtype(type, data);
-      validatePhotoSize(file);
+      validatePhotoSize(data);
       options = { fileName: data.name };
       dataToPut = data.data;
     }
