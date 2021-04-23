@@ -316,7 +316,37 @@ function buildGetOrDeployUpgradeableContract(
   }
 }
 
-async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
+async function deployAll(
+  signer = undefined,
+  resetStates = false,
+  doUpgrade = false,
+  resetAllContracts = false
+) {
+
+  const implProject = await getOrDeployContract(
+    'Project',
+    [],
+    signer,
+    resetAllContracts
+  );
+
+  const implSuperDao = await getOrDeployContract(
+    'SuperDAO',
+    [],
+    signer,
+    resetAllContracts
+  );
+
+  const implDao = await getOrDeployContract('DAO', [], signer, resetAllContracts);
+
+  const resetProxies = resetStates || resetAllContracts;
+
+  const proxyAdmin = await getOrDeployContract(
+    'ProxyAdmin',
+    [],
+    signer,
+    resetProxies
+  );
 
   await getOrDeployUpgradeableContract(
     'UsersWhitelist',
@@ -324,30 +354,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
     signer,
     doUpgrade,
     { initializer: 'whitelistInitialize' },
-    reset
-  );
-
-  const implProject = await getOrDeployContract(
-    'Project',
-    [],
-    signer,
-    reset
-  );
-
-  const implSuperDao = await getOrDeployContract(
-    'SuperDAO',
-    [],
-    signer,
-    reset
-  );
-
-  const implDao = await getOrDeployContract('DAO', [], signer, reset);
-
-  const proxyAdmin = await getOrDeployContract(
-    'ProxyAdmin',
-    [],
-    signer,
-    reset
+    resetProxies
   );
 
   const registry = await getOrDeployUpgradeableContract(
@@ -356,7 +363,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
     signer,
     doUpgrade,
     undefined,
-    reset
+    resetProxies
   );
 
   await getOrDeployUpgradeableContract(
@@ -371,7 +378,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
     signer,
     doUpgrade,
     { initializer: 'coaInitialize' },
-    reset
+    resetProxies
   );
 }
 
