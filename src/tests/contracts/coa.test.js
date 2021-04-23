@@ -1,7 +1,6 @@
 const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
 const { assert } = require('chai');
-const { getSigner } = require('../../plugins/deployments');
-
+const { testConfig } = require('config');
 const { throwsAsync } = require('./testHelpers');
 
 let coa;
@@ -18,7 +17,7 @@ async function getProjectAt(address, consultant) {
 
 contract('COA.sol', ([creator, founder, other]) => {
   beforeEach('deploy contracts', async function beforeEach() {
-    this.timeout(1 * 60 * 1000);
+    this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { reset: true });
     [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
     [coa] = await deployments.getDeployedContracts('COA');

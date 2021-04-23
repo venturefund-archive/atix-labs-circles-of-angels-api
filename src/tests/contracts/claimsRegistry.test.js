@@ -1,6 +1,7 @@
 const { run, deployments, web3, upgrades } = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
 const { assert } = require('chai');
+const { testConfig } = require('config');
 const { throwsAsync, waitForEvent } = require('./testHelpers');
 
 const addClaim = async (
@@ -38,7 +39,7 @@ contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
   let project;
 
   beforeEach('deploy contracts', async function beforeEach() {
-    this.timeout(1 * 60 * 1000);
+    this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { reset: true });
     [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
     [coa] = await deployments.getDeployedContracts('COA');

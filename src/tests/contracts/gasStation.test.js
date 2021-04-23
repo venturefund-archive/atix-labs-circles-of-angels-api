@@ -1,13 +1,11 @@
 /* eslint-disable no-console */
-const { run, deployments, ethers } = require('@nomiclabs/buidler');
+const { run, deployments, ethers, web3 } = require('@nomiclabs/buidler');
 const {
   deployRelayHub,
   runRelayer,
   fundRecipient
 } = require('@openzeppelin/gsn-helpers');
-
-const Web3 = require('web3');
-
+const { testConfig } = require('config');
 const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
 
 const { assert } = require('chai');
@@ -15,7 +13,7 @@ const { throwsAsync } = require('./testHelpers');
 
 const { isRelayHubDeployedForRecipient } = utils;
 
-const PROVIDER_URL = 'http://localhost:8545';
+const PROVIDER_URL = ethers.provider.connection.url;
 const singletonRelayHub = '0xD216153c06E857cD7f72665E0aF1d7D82172F494';
 
 async function getProjectAt(address, consultant) {
@@ -38,24 +36,22 @@ contract('Gsn', accounts => {
   let coa;
   let whitelist;
   let subprocess;
-  let gsnWeb3;
   let hubAddress;
   before('Gsn provider run', async function before() {
-    gsnWeb3 = new Web3(PROVIDER_URL);
-    hubAddress = await deployRelayHub(gsnWeb3, {
+    hubAddress = await deployRelayHub(web3, {
       from: userRelayer
     });
     subprocess = await runRelayer({ quiet: true, relayHubAddress: hubAddress });
   });
 
   beforeEach('deploy contracts', async function beforeEach() {
-    this.timeout(1 * 60 * 1000);
+    this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { reset: true });
     [coa] = await deployments.getDeployedContracts('COA');
     [whitelist] = await deployments.getDeployedContracts('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
 
-    await fundRecipient(gsnWeb3, {
+    await fundRecipient(web3, {
       recipient: coa.address,
       amount: '100000000000000000',
       relayHubAddress: hubAddress
@@ -136,17 +132,22 @@ contract('Gsn', accounts => {
   });
 
   describe('GSN disabled', () => {
-    const gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
-      ownerAddress,
-      relayerAddress,
-      useGSN: false
-    });
+    let gsnDevProvider;
+    let provider;
+    let project;
 
-    const provider = new ethers.providers.Web3Provider(gsnDevProvider);
-    const project = {
-      id: 1,
-      name: 'a good project'
-    };
+    before(async () => {
+      gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
+        ownerAddress,
+        relayerAddress,
+        useGSN: false
+      });
+      provider = new ethers.providers.Web3Provider(gsnDevProvider);
+      project = {
+        id: 1,
+        name: 'a good project'
+      };
+    });
 
     it('should execute coa TX from a user in whitelist spending his founds', async () => {
       await whitelist.addUser(signerAddress);
