@@ -35,9 +35,9 @@ const getRegistryContract = async env => {
 };
 
 task('test-contracts', 'Runs setup, tests and teardown').setAction(async () => {
-  await run('test-contracts:testSetup');
-  await run('test');
-  await run('test-contracts:testTeardown');
+  await global.run('test-contracts:testSetup');
+  await global.run('test');
+  await global.run('test-contracts:testTeardown');
 });
 
 task('test-contracts:testSetup', 'Runs the test setup').setAction(async () => {
@@ -255,11 +255,11 @@ task(
 });
 
 task('run-dev-gsn').setAction(async () => {
-  await run('test-contracts:testSetup');
+  await global.run('test-contracts:testSetup');
 });
 
 task('stop-dev-gsn').setAction(async () => {
-  await run('test-contracts:testTeardown');
+  await global.run('test-contracts:testTeardown');
 });
 
 task('encrypt-wallet')

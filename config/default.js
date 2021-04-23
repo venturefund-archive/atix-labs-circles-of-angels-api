@@ -156,15 +156,16 @@ module.exports = {
     port: process.env.RS_PORT
   },
   gsnConfig: {
-    isEnabled: true
+    isEnabled: false
   },
   testConfig: {
+    contractTestTimeoutMilliseconds: 2 * 60 * 1000,
     ganache: {
-      runOnTest: true,
+      runOnTest: false,
       port: 8545
     },
     relayer: {
-      runOnTest: true,
+      runOnTest: false,
       port: 8546,
       devMode: true,
       quiet: true

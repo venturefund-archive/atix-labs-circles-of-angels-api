@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 
 const { exec, execSync } = require('child_process');
-const { testConfig } = require('config');
+const { testConfig, gsnConfig } = require('config');
 const { runGSN } = require('./runDevGsn');
 const Logger = require('../src/rest/logger');
 
@@ -33,7 +33,7 @@ module.exports = async () => {
   if (testConfig.ganache.runOnTest) {
     await runNode();
   }
-  if (testConfig.relayer.runOnTest) {
+  if (gsnConfig.isEnabled && testConfig.relayer.runOnTest) {
     await runGSN();
   }
   Logger.info('Jest global setup finished');
