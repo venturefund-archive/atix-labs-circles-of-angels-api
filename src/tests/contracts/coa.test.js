@@ -1,4 +1,10 @@
-const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
+const {
+  web3,
+  run,
+  deployments,
+  ethers,
+  coa: coaPlugin
+} = require('@nomiclabs/buidler');
 const { assert } = require('chai');
 const { testConfig } = require('config');
 const { throwsAsync } = require('./testHelpers');
@@ -114,12 +120,8 @@ contract('COA.sol', ([creator, founder, other]) => {
       await coa.createProject(project.id, project.name);
       const factory = await ethers.getContractFactory('ProjectV2');
       const mockContract = await factory.deploy({});
-      const instance = await deployments.getContractInstance(
-        'AdminUpgradeabilityProxy',
-        await coa.projects(0),
-        creator
-      );
-      await instance.upgradeTo(mockContract.address);
+      const proxyAdmin = await coaPlugin.getProxyAdmin();
+      await proxyAdmin.upgrade(await coa.projects(0), mockContract.address);
       const newVersion = await deployments.getContractInstance(
         'ProjectV2',
         await coa.projects(0),

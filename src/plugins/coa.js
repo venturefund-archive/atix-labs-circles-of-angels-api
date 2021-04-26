@@ -373,6 +373,16 @@ module.exports = class COA {
     return this.contracts.whitelist;
   }
 
+  async getProxyAdmin() {
+    if (this.contracts.proxyAdmin === undefined) {
+      this.contracts.proxyAdmin = await this.env.deployments.getLastDeployedContract(
+        'ProxyAdmin'
+      );
+    }
+
+    return this.contracts.proxyAdmin;
+  }
+
   async getProvider() {
     return this.env.deployments.getProvider();
   }
