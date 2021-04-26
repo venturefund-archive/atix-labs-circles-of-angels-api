@@ -2,7 +2,7 @@ const { run, coa, ethereum } = require('@nomiclabs/buidler');
 const { sha3 } = require('../../rest/util/hash');
 
 const deployContracts = async () => {
-  await run('deploy', { reset: true });
+  await run('deploy', { resetStates: true });
   return ethereum.send('evm_snapshot', []);
 };
 const revertSnapshot = snapshot => ethereum.send('evm_revert', [snapshot]);

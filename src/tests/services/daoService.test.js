@@ -25,7 +25,7 @@ const GRACE_PERIOD_SEC = PERIOD_DURATION_SEC * GRACE_PERIOD_LENGTH;
 
 // TODO: change to use snapshots when buidler supports it
 const redeployContracts = async () => {
-  await run('deploy', { reset: true });
+  await run('deploy', { resetStates: true });
   const coaContract = await coa.getCOA();
   const superDaoAddress = await coaContract.daos(0);
   const { _address } = await coa.getSigner();
