@@ -66,11 +66,11 @@ async function _checkBalances(contracts, signer, web3, config) {
   // eslint-disable-next-line no-restricted-syntax
   for (const contract of contracts) {
     // eslint-disable-next-line no-await-in-loop
-    await _checkBalance(contract.address, signer, web3, config);
+    await checkBalance(contract.address, signer, web3, config);
   }
 }
 
-async function _checkBalance(recipient, signer, web3, config) {
+async function checkBalance(recipient, signer, web3, config) {
   const contractBalance = BigNumber.from(await balance(web3, { recipient }));
   const balanceThreshold = parseEther(config.balanceThreshold);
   logger.info(
@@ -90,7 +90,7 @@ async function _checkBalance(recipient, signer, web3, config) {
     });
     const newBalance = await balance(web3, { recipient });
     logger.info(
-      `Contract ${recipient} founded, new balance: ${formatEther(
+      `[BalancesService] :: Contract ${recipient} funded, new balance: ${formatEther(
         newBalance
       )} ETH`
     );
