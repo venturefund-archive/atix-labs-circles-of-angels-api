@@ -139,10 +139,19 @@ async function getDeployedAddresses(name, chainId) {
 }
 
 async function getLastDeployedContract(name, chainId) {
-  return (await getDeployedContracts(name, chainId))[0];
+  return (await getDeployedContractsGenerator(name, chainId).next()).value;
 }
 
 async function getDeployedContracts(name, chainId) {
+  const contractGenerator = getDeployedContractsGenerator(name, chainId);
+  const contracts = [];
+  for await (let contract of contractGenerator) {
+    contracts.push(contract)
+  }
+  return contracts;
+}
+
+async function* getDeployedContractsGenerator(name, chainId) {
   const factory = await getContractFactory(name);
   const addresses = await getDeployedAddresses(name, chainId);
   const artifact = readArtifactSync(config.paths.artifacts, name);
@@ -155,16 +164,13 @@ async function getDeployedContracts(name, chainId) {
     );
   }
 
-  const contracts = [];
   for (const addr of addresses) {
     const code = await ethers.provider.getCode(addr);
     const contract = factory.attach(addr);
     if (code === artifact.deployedBytecode || code === AdminUpgradeabilityProxy.deployedBytecode) {
-      contracts.push(contract);
+      yield contract;
     }
   }
-
-  return contracts;
 }
 
 async function getImplContract(contract, contractName) {
@@ -252,7 +258,7 @@ async function getOrDeployContract(contractName, params, signer = undefined, res
   logger.info(
       `[deployments] :: Entering getOrDeployContract. Contract ${contractName} with args [${params}].`
   );
-  let [contract] = await getDeployedContracts(contractName);
+  let contract = await getLastDeployedContract(contractName);
   if (contract === undefined || reset === true) {
     logger.info(`[deployments] :: ${contractName} not found, deploying...`);
     [contract] = await deploy(contractName, params, signer);
@@ -277,7 +283,7 @@ function buildGetOrDeployUpgradeableContract(
     logger.info(
       `[deployments] :: Entering getOrDeployUpgradeableContract. Contract ${contractName} with args [${params}].`
     );
-    let [contract] = await getDeployedContracts(contractName);
+    let contract = await getLastDeployedContract(contractName);
     if (contract === undefined || reset === true) {
       logger.info(`[deployments] :: ${contractName} not found, deploying...`);
       [contract] = await deployProxy(

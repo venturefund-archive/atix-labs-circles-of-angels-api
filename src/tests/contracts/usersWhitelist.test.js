@@ -35,8 +35,8 @@ contract('UsersWhitelist.sol', accounts => {
   beforeEach('deploy contracts', async function beforeEach() {
     this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { resetStates: true });
-    [coa] = await deployments.getDeployedContracts('COA');
-    [whitelist] = await deployments.getDeployedContracts('UsersWhitelist');
+    coa = await deployments.getLastDeployedContract('COA');
+    whitelist = await deployments.getLastDeployedContract('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
 
     await fundRecipient(gsnWeb3, {

@@ -101,7 +101,7 @@ contract(
     beforeEach('deploy contracts', async function be() {
       this.timeout(testConfig.contractTestTimeoutMilliseconds);
       await run('deploy', { resetStates: true });
-      [coa] = await deployments.getDeployedContracts('COA');
+      coa = await deployments.getLastDeployedContract('COA');
       await coa.createDAO('the dao', daoCreator);
       const superDaoAddress = await coa.daos(0);
       const daosLength = await coa.getDaosLength();

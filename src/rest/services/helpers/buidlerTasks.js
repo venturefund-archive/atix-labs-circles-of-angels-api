@@ -11,10 +11,8 @@ const testTeardown = require('../../../../scripts/jestGlobalTearDown');
 const balanceService = require('../balancesService');
 const Logger = require('../../logger');
 
-const getCOAContract = async env => {
-  const [coa] = await env.deployments.getDeployedContracts('COA');
-  return coa;
-};
+const getCOAContract = async env =>
+  env.deployments.getLastDeployedContract('COA');
 
 const getSigner = async (env, account) => env.deployments.getSigner(account);
 
@@ -27,12 +25,8 @@ const getDAOContract = async (env, address, signer) => {
   return factory.attach(address);
 };
 
-const getRegistryContract = async env => {
-  const [registry] = await env.deployments.getDeployedContracts(
-    'ClaimsRegistry'
-  );
-  return registry;
-};
+const getRegistryContract = async env =>
+  env.deployments.getLastDeployedContract('ClaimsRegistry');
 
 task('test-contracts', 'Runs setup, tests and teardown').setAction(async () => {
   await global.run('test-contracts:testSetup');
