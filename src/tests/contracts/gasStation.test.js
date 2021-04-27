@@ -52,14 +52,12 @@ contract('Gas Station Network Tests', accounts => {
     [whitelist] = await deployments.getDeployedContracts('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
     let hubBalance = await coa.provider.getBalance(hubAddress);
-    console.log('Relayer balance 1', hubBalance.toString());
     await fundRecipient(gsnWeb3, {
       recipient: coa.address,
       amount: '100000000000000000',
       relayHubAddress: hubAddress
     });
     hubBalance = await coa.provider.getBalance(hubAddress);
-    console.log('Relayer balance 2', hubBalance.toString());
   });
 
   after('finish process', async () => {
@@ -88,7 +86,6 @@ contract('Gas Station Network Tests', accounts => {
     it('should execute coa TX for FREE from a user in whitelist', async () => {
       await whitelist.addUser(signerAddress);
       let hubBalance = await coa.provider.getBalance(hubAddress);
-      console.log('Relayer balance 3', hubBalance.toString());
       coa = await deployments.getContractInstance(
         'COA',
         coa.address,
@@ -104,7 +101,6 @@ contract('Gas Station Network Tests', accounts => {
       const newBalance = await coa.provider.getBalance(signerAddress);
       assert.equal(oldBalance.toString(), newBalance.toString());
       hubBalance = await coa.provider.getBalance(hubAddress);
-      console.log('Relayer balance 4', hubBalance.toString());
     });
 
     it('should not execute coa TX from a user is not in whitelist', async () => {
