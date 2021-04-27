@@ -11,11 +11,7 @@ const getCOAContract = async env => {
 };
 
 const getSigner = async (env, account) => {
-  let creator = (await env.ethers.getSigners())[0];
-  if (account && typeof account === 'string') {
-    creator = await env.ethers.provider.getSigner(account);
-  }
-  return creator;
+  return env.deployments.getSigner(account);
 };
 
 const getDAOContract = async (env, address, signer) => {
