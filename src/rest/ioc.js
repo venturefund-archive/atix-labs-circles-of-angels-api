@@ -21,6 +21,7 @@ const transferService = require('./services/transferService');
 const milestoneService = require('./services/milestoneService');
 const daoService = require('./services/daoService');
 const transactionService = require('./services/transactionService');
+const balanceService = require('./services/balancesService');
 
 const projectStatusValidators = require('./services/helpers/projectStatusValidators/validators');
 const cronjobService = require('./services/cronjob/cronjobService');
@@ -211,7 +212,9 @@ module.exports = fastify => {
       projectService,
       transferService,
       activityService,
-      daoService
+      daoService,
+      balanceService,
+      mailService
     };
     injectDependencies(service, dependencies);
   }
@@ -220,6 +223,13 @@ module.exports = fastify => {
     const dependencies = {
       userService,
       transactionDao
+    };
+    injectDependencies(service, dependencies);
+  }
+
+  function configureBalanceService(service) {
+    const dependencies = {
+      mailService
     };
     injectDependencies(service, dependencies);
   }
@@ -266,6 +276,7 @@ module.exports = fastify => {
     configureProjectStatusValidators(projectStatusValidators);
     configureCronjobService(cronjobService);
     configureTransactionService(transactionService);
+    configureBalanceService(balanceService);
   }
 
   function init({ models }) {

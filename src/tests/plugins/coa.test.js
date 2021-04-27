@@ -1,9 +1,8 @@
 const { run, coa, ethereum } = require('@nomiclabs/buidler');
-const { Wallet } = require('ethers');
 const { sha3 } = require('../../rest/util/hash');
 
 const deployContracts = async () => {
-  await run('deploy', { reset: true });
+  await run('deploy', { resetStates: true });
   return ethereum.send('evm_snapshot', []);
 };
 const revertSnapshot = snapshot => ethereum.send('evm_revert', [snapshot]);
@@ -28,7 +27,9 @@ describe('COA plugin tests', () => {
   beforeAll(async () => {
     evmSnapshot = await deployContracts();
   });
-  beforeEach(() => revertSnapshot(evmSnapshot));
+  beforeEach(async () => {
+    await revertSnapshot(evmSnapshot);
+  });
 
   describe('Testing getUnsignedTransaction method', () => {
     it(
@@ -182,6 +183,7 @@ describe('COA plugin tests', () => {
       expect(currentPeriod).toEqual(expectedPeriod);
     });
   });
+
   describe('Testing votingPeriodExpired method', () => {
     const superDaoId = 0;
     const userWallet = {
@@ -218,6 +220,7 @@ describe('COA plugin tests', () => {
       expect(votingPeriodExpired).toBe(true);
     });
   });
+
   describe('Testing getOpenProposalsFromDao method', () => {
     beforeAll(async () => {
       evmSnapshot = await deployContracts();
@@ -283,6 +286,7 @@ describe('COA plugin tests', () => {
       );
       expect(openProposals).toEqual(1);
     });
+
     describe('Testing getDaoPeriodLengths method', () => {
       const votingPeriodCurrentLength = 35;
       const gracePeriodCurrentLength = 35;
@@ -307,6 +311,90 @@ describe('COA plugin tests', () => {
           processingPeriodCurrentLength
         );
       });
+    });
+  });
+
+  describe('Testing getProjects method', () => {
+    beforeAll(async () => {
+      evmSnapshot = await deployContracts();
+    });
+
+    const mockProjects = [
+      {
+        id: '1',
+        name: 'project1'
+      }
+    ];
+
+    it('SHOULD return an empty array if no project was created', async () => {
+      const coaProjects = await coa.getProjects();
+      expect(coaProjects).toEqual([]);
+    });
+
+    it('SHOULD return an array with project 1 if it was created', async () => {
+      const mockProject = mockProjects[0];
+      await coa.createProject(mockProject.id, mockProject.name);
+      const coaProjects = await coa.getProjects();
+      expect(coaProjects.length).toEqual(1);
+      const returnedProject = coaProjects[0];
+      expect(returnedProject.name()).resolves.toEqual(mockProject.name);
+    });
+  });
+
+  describe('Testing getProjectsLength method', () => {
+    beforeAll(async () => {
+      evmSnapshot = await deployContracts();
+    });
+
+    const mockProjects = [
+      {
+        id: '1',
+        name: 'project1'
+      }
+    ];
+
+    it('SHOULD return 0 if no project was created', async () => {
+      const coaProjectsLength = await coa.getProjectsLength();
+      expect(coaProjectsLength.toString()).toEqual('0');
+    });
+
+    it('SHOULD return 1 if only 1 project was created', async () => {
+      const mockProject = mockProjects[0];
+      await coa.createProject(mockProject.id, mockProject.name);
+      const coaProjectsLength = await coa.getProjectsLength();
+      expect(coaProjectsLength.toString()).toEqual('1');
+    });
+  });
+
+  describe('Testing getAllRecipientContracts method', () => {
+    beforeAll(async () => {
+      evmSnapshot = await deployContracts();
+    });
+
+    const mockDaos = [
+      {
+        name: 'dao1'
+      }
+    ];
+
+    it('SHOULD return only COA and superDao contracts if no dao was created', async () => {
+      const {
+        coa: returnedCoa,
+        daos,
+        claimRegistry
+      } = await coa.getAllRecipientContracts();
+      expect(returnedCoa.length).toEqual(1); // COA
+      expect(daos.length).toEqual(1); // SuperDao
+      expect(claimRegistry.length).toEqual(1);
+    });
+
+    it('SHOULD return mockDao if only one dao was created', async () => {
+      const mockDao = mockDaos[0];
+      await coa.createDAO(mockDao.name, address);
+      const { daos } = await coa.getAllRecipientContracts();
+      expect(daos.length).toEqual(2);
+      expect(daos[0].name()).resolves.toEqual('Super DAO');
+      expect(daos[1].name()).resolves.toEqual(mockDao.name);
     });
   });
 });

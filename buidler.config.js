@@ -9,31 +9,72 @@ const config = require('config');
 const COA = require('./src/plugins/coa');
 require('./src/rest/services/helpers/buidlerTasks');
 
+async function getDeploymentSigner(env) {
+  const { provider } = env.ethers;
+  const accounts = await provider.listAccounts();
+
+  return provider.getSigner(accounts[0]);
+}
+
+async function disableGSNAndDeployAll(
+  env,
+  resetStates,
+  doUpgrade,
+  resetAllContracts
+) {
+  // Make sure everything is compiled
+  await run('compile');
+
+  if (resetStates || resetAllContracts) env.coa.clearContracts();
+
+  const oldGSNIsEnabled = config.gsnConfig.isEnabled;
+  config.gsnConfig.isEnabled = false;
+  const signer = await getDeploymentSigner(env);
+  await env.deployments.deployAll(
+    signer,
+    resetStates,
+    doUpgrade,
+    resetAllContracts
+  );
+  config.gsnConfig.isEnabled = oldGSNIsEnabled;
+  if (config.gsnConfig.isEnabled) await run('check-balances');
+}
+
 task('deploy', 'Deploys COA contracts')
-  // eslint-disable-next-line no-undef
-  .addOptionalParam('reset', 'force deploy', false, types.boolean)
-  .setAction(async ({ reset }, env) => {
-    // Make sure everything is compiled
-    await run('compile');
-
-    if (reset) env.coa.clearContracts();
-
-    await env.deployments.deployAll(undefined, reset, false);
+  .addOptionalParam(
+    'resetStates',
+    'redeploy all proxies in order to reset all contract states',
+    false,
+    types.boolean
+  )
+  .addOptionalParam(
+    'resetAllContracts',
+    'force deploy of all contracts',
+    false,
+    types.boolean
+  )
+  .setAction(async ({ resetStates, resetAllContracts }, env) => {
+    await disableGSNAndDeployAll(env, resetStates, false, resetAllContracts);
   });
 
 task(
   'upgradeContracts',
   'Deploys and Upgrades (if necessary) upgradeable COA contracts'
 )
-  // eslint-disable-next-line no-undef
-  .addOptionalParam('reset', 'force deploy', false, types.boolean)
-  .setAction(async ({ reset }, env) => {
-    // Make sure everything is compiled
-    await run('compile');
-
-    if (reset) env.coa.clearContracts();
-
-    await env.deployments.deployAll(undefined, reset, true);
+  .addOptionalParam(
+    'resetStates',
+    'redeploy all proxies in order to reset all contract states',
+    false,
+    types.boolean
+  )
+  .addOptionalParam(
+    'resetAllContracts',
+    'force deploy of all contracts',
+    false,
+    types.boolean
+  )
+  .setAction(async ({ resetStates, resetAllContracts }, env) => {
+    await disableGSNAndDeployAll(env, resetStates, true, resetAllContracts);
   });
 
 const coaDeploySetup = {

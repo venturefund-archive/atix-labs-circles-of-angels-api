@@ -46,5 +46,9 @@ module.exports = {
   EvidenceStatusCannotChange: status => ({
     message: `Status ${status} of an evidence cannot be updated`,
     statusCode: 400
+  }),
+  GSNAccountNotConfigured: () => ({
+    message: 'GSN Account Not Configured!',
+    statusCode: 400
   })
 };
