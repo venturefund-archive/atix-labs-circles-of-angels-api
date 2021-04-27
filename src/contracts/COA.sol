@@ -47,7 +47,8 @@ contract COA is Initializable, Ownable, GSNRecipient {
         address _proxyAdmin,
         address _implProject,
         address _implSuperDao,
-        address _implDao
+        address _implDao,
+        address _whitelist
     ) public initializer {
         Ownable.initialize(msg.sender);
         GSNRecipient.initialize();
@@ -56,6 +57,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
         implProject = _implProject;
         implSuperDao = _implSuperDao;
         implDao = _implDao;
+        whitelist = UsersWhitelist(_whitelist);
         createSuperDAO();
     }
     /**
@@ -105,7 +107,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
      */
     function createDAO(string memory _name, address _creator) public {
         require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
-        bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
+        bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", _name, _creator, address(whitelist));
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));
@@ -117,7 +119,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
      */
     function createSuperDAO() internal {
         require(proxyAdmin != owner(), "The creator can not be the admin proxy.");
-        bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", 'Super DAO', owner(), address(this));
+        bytes memory payload = abi.encodeWithSignature("initialize(string,address,address,address)", 'Super DAO', owner(), address(this), address(whitelist));
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));

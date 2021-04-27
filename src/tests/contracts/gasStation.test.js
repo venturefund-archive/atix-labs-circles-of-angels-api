@@ -51,7 +51,6 @@ contract('Gas Station Network Tests', accounts => {
     [coa] = await deployments.getDeployedContracts('COA');
     [whitelist] = await deployments.getDeployedContracts('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
-
     await fundRecipient(gsnWeb3, {
       recipient: coa.address,
       amount: '100000000000000000',
