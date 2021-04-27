@@ -2,87 +2,79 @@ usePlugin('@nomiclabs/buidler-truffle5');
 usePlugin('@nomiclabs/buidler-ethers');
 usePlugin('@openzeppelin/buidler-upgrades');
 usePlugin('solidity-coverage');
-const config = require('config');
+
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
-require('./src/rest/services/helpers/buidlerTasks');
+
+const config = require('config');
 const COA = require('./src/plugins/coa');
+require('./src/rest/services/helpers/buidlerTasks');
 
-const testnetUrl = config.buidler.testnet_url;
-const testnetAccount = config.buidler.testnet_account;
+async function getDeploymentSigner(env) {
+  const { provider } = env.ethers;
+  const accounts = await provider.listAccounts();
 
-const mainnetUrl = config.buidler.mainnet_url;
-const mainnetAccount = config.buidler.mainnet_account;
+  return provider.getSigner(accounts[0]);
+}
 
-// const Deployments = require("./scripts/deployments");
+async function disableGSNAndDeployAll(
+  env,
+  resetStates,
+  doUpgrade,
+  resetAllContracts
+) {
+  // Make sure everything is compiled
+  await run('compile');
+
+  if (resetStates || resetAllContracts) env.coa.clearContracts();
+
+  const oldGSNIsEnabled = config.gsnConfig.isEnabled;
+  config.gsnConfig.isEnabled = false;
+  const signer = await getDeploymentSigner(env);
+  await env.deployments.deployAll(
+    signer,
+    resetStates,
+    doUpgrade,
+    resetAllContracts
+  );
+  config.gsnConfig.isEnabled = oldGSNIsEnabled;
+  if (config.gsnConfig.isEnabled) await run('check-balances');
+}
 
 task('deploy', 'Deploys COA contracts')
-  // eslint-disable-next-line no-undef
-  .addOptionalParam('reset', 'force deploy', false, types.boolean)
-  .setAction(async ({ reset }, env) => {
-    // Make sure everything is compiled
-    // await run('compile');
+  .addOptionalParam(
+    'resetStates',
+    'redeploy all proxies in order to reset all contract states',
+    false,
+    types.boolean
+  )
+  .addOptionalParam(
+    'resetAllContracts',
+    'force deploy of all contracts',
+    false,
+    types.boolean
+  )
+  .setAction(async ({ resetStates, resetAllContracts }, env) => {
+    await disableGSNAndDeployAll(env, resetStates, false, resetAllContracts);
+  });
 
-    // TODO: check if reset condition is needed
-    if (reset) env.coa.clearContracts();
-
-    let [implProject] = await env.deployments.getDeployedContracts('Project');
-    if (implProject === undefined || reset === true) {
-      [implProject] = await env.deployments.deploy('Project', []);
-      await env.deployments.saveDeployedContract('Project', implProject);
-      // console.log('implProject deployed. Address:', implProject.address);
-    }
-
-    let [implSuperDao] = await env.deployments.getDeployedContracts('SuperDAO');
-    if (implSuperDao === undefined || reset === true) {
-      [implSuperDao] = await env.deployments.deploy('SuperDAO', []);
-      await env.deployments.saveDeployedContract('SuperDAO', implSuperDao);
-      // console.log('implSuperDao deployed. Address:', implSuperDao.address);
-    }
-
-    let [implDao] = await env.deployments.getDeployedContracts('DAO');
-    if (implDao === undefined || reset === true) {
-      [implDao] = await env.deployments.deploy('DAO', []);
-      await env.deployments.saveDeployedContract('DAO', implDao);
-      // console.log('implDao deployed. Address:', implDao.address);
-    }
-
-    let [proxyAdmin] = await env.deployments.getDeployedContracts('ProxyAdmin');
-    if (proxyAdmin === undefined || reset === true) {
-      [proxyAdmin] = await env.deployments.deploy('ProxyAdmin', []);
-      await env.deployments.saveDeployedContract('ProxyAdmin', proxyAdmin);
-      // console.log('ProxyAdmin deployed. Address:', proxyAdmin.address);
-    }
-
-    let [registry] = await env.deployments.getDeployedContracts(
-      'ClaimsRegistry'
-    );
-    if (registry === undefined || reset === true) {
-      [registry] = await env.deployments.deployProxy('ClaimsRegistry', []);
-      await env.deployments.saveDeployedContract('ClaimsRegistry', registry);
-      // console.log('ClaimsRegistry deployed. Address:', registry.address);
-    }
-
-    let [coa] = await env.deployments.getDeployedContracts('COA');
-    if (coa === undefined || reset === true) {
-      [coa] = await env.deployments.deployProxy(
-        'COA',
-        [
-          registry.address,
-          proxyAdmin.address,
-          implProject.address,
-          implSuperDao.address,
-          implDao.address
-        ],
-        undefined,
-        { initializer: 'coaInitialize' }
-      );
-      await env.deployments.saveDeployedContract('COA', coa);
-      // console.log('COA deployed. Address:', coa.address);
-    }
-
-    // console.log('ProxyAdmin attached to', proxyAdmin.address);
-    // console.log('Registry attached to', registry.address);
-    // console.log('COA attached to', coa.address);
+task(
+  'upgradeContracts',
+  'Deploys and Upgrades (if necessary) upgradeable COA contracts'
+)
+  .addOptionalParam(
+    'resetStates',
+    'redeploy all proxies in order to reset all contract states',
+    false,
+    types.boolean
+  )
+  .addOptionalParam(
+    'resetAllContracts',
+    'force deploy of all contracts',
+    false,
+    types.boolean
+  )
+  .setAction(async ({ resetStates, resetAllContracts }, env) => {
+    await disableGSNAndDeployAll(env, resetStates, true, resetAllContracts);
   });
 
 const coaDeploySetup = {
@@ -96,6 +88,9 @@ const coaDeploySetup = {
         context.ClaimsRegistry.address,
         context.ProxyAdmin.address
       ]
+    },
+    {
+      name: 'UsersWhitelist'
     }
   ]
 };

@@ -1,26 +1,29 @@
-const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
-const { getSigner } = require('../../plugins/deployments');
-
+const { describe, it, beforeEach } = global;
+const {
+  web3,
+  run,
+  deployments,
+  ethers,
+  coa: coaPlugin
+} = require('@nomiclabs/buidler');
+const { assert } = require('chai');
+const { testConfig } = require('config');
 const { throwsAsync } = require('./testHelpers');
 
 let coa;
 let registry;
 
 async function getProjectAt(address, consultant) {
-  const project = await deployments.getContractInstance(
-    'Project',
-    address,
-    consultant
-  );
-  return project;
+  return deployments.getContractInstance('Project', address, consultant);
 }
 
 contract('COA.sol', ([creator, founder, other]) => {
-  beforeEach('deploy contracts', async function() {
-    this.timeout(1 * 60 * 1000);
-    await run('deploy', { reset: true });
-    [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
-    [coa] = await deployments.getDeployedContracts('COA');
+  // WARNING: Don't use arrow functions here, this.timeout doesn't work
+  beforeEach('deploy contracts', async function be() {
+    this.timeout(testConfig.contractTestTimeoutMilliseconds);
+    await run('deploy', { resetStates: true });
+    registry = await deployments.getLastDeployedContract('ClaimsRegistry');
+    coa = await deployments.getLastDeployedContract('COA');
   });
 
   it('Deployment works', async () => {
@@ -114,12 +117,8 @@ contract('COA.sol', ([creator, founder, other]) => {
       await coa.createProject(project.id, project.name);
       const factory = await ethers.getContractFactory('ProjectV2');
       const mockContract = await factory.deploy({});
-      const instance = await deployments.getContractInstance(
-        'AdminUpgradeabilityProxy',
-        await coa.projects(0),
-        creator
-      );
-      await instance.upgradeTo(mockContract.address);
+      const proxyAdmin = await coaPlugin.getProxyAdmin();
+      await proxyAdmin.upgrade(await coa.projects(0), mockContract.address);
       const newVersion = await deployments.getContractInstance(
         'ProjectV2',
         await coa.projects(0),

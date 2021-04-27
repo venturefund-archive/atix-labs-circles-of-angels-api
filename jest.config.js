@@ -1,11 +1,15 @@
 module.exports = {
   rootDir: 'src',
+  globalSetup: '../scripts/jestGlobalSetup.js',
+  globalTeardown: '../scripts/jestGlobalTearDown.js',
   testMatch: ['<rootDir>/tests/**/*.js', '<rootDir>/plugins/tests/**/*.js'],
   testPathIgnorePatterns: [
     '<rootDir>/tests/contracts/coa.test.js',
     '<rootDir>/tests/contracts/dao.test.js',
     '<rootDir>/tests/contracts/claimsRegistry.test.js',
     '<rootDir>/tests/contracts/testHelpers.js',
+    '<rootDir>/tests/contracts/gasStation.test.js',
+    '<rootDir>/tests/contracts/usersWhitelist.test.js',
     '<rootDir>/tests/testHelper.js',
     '<rootDir>/tests/mockModels.js',
     '<rootDir>/tests/mockFiles'

@@ -4,6 +4,8 @@ const {
   readArtifactSync
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
+const { GSNProvider } = require("@openzeppelin/gsn-provider");
+const { getImplementationAddress } = require('@openzeppelin/upgrades-core');
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
 const {
   ethereum,
@@ -21,7 +23,8 @@ const {
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
-const { contractAddresses } = require('config');
+const { contractAddresses, gsnConfig } = require('config');
+const logger = require('../rest/logger')
 
 // TODO : this can be placed into the buidler's config.
 const stateFilename = 'state.json';
@@ -136,15 +139,23 @@ async function getDeployedAddresses(name, chainId) {
 }
 
 async function getLastDeployedContract(name, chainId) {
-  return (await getDeployedContracts(name, chainId))[0];
+  return (await getDeployedContractsGenerator(name, chainId).next()).value;
 }
 
 async function getDeployedContracts(name, chainId) {
+  const contractGenerator = getDeployedContractsGenerator(name, chainId);
+  const contracts = [];
+  for await (let contract of contractGenerator) {
+    contracts.push(contract)
+  }
+  return contracts;
+}
+
+async function* getDeployedContractsGenerator(name, chainId) {
   const factory = await getContractFactory(name);
   const addresses = await getDeployedAddresses(name, chainId);
   const artifact = readArtifactSync(config.paths.artifacts, name);
 
-  // TODO : should use deployedBytecode instead?
   if (artifact.bytecode !== factory.bytecode) {
     console.warn(
       'Deployed contract',
@@ -153,47 +164,22 @@ async function getDeployedContracts(name, chainId) {
     );
   }
 
-  const contracts = [];
   for (const addr of addresses) {
     const code = await ethers.provider.getCode(addr);
     const contract = factory.attach(addr);
-    if (code === artifact.deployedBytecode) {
-      contracts.push(contract);
-    } else if (code === AdminUpgradeabilityProxy.deployedBytecode) {
-      const implContract = await getImplContract(contract, name);
-      const implCode = await ethers.provider.getCode(implContract.address);
-      if (implCode === artifact.deployedBytecode) {
-        contracts.push(contract);
-      }
+    if (code === artifact.deployedBytecode || code === AdminUpgradeabilityProxy.deployedBytecode) {
+      yield contract;
     }
   }
-
-  // return addresses.map(addr => factory.attach(addr));
-  return contracts;
 }
 
 async function getImplContract(contract, contractName) {
-  const addr = contract.address;
-  const code = await ethers.provider.getCode(addr);
-
-  // This slot was recollected from
-  // @openzeppelin/upgrades-core/artifacts/BaseUpgradeabilityProxy.json
-  const IMPLEMENTATION_SLOT =
-      '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
-
-  if (code === AdminUpgradeabilityProxy.deployedBytecode) {
-    const storageAddr = await ethers.provider.getStorageAt(
-        addr,
-        IMPLEMENTATION_SLOT
-    );
-    const implAddr = `0x${storageAddr.substring(
-        storageAddr.length - 40,
-        storageAddr.length
-    )}`;
+  if (await isProxy(contract)) {
+    const implAddr = await getImplementationAddress(ethers.provider, contract.address);
     const contractFactory = await ethers.getContractFactory(contractName);
     return contractFactory.attach(implAddr);
   }
-  return undefined;
+  throw new Error("The contract is not a Proxy")
 }
 
 async function isProxy(contract) {
@@ -268,6 +254,141 @@ async function deployProxy(contractName, params, signer, opts) {
   return [contract, receipt];
 }
 
+async function getOrDeployContract(contractName, params, signer = undefined, reset = false) {
+  logger.info(
+      `[deployments] :: Entering getOrDeployContract. Contract ${contractName} with args [${params}].`
+  );
+  let contract = await getLastDeployedContract(contractName);
+  if (contract === undefined || reset === true) {
+    logger.info(`[deployments] :: ${contractName} not found, deploying...`);
+    [contract] = await deploy(contractName, params, signer);
+    await saveDeployedContract(contractName, contract, signer);
+    logger.info(`[deployments] :: ${contractName} deployed.`);
+  }
+  return contract;
+}
+
+function buildGetOrDeployUpgradeableContract(
+  readArtifactSyncFun = readArtifactSync,
+  getContractFactoryFun = getContractFactory
+) {
+  return async function getOrDeployUpgradeableContract(
+    contractName,
+    params,
+    signer = undefined,
+    doUpgrade = false,
+    options = undefined,
+    reset = false
+  ) {
+    logger.info(
+      `[deployments] :: Entering getOrDeployUpgradeableContract. Contract ${contractName} with args [${params}].`
+    );
+    let contract = await getLastDeployedContract(contractName);
+    if (contract === undefined || reset === true) {
+      logger.info(`[deployments] :: ${contractName} not found, deploying...`);
+      [contract] = await deployProxy(
+        contractName,
+        params,
+        signer,
+        options
+      );
+      await saveDeployedContract(contractName, contract);
+      logger.info(`[deployments] :: ${contractName} deployed.`);
+    } else {
+      logger.info(
+        `[deployments] :: ${contractName} found, checking if an upgrade is needed`
+      );
+      const implContract = await getImplContract(
+        contract,
+        contractName
+      );
+      const artifact = readArtifactSyncFun(config.paths.artifacts, contractName);
+
+      const implCode = await ethers.provider.getCode(implContract.address);
+      if (implCode !== artifact.deployedBytecode) {
+        logger.info(
+          `[deployments] :: ${contractName} need an upgrade, upgrading to new implementation`
+        );
+
+        if (!doUpgrade)
+          throw new Error(`The contract ${contractName} needs an upgrade, upgrade it with the buidler command ´upgradeContracts´`)
+
+        const factory = await getContractFactoryFun(contractName, signer);
+        contract = await upgrades.upgradeProxy(contract.address, factory, options);
+        logger.info(`[deployments] :: ${contractName} upgraded`);
+      }
+    }
+    return contract;
+  }
+}
+
+async function deployAll(
+  signer = undefined,
+  resetStates = false,
+  doUpgrade = false,
+  resetAllContracts = false
+) {
+
+  const implProject = await getOrDeployContract(
+    'Project',
+    [],
+    signer,
+    resetAllContracts
+  );
+
+  const implSuperDao = await getOrDeployContract(
+    'SuperDAO',
+    [],
+    signer,
+    resetAllContracts
+  );
+
+  const implDao = await getOrDeployContract('DAO', [], signer, resetAllContracts);
+
+  const resetProxies = resetStates || resetAllContracts;
+
+  const proxyAdmin = await getOrDeployContract(
+    'ProxyAdmin',
+    [],
+    signer,
+    resetProxies
+  );
+
+  const whiteList = await getOrDeployUpgradeableContract(
+    'UsersWhitelist',
+    [],
+    signer,
+    doUpgrade,
+    { initializer: 'whitelistInitialize' },
+    resetProxies
+  );
+
+  const registry = await getOrDeployUpgradeableContract(
+    'ClaimsRegistry',
+    [whiteList.address],
+    signer,
+    doUpgrade,
+    { initializer: 'claimsInitialize' },
+    resetProxies
+  );
+
+  await getOrDeployUpgradeableContract(
+    'COA',
+    [
+      registry.address,
+      proxyAdmin.address,
+      implProject.address,
+      implSuperDao.address,
+      implDao.address,
+      whiteList.address
+    ],
+    signer,
+    doUpgrade,
+    { initializer: 'coaInitialize' },
+    resetProxies
+  );
+}
+
 async function getContractInstance(name, address, signer) {
   const factory = await getContractFactory(name, signer);
 
@@ -291,16 +412,40 @@ async function getChainId(chainId) {
   return chainId;
 }
 
+async function getAccounts() {
+  return ethers.provider.listAccounts()
+}
+
 async function getSigner(account) {
-  if (account === undefined) {
-    return (await ethers.getSigners())[0];
-  } else if (typeof account === "number") {
-    return (await ethers.getSigners())[account];
-  } else if (typeof account === 'string') {
-    return ethers.provider.getSigner(account);
-  }
+  const provider = await getProvider();
+  const accounts = await getAccounts();
   // TODO: Is it okay return account?
-  return account;
+  let signer = account;
+  if (account === undefined) {
+    signer = provider.getSigner(accounts[0]);
+  } else if (typeof account === "number") {
+    signer = provider.getSigner(accounts[account]);
+  } else if (typeof account === 'string') {
+    signer = provider.getSigner(account);
+  }
+  return signer;
+}
+
+async function getProvider() {
+  return gsnConfig.isEnabled ? await getGSNProvider() : ethers.provider;
+}
+
+
+async function getGSNProvider() {
+  const providerUrl = ethers.provider.connection.url;
+  const ownerAddress = (await getAccounts())[0];
+
+  const gsnProvider = new GSNProvider(providerUrl, {
+    ownerAddress,
+    useGSN: true
+  });
+
+  return new ethers.providers.Web3Provider(gsnProvider);
 }
 
 function isDeployed(state, chainId, name) {
@@ -311,10 +456,14 @@ function isDeployed(state, chainId, name) {
   );
 }
 
+const getOrDeployUpgradeableContract = buildGetOrDeployUpgradeableContract()
+
 module.exports = {
   deploy,
   deployProxy,
   getSigner,
+  getProvider,
+  getAccounts,
   getDeployedContracts,
   saveDeployedContract,
   getLastDeployedContract,
@@ -322,5 +471,9 @@ module.exports = {
   getContractFactory,
   getImplContract,
   isProxy,
-  getDeploymentSetup
+  getDeploymentSetup,
+  getOrDeployContract,
+  buildGetOrDeployUpgradeableContract,
+  getOrDeployUpgradeableContract,
+  deployAll
 };

@@ -1,16 +1,25 @@
 const { coa } = require('@nomiclabs/buidler');
+const { balancesConfig, gsnConfig } = require('config');
 const logger = require('../../../logger');
 const daoHandlers = require('./daoHandlers');
 const { registerHandlers } = require('../../../util/listener');
 // TODO: see if we can inject these services
 const projectService = require('../../../services/projectService');
-const milestoneService = require('../../../services/milestoneService');
 const { projectStatuses } = require('../../../util/constants');
+const { checkBalance } = require('../../../services/balancesService');
 
 module.exports = {
   DAOCreated: async address => {
     logger.info('[COA] :: Incoming event DAOCreated', address);
     const dao = await coa.getDaoContract(address);
+    if (gsnConfig.isEnabled) {
+      await checkBalance(
+        address,
+        coa.signer,
+        this.env.web3,
+        balancesConfig.daos
+      );
+    }
     registerHandlers(dao, daoHandlers);
   },
   ProjectCreated: async (id, address) => {
