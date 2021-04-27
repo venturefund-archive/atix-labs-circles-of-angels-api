@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+const { describe, it, before, beforeEach, after } = global;
 const { run, deployments, ethers, web3 } = require('@nomiclabs/buidler');
 const {
   deployRelayHub,
@@ -17,15 +18,10 @@ const PROVIDER_URL = ethers.provider.connection.url;
 const singletonRelayHub = '0xD216153c06E857cD7f72665E0aF1d7D82172F494';
 
 async function getProjectAt(address, consultant) {
-  const project = await deployments.getContractInstance(
-    'Project',
-    address,
-    consultant
-  );
-  return project;
+  return deployments.getContractInstance('Project', address, consultant);
 }
 
-contract('Gsn', accounts => {
+contract('Gas Station Network Tests', accounts => {
   const [
     creator,
     userRelayer,
@@ -37,14 +33,15 @@ contract('Gsn', accounts => {
   let whitelist;
   let subprocess;
   let hubAddress;
-  before('Gsn provider run', async function before() {
+  before('Gsn provider run', async function b() {
     hubAddress = await deployRelayHub(web3, {
       from: userRelayer
     });
     subprocess = await runRelayer({ quiet: true, relayHubAddress: hubAddress });
   });
 
-  beforeEach('deploy contracts', async function beforeEach() {
+  // WARNING: Don't use arrow functions here, this.timeout doesn't work
+  beforeEach('deploy contracts', async function be() {
     this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { resetStates: true });
     coa = await deployments.getLastDeployedContract('COA');
@@ -58,7 +55,7 @@ contract('Gsn', accounts => {
     });
   });
 
-  after('finish process', async function after() {
+  after('finish process', async function a() {
     if (subprocess) subprocess.kill();
   });
 

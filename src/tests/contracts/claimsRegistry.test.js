@@ -1,4 +1,11 @@
-const { run, deployments, web3, upgrades } = require('@nomiclabs/buidler');
+const { it, beforeEach } = global;
+const {
+  run,
+  deployments,
+  web3,
+  upgrades,
+  ethers
+} = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
 const { assert } = require('chai');
 const { testConfig } = require('config');
@@ -33,12 +40,13 @@ const addClaim = async (
   };
 };
 
-contract('ClaimsRegistry.sol', ([creator, otherUser]) => {
+contract('ClaimsRegistry.sol', ([creator]) => {
   let coa;
   let registry;
   let project;
 
-  beforeEach('deploy contracts', async function beforeEach() {
+  // WARNING: Don't use arrow functions here, this.timeout doesn't work
+  beforeEach('deploy contracts', async function be() {
     this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { resetStates: true });
     registry = await deployments.getLastDeployedContract('ClaimsRegistry');

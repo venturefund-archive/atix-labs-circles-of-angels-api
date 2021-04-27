@@ -354,7 +354,7 @@ async function deployAll(
     resetProxies
   );
 
-  await getOrDeployUpgradeableContract(
+  const whiteList = await getOrDeployUpgradeableContract(
     'UsersWhitelist',
     [],
     signer,
@@ -365,10 +365,10 @@ async function deployAll(
 
   const registry = await getOrDeployUpgradeableContract(
     'ClaimsRegistry',
-    [],
+    [whiteList.address],
     signer,
     doUpgrade,
-    undefined,
+    { initializer: 'claimsInitialize' },
     resetProxies
   );
 
@@ -379,7 +379,8 @@ async function deployAll(
       proxyAdmin.address,
       implProject.address,
       implSuperDao.address,
-      implDao.address
+      implDao.address,
+      whiteList.address
     ],
     signer,
     doUpgrade,

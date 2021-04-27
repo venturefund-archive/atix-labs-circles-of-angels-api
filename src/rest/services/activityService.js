@@ -482,29 +482,34 @@ module.exports = {
       '[ActivityService] :: Sending signed tx to the blockchain for task',
       taskId
     );
-    const tx = await coa.sendNewTransaction(signedTransaction);
-    logger.info('[ActivityService] :: Add claim transaction sent', tx);
+    try {
+      const tx = await coa.sendNewTransaction(signedTransaction);
+      logger.info('[ActivityService] :: Add claim transaction sent', tx);
 
-    // TODO: we shouldn't save the file once we have the ipfs storage working
-    logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
-    const filePath = await files.validateAndSaveFile(claimType, file);
-    logger.info(`[ActivityService] :: File saved to: ${filePath}`);
-    const evidence = {
-      description,
-      proof: filePath,
-      task: taskId,
-      approved,
-      txHash: tx.hash,
-      status: txEvidenceStatus.SENT
-    };
-    logger.info('[ActivityService] :: Saving evidence in database', evidence);
-    const taskEvidence = await this.taskEvidenceDao.addTaskEvidence(evidence);
-    await this.transactionService.save({
-      sender: userAddress,
-      txHash: tx.hash,
-      nonce: tx.nonce
-    });
-    return { claimId: taskEvidence.id };
+      // TODO: we shouldn't save the file once we have the ipfs storage working
+      logger.info(`[ActivityService] :: Saving file of type '${claimType}'`);
+      const filePath = await files.validateAndSaveFile(claimType, file);
+      logger.info(`[ActivityService] :: File saved to: ${filePath}`);
+      const evidence = {
+        description,
+        proof: filePath,
+        task: taskId,
+        approved,
+        txHash: tx.hash,
+        status: txEvidenceStatus.SENT
+      };
+      logger.info('[ActivityService] :: Saving evidence in database', evidence);
+      const taskEvidence = await this.taskEvidenceDao.addTaskEvidence(evidence);
+      await this.transactionService.save({
+        sender: userAddress,
+        txHash: tx.hash,
+        nonce: tx.nonce
+      });
+      return { claimId: taskEvidence.id };
+    } catch (error) {
+      logger.info(`[ActivityService] :: Blockchain error :: ${error}`);
+      throw new COAError(error);
+    }
   },
 
   /**
@@ -542,26 +547,32 @@ module.exports = {
     const proof = sha3(filePath); // TODO: this should be an ipfs hash
 
     logger.info('[ActivityService] :: Getting add claim transaction');
-    const unsignedTx = await coa.getAddClaimTransaction(
-      address,
-      claim,
-      proof,
-      approved,
-      milestoneId
-    );
-    const nonce = await this.transactionService.getNextNonce(
-      userWallet.address
-    );
-    const txWithNonce = { ...unsignedTx, nonce };
 
-    logger.info(
-      '[ActivityService] :: Sending unsigned transaction to client',
-      txWithNonce
-    );
-    return {
-      tx: txWithNonce,
-      encryptedWallet: userWallet.encryptedWallet
-    };
+    try {
+      const unsignedTx = await coa.getAddClaimTransaction(
+        address,
+        claim,
+        proof,
+        approved,
+        milestoneId
+      );
+      const nonce = await this.transactionService.getNextNonce(
+        userWallet.address
+      );
+      const txWithNonce = { ...unsignedTx, nonce };
+
+      logger.info(
+        '[ActivityService] :: Sending unsigned transaction to client',
+        txWithNonce
+      );
+      return {
+        tx: txWithNonce,
+        encryptedWallet: userWallet.encryptedWallet
+      };
+    } catch (error) {
+      logger.info(`[ActivityService] :: Blockchain error :: ${error}`);
+      throw new COAError(error);
+    }
   },
 
   /**

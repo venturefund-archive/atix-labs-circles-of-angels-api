@@ -1,6 +1,8 @@
+const { describe, it, before, beforeEach, after } = global;
 const { run, deployments, ethers } = require('@nomiclabs/buidler');
 const { assert } = require('chai');
 const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
+const Web3 = require('web3');
 const {
   deployRelayHub,
   runRelayer,
@@ -24,7 +26,7 @@ contract('UsersWhitelist.sol', accounts => {
   let subprocess;
   let gsnWeb3;
   let hubAddress;
-  before('Gsn provider run', async function before() {
+  before('Gsn provider run', async function b() {
     gsnWeb3 = new Web3(PROVIDER_URL);
     hubAddress = await deployRelayHub(gsnWeb3, {
       from: userRelayer
@@ -32,7 +34,8 @@ contract('UsersWhitelist.sol', accounts => {
     subprocess = await runRelayer({ quiet: true, relayHubAddress: hubAddress });
   });
 
-  beforeEach('deploy contracts', async function beforeEach() {
+  // WARNING: Don't use arrow functions here, this.timeout doesn't work
+  beforeEach('deploy contracts', async function be() {
     this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { resetStates: true });
     coa = await deployments.getLastDeployedContract('COA');
@@ -44,17 +47,9 @@ contract('UsersWhitelist.sol', accounts => {
       amount: '100000000000000000',
       relayHubAddress: hubAddress
     });
-
-    const gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
-      ownerAddress,
-      relayerAddress,
-      useGSN: true
-    });
-
-    const provider = new ethers.providers.Web3Provider(gsnDevProvider);
   });
 
-  after('finish process', async function after() {
+  after('finish process', async function a() {
     if (subprocess) subprocess.kill();
   });
 

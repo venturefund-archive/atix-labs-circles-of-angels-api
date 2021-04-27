@@ -1,3 +1,4 @@
+const { describe, it, beforeEach } = global;
 const {
   web3,
   run,
@@ -13,16 +14,12 @@ let coa;
 let registry;
 
 async function getProjectAt(address, consultant) {
-  const project = await deployments.getContractInstance(
-    'Project',
-    address,
-    consultant
-  );
-  return project;
+  return deployments.getContractInstance('Project', address, consultant);
 }
 
 contract('COA.sol', ([creator, founder, other]) => {
-  beforeEach('deploy contracts', async function beforeEach() {
+  // WARNING: Don't use arrow functions here, this.timeout doesn't work
+  beforeEach('deploy contracts', async function be() {
     this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { resetStates: true });
     registry = await deployments.getLastDeployedContract('ClaimsRegistry');
