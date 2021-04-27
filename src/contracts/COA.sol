@@ -42,6 +42,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
     address internal implSuperDao;
     address internal implDao;
     UsersWhitelist public whitelist;
+
     function coaInitialize(
         address _registryAddress,
         address _proxyAdmin,
@@ -58,13 +59,14 @@ contract COA is Initializable, Ownable, GSNRecipient {
         implDao = _implDao;
         createSuperDAO();
     }
+
     /**
      * @notice Adds a new member in COA.
      * @param _profile - string of the member's profile.
      *
      * @dev the profile can be bytes32 but IPFS hashes are 34 bytes long due to multihash. We could strip the first two bytes but for now it seems unnecessary.
      */
-    function createMember(string memory _profile) public {
+    function createMember(string calldata _profile) external {
         // role: Role.Activist,
         Member memory member = Member({profile: _profile});
         members[msg.sender] = member;
@@ -75,8 +77,8 @@ contract COA is Initializable, Ownable, GSNRecipient {
      * @param _profile - string of the member's profile.
      * @param _existingAddress - address of the old member
      */
-    function migrateMember(string memory _profile, address _existingAddress)
-        public
+    function migrateMember(string calldata _profile, address _existingAddress)
+        external
         onlyOwner
     {
         // role: Role.Activist,
@@ -87,28 +89,35 @@ contract COA is Initializable, Ownable, GSNRecipient {
     /**
      * @dev Create a Project
      * @param _name - string of the Project's name.
+     * @return address - the address of the new project
      */
-    function createProject(uint256 _id, string memory _name)
-        public
-        returns (uint256)
+    function createProject(uint256 _id, string calldata _name)
+        external
+        returns (address)
     {
         bytes memory payload = abi.encodeWithSignature("initialize(string)", _name);
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implProject, owner(), payload);
+        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implProject, proxyAdmin, payload);
         projects.push(proxy);
         emit ProjectCreated(_id, address(proxy));
+        return address(proxy);
     }
 
     /**
      * @dev Create a DAO
      * @param _name - string of the DAO's name.
      * @param _creator - address of the first member of the DAO (i.e. its creator)
+     * @return address - the address of the new dao
      */
-    function createDAO(string memory _name, address _creator) public {
+    function createDAO(string calldata _name, address _creator)
+        external
+        returns (address)
+    {
         require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
         bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));
+        return address(proxy);
     }
 
     /**
@@ -130,8 +139,8 @@ contract COA is Initializable, Ownable, GSNRecipient {
      * @param _project - address of the project the agreement belongs to
      * @param _agreementHash - string of the agreement's hash.
      */
-    function addAgreement(address _project, string memory _agreementHash)
-        public
+    function addAgreement(address _project, string calldata _agreementHash)
+        external
         onlyOwner()
     {
         agreements[_project] = _agreementHash;
@@ -145,7 +154,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
         return projects.length;
     }
 
-    function setWhitelist(address _whitelist) public onlyOwner() {
+    function setWhitelist(address _whitelist) external onlyOwner() {
         whitelist = UsersWhitelist(_whitelist);
     }
 
@@ -167,13 +176,11 @@ contract COA is Initializable, Ownable, GSNRecipient {
         }
     }
 
-    function _preRelayedCall(bytes memory context) internal returns (bytes32) {
-        
+    function _preRelayedCall(bytes memory) internal returns (bytes32) {
+        return 0;
     }
 
-    function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
-        
-    }
-    
+    function _postRelayedCall(bytes memory, bool, uint256, bytes32) internal {}
+
     uint256[49] private _gap;
 }

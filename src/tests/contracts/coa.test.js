@@ -1,7 +1,12 @@
-const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
+const {
+  web3,
+  run,
+  deployments,
+  ethers,
+  coa: coaPlugin
+} = require('@nomiclabs/buidler');
 const { assert } = require('chai');
-const { getSigner } = require('../../plugins/deployments');
-
+const { testConfig } = require('config');
 const { throwsAsync } = require('./testHelpers');
 
 let coa;
@@ -18,10 +23,10 @@ async function getProjectAt(address, consultant) {
 
 contract('COA.sol', ([creator, founder, other]) => {
   beforeEach('deploy contracts', async function beforeEach() {
-    this.timeout(1 * 60 * 1000);
-    await run('deploy', { reset: true });
-    [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
-    [coa] = await deployments.getDeployedContracts('COA');
+    this.timeout(testConfig.contractTestTimeoutMilliseconds);
+    await run('deploy', { resetStates: true });
+    registry = await deployments.getLastDeployedContract('ClaimsRegistry');
+    coa = await deployments.getLastDeployedContract('COA');
   });
 
   it('Deployment works', async () => {
@@ -115,12 +120,8 @@ contract('COA.sol', ([creator, founder, other]) => {
       await coa.createProject(project.id, project.name);
       const factory = await ethers.getContractFactory('ProjectV2');
       const mockContract = await factory.deploy({});
-      const instance = await deployments.getContractInstance(
-        'AdminUpgradeabilityProxy',
-        await coa.projects(0),
-        creator
-      );
-      await instance.upgradeTo(mockContract.address);
+      const proxyAdmin = await coaPlugin.getProxyAdmin();
+      await proxyAdmin.upgrade(await coa.projects(0), mockContract.address);
       const newVersion = await deployments.getContractInstance(
         'ProjectV2',
         await coa.projects(0),
