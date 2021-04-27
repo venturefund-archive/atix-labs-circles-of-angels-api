@@ -237,6 +237,11 @@ module.exports = {
       const profile = `${firstName} ${lastName}`;
       // using migrateMember instead of createMember for now
       await coa.migrateMember(profile, address);
+
+      // whitelist user
+      const whitelistContract = await coa.getWhitelist();
+      await whitelistContract.addUser(savedUserWallet.address);
+
       logger.info(`[User Service] :: New user created with id ${savedUser.id}`);
     } catch (error) {
       await this.userWalletDao.removeUserWalletByUser(savedUser.id);

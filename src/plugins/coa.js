@@ -1,5 +1,4 @@
-const { readArtifact } = require('@nomiclabs/buidler/plugins');
-const { ContractFactory, utils } = require('ethers');
+const { utils } = require('ethers');
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
@@ -370,11 +369,9 @@ module.exports = class COA {
 
   async getRegistry() {
     if (this.contracts.registry === undefined) {
-      const contract = await this.env.deployments.getLastDeployedContract(
+      this.contracts.registry = await this.env.deployments.getLastDeployedContract(
         'ClaimsRegistry'
       );
-
-      this.contracts.registry = contract;
     }
 
     return this.contracts.registry;
@@ -382,11 +379,9 @@ module.exports = class COA {
 
   async getWhitelist() {
     if (this.contracts.whitelist === undefined) {
-      const contract = await this.env.deployments.getLastDeployedContract(
+      this.contracts.whitelist = await this.env.deployments.getLastDeployedContract(
         'UsersWhitelist'
       );
-
-      this.contracts.whitelist = contract;
     }
 
     return this.contracts.whitelist;

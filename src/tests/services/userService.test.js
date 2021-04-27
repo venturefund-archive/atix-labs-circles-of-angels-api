@@ -282,9 +282,14 @@ describe('Testing userService', () => {
       encryptedWallet: '{ "address": 65dqw6sa9787a }',
       mnemonic: 'fast envelope asd asd asd asd asd'
     };
+
     beforeAll(() => {
       bcrypt.hash = jest.fn();
       coa.migrateMember = jest.fn();
+      const addUser = jest.fn();
+      coa.getWhitelist = jest.fn().mockReturnValue({
+        addUser
+      });
       const sendTransaction = jest.fn();
       ethers.signers = jest.fn(() => [
         {
@@ -347,6 +352,10 @@ describe('Testing userService', () => {
         ...newUser,
         id: 1
       });
+    });
+    it('should whitelist the user', async () => {
+      await userService.createUser(newUser);
+      expect(coa.getWhitelist().addUser).toBeCalledWith(newUser.address);
     });
   });
 

@@ -128,5 +128,8 @@ module.exports = {
     protocol: process.env.RS_PROTOCOL,
     host: process.env.RS_HOST,
     port: process.env.RS_PORT
+  },
+  gsnConfig: {
+    isEnabled: false
   }
 };
