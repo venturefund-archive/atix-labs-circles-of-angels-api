@@ -251,7 +251,7 @@ async function deploy(contractName, params, signer) {
 
 async function deployProxy(contractName, params, signer, opts) {
   const factory = await ethers.getContractFactory(contractName, await getSigner(signer));
-  
+
   const contract = await upgrades.deployProxy(factory, params, { ...opts, unsafeAllowCustomTypes: true });
   await contract.deployed();
 
@@ -434,10 +434,8 @@ async function getProvider() {
 
 async function getGSNProvider() {
   const providerUrl = ethers.provider.connection.url;
-  const accounts = await ethers.provider.listAccounts();
 
   const gsnProvider = new GSNProvider(providerUrl, {
-    ...accounts,
     useGSN: true
   });
 
