@@ -12,34 +12,33 @@ module.exports = {
     maxFileSize: 5000000
   },
   buidler: {
-    defaultNetwork: 'develop'
+    defaultNetwork: 'buidlerevm'
   },
   frontendUrl: '//test',
   crypto: {
     key: '3c50cffcdce9a802a26f5293aa4dc689' // added to run tests
   },
-  crons: {
-    checkContractBalancesJob: {
-      balancesConfig: {
-        gsnAccountThreshold: '50',
-        email: 'a@fake.email',
-        default: {
-          targetBalance: '1',
-          balanceThreshold: '5'
-        },
-        coa: {
-          targetBalance: '5',
-          balanceThreshold: '50'
-        },
-        projects: {
-          targetBalance: '10',
-          balanceThreshold: '50'
-        },
-        daos: {
-          targetBalance: '100',
-          balanceThreshold: '100'
-        }
-      }
+  gsnConfig: {
+    isEnabled: false
+  },
+  balancesConfig: {
+    gsnAccountThreshold: '500',
+    email: 'a@fake.email',
+    default: {
+      targetBalance: '4',
+      balanceThreshold: '2'
+    },
+    coa: {
+      targetBalance: '1.6',
+      balanceThreshold: '0.8'
+    },
+    claimRegistry: {
+      targetBalance: '0.4',
+      balanceThreshold: '0.2'
+    },
+    daos: {
+      targetBalance: '2',
+      balanceThreshold: '1'
     }
   }
 };

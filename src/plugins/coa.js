@@ -40,19 +40,17 @@ module.exports = class COA {
 
   async createProject(id, name) {
     const coa = await this.getCOA();
-    const tx = await coa.createProject(id, name);
-    return tx;
+    return coa.createProject(id, name);
   }
 
   async addProjectAgreement(projectAddress, agreement) {
     const coa = await this.getCOA();
-    const txReceipt = await coa.addAgreement(projectAddress, agreement);
-    return txReceipt;
+    return coa.addAgreement(projectAddress, agreement);
   }
 
   async createDAO(name, creator) {
     const coa = await this.getCOA();
-    await coa.createDAO(name, creator);
+    return coa.createDAO(name, creator);
   }
 
   async getProject(address) {
@@ -65,24 +63,16 @@ module.exports = class COA {
     return this.getContractAt('Project', address);
   }
 
-  async getClaim(projectId, validator, claim) {
-    const coa = await this.getCOA();
-    const projectAddress = await coa.projects(projectId);
-    const tx = await coa.registry(projectAddress, validator, claim);
-  }
-
-  // TODO: delete if not needed
   async addClaim(project, claim, proof, valid, milestoneId, validator) {
     const registry = await this.getRegistry();
     const registryWithSigner = await registry.connect(validator);
-    const txReceipt = await registryWithSigner.addClaim(
+    return registryWithSigner.addClaim(
       project,
       claim,
       proof,
       valid,
       milestoneId
     );
-    return txReceipt;
   }
 
   async getAddClaimTransaction(
@@ -93,12 +83,11 @@ module.exports = class COA {
     milestoneId
   ) {
     const registry = await this.getRegistry();
-    const unsignedTransaction = await this.getUnsignedTransaction(
+    return this.getUnsignedTransaction(
       registry,
       'addClaim(address,bytes32,bytes32,bool,uint256)',
       [projectAddress.toLowerCase(), claim, proof, valid, milestoneId]
     );
-    return unsignedTransaction;
   }
 
   async milestoneApproved(projectAddress, validators, claims) {
@@ -140,12 +129,9 @@ module.exports = class COA {
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, memberAddress);
     await this.checkProposalExistence(proposalId, dao);
-    const unsignedTransaction = await this.getUnsignedTransaction(
-      dao,
-      'processProposal(uint256)',
-      [proposalId]
-    );
-    return unsignedTransaction;
+    return this.getUnsignedTransaction(dao, 'processProposal(uint256)', [
+      proposalId
+    ]);
   }
 
   async getNewVoteTransaction(daoId, proposalId, vote, memberAddress) {
@@ -154,12 +140,11 @@ module.exports = class COA {
     const daoAddress = await coa.daos(daoId);
     const daoContract = await this.getDaoContract(daoAddress, memberAddress);
     await this.checkProposalExistence(proposalId, daoContract);
-    const unsignedTransaction = await this.getUnsignedTransaction(
+    return this.getUnsignedTransaction(
       daoContract,
       'submitVote(uint256,uint8)',
       [proposalId, vote]
     );
-    return unsignedTransaction;
   }
 
   async getNewProposalTransaction(
@@ -173,19 +158,16 @@ module.exports = class COA {
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const daoContract = await this.getDaoContract(daoAddress, memberAddress);
-    const unsignedTransaction = await this.getUnsignedTransaction(
+    return this.getUnsignedTransaction(
       daoContract,
       'submitProposal(address,uint8,string)',
       [applicant, proposalType, description]
     );
-    return unsignedTransaction;
   }
 
+  // noinspection JSUnusedGlobalSymbols
   async sendNewTransaction(signedTransaction) {
-    const txResponse = await this.env.ethers.provider.sendTransaction(
-      signedTransaction
-    );
-    return txResponse;
+    return this.env.ethers.provider.sendTransaction(signedTransaction);
   }
 
   async getMember(address) {
@@ -203,13 +185,11 @@ module.exports = class COA {
   }
 
   async getDaoContract(address, signer) {
-    const dao = await this.getContractAt('DAO', address, signer);
-    return dao;
+    return this.getContractAt('DAO', address, signer);
   }
 
   async submitProposalVote(daoId, proposalId, vote, signer) {
     const coa = await this.getCOA();
-    // TODO: check if this is necessary
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
@@ -219,7 +199,6 @@ module.exports = class COA {
 
   async submitProposal(daoId, type, description, applicantAddress, signer) {
     const coa = await this.getCOA();
-    // TODO: check if this is necessary
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
@@ -228,7 +207,6 @@ module.exports = class COA {
 
   async processProposal(daoId, proposalId, signer) {
     const coa = await this.getCOA();
-    // TODO: check if this is necessary
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
@@ -238,7 +216,6 @@ module.exports = class COA {
 
   async getAllProposalsByDaoId(daoId, signer) {
     const coa = await this.getCOA();
-    // TODO: check if this is necessary
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
@@ -255,8 +232,7 @@ module.exports = class COA {
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
-    const creationTime = await dao.creationTime();
-    return creationTime;
+    return dao.creationTime();
   }
 
   async getCurrentPeriod(daoId, signer) {
@@ -264,18 +240,15 @@ module.exports = class COA {
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
-    const currentPeriod = await dao.getCurrentPeriod();
-    return currentPeriod;
+    return dao.getCurrentPeriod();
   }
 
   async getDaoMember(daoId, memberAddress, signer) {
     const coa = await this.getCOA();
-    // TODO: check if this is necessary
     await this.checkDaoExistence(daoId);
     const daoAddress = await coa.daos(daoId);
     const dao = await this.getDaoContract(daoAddress, signer);
-    const member = await dao.members(memberAddress);
-    return member;
+    return dao.members(memberAddress);
   }
 
   async getDaos() {
@@ -340,10 +313,9 @@ module.exports = class COA {
 
   async getOpenProposalsFromDao(daoId, signer) {
     const proposals = await this.getAllProposalsByDaoId(daoId, signer);
-    const open = proposals.filter(
+    return proposals.filter(
       proposal => !proposal.processed && !proposal.votingPeriodExpired
     ).length;
-    return open;
   }
 
   async getProposalQueueLength(dao) {
@@ -368,18 +340,14 @@ module.exports = class COA {
     await this.checkProposalExistence(proposalId, dao);
     const proposal = await dao.proposalQueue(proposalId);
     const startingPeriod = Number(proposal.startingPeriod);
-    const votingPeriodExpired = await dao.hasVotingPeriodExpired(
-      startingPeriod
-    );
-    return votingPeriodExpired;
+    return dao.hasVotingPeriodExpired(startingPeriod);
   }
 
   async getCOA() {
     if (this.contracts.coa === undefined) {
-      const contract = await this.env.deployments.getLastDeployedContract(
+      this.contracts.coa = await this.env.deployments.getLastDeployedContract(
         'COA'
       );
-      this.contracts.coa = contract;
     }
 
     return this.contracts.coa;
@@ -403,6 +371,16 @@ module.exports = class COA {
     }
 
     return this.contracts.whitelist;
+  }
+
+  async getProxyAdmin() {
+    if (this.contracts.proxyAdmin === undefined) {
+      this.contracts.proxyAdmin = await this.env.deployments.getLastDeployedContract(
+        'ProxyAdmin'
+      );
+    }
+
+    return this.contracts.proxyAdmin;
   }
 
   async getProvider() {
@@ -443,20 +421,15 @@ module.exports = class COA {
    * @param {String} address
    */
   async getTransactionCount(address) {
-    const nonce = await this.env.ethers.provider.getTransactionCount(address);
-    return nonce;
+    return this.env.ethers.provider.getTransactionCount(address);
   }
 
   async getTransactionResponse(txHash) {
-    const txInfo = await this.env.ethers.provider.getTransaction(txHash);
-    return txInfo;
+    return this.env.ethers.provider.getTransaction(txHash);
   }
 
   async getTransactionReceipt(txHash) {
-    const receipt = await this.env.ethers.provider.getTransactionReceipt(
-      txHash
-    );
-    return receipt;
+    return this.env.ethers.provider.getTransactionReceipt(txHash);
   }
 
   /**
@@ -466,22 +439,25 @@ module.exports = class COA {
    * @param {string | number} blockHashOrNumber
    */
   async getBlock(blockHashOrNumber) {
-    const block = await this.env.ethers.provider.getBlock(blockHashOrNumber);
-    return block;
+    return this.env.ethers.provider.getBlock(blockHashOrNumber);
   }
 
   /**
    * @dev get all the recipient contracts in order to verify balances, founding, etc.
    *
-   * @return Array of recipient contracts
+   * @return object with the arrays of recipient contracts for each contract type
    */
   async getAllRecipientContracts() {
-    const coa = [await this.getCOA()];
+    const coa =
+      (await this.getCOA()) !== undefined ? [await this.getCOA()] : [];
     const daos = await this.getDaos();
-    const projects = await this.getProjects();
+    const claimRegistry =
+      (await this.getRegistry()) !== undefined
+        ? [await this.getRegistry()]
+        : [];
     return {
       coa,
-      projects,
+      claimRegistry,
       daos
     };
   }

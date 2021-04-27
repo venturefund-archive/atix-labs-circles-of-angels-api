@@ -2,7 +2,7 @@ const { run, coa, ethereum } = require('@nomiclabs/buidler');
 const { sha3 } = require('../../rest/util/hash');
 
 const deployContracts = async () => {
-  await run('deploy', { reset: true });
+  await run('deploy', { resetStates: true });
   return ethereum.send('evm_snapshot', []);
 };
 const revertSnapshot = snapshot => ethereum.send('evm_revert', [snapshot]);
@@ -371,28 +371,21 @@ describe('COA plugin tests', () => {
       evmSnapshot = await deployContracts();
     });
 
-    const mockProjects = [
-      {
-        id: '1',
-        name: 'project1'
-      }
-    ];
-
     const mockDaos = [
       {
         name: 'dao1'
       }
     ];
 
-    it('SHOULD return only COA and superDao contracts if no project neither dao was created', async () => {
+    it('SHOULD return only COA and superDao contracts if no dao was created', async () => {
       const {
         coa: returnedCoa,
         daos,
-        projects
+        claimRegistry
       } = await coa.getAllRecipientContracts();
       expect(returnedCoa.length).toEqual(1); // COA
       expect(daos.length).toEqual(1); // SuperDao
-      expect(projects.length).toEqual(0);
+      expect(claimRegistry.length).toEqual(1);
     });
 
     it('SHOULD return mockDao if only one dao was created', async () => {
@@ -402,14 +395,6 @@ describe('COA plugin tests', () => {
       expect(daos.length).toEqual(2);
       expect(daos[0].name()).resolves.toEqual('Super DAO');
       expect(daos[1].name()).resolves.toEqual(mockDao.name);
-    });
-
-    it('SHOULD return mockProject if only one project was created', async () => {
-      const mockProject = mockProjects[0];
-      await coa.createProject(mockProject.id, mockProject.name);
-      const { projects } = await coa.getAllRecipientContracts();
-      expect(projects.length).toEqual(1);
-      expect(projects[0].name()).resolves.toEqual(mockProject.name);
     });
   });
 });

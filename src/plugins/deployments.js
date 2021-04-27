@@ -5,6 +5,7 @@ const {
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
 const { GSNProvider } = require("@openzeppelin/gsn-provider");
+const { getImplementationAddress } = require('@openzeppelin/upgrades-core');
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
 const {
   ethereum,
@@ -138,10 +139,19 @@ async function getDeployedAddresses(name, chainId) {
 }
 
 async function getLastDeployedContract(name, chainId) {
-  return (await getDeployedContracts(name, chainId))[0];
+  return (await getDeployedContractsGenerator(name, chainId).next()).value;
 }
 
 async function getDeployedContracts(name, chainId) {
+  const contractGenerator = getDeployedContractsGenerator(name, chainId);
+  const contracts = [];
+  for await (let contract of contractGenerator) {
+    contracts.push(contract)
+  }
+  return contracts;
+}
+
+async function* getDeployedContractsGenerator(name, chainId) {
   const factory = await getContractFactory(name);
   const addresses = await getDeployedAddresses(name, chainId);
   const artifact = readArtifactSync(config.paths.artifacts, name);
@@ -154,35 +164,18 @@ async function getDeployedContracts(name, chainId) {
     );
   }
 
-  const contracts = [];
   for (const addr of addresses) {
     const code = await ethers.provider.getCode(addr);
     const contract = factory.attach(addr);
     if (code === artifact.deployedBytecode || code === AdminUpgradeabilityProxy.deployedBytecode) {
-      contracts.push(contract);
+      yield contract;
     }
   }
-
-  return contracts;
 }
 
 async function getImplContract(contract, contractName) {
-  const addr = contract.address;
-
-  // This slot was recollected from
-  // @openzeppelin/upgrades-core/artifacts/BaseUpgradeabilityProxy.json
-  const IMPLEMENTATION_SLOT =
-      '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
-
   if (await isProxy(contract)) {
-    const storageAddr = await ethers.provider.getStorageAt(
-        addr,
-        IMPLEMENTATION_SLOT
-    );
-    const implAddr = `0x${storageAddr.substring(
-        storageAddr.length - 40,
-        storageAddr.length
-    )}`;
+    const implAddr = await getImplementationAddress(ethers.provider, contract.address);
     const contractFactory = await ethers.getContractFactory(contractName);
     return contractFactory.attach(implAddr);
   }
@@ -265,7 +258,7 @@ async function getOrDeployContract(contractName, params, signer = undefined, res
   logger.info(
       `[deployments] :: Entering getOrDeployContract. Contract ${contractName} with args [${params}].`
   );
-  let [contract] = await getDeployedContracts(contractName);
+  let contract = await getLastDeployedContract(contractName);
   if (contract === undefined || reset === true) {
     logger.info(`[deployments] :: ${contractName} not found, deploying...`);
     [contract] = await deploy(contractName, params, signer);
@@ -290,7 +283,7 @@ function buildGetOrDeployUpgradeableContract(
     logger.info(
       `[deployments] :: Entering getOrDeployUpgradeableContract. Contract ${contractName} with args [${params}].`
     );
-    let [contract] = await getDeployedContracts(contractName);
+    let contract = await getLastDeployedContract(contractName);
     if (contract === undefined || reset === true) {
       logger.info(`[deployments] :: ${contractName} not found, deploying...`);
       [contract] = await deployProxy(
@@ -329,7 +322,37 @@ function buildGetOrDeployUpgradeableContract(
   }
 }
 
-async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
+async function deployAll(
+  signer = undefined,
+  resetStates = false,
+  doUpgrade = false,
+  resetAllContracts = false
+) {
+
+  const implProject = await getOrDeployContract(
+    'Project',
+    [],
+    signer,
+    resetAllContracts
+  );
+
+  const implSuperDao = await getOrDeployContract(
+    'SuperDAO',
+    [],
+    signer,
+    resetAllContracts
+  );
+
+  const implDao = await getOrDeployContract('DAO', [], signer, resetAllContracts);
+
+  const resetProxies = resetStates || resetAllContracts;
+
+  const proxyAdmin = await getOrDeployContract(
+    'ProxyAdmin',
+    [],
+    signer,
+    resetProxies
+  );
 
   await getOrDeployUpgradeableContract(
     'UsersWhitelist',
@@ -337,30 +360,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
     signer,
     doUpgrade,
     { initializer: 'whitelistInitialize' },
-    reset
-  );
-
-  const implProject = await getOrDeployContract(
-    'Project',
-    [],
-    signer,
-    reset
-  );
-
-  const implSuperDao = await getOrDeployContract(
-    'SuperDAO',
-    [],
-    signer,
-    reset
-  );
-
-  const implDao = await getOrDeployContract('DAO', [], signer, reset);
-
-  const proxyAdmin = await getOrDeployContract(
-    'ProxyAdmin',
-    [],
-    signer,
-    reset
+    resetProxies
   );
 
   const registry = await getOrDeployUpgradeableContract(
@@ -369,7 +369,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
     signer,
     doUpgrade,
     undefined,
-    reset
+    resetProxies
   );
 
   await getOrDeployUpgradeableContract(
@@ -384,7 +384,7 @@ async function deployAll(signer = undefined, reset = false, doUpgrade = false) {
     signer,
     doUpgrade,
     { initializer: 'coaInitialize' },
-    reset
+    resetProxies
   );
 }
 

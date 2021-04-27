@@ -109,27 +109,27 @@ module.exports = {
       cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT,
       disabled: true,
       runOnInit: false,
-      timezone: undefined,
-      balancesConfig: {
-        gsnAccountThreshold: '5',
-        email: process.env.MAIN_ACCOUNT_BALANCE_EMAIL,
-        default: {
-          targetBalance: '1',
-          balanceThreshold: '5'
-        },
-        coa: {
-          targetBalance: '1',
-          balanceThreshold: '5'
-        },
-        projects: {
-          targetBalance: '1',
-          balanceThreshold: '5'
-        },
-        daos: {
-          targetBalance: '1',
-          balanceThreshold: '5'
-        }
-      }
+      timezone: undefined
+    }
+  },
+  balancesConfig: {
+    gsnAccountThreshold: '5',
+    email: process.env.MAIN_ACCOUNT_BALANCE_EMAIL,
+    default: {
+      targetBalance: '0.1',
+      balanceThreshold: '0.05'
+    },
+    coa: {
+      targetBalance: '0.1',
+      balanceThreshold: '0.05'
+    },
+    claimRegistry: {
+      targetBalance: '0.01',
+      balanceThreshold: '0.005'
+    },
+    daos: {
+      targetBalance: '0.05',
+      balanceThreshold: '0.025'
     }
   },
 
@@ -156,15 +156,16 @@ module.exports = {
     port: process.env.RS_PORT
   },
   gsnConfig: {
-    isEnabled: true,
+    isEnabled: false
   },
   testConfig: {
+    contractTestTimeoutMilliseconds: 2 * 60 * 1000,
     ganache: {
-      runOnTest: true,
+      runOnTest: false,
       port: 8545
     },
     relayer: {
-      runOnTest: true,
+      runOnTest: false,
       port: 8546,
       devMode: true,
       quiet: true

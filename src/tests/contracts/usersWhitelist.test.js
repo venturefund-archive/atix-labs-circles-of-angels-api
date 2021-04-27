@@ -1,11 +1,12 @@
-const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
+const { run, deployments, ethers } = require('@nomiclabs/buidler');
 const { assert } = require('chai');
-const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
+const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
 const {
   deployRelayHub,
   runRelayer,
   fundRecipient
 } = require('@openzeppelin/gsn-helpers');
+const { testConfig } = require('config');
 
 const PROVIDER_URL = 'http://localhost:8545';
 
@@ -32,10 +33,10 @@ contract('UsersWhitelist.sol', accounts => {
   });
 
   beforeEach('deploy contracts', async function beforeEach() {
-    this.timeout(1 * 60 * 1000);
-    await run('deploy', { reset: true });
-    [coa] = await deployments.getDeployedContracts('COA');
-    [whitelist] = await deployments.getDeployedContracts('UsersWhitelist');
+    this.timeout(testConfig.contractTestTimeoutMilliseconds);
+    await run('deploy', { resetStates: true });
+    coa = await deployments.getLastDeployedContract('COA');
+    whitelist = await deployments.getLastDeployedContract('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
 
     await fundRecipient(gsnWeb3, {

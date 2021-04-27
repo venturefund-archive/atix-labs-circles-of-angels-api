@@ -1,21 +1,40 @@
+const Web3 = require('web3');
+
 const { exec, execSync } = require('child_process');
-const { testConfig } = require('config');
+const { testConfig, gsnConfig } = require('config');
 const { runGSN } = require('./runDevGsn');
-const logger = require('../src/rest/logger');
+const Logger = require('../src/rest/logger');
+
+async function waitUntilNodeIsUp(host) {
+  const web3 = new Web3(new Web3.providers.HttpProvider(host));
+
+  do {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      if (await web3.eth.net.isListening()) {
+        break;
+      } else {
+        Logger.error('Not connected for some reason');
+      }
+    } catch (e) {
+      execSync('sleep 0.5');
+    }
+  } while (true);
+}
 
 async function runNode() {
   exec('npm run node >> /dev/null');
-  // Wait until buidler node is up and running
-  execSync('sleep 3');
+
+  await waitUntilNodeIsUp('http://localhost:8545');
 }
 
 module.exports = async () => {
-  logger.info('Running jest global setup');
+  Logger.info('Running jest global setup');
   if (testConfig.ganache.runOnTest) {
     await runNode();
   }
-  if (testConfig.relayer.runOnTest) {
+  if (gsnConfig.isEnabled && testConfig.relayer.runOnTest) {
     await runGSN();
   }
-  logger.info('Jest global setup finished');
+  Logger.info('Jest global setup finished');
 };

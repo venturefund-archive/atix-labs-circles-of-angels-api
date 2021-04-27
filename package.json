@@ -23,6 +23,9 @@
     "deploy": "buidler deploy",
     "build": "buidler compile",
     "index": "node index",
+    "check-balances": "buidler check-balances",
+    "run-dev-gsn": "buidler run-dev-gsn",
+    "stop-dev-gsn": "buidler stop-dev-gsn",
     "docker:build": "docker build -t $npm_package_dockerImage:$npm_package_version-$CI_COMMIT_SHORT_SHA .",
     "docker:push": "docker push $npm_package_dockerImage:$npm_package_version-$CI_COMMIT_SHORT_SHA"
   },
