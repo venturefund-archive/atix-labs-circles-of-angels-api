@@ -103,21 +103,6 @@ contract('Gas Station Network Tests', accounts => {
         provider.getSigner(signerAddress)
       );
       const oldBalance = await coa.provider.getBalance(signerAddress);
-      await throwsAsync(
-        coa.createProject(project.id, project.name),
-        'Error: Recipient canRelay call was rejected with error 11'
-      );
-      const newBalance = await coa.provider.getBalance(signerAddress);
-      assert.equal(oldBalance.toString(), newBalance.toString());
-    });
-
-    it('should not execute coa TX from a user is not in whitelist', async () => {
-      coa = await deployments.getContractInstance(
-        'COA',
-        coa.address,
-        provider.getSigner(signerAddress)
-      );
-      const oldBalance = await coa.provider.getBalance(signerAddress);
 
       await throwsAsync(
         coa.createProject(project.id, project.name),
