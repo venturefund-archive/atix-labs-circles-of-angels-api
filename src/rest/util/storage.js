@@ -1,3 +1,5 @@
+global.TextEncoder = require('util').TextEncoder;
+global.TextDecoder = require('util').TextDecoder;
 const RifStorage = require('@rsksmart/rif-storage');
 const { Provider } = require('@rsksmart/rif-storage');
 const config = require('config');
@@ -16,7 +18,7 @@ module.exports = {
     let options;
     if (type) {
       validateMtype(type, data);
-      validatePhotoSize(file);
+      validatePhotoSize(data);
       options = { fileName: data.name };
       dataToPut = data.data;
     }
