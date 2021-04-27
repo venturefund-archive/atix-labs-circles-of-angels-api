@@ -8,7 +8,7 @@ import '../../contracts/UsersWhitelist.sol';
  * @title This contract holds information about claims made buy COA members
  * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
  */
-contract ClaimsRegistryV2 is Initializable, GSNRecipient{
+contract ClaimsRegistryV2 is Initializable, GSNRecipient {
     struct Claim {
         bool approved;
         bytes32 proof;
@@ -111,11 +111,11 @@ contract ClaimsRegistryV2 is Initializable, GSNRecipient{
     }
 
     function _preRelayedCall(bytes memory context) internal returns (bytes32) {
-        
+
     }
 
     function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
-        
+
     }
     uint256[48] private _gap;
 }
