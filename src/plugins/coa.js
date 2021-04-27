@@ -2,6 +2,8 @@ const { utils } = require('ethers');
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
+const logger = require('../rest/logger');
+const COAError = require('../rest/errors/COAError');
 
 module.exports = class COA {
   constructor(env) {
@@ -182,10 +184,15 @@ module.exports = class COA {
   }
 
   async sendNewTransaction(signedTransaction) {
-    const txResponse = await this.env.ethers.provider.sendTransaction(
-      signedTransaction
-    );
-    return txResponse;
+    try {
+      const txResponse = await this.env.ethers.provider.sendTransaction(
+        signedTransaction
+      );
+      return txResponse;
+    } catch (error) {
+      logger.info(`[ActivityService] :: Blockchain error :: ${error}`);
+      throw new COAError(error);
+    }
   }
 
   async getMember(address) {

@@ -1,22 +1,18 @@
+const { describe, it, beforeEach } = global;
 const { web3, run, deployments, ethers } = require('@nomiclabs/buidler');
-const { getSigner } = require('../../plugins/deployments');
-
+const { assert } = require('chai');
 const { throwsAsync } = require('./testHelpers');
 
 let coa;
 let registry;
 
 async function getProjectAt(address, consultant) {
-  const project = await deployments.getContractInstance(
-    'Project',
-    address,
-    consultant
-  );
-  return project;
+  return deployments.getContractInstance('Project', address, consultant);
 }
 
 contract('COA.sol', ([creator, founder, other]) => {
-  beforeEach('deploy contracts', async function() {
+  // WARNING: Don't use arrow functions here, this.timeout doesn't work
+  beforeEach('deploy contracts', async function be() {
     this.timeout(1 * 60 * 1000);
     await run('deploy', { reset: true });
     [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
