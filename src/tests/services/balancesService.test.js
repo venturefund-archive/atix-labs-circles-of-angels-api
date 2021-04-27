@@ -67,31 +67,6 @@ describe('BalanceService tests', () => {
       });
     });
 
-    describe('GIVEN the GSN account has enough balance', () => {
-      const sameBalanceAmountThanThreshold = parseEther(
-        balancesConfig.gsnAccountThreshold
-      );
-
-      beforeAll(async () => {
-        mocks.provider = {
-          ...mocks.provider,
-          getBalance: () => sameBalanceAmountThanThreshold
-        };
-        injectMocks(balanceService, {
-          mailService: mocks.mailService
-        });
-        await balanceService.checkGSNAccountBalance(mocks.coa);
-      });
-
-      it('SHOULD send an alert email', () => {
-        expect(mocks.mailService.sendLowBalanceGSNAccountEmail).toBeCalledWith(
-          balancesConfig.email,
-          gsnAccount,
-          sameBalanceAmountThanThreshold
-        );
-      });
-    });
-
     describe('GIVEN the GSN account has not enough balance', () => {
       const smallBalanceAmount = parseEther(balancesConfig.gsnAccountThreshold);
 
