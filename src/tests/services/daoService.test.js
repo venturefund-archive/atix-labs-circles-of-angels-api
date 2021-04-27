@@ -10,6 +10,8 @@ const {
   txProposalStatus
 } = require('../../rest/util/constants');
 
+require('chai'); // needed in some tests
+
 let mockedDaoService = Object.assign({}, daoService);
 const restoreMockedDaoService = () => {
   mockedDaoService = Object.assign({}, daoService);
@@ -23,7 +25,7 @@ const GRACE_PERIOD_SEC = PERIOD_DURATION_SEC * GRACE_PERIOD_LENGTH;
 
 // TODO: change to use snapshots when buidler supports it
 const redeployContracts = async () => {
-  await run('deploy', { reset: true });
+  await run('deploy', { resetStates: true });
   const coaContract = await coa.getCOA();
   const superDaoAddress = await coaContract.daos(0);
   const { _address } = await coa.getSigner();
@@ -75,15 +77,13 @@ describe('Testing daoService', () => {
     status: txProposalStatus.SENT
   };
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     ({
       coaContract,
       superDaoAddress,
       superUserAddress
     } = await redeployContracts());
-  });
 
-  beforeAll(() => {
     coa.sendNewTransaction = jest.fn();
     coa.getNewProposalTransaction = jest.fn();
     coa.getProcessProposalTransaction = jest.fn();
@@ -218,6 +218,14 @@ describe('Testing daoService', () => {
     }
   };
   describe('Testing getMember method', () => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+    });
+
     it('should return the information of the existing member in the DAO', async () => {
       const response = await daoService.getMember({
         daoId: 0,
@@ -266,7 +274,13 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing getProposalsByDaoId method', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService,
         proposalDao,
@@ -338,6 +352,14 @@ describe('Testing daoService', () => {
       });
     });
 
+    beforeEach(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+    });
+
     afterAll(() => restoreMockedDaoService());
 
     it('should have a list of 2 daos when getDaos is applied', async () => {
@@ -381,7 +403,13 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing getUsers method', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         userService
       });
@@ -433,6 +461,14 @@ describe('Testing daoService', () => {
       injectMocks(mockedDaoService, {
         transactionService
       });
+    });
+
+    beforeEach(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
     });
 
     afterAll(() => restoreMockedDaoService());
@@ -534,7 +570,13 @@ describe('Testing daoService', () => {
       encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
     };
 
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService,
         proposalDao
@@ -579,7 +621,13 @@ describe('Testing daoService', () => {
     const yesVote = true;
     const superDaoId = 0;
 
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService
       });
@@ -629,7 +677,13 @@ describe('Testing daoService', () => {
       encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
     };
 
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService,
         voteDao
@@ -676,7 +730,13 @@ describe('Testing daoService', () => {
     };
     const superDaoId = 0;
 
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService
       });
@@ -724,7 +784,13 @@ describe('Testing daoService', () => {
       encryptedWallet: '{"address":"ea2c2f7582d196de3c99bc6daa22621c4d5fe4aa"}'
     };
 
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService
       });
@@ -760,7 +826,13 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing updateProposalStatusByTxHash method', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         proposalDao
       });
@@ -827,7 +899,13 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing updateFailedProposalTransactions method', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService,
         proposalDao
@@ -854,7 +932,13 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing updateVoteStatusByTxHash method', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         voteDao
       });
@@ -911,7 +995,13 @@ describe('Testing daoService', () => {
     });
   });
   describe('Testing updateFailedVoteTransactions method', () => {
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService,
         voteDao
@@ -940,7 +1030,13 @@ describe('Testing daoService', () => {
   describe('Testing getSentProposals method', () => {
     const superDaoId = 0;
 
-    beforeAll(() => {
+    beforeAll(async () => {
+      ({
+        coaContract,
+        superDaoAddress,
+        superUserAddress
+      } = await redeployContracts());
+
       injectMocks(mockedDaoService, {
         transactionService,
         proposalDao

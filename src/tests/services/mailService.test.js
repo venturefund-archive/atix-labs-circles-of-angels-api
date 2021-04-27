@@ -124,4 +124,32 @@ describe('Testing mailService', () => {
       );
     });
   });
+
+  describe('Test sendLowBalanceGSNAccountEmail method', () => {
+    const account = 'fakeAccount';
+    const balance = 'fakeBalance';
+
+    beforeEach(() => {
+      injectMocks(mailService, {
+        sendMail: jest.fn()
+      });
+    });
+
+    it('should resolve and call completeTemplate and sendMail', async () => {
+      await expect(
+        mailService.sendLowBalanceGSNAccountEmail(email.to, account, balance)
+      ).resolves.toBeUndefined();
+
+      expect(templateParser.completeTemplate).toHaveBeenCalled();
+      expect(mailService.sendMail).toHaveBeenCalled();
+    });
+
+    it('should throw an error if any required param is missing', async () => {
+      await expect(
+        mailService.sendLowBalanceGSNAccountEmail(undefined, account, balance)
+      ).rejects.toThrow(
+        errors.common.RequiredParamsMissing('sendLowBalanceGSNAccountEmail')
+      );
+    });
+  });
 });

@@ -46,6 +46,8 @@ test_be:
   image: docker.atixlabs.com/node:12.21.0
   stage: test
   script:
+    - npm run node > /dev/null &
+    - sleep 5
     - npm run test
   except:
     - schedules

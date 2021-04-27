@@ -1,22 +1,20 @@
 const { readArtifact } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory, Wallet, utils } = require('ethers');
-const { types } = require('@nomiclabs/buidler/config');
+const { task, types } = require('@nomiclabs/buidler/config');
 
 const { sha3 } = require('../../util/hash');
 const { proposalTypeEnum, voteEnum } = require('../../util/constants');
 
-const getCOAContract = async env => {
-  const [coa] = await env.deployments.getDeployedContracts('COA');
-  return coa;
-};
+const testSetup = require('../../../../scripts/jestGlobalSetup');
+const testTeardown = require('../../../../scripts/jestGlobalTearDown');
 
-const getSigner = async (env, account) => {
-  let creator = (await env.ethers.getSigners())[0];
-  if (account && typeof account === 'string') {
-    creator = await env.ethers.provider.getSigner(account);
-  }
-  return creator;
-};
+const balanceService = require('../balancesService');
+const Logger = require('../../logger');
+
+const getCOAContract = async env =>
+  env.deployments.getLastDeployedContract('COA');
+
+const getSigner = async (env, account) => env.deployments.getSigner(account);
 
 const getDAOContract = async (env, address, signer) => {
   const { abi, bytecode } = await readArtifact(
@@ -27,12 +25,24 @@ const getDAOContract = async (env, address, signer) => {
   return factory.attach(address);
 };
 
-const getRegistryContract = async env => {
-  const [registry] = await env.deployments.getDeployedContracts(
-    'ClaimsRegistry'
-  );
-  return registry;
-};
+const getRegistryContract = async env =>
+  env.deployments.getLastDeployedContract('ClaimsRegistry');
+
+task('test-contracts', 'Runs setup, tests and teardown').setAction(async () => {
+  await global.run('test-contracts:testSetup');
+  await global.run('test');
+  await global.run('test-contracts:testTeardown');
+});
+
+task('test-contracts:testSetup', 'Runs the test setup').setAction(async () => {
+  await testSetup();
+});
+
+task('test-contracts:testTeardown', 'Runs the test teardown').setAction(
+  async () => {
+    await testTeardown();
+  }
+);
 
 task('get-signer-zero', 'Gets signer zero address').setAction(
   async (_args, env) => {
@@ -225,28 +235,26 @@ task('migrate-member', 'Migrate existing user to current contract')
     }
   });
 
-task('check-balance')
-  .addOptionalParam('address')
-  .setAction(async ({ address }, env) => {
-    const coa = await getCOAContract(env);
-    if (coa === undefined) {
-      console.error('COA contract not deployed');
-      return;
-    }
-    // this array could be used to check for several addresses
-    const addresses = [];
-    if (address) {
-      console.log(`${address}: ${await web3.eth.getBalance(address)}`);
-    } else {
-      await Promise.all(
-        addresses.map(async userAddress => {
-          console.log(
-            `${userAddress}: ${await web3.eth.getBalance(userAddress)}`
-          );
-        })
-      );
-    }
-  });
+task(
+  'check-balances',
+  'Checks the balance of all recipients contracts in COA'
+).setAction(async (_args, env) => {
+  try {
+    const allContracts = await env.coa.getAllRecipientContracts();
+    const signer = await env.coa.getSigner();
+    await balanceService.checkContractBalances(allContracts, signer, env.web3);
+  } catch (e) {
+    Logger.error(e);
+  }
+});
+
+task('run-dev-gsn').setAction(async () => {
+  await global.run('test-contracts:testSetup');
+});
+
+task('stop-dev-gsn').setAction(async () => {
+  await global.run('test-contracts:testTeardown');
+});
 
 task('encrypt-wallet')
   .addParam('pk')

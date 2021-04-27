@@ -104,6 +104,32 @@ module.exports = {
       disabled: false,
       runOnInit: false,
       timezone: undefined
+    },
+    checkContractBalancesJob: {
+      cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT,
+      disabled: true,
+      runOnInit: false,
+      timezone: undefined
+    }
+  },
+  balancesConfig: {
+    gsnAccountThreshold: '5',
+    email: process.env.MAIN_ACCOUNT_BALANCE_EMAIL,
+    default: {
+      targetBalance: '0.1',
+      balanceThreshold: '0.05'
+    },
+    coa: {
+      targetBalance: '0.1',
+      balanceThreshold: '0.05'
+    },
+    claimRegistry: {
+      targetBalance: '0.01',
+      balanceThreshold: '0.005'
+    },
+    daos: {
+      targetBalance: '0.05',
+      balanceThreshold: '0.025'
     }
   },
 
@@ -127,6 +153,22 @@ module.exports = {
   rifStorageOptions: {
     protocol: process.env.RS_PROTOCOL,
     host: process.env.RS_HOST,
-    port: process.env.RS_PORT,
+    port: process.env.RS_PORT
+  },
+  gsnConfig: {
+    isEnabled: false
+  },
+  testConfig: {
+    contractTestTimeoutMilliseconds: 2 * 60 * 1000,
+    ganache: {
+      runOnTest: false,
+      port: 8545
+    },
+    relayer: {
+      runOnTest: false,
+      port: 8546,
+      devMode: true,
+      quiet: true
+    }
   }
 };
