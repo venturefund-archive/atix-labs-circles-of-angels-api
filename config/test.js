@@ -17,5 +17,28 @@ module.exports = {
   frontendUrl: '//test',
   crypto: {
     key: '3c50cffcdce9a802a26f5293aa4dc689' // added to run tests
+  },
+  gsnConfig: {
+    isEnabled: false
+  },
+  balancesConfig: {
+    gsnAccountThreshold: '500',
+    email: 'a@fake.email',
+    default: {
+      targetBalance: '4',
+      balanceThreshold: '2'
+    },
+    coa: {
+      targetBalance: '1.6',
+      balanceThreshold: '0.8'
+    },
+    claimRegistry: {
+      targetBalance: '0.4',
+      balanceThreshold: '0.2'
+    },
+    daos: {
+      targetBalance: '2',
+      balanceThreshold: '1'
+    }
   }
 };

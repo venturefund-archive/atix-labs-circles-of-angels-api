@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const { describe, it, before, beforeEach, after } = global;
 const { run, deployments, ethers, web3 } = require('@nomiclabs/buidler');
 const {
@@ -5,9 +6,7 @@ const {
   runRelayer,
   fundRecipient
 } = require('@openzeppelin/gsn-helpers');
-
-const Web3 = require('web3');
-
+const { testConfig } = require('config');
 const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
 
 const { assert } = require('chai');
@@ -15,7 +14,7 @@ const { throwsAsync } = require('./testHelpers');
 
 const { isRelayHubDeployedForRecipient } = utils;
 
-const PROVIDER_URL = 'http://localhost:8545';
+const PROVIDER_URL = ethers.provider.connection.url;
 const singletonRelayHub = '0xD216153c06E857cD7f72665E0aF1d7D82172F494';
 
 async function getProjectAt(address, consultant) {
@@ -33,12 +32,9 @@ contract('Gas Station Network Tests', accounts => {
   let coa;
   let whitelist;
   let subprocess;
-  let gsnWeb3;
   let hubAddress;
-
-  before('Gsn provider run', async () => {
-    gsnWeb3 = new Web3(PROVIDER_URL);
-    hubAddress = await deployRelayHub(gsnWeb3, {
+  before('Gsn provider run', async function b() {
+    hubAddress = await deployRelayHub(web3, {
       from: userRelayer
     });
     subprocess = await runRelayer({ quiet: true, relayHubAddress: hubAddress });
@@ -46,19 +42,20 @@ contract('Gas Station Network Tests', accounts => {
 
   // WARNING: Don't use arrow functions here, this.timeout doesn't work
   beforeEach('deploy contracts', async function be() {
-    this.timeout(1 * 60 * 1000);
-    await run('deploy', { reset: true });
-    [coa] = await deployments.getDeployedContracts('COA');
-    [whitelist] = await deployments.getDeployedContracts('UsersWhitelist');
+    this.timeout(testConfig.contractTestTimeoutMilliseconds);
+    await run('deploy', { resetStates: true });
+    coa = await deployments.getLastDeployedContract('COA');
+    whitelist = await deployments.getLastDeployedContract('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
-    await fundRecipient(gsnWeb3, {
+
+    await fundRecipient(web3, {
       recipient: coa.address,
       amount: '100000000000000000',
       relayHubAddress: hubAddress
     });
   });
 
-  after('finish process', async () => {
+  after('finish process', async function a() {
     if (subprocess) subprocess.kill();
   });
 
@@ -106,21 +103,6 @@ contract('Gas Station Network Tests', accounts => {
         provider.getSigner(signerAddress)
       );
       const oldBalance = await coa.provider.getBalance(signerAddress);
-      await throwsAsync(
-        coa.createProject(project.id, project.name),
-        'Error: Recipient canRelay call was rejected with error 11'
-      );
-      const newBalance = await coa.provider.getBalance(signerAddress);
-      assert.equal(oldBalance.toString(), newBalance.toString());
-    });
-
-    it('should not execute coa TX from a user is not in whitelist', async () => {
-      coa = await deployments.getContractInstance(
-        'COA',
-        coa.address,
-        provider.getSigner(signerAddress)
-      );
-      const oldBalance = await coa.provider.getBalance(signerAddress);
 
       await throwsAsync(
         coa.createProject(project.id, project.name),
@@ -132,17 +114,22 @@ contract('Gas Station Network Tests', accounts => {
   });
 
   describe('GSN disabled', () => {
-    const gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
-      ownerAddress,
-      relayerAddress,
-      useGSN: false
-    });
+    let gsnDevProvider;
+    let provider;
+    let project;
 
-    const provider = new ethers.providers.Web3Provider(gsnDevProvider);
-    const project = {
-      id: 1,
-      name: 'a good project'
-    };
+    before(async () => {
+      gsnDevProvider = new GSNDevProvider(PROVIDER_URL, {
+        ownerAddress,
+        relayerAddress,
+        useGSN: false
+      });
+      provider = new ethers.providers.Web3Provider(gsnDevProvider);
+      project = {
+        id: 1,
+        name: 'a good project'
+      };
+    });
 
     it('should execute coa TX from a user in whitelist spending his founds', async () => {
       await whitelist.addUser(signerAddress);

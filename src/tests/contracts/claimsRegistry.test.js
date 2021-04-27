@@ -8,6 +8,7 @@ const {
 } = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
 const { assert } = require('chai');
+const { testConfig } = require('config');
 const { throwsAsync, waitForEvent } = require('./testHelpers');
 
 const addClaim = async (
@@ -46,10 +47,10 @@ contract('ClaimsRegistry.sol', ([creator]) => {
 
   // WARNING: Don't use arrow functions here, this.timeout doesn't work
   beforeEach('deploy contracts', async function be() {
-    this.timeout(1 * 60 * 1000);
-    await run('deploy', { reset: true });
-    [registry] = await deployments.getDeployedContracts('ClaimsRegistry');
-    [coa] = await deployments.getDeployedContracts('COA');
+    this.timeout(testConfig.contractTestTimeoutMilliseconds);
+    await run('deploy', { resetStates: true });
+    registry = await deployments.getLastDeployedContract('ClaimsRegistry');
+    coa = await deployments.getLastDeployedContract('COA');
     await coa.createProject(1, 'a project');
     project = await coa.projects(0);
   });
