@@ -29,6 +29,9 @@ lint:
   stage: test
   script:
     - npm run lint
+  only:
+    changes:
+      - src/**
   except:
     - schedules
 
@@ -39,6 +42,9 @@ test_contracts:
     - npm run node > /dev/null &
     - sleep 5
     - npm run test:contracts
+  only:
+    changes:
+      - src/contracts/**
   except:
     - schedules
 
@@ -49,6 +55,9 @@ test_be:
     - npm run node > /dev/null &
     - sleep 5
     - npm run test
+  only:
+    changes:
+      - src/**
   except:
     - schedules
 
@@ -58,8 +67,7 @@ package:
   services:
     - docker:19.03.1-dind
   script:
-    - curl -fsSL https://get.docker.com -o get-docker.sh
-    - sh get-docker.sh
+    - sh ./scripts/debian_install_docker.sh # installing docker
     - docker login -u gitlabci -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker info
     - npm run docker:build
