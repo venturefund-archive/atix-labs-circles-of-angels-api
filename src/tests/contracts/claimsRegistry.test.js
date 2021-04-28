@@ -9,7 +9,7 @@ const {
 const { utils } = require('ethers');
 const { assert } = require('chai');
 const { testConfig } = require('config');
-const { throwsAsync, waitForEvent } = require('./testHelpers');
+const { throwsAsync, waitForEvent } = require('./helpers/testHelpers');
 
 const addClaim = async (
   claimsRegistry,
@@ -167,20 +167,5 @@ contract('ClaimsRegistry.sol', ([creator]) => {
       }),
       "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
     );
-  });
-
-  it('Should upgrade a new version of claimsregistry contract', async () => {
-    const { proofHash, claimHash } = await addClaim(registry, project);
-    const mockContract = await ethers.getContractFactory('ClaimsRegistryV2');
-    const registryV2 = await upgrades.upgradeProxy(
-      registry.address,
-      mockContract,
-      { unsafeAllowCustomTypes: true }
-    );
-    const claim = await registryV2.registry(project, creator, claimHash);
-    // Claim is stored properly
-    assert.equal(claim.proof, proofHash);
-    await registryV2.setTest('test');
-    assert.equal(await registryV2.test(), 'test');
   });
 });

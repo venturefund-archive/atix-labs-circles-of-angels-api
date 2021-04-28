@@ -10,7 +10,7 @@ const { testConfig } = require('config');
 const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
 
 const { assert } = require('chai');
-const { throwsAsync } = require('./testHelpers');
+const { throwsAsync } = require('./helpers/testHelpers');
 
 const { isRelayHubDeployedForRecipient } = utils;
 

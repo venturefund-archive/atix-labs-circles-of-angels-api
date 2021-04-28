@@ -9,8 +9,9 @@ contract ProjectV2 is Initializable, Ownable {
 
     string public name;
     address public entrepreneurAddress;
-    
-    mapping (bytes32 => bool) public isClaimValidated;
+
+    mapping(bytes32 => bool) public isClaimValidated;
+
     string public test;
 
     function initialize(string memory _name) public payable initializer {
@@ -21,6 +22,6 @@ contract ProjectV2 is Initializable, Ownable {
     function setTest(string memory _test) public {
         test = _test;
     }
-    
+
     uint256[49] private _gap;
 }
