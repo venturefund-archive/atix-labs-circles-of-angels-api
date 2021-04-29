@@ -8,7 +8,7 @@ const {
 } = require('@nomiclabs/buidler');
 const { assert } = require('chai');
 const { testConfig } = require('config');
-const { throwsAsync } = require('./testHelpers');
+const { throwsAsync } = require('./helpers/testHelpers');
 
 let coa;
 let registry;
@@ -105,28 +105,6 @@ contract('COA.sol', ([creator, founder, other]) => {
         }),
         "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
       );
-    });
-  });
-
-  describe('Upgrade Project contract', () => {
-    it('Should upgrade a new version of project', async () => {
-      const project = {
-        id: 1,
-        name: 'a good project'
-      };
-      await coa.createProject(project.id, project.name);
-      const factory = await ethers.getContractFactory('ProjectV2');
-      const mockContract = await factory.deploy({});
-      const proxyAdmin = await coaPlugin.getProxyAdmin();
-      await proxyAdmin.upgrade(await coa.projects(0), mockContract.address);
-      const newVersion = await deployments.getContractInstance(
-        'ProjectV2',
-        await coa.projects(0),
-        other
-      );
-      newVersion.setTest('test');
-      assert.equal(await newVersion.name(), project.name);
-      assert.equal(await newVersion.test(), 'test');
     });
   });
 });

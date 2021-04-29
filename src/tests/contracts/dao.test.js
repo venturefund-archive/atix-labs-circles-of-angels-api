@@ -8,7 +8,7 @@ const {
 } = require('@nomiclabs/buidler');
 const { assert } = require('chai');
 const { testConfig } = require('config');
-const { throwsAsync, waitForEvent } = require('./testHelpers');
+const { throwsAsync, waitForEvent } = require('./helpers/testHelpers');
 
 const ProposalType = {
   NewMember: 0,
