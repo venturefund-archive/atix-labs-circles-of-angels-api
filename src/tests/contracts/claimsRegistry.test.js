@@ -9,7 +9,10 @@ const {
 const { utils } = require('ethers');
 const { assert } = require('chai');
 const { testConfig } = require('config');
-const { throwsAsync, waitForEvent } = require('./helpers/testHelpers');
+const chai = require('chai');
+const { solidity } = require('ethereum-waffle');
+
+chai.use(solidity);
 
 const addClaim = async (
   claimsRegistry,
@@ -159,13 +162,16 @@ contract('ClaimsRegistry.sol', ([creator]) => {
   });
 
   it('It should revert when sending a tx to the contract', async () => {
-    await throwsAsync(
-      web3.eth.sendTransaction({
-        from: creator,
-        to: registry.address,
-        value: '0x16345785d8a0000'
-      }),
-      "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
-    );
+    await chai
+      .expect(
+        web3.eth.sendTransaction({
+          from: creator,
+          to: registry.address,
+          value: '0x16345785d8a0000'
+        })
+      )
+      .to.be.revertedWith(
+        "Transaction reverted: function selector was not recognized and there's no fallback function"
+      );
   });
 });
