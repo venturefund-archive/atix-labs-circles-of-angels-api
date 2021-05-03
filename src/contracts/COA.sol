@@ -43,6 +43,12 @@ contract COA is Initializable, Ownable, GSNRecipient {
     address internal implDao;
     UsersWhitelist public whitelist;
 
+    modifier withdrawOk(uint256 _amount, address _destinationAddress) {
+        require(_destinationAddress != address(0), 'Address cannot be empty');
+        require(_amount > 0, 'Amount cannot be ZERO');
+        _;
+    }
+
     function coaInitialize(
         address _registryAddress,
         address _proxyAdmin,
@@ -97,8 +103,10 @@ contract COA is Initializable, Ownable, GSNRecipient {
         external
         returns (address)
     {
-        bytes memory payload = abi.encodeWithSignature("initialize(string)", _name);
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implProject, proxyAdmin, payload);
+        bytes memory payload =
+            abi.encodeWithSignature('initialize(string)', _name);
+        AdminUpgradeabilityProxy proxy =
+            new AdminUpgradeabilityProxy(implProject, proxyAdmin, payload);
         projects.push(proxy);
         emit ProjectCreated(_id, address(proxy));
         return address(proxy);
@@ -114,9 +122,19 @@ contract COA is Initializable, Ownable, GSNRecipient {
         external
         returns (address)
     {
-        require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
-        bytes memory payload = abi.encodeWithSignature("initialize(string,address,address)", _name, _creator, address(whitelist));
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
+        require(
+            proxyAdmin != _creator,
+            'The creator can not be the proxy admin.'
+        );
+        bytes memory payload =
+            abi.encodeWithSignature(
+                'initialize(string,address,address)',
+                _name,
+                _creator,
+                address(whitelist)
+            );
+        AdminUpgradeabilityProxy proxy =
+            new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));
         return address(proxy);
@@ -127,9 +145,20 @@ contract COA is Initializable, Ownable, GSNRecipient {
      *      It's the DAO that can be used to create other DAOs.
      */
     function createSuperDAO() internal {
-        require(proxyAdmin != owner(), "The creator can not be the admin proxy.");
-        bytes memory payload = abi.encodeWithSignature("initialize(string,address,address,address)", 'Super DAO', owner(), address(this), address(whitelist));
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);
+        require(
+            proxyAdmin != owner(),
+            'The creator can not be the admin proxy.'
+        );
+        bytes memory payload =
+            abi.encodeWithSignature(
+                'initialize(string,address,address,address)',
+                'Super DAO',
+                owner(),
+                address(this),
+                address(whitelist)
+            );
+        AdminUpgradeabilityProxy proxy =
+            new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));
     }
@@ -143,7 +172,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
      */
     function addAgreement(address _project, string calldata _agreementHash)
         external
-        onlyOwner()
+        onlyOwner
     {
         agreements[_project] = _agreementHash;
     }
@@ -156,19 +185,19 @@ contract COA is Initializable, Ownable, GSNRecipient {
         return projects.length;
     }
 
-    function setWhitelist(address _whitelist) external onlyOwner() {
+    function setWhitelist(address _whitelist) external onlyOwner {
         whitelist = UsersWhitelist(_whitelist);
     }
 
     function acceptRelayedCall(
-        address ,
+        address,
         address from,
         bytes calldata,
-        uint256 ,
-        uint256 ,
-        uint256 ,
-        uint256 ,
-        bytes calldata ,
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        bytes calldata,
         uint256
     ) external view returns (uint256, bytes memory) {
         if (whitelist.users(from)) {
@@ -182,7 +211,19 @@ contract COA is Initializable, Ownable, GSNRecipient {
         return 0;
     }
 
-    function _postRelayedCall(bytes memory, bool, uint256, bytes32) internal {}
+    function _postRelayedCall(
+        bytes memory,
+        bool,
+        uint256,
+        bytes32
+    ) internal {}
+
+    function withdrawDeposits(
+        uint256 _amount,
+        address payable _destinationAddress
+    ) external onlyOwner withdrawOk(_amount, _destinationAddress) {
+        _withdrawDeposits(_amount, _destinationAddress);
+    }
 
     uint256[49] private _gap;
 }
