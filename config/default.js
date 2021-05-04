@@ -113,23 +113,23 @@ module.exports = {
     }
   },
   balancesConfig: {
-    gsnAccountThreshold: '5',
+    gsnAccountThreshold: '0.05',
     email: process.env.MAIN_ACCOUNT_BALANCE_EMAIL,
     default: {
-      targetBalance: '0.1',
-      balanceThreshold: '0.05'
-    },
-    coa: {
-      targetBalance: '0.1',
-      balanceThreshold: '0.05'
-    },
-    claimRegistry: {
       targetBalance: '0.01',
       balanceThreshold: '0.005'
     },
+    coa: {
+      targetBalance: '0.01',
+      balanceThreshold: '0.005'
+    },
+    claimRegistry: {
+      targetBalance: '0.001',
+      balanceThreshold: '0.0005'
+    },
     daos: {
-      targetBalance: '0.05',
-      balanceThreshold: '0.025'
+      targetBalance: '0.005',
+      balanceThreshold: '0.0025'
     }
   },
 
@@ -156,7 +156,8 @@ module.exports = {
     port: process.env.RS_PORT
   },
   gsnConfig: {
-    isEnabled: false
+    isEnabled: false,
+    relayHubAddress: '0x73c02c2a07fe2929b4da5aa5f299b5c6ea94e979'
   },
   testConfig: {
     contractTestTimeoutMilliseconds: 2 * 60 * 1000,
