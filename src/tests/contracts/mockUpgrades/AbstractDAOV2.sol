@@ -1,9 +1,8 @@
 pragma solidity ^0.5.8;
-
-import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
+
 import '../../../contracts/UsersWhitelist.sol';
 
 /// @title A DAO contract based on MolochDAO ideas
@@ -17,6 +16,7 @@ contract AbstractDAOV2 is Initializable, GSNRecipient {
     /// DAO's name.
     string public name;
     uint256 public creationTime;
+
 
     enum ProposalType {
         NewMember, /// Adds a new member to the DAO
@@ -77,8 +77,16 @@ contract AbstractDAOV2 is Initializable, GSNRecipient {
     }
 
     UsersWhitelist public whitelist;
-
+    address coaAddress;
     string public test;
+
+    modifier onlyCoa() {
+        require(
+            address(coaAddress) == msg.sender,
+            'Invalid caller to withdraw function'
+        );
+        _;
+    }
 
     /**
      * @param _name DAO name
@@ -87,7 +95,8 @@ contract AbstractDAOV2 is Initializable, GSNRecipient {
     function initialize(
         string memory _name,
         address _creator,
-        address _whitelist
+        address _whitelist,
+        address _coaAddress
     ) public initializer {
         name = _name;
         creationTime = now;
@@ -98,6 +107,7 @@ contract AbstractDAOV2 is Initializable, GSNRecipient {
         processingPeriodLength = votingPeriodLength + gracePeriodLength;
         GSNRecipient.initialize();
         whitelist = UsersWhitelist(_whitelist);
+        coaAddress = address(_coaAddress);
     }
 
     /**
@@ -370,9 +380,16 @@ contract AbstractDAOV2 is Initializable, GSNRecipient {
         bytes32
     ) internal {}
 
+    function withdrawDeposits(
+        uint256 amount,
+        address payable destinationAddress
+    ) external onlyCoa {
+        _withdrawDeposits(amount, destinationAddress);
+    }
+
     function setTest(string memory _test) public {
         test = _test;
     }
 
-    uint256[48] private _gap;
+    uint256[47] private _gap;
 }
