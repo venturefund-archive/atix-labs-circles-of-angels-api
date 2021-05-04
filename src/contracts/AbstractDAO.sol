@@ -118,7 +118,7 @@ contract AbstractDAO is Initializable, GSNRecipient {
         address _applicant,
         uint8 _proposalType,
         string memory _description
-    ) public onlyMembers() {
+    ) public onlyMembers {
         ProposalType proposalType = ProposalType(_proposalType);
         require(_proposalType < 4, 'invalid type');
         requireProposalTypeIsValid(proposalType);
@@ -169,7 +169,7 @@ contract AbstractDAO is Initializable, GSNRecipient {
      */
     function submitVote(uint256 _proposalIndex, uint8 _vote)
         public
-        onlyMembers()
+        onlyMembers
     {
         address memberAddress = msg.sender;
         require(
@@ -345,7 +345,7 @@ contract AbstractDAO is Initializable, GSNRecipient {
     function processNewDaoProposal(string memory _name, address _applicant)
         internal;
 
-    function setWhitelist(address _whitelist) public onlyMembers() {
+    function setWhitelist(address _whitelist) public onlyMembers {
         whitelist = UsersWhitelist(_whitelist);
     }
 

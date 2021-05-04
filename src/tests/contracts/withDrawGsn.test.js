@@ -26,11 +26,13 @@ contract('Withdraw Gsn funded contracts balance', accounts => {
     userRelayer,
     ownerAddress,
     relayerAddress,
-    signerAddress
+    signerAddress,
+    other
   ] = accounts;
   let coa;
   let claimsRegistry;
   let superDaoAddress;
+  let daoAddress;
   let whitelist;
   let subprocess;
   let hubAddress;
@@ -313,6 +315,87 @@ contract('Withdraw Gsn funded contracts balance', accounts => {
           const withdrawAmount = BigNumber.from('100000000000000000000');
           await chai.expect(
             coa.withdrawDaoDeposits(withdrawAmount, creator, superDaoAddress)
+          ).to.be.reverted;
+        });
+      });
+
+      describe('On [Dao] Contract ==> ', () => {
+        const newDaoData = {
+          name: 'New Dao',
+          daoCreator: other
+        };
+        // eslint-disable-next-line func-names, no-undef
+        before(async function() {
+          await coa.createDAO(newDaoData.name, newDaoData.daoCreator);
+          daoAddress = await coa.daos(1);
+          await fundRecipient(web3, {
+            recipient: daoAddress,
+            amount: fundValue,
+            relayHubAddress: hubAddress
+          });
+        });
+
+        it('Return the amount to the caller when owner calls', async () => {
+          const oldBalances = await getBalances(
+            hubAddress,
+            relayerAddress,
+            daoAddress,
+            creator
+          );
+
+          const withdrawAmount = BigNumber.from('100000000000000000');
+          const resultTx = await coa.withdrawDaoDeposits(
+            withdrawAmount,
+            creator,
+            daoAddress
+          );
+
+          const newBalances = await getBalances(
+            hubAddress,
+            relayerAddress,
+            daoAddress,
+            creator
+          );
+
+          chai.assert.isTrue(
+            withdrawAmount.eq(oldBalances.hub.sub(newBalances.hub))
+          );
+          chai.assert.isTrue(newBalances.relayer.eq(oldBalances.relayer));
+          chai.assert.isTrue(
+            withdrawAmount.eq(oldBalances.contract.sub(newBalances.contract))
+          );
+
+          const receiptTx = await web3.eth.getTransactionReceipt(resultTx.hash);
+          const gasUsed = BigNumber.from(receiptTx.gasUsed);
+          const gasPrice = await web3.eth.getGasPrice();
+          const gasAmountEth = gasUsed.mul(gasPrice);
+          const qtyAddedToCreatorBalance = withdrawAmount.sub(gasAmountEth);
+
+          chai.assert.isTrue(
+            oldBalances.user.add(qtyAddedToCreatorBalance).eq(newBalances.user)
+          );
+        });
+
+        it('Fail when the amount is not bigger than zero', async () => {
+          const withdrawAmount = BigNumber.from('0');
+          await chai
+            .expect(
+              coa.withdrawDaoDeposits(withdrawAmount, creator, daoAddress)
+            )
+            .to.be.revertedWith('Amount cannot be ZERO');
+        });
+
+        it('Fail when the address is invalid', async () => {
+          const withdrawAmount = BigNumber.from('10000000000');
+          await chai.expect(
+            coa.withdrawDaoDeposits(withdrawAmount, '0x0', daoAddress)
+          ).to.be.reverted;
+        });
+
+        it('Fail when the amount is bigger than balance', async () => {
+          const withdrawAmount = BigNumber.from('100000000000000000000');
+          await chai.expect(
+            coa.withdrawDaoDeposits(withdrawAmount, creator, daoAddress)
           ).to.be.reverted;
         });
       });
