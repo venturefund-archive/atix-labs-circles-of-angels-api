@@ -1,12 +1,10 @@
 /* eslint-disable no-console */
 const { describe, it, before, beforeEach, after } = global;
 const { run, deployments, ethers, web3 } = require('@nomiclabs/buidler');
-const { BigNumber } = require('@ethersproject/bignumber');
 const {
   deployRelayHub,
   runRelayer,
-  fundRecipient,
-  balance
+  fundRecipient
 } = require('@openzeppelin/gsn-helpers');
 const { testConfig } = require('config');
 const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
@@ -33,14 +31,15 @@ contract('Gas Station Network Tests', accounts => {
     userRelayer,
     ownerAddress,
     relayerAddress,
-    signerAddress,
-    other
+    signerAddress
   ] = accounts;
   let coa;
   let claimsRegistry;
+  let superDaoAddress;
   let whitelist;
   let subprocess;
   let hubAddress;
+
   before('Gsn provider run', async function b() {
     hubAddress = await deployRelayHub(web3, {
       from: userRelayer
@@ -56,6 +55,7 @@ contract('Gas Station Network Tests', accounts => {
     claimsRegistry = await deployments.getLastDeployedContract(
       'ClaimsRegistry'
     );
+
     whitelist = await deployments.getLastDeployedContract('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
 
@@ -67,6 +67,13 @@ contract('Gas Station Network Tests', accounts => {
 
     await fundRecipient(web3, {
       recipient: claimsRegistry.address,
+      amount: fundValue,
+      relayHubAddress: hubAddress
+    });
+
+    superDaoAddress = await coa.daos(0);
+    await fundRecipient(web3, {
+      recipient: superDaoAddress,
       amount: fundValue,
       relayHubAddress: hubAddress
     });
@@ -159,138 +166,6 @@ contract('Gas Station Network Tests', accounts => {
       await gsnCoaOff.createProject(project.id, project.name);
       const newBalance = await gsnCoaOff.provider.getBalance(signerAddress);
       chai.assert.isTrue(newBalance.lt(oldBalance));
-    });
-
-    describe('WhitdrawDeposit should ==> ', () => {
-      const getBalances = async (
-        _hubAddress,
-        _relayerAddress,
-        _contractAddress,
-        _userAddress
-      ) => {
-        const balances = {
-          hub: BigNumber.from(await coa.provider.getBalance(_hubAddress)),
-          relayer: BigNumber.from(
-            await coa.provider.getBalance(_relayerAddress)
-          ),
-          contract: BigNumber.from(
-            await balance(web3, {
-              recipient: _contractAddress
-            })
-          ),
-          user: BigNumber.from(await coa.provider.getBalance(_userAddress))
-        };
-
-        return balances;
-      };
-
-      describe('On [Coa] Contract ==> ', () => {
-        it('Return the amount to the caller when owner calls', async () => {
-          const oldBalances = await getBalances(
-            hubAddress,
-            relayerAddress,
-            coa.address,
-            creator
-          );
-
-          const withdrawAmount = BigNumber.from('100000000000000000');
-          const resultTx = await coa.withdrawDeposits(withdrawAmount, creator);
-
-          const newBalances = await getBalances(
-            hubAddress,
-            relayerAddress,
-            coa.address,
-            creator
-          );
-
-          chai.assert.isTrue(
-            withdrawAmount.eq(oldBalances.hub.sub(newBalances.hub))
-          );
-          chai.assert.isTrue(newBalances.relayer.eq(oldBalances.relayer));
-          chai.assert.isTrue(
-            withdrawAmount.eq(oldBalances.contract.sub(newBalances.contract))
-          );
-
-          const receiptTx = await web3.eth.getTransactionReceipt(resultTx.hash);
-          const gasUsed = BigNumber.from(receiptTx.gasUsed);
-          const gasPrice = await web3.eth.getGasPrice();
-          const gasAmountEth = gasUsed.mul(gasPrice);
-          const qtyAddedToCreatorBalance = withdrawAmount.sub(gasAmountEth);
-
-          chai.assert.isTrue(
-            oldBalances.user.add(qtyAddedToCreatorBalance).eq(newBalances.user)
-          );
-        });
-
-        it('Fail when the amount is not bigger than zero', async () => {
-          const withdrawAmount = BigNumber.from('0');
-          await chai
-            .expect(coa.withdrawDeposits(withdrawAmount, creator))
-            .to.be.revertedWith('Amount cannot be ZERO');
-        });
-
-        it('Fail when the address is invalid', async () => {
-          const withdrawAmount = BigNumber.from('10000000000');
-          await chai.expect(coa.withdrawDeposits(withdrawAmount, '0x0')).to.be
-            .reverted;
-        });
-      });
-
-      describe('On [ClaimRegistry] Contract ==> ', () => {
-        it('Return the amount to the caller when owner calls', async () => {
-          const oldBalances = await getBalances(
-            hubAddress,
-            relayerAddress,
-            claimsRegistry.address,
-            creator
-          );
-
-          const withdrawAmount = BigNumber.from('100000000000000000');
-          const resultTx = await claimsRegistry.withdrawDeposits(
-            withdrawAmount,
-            creator
-          );
-
-          const newBalances = await getBalances(
-            hubAddress,
-            relayerAddress,
-            claimsRegistry.address,
-            creator
-          );
-
-          chai.assert.isTrue(
-            withdrawAmount.eq(oldBalances.hub.sub(newBalances.hub))
-          );
-          chai.assert.isTrue(newBalances.relayer.eq(oldBalances.relayer));
-          chai.assert.isTrue(
-            withdrawAmount.eq(oldBalances.contract.sub(newBalances.contract))
-          );
-
-          const receiptTx = await web3.eth.getTransactionReceipt(resultTx.hash);
-          const gasUsed = BigNumber.from(receiptTx.gasUsed);
-          const gasPrice = await web3.eth.getGasPrice();
-          const gasAmountEth = gasUsed.mul(gasPrice);
-          const qtyAddedToCreatorBalance = withdrawAmount.sub(gasAmountEth);
-
-          chai.assert.isTrue(
-            oldBalances.user.add(qtyAddedToCreatorBalance).eq(newBalances.user)
-          );
-        });
-
-        it('Fail when the amount is not bigger than zero', async () => {
-          const withdrawAmount = BigNumber.from('0');
-          await chai
-            .expect(claimsRegistry.withdrawDeposits(withdrawAmount, creator))
-            .to.be.revertedWith('Amount cannot be ZERO');
-        });
-
-        it('Fail when the address is invalid', async () => {
-          const withdrawAmount = BigNumber.from('10000000000');
-          await chai.expect(
-            claimsRegistry.withdrawDeposits(withdrawAmount, '0x0')
-          ).to.be.reverted;
-        });
-      });
     });
   });
 });

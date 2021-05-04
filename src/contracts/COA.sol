@@ -7,11 +7,9 @@ import '@openzeppelin/upgrades/contracts/upgradeability/InitializableUpgradeabil
 import '@openzeppelin/upgrades/contracts/upgradeability/ProxyAdmin.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol';
-
 import './Project.sol';
 import './ClaimsRegistry.sol';
-import './DAO.sol';
-import './SuperDAO.sol';
+import './AbstractDAO.sol';
 import './UsersWhitelist.sol';
 
 /// @title COA main contract to store projects related information
@@ -128,10 +126,11 @@ contract COA is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initialize(string,address,address)',
+                'initialize(string,address,address,address)',
                 _name,
                 _creator,
-                address(whitelist)
+                address(whitelist),
+                address(this)
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
@@ -218,11 +217,20 @@ contract COA is Initializable, Ownable, GSNRecipient {
         bytes32
     ) internal {}
 
+    function withdrawDaoDeposits(
+        uint256 amount,
+        address payable destinationAddress,
+        address contractFrom
+    ) external onlyOwner withdrawOk(amount, destinationAddress) {
+        AbstractDAO dao = AbstractDAO(contractFrom);
+        dao.withdrawDeposits(amount, destinationAddress);
+    }
+
     function withdrawDeposits(
-        uint256 _amount,
-        address payable _destinationAddress
-    ) external onlyOwner withdrawOk(_amount, _destinationAddress) {
-        _withdrawDeposits(_amount, _destinationAddress);
+        uint256 amount,
+        address payable destinationAddress
+    ) external onlyOwner withdrawOk(amount, destinationAddress) {
+        _withdrawDeposits(amount, destinationAddress);
     }
 
     uint256[49] private _gap;
