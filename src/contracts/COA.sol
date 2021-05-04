@@ -49,17 +49,23 @@ contract COA is Initializable, Ownable, GSNRecipient {
         address _implProject,
         address _implSuperDao,
         address _implDao,
-        address _whitelist
+        address _whitelist,
+        address _relayHub
     ) public initializer {
         Ownable.initialize(msg.sender);
         GSNRecipient.initialize();
-        registry = ClaimsRegistry(_registryAddress);
+        registry = ClaimsRegistry(_registryAddress, _relayHub);
         proxyAdmin = _proxyAdmin;
         implProject = _implProject;
         implSuperDao = _implSuperDao;
         implDao = _implDao;
         whitelist = UsersWhitelist(_whitelist);
         createSuperDAO();
+        _upgradeRelayHub(_relayHub);
+    }
+
+    function setDefaultRelayHub() public onlyOwner {
+        super.setDefaultRelayHub();
     }
 
     /**

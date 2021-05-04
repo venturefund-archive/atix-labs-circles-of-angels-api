@@ -380,7 +380,8 @@ async function deployAll(
       implProject.address,
       implSuperDao.address,
       implDao.address,
-      whiteList.address
+      whiteList.address,
+      gsnConfig.relayHubAddress
     ],
     signer,
     doUpgrade,
