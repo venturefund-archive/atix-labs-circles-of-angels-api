@@ -23,11 +23,14 @@ const {
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
-const { contractAddresses, gsnConfig } = require('config');
+const { contractAddresses, gsnConfig, server } = require('config');
 const logger = require('../rest/logger')
 
 // TODO : this can be placed into the buidler's config.
 const stateFilename = 'state.json';
+
+// HIDE_LOGS in env file, to hide or not the logger printing in this file
+const HIDE_LOGS = server.hideLogs;
 
 const readState = () => readJsonSync(stateFilename);
 
@@ -255,15 +258,15 @@ async function deployProxy(contractName, params, signer, opts) {
 }
 
 async function getOrDeployContract(contractName, params, signer = undefined, reset = false) {
-  logger.info(
+  if (!HIDE_LOGS) logger.info(
       `[deployments] :: Entering getOrDeployContract. Contract ${contractName} with args [${params}].`
   );
   let contract = await getLastDeployedContract(contractName);
   if (contract === undefined || reset === true) {
-    logger.info(`[deployments] :: ${contractName} not found, deploying...`);
+    if (!HIDE_LOGS) logger.info(`[deployments] :: ${contractName} not found, deploying...`);
     [contract] = await deploy(contractName, params, signer);
     await saveDeployedContract(contractName, contract, signer);
-    logger.info(`[deployments] :: ${contractName} deployed.`);
+    if (!HIDE_LOGS) logger.info(`[deployments] :: ${contractName} deployed.`);
   }
   return contract;
 }
@@ -280,12 +283,12 @@ function buildGetOrDeployUpgradeableContract(
     options = undefined,
     reset = false
   ) {
-    logger.info(
+    if (!HIDE_LOGS) logger.info(
       `[deployments] :: Entering getOrDeployUpgradeableContract. Contract ${contractName} with args [${params}].`
     );
     let contract = await getLastDeployedContract(contractName);
     if (contract === undefined || reset === true) {
-      logger.info(`[deployments] :: ${contractName} not found, deploying...`);
+      if (!HIDE_LOGS) logger.info(`[deployments] :: ${contractName} not found, deploying...`);
       [contract] = await deployProxy(
         contractName,
         params,
@@ -293,9 +296,9 @@ function buildGetOrDeployUpgradeableContract(
         options
       );
       await saveDeployedContract(contractName, contract);
-      logger.info(`[deployments] :: ${contractName} deployed.`);
+      if (!HIDE_LOGS) logger.info(`[deployments] :: ${contractName} deployed.`);
     } else {
-      logger.info(
+      if (!HIDE_LOGS) logger.info(
         `[deployments] :: ${contractName} found, checking if an upgrade is needed`
       );
       const implContract = await getImplContract(
@@ -306,7 +309,7 @@ function buildGetOrDeployUpgradeableContract(
 
       const implCode = await ethers.provider.getCode(implContract.address);
       if (implCode !== artifact.deployedBytecode) {
-        logger.info(
+        if (!HIDE_LOGS) logger.info(
           `[deployments] :: ${contractName} need an upgrade, upgrading to new implementation`
         );
 
@@ -315,7 +318,7 @@ function buildGetOrDeployUpgradeableContract(
 
         const factory = await getContractFactoryFun(contractName, signer);
         contract = await upgrades.upgradeProxy(contract.address, factory, options);
-        logger.info(`[deployments] :: ${contractName} upgraded`);
+        if (!HIDE_LOGS) logger.info(`[deployments] :: ${contractName} upgraded`);
       }
     }
     return contract;
