@@ -128,7 +128,7 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initialize(string,address,address,address)',
+                'initDao(string,address,address,address)',
                 _name,
                 _creator,
                 address(whitelist),
@@ -152,7 +152,7 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initialize(string,address,address,address)',
+                'initSuperDao(string,address,address,address)',
                 'Super DAO',
                 owner(),
                 address(this),

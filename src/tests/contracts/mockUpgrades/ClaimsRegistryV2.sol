@@ -9,7 +9,7 @@ import '../../../contracts/UsersWhitelist.sol';
  * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
  */
 
-contract ClaimsRegistryV2 is Initializable, GSNRecipient, Ownable {
+contract ClaimsRegistryV2 is Initializable, Ownable, GSNRecipient {
     struct Claim {
         bool approved;
         bytes32 proof;

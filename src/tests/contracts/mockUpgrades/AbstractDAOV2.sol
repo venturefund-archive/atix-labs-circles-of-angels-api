@@ -92,7 +92,7 @@ contract AbstractDAOV2 is Initializable, GSNRecipient {
      * @param _name DAO name
      * @param _creator User that will be assigned as the first member
      */
-    function initialize(
+    function initAbstractDao(
         string memory _name,
         address _creator,
         address _whitelist,

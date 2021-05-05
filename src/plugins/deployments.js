@@ -23,14 +23,14 @@ const {
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
-const { contractAddresses, gsnConfig } = require('config');
+const { contractAddresses, gsnConfig, server } = require('config');
 const logger = require('../rest/logger')
 
 // TODO : this can be placed into the buidler's config.
 const stateFilename = 'state.json';
 
 // HIDE_LOGS in env file, to hide or not the logger printing in this file
-const HIDE_LOGS = process.env.HIDE_LOGS || false;   
+const HIDE_LOGS = server.hideLogs;
 
 const readState = () => readJsonSync(stateFilename);
 

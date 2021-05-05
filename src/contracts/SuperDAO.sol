@@ -8,13 +8,13 @@ import './AbstractDAO.sol';
 contract SuperDAO is AbstractDAO, Ownable {
     COA coa;
 
-    function initialize(
+    function initSuperDao(
         string memory _name,
         address _creator,
         address _coaAddress,
         address _whitelist
     ) public initializer {
-        AbstractDAO.initialize(_name, _creator, _whitelist, _coaAddress);
+        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress);
         coa = COA(_coaAddress);
     }
 

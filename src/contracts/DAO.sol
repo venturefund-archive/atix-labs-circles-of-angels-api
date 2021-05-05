@@ -5,8 +5,8 @@ import './AbstractDAO.sol';
 /// @title A DAO contract based on MolochDAO ideas
 contract DAO is AbstractDAO {
 
-    function initialize(string memory _name, address _creator, address _whitelist, address _coaAddress) public initializer {
-        AbstractDAO.initialize(_name, _creator, _whitelist, _coaAddress);
+    function initDao(string memory _name, address _creator, address _whitelist, address _coaAddress) public initializer {
+        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress);
     }
     
     function processNewDaoProposal(string memory _name, address applicant)
