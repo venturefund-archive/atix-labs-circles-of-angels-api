@@ -24,7 +24,8 @@ module.exports = {
       ]
     },
     isHttps: false,
-    domain: 'localhost'
+    domain: 'localhost',
+    hideLogs: true
   },
   frontendUrl: process.env.FRONTEND_URL,
   email: {

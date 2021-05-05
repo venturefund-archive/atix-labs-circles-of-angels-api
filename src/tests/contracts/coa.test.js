@@ -8,8 +8,11 @@ const {
 } = require('@nomiclabs/buidler');
 const { assert } = require('chai');
 const { testConfig } = require('config');
+const chai = require('chai');
+const { solidity } = require('ethereum-waffle');
 const { throwsAsync } = require('./helpers/testHelpers');
 
+chai.use(solidity);
 let coa;
 let registry;
 
@@ -97,14 +100,13 @@ contract('COA.sol', ([creator, founder, other]) => {
 
   describe('Transaction', () => {
     it('Should revert when sending a tx to the contract', async () => {
-      await throwsAsync(
+      await chai.expect(
         web3.eth.sendTransaction({
           from: other,
           to: coa.address,
           value: '0x16345785d8a0000'
-        }),
-        "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
-      );
+        })
+      ).to.be.reverted;
     });
   });
 });

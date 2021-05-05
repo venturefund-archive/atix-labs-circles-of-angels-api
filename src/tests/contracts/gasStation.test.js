@@ -9,14 +9,18 @@ const {
 const { testConfig } = require('config');
 const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
 
-const { assert } = require('chai');
+const chai = require('chai');
+const { solidity } = require('ethereum-waffle');
+
+chai.use(solidity);
+
 const { throwsAsync } = require('./helpers/testHelpers');
 
 const { isRelayHubDeployedForRecipient } = utils;
 
 const PROVIDER_URL = ethers.provider.connection.url;
 const singletonRelayHub = '0xD216153c06E857cD7f72665E0aF1d7D82172F494';
-
+const fundValue = '1000000000000000000';
 async function getProjectAt(address, consultant) {
   return deployments.getContractInstance('Project', address, consultant);
 }
@@ -30,9 +34,12 @@ contract('Gas Station Network Tests', accounts => {
     signerAddress
   ] = accounts;
   let coa;
+  let claimsRegistry;
+  let superDaoAddress;
   let whitelist;
   let subprocess;
   let hubAddress;
+
   before('Gsn provider run', async function b() {
     hubAddress = await deployRelayHub(web3, {
       from: userRelayer
@@ -45,12 +52,29 @@ contract('Gas Station Network Tests', accounts => {
     this.timeout(testConfig.contractTestTimeoutMilliseconds);
     await run('deploy', { resetStates: true });
     coa = await deployments.getLastDeployedContract('COA');
+    claimsRegistry = await deployments.getLastDeployedContract(
+      'ClaimsRegistry'
+    );
+
     whitelist = await deployments.getLastDeployedContract('UsersWhitelist');
     await coa.setWhitelist(whitelist.address);
 
     await fundRecipient(web3, {
       recipient: coa.address,
-      amount: '100000000000000000',
+      amount: fundValue,
+      relayHubAddress: hubAddress
+    });
+
+    await fundRecipient(web3, {
+      recipient: claimsRegistry.address,
+      amount: fundValue,
+      relayHubAddress: hubAddress
+    });
+
+    superDaoAddress = await coa.daos(0);
+    await fundRecipient(web3, {
+      recipient: superDaoAddress,
+      amount: fundValue,
       relayHubAddress: hubAddress
     });
   });
@@ -60,9 +84,9 @@ contract('Gas Station Network Tests', accounts => {
   });
 
   it('initially returns the singleton instance address', async () => {
-    assert.equal(await coa.getHubAddr(), singletonRelayHub);
+    chai.assert.equal(await coa.getHubAddr(), singletonRelayHub);
     const isCoaReady = await isRelayHubDeployedForRecipient(web3, coa.address);
-    assert.equal(isCoaReady, true);
+    chai.assert.equal(isCoaReady, true);
   });
 
   describe('GSN enabled ', () => {
@@ -80,36 +104,36 @@ contract('Gas Station Network Tests', accounts => {
 
     it('should execute coa TX for FREE from a user in whitelist', async () => {
       await whitelist.addUser(signerAddress);
-      coa = await deployments.getContractInstance(
+      const gsnCoa = await deployments.getContractInstance(
         'COA',
         coa.address,
         provider.getSigner(signerAddress)
       );
-      const oldBalance = await coa.provider.getBalance(signerAddress);
-      await coa.createProject(project.id, project.name);
+      const oldBalance = await gsnCoa.provider.getBalance(signerAddress);
+      await gsnCoa.createProject(project.id, project.name);
       const instance = await getProjectAt(
-        await coa.projects(0),
+        await gsnCoa.projects(0),
         provider.getSigner(signerAddress)
       );
-      assert.equal(await instance.name(), project.name);
-      const newBalance = await coa.provider.getBalance(signerAddress);
-      assert.equal(oldBalance.toString(), newBalance.toString());
+      chai.assert.equal(await instance.name(), project.name);
+      const newBalance = await gsnCoa.provider.getBalance(signerAddress);
+      chai.assert.equal(oldBalance.toString(), newBalance.toString());
     });
 
     it('should not execute coa TX from a user is not in whitelist', async () => {
-      coa = await deployments.getContractInstance(
+      const gsnCoa = await deployments.getContractInstance(
         'COA',
         coa.address,
         provider.getSigner(signerAddress)
       );
-      const oldBalance = await coa.provider.getBalance(signerAddress);
+      const oldBalance = await gsnCoa.provider.getBalance(signerAddress);
 
       await throwsAsync(
-        coa.createProject(project.id, project.name),
+        gsnCoa.createProject(project.id, project.name),
         'Error: Recipient canRelay call was rejected with error 11'
       );
-      const newBalance = await coa.provider.getBalance(signerAddress);
-      assert.equal(oldBalance.toString(), newBalance.toString());
+      const newBalance = await gsnCoa.provider.getBalance(signerAddress);
+      chai.assert.equal(oldBalance.toString(), newBalance.toString());
     });
   });
 
@@ -133,15 +157,15 @@ contract('Gas Station Network Tests', accounts => {
 
     it('should execute coa TX from a user in whitelist spending his founds', async () => {
       await whitelist.addUser(signerAddress);
-      coa = await deployments.getContractInstance(
+      const gsnCoaOff = await deployments.getContractInstance(
         'COA',
         coa.address,
         provider.getSigner(signerAddress)
       );
-      const oldBalance = await coa.provider.getBalance(signerAddress);
-      await coa.createProject(project.id, project.name);
-      const newBalance = await coa.provider.getBalance(signerAddress);
-      assert.isTrue(newBalance.lt(oldBalance));
+      const oldBalance = await gsnCoaOff.provider.getBalance(signerAddress);
+      await gsnCoaOff.createProject(project.id, project.name);
+      const newBalance = await gsnCoaOff.provider.getBalance(signerAddress);
+      chai.assert.isTrue(newBalance.lt(oldBalance));
     });
   });
 });
