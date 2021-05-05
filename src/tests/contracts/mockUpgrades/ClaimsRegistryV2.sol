@@ -1,15 +1,15 @@
 pragma solidity ^0.5.8;
 
+import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
-
 import '../../../contracts/UsersWhitelist.sol';
-
 /**
  * @title This contract holds information about claims made buy COA members
  * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
  */
-contract ClaimsRegistryV2 is Initializable, GSNRecipient {
+
+contract ClaimsRegistryV2 is Initializable, Ownable, GSNRecipient {
     struct Claim {
         bool approved;
         bytes32 proof;
@@ -118,6 +118,15 @@ contract ClaimsRegistryV2 is Initializable, GSNRecipient {
         uint256 actualCharge,
         bytes32
     ) internal {}
+
+    function withdrawDeposits(
+        uint256 amount,
+        address payable destinationAddress
+    ) external onlyOwner {
+        require(destinationAddress != address(0), 'Address cannot be empty');
+        require(amount > 0, 'Amount cannot be ZERO');
+        _withdrawDeposits(amount, destinationAddress);
+    }
 
     function setTest(string memory _test) public {
         test = _test;

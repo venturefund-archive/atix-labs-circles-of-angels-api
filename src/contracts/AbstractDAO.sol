@@ -1,11 +1,9 @@
 pragma solidity ^0.5.8;
-
-import '@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/upgrades/contracts/Initializable.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
-
 import './UsersWhitelist.sol';
+
 /// @title A DAO contract based on MolochDAO ideas
 contract AbstractDAO is Initializable, GSNRecipient {
     using SafeMath for uint256;
@@ -77,14 +75,25 @@ contract AbstractDAO is Initializable, GSNRecipient {
     }
 
     UsersWhitelist public whitelist;
+    address coaAddress;
+
+    modifier onlyCoa() {
+        require(
+            address(coaAddress) == msg.sender,
+            'Invalid caller to withdraw function'
+        );
+        _;
+    }
+
     /**
      * @param _name DAO name
      * @param _creator User that will be assigned as the first member
      */
-    function initialize(
+    function initAbstractDao(
         string memory _name,
         address _creator,
-        address _whitelist
+        address _whitelist,
+        address _coaAddress
     ) public initializer {
         name = _name;
         creationTime = now;
@@ -95,7 +104,9 @@ contract AbstractDAO is Initializable, GSNRecipient {
         processingPeriodLength = votingPeriodLength + gracePeriodLength;
         GSNRecipient.initialize();
         whitelist = UsersWhitelist(_whitelist);
+        coaAddress = address(_coaAddress);
     }
+
     /**
      * @notice Function to be invoked in order to create a new proposal.
      *
@@ -107,7 +118,7 @@ contract AbstractDAO is Initializable, GSNRecipient {
         address _applicant,
         uint8 _proposalType,
         string memory _description
-    ) public onlyMembers() {
+    ) public onlyMembers {
         ProposalType proposalType = ProposalType(_proposalType);
         require(_proposalType < 4, 'invalid type');
         requireProposalTypeIsValid(proposalType);
@@ -120,24 +131,26 @@ contract AbstractDAO is Initializable, GSNRecipient {
         }
 
         address memberAddress = msg.sender;
-        uint256 startingPeriod = max(
-            getCurrentPeriod(),
-            proposalQueue.length == 0
-                ? 0
-                : proposalQueue[proposalQueue.length.sub(1)].startingPeriod
-        )
-            .add(1);
-        Proposal memory proposal = Proposal({
-            proposer: memberAddress,
-            description: _description,
-            proposalType: proposalType,
-            applicant: _applicant,
-            yesVotes: 0,
-            noVotes: 0,
-            didPass: false,
-            startingPeriod: startingPeriod,
-            processed: false
-        });
+        uint256 startingPeriod =
+            max(
+                getCurrentPeriod(),
+                proposalQueue.length == 0
+                    ? 0
+                    : proposalQueue[proposalQueue.length.sub(1)].startingPeriod
+            )
+                .add(1);
+        Proposal memory proposal =
+            Proposal({
+                proposer: memberAddress,
+                description: _description,
+                proposalType: proposalType,
+                applicant: _applicant,
+                yesVotes: 0,
+                noVotes: 0,
+                didPass: false,
+                startingPeriod: startingPeriod,
+                processed: false
+            });
 
         proposalQueue.push(proposal);
 
@@ -156,7 +169,7 @@ contract AbstractDAO is Initializable, GSNRecipient {
      */
     function submitVote(uint256 _proposalIndex, uint8 _vote)
         public
-        onlyMembers()
+        onlyMembers
     {
         address memberAddress = msg.sender;
         require(
@@ -309,11 +322,8 @@ contract AbstractDAO is Initializable, GSNRecipient {
     }
 
     function addMember(address memberAddress) private {
-        Member memory member = Member({
-            role: Role.Normal,
-            exists: true,
-            shares: 1
-        });
+        Member memory member =
+            Member({role: Role.Normal, exists: true, shares: 1});
         members[memberAddress] = member;
     }
 
@@ -335,19 +345,19 @@ contract AbstractDAO is Initializable, GSNRecipient {
     function processNewDaoProposal(string memory _name, address _applicant)
         internal;
 
-    function setWhitelist(address _whitelist) public onlyMembers(){
+    function setWhitelist(address _whitelist) public onlyMembers {
         whitelist = UsersWhitelist(_whitelist);
     }
 
     function acceptRelayedCall(
-        address ,
+        address,
         address from,
         bytes calldata,
-        uint256 ,
-        uint256 ,
-        uint256 ,
-        uint256 ,
-        bytes calldata ,
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        bytes calldata,
         uint256
     ) external view returns (uint256, bytes memory) {
         Member storage member = members[from];
@@ -358,12 +368,21 @@ contract AbstractDAO is Initializable, GSNRecipient {
         }
     }
 
-    function _preRelayedCall(bytes memory context) internal returns (bytes32) {
-        
+    function _preRelayedCall(bytes memory context) internal returns (bytes32) {}
+
+    function _postRelayedCall(
+        bytes memory context,
+        bool,
+        uint256 actualCharge,
+        bytes32
+    ) internal {}
+
+    function withdrawDeposits(
+        uint256 amount,
+        address payable destinationAddress
+    ) external onlyCoa {
+        _withdrawDeposits(amount, destinationAddress);
     }
 
-    function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
-        
-    }
-    uint256[49] private _gap;
+    uint256[48] private _gap;
 }

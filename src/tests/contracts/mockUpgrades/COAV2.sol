@@ -10,8 +10,7 @@ import '@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.so
 
 import '../../../contracts/Project.sol';
 import '../../../contracts/ClaimsRegistry.sol';
-import '../../../contracts/DAO.sol';
-import '../../../contracts/SuperDAO.sol';
+import '../../../contracts/AbstractDAO.sol';
 import '../../../contracts/UsersWhitelist.sol';
 
 /// @title COA main contract to store projects related information
@@ -43,6 +42,12 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
     address internal implDao;
     UsersWhitelist public whitelist;
     string public test;
+
+    modifier withdrawOk(uint256 _amount, address _destinationAddress) {
+        require(_destinationAddress != address(0), 'Address cannot be empty');
+        require(_amount > 0, 'Amount cannot be ZERO');
+        _;
+    }
 
     function coaInitialize(
         address _registryAddress,
@@ -123,10 +128,11 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initialize(string,address,address)',
+                'initDao(string,address,address,address)',
                 _name,
                 _creator,
-                address(whitelist)
+                address(whitelist),
+                address(this)
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
@@ -146,7 +152,7 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initialize(string,address,address,address)',
+                'initSuperDao(string,address,address,address)',
                 'Super DAO',
                 owner(),
                 address(this),
@@ -167,7 +173,7 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
      */
     function addAgreement(address _project, string calldata _agreementHash)
         external
-        onlyOwner()
+        onlyOwner
     {
         agreements[_project] = _agreementHash;
     }
@@ -180,7 +186,7 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         return projects.length;
     }
 
-    function setWhitelist(address _whitelist) external onlyOwner() {
+    function setWhitelist(address _whitelist) external onlyOwner {
         whitelist = UsersWhitelist(_whitelist);
     }
 
@@ -212,6 +218,22 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         uint256,
         bytes32
     ) internal {}
+
+    function withdrawDaoDeposits(
+        uint256 amount,
+        address payable destinationAddress,
+        address contractFrom
+    ) external onlyOwner withdrawOk(amount, destinationAddress) {
+        AbstractDAO dao = AbstractDAO(contractFrom);
+        dao.withdrawDeposits(amount, destinationAddress);
+    }
+
+    function withdrawDeposits(
+        uint256 amount,
+        address payable destinationAddress
+    ) external onlyOwner withdrawOk(amount, destinationAddress) {
+        _withdrawDeposits(amount, destinationAddress);
+    }
 
     function setTest(string memory _test) public {
         test = _test;

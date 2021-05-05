@@ -1,15 +1,13 @@
 const { it, beforeEach } = global;
-const {
-  run,
-  deployments,
-  web3,
-  upgrades,
-  ethers
-} = require('@nomiclabs/buidler');
+const { run, deployments, web3 } = require('@nomiclabs/buidler');
 const { utils } = require('ethers');
 const { assert } = require('chai');
 const { testConfig } = require('config');
-const { throwsAsync, waitForEvent } = require('./helpers/testHelpers');
+const chai = require('chai');
+const { solidity } = require('ethereum-waffle');
+const { waitForEvent } = require('./helpers/testHelpers');
+
+chai.use(solidity);
 
 const addClaim = async (
   claimsRegistry,
@@ -159,13 +157,12 @@ contract('ClaimsRegistry.sol', ([creator]) => {
   });
 
   it('It should revert when sending a tx to the contract', async () => {
-    await throwsAsync(
+    await chai.expect(
       web3.eth.sendTransaction({
         from: creator,
         to: registry.address,
         value: '0x16345785d8a0000'
-      }),
-      "Returned error: Transaction reverted: function selector was not recognized and there's no fallback function"
-    );
+      })
+    ).to.be.reverted;
   });
 });
