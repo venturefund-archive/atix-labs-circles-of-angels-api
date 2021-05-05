@@ -62,14 +62,22 @@ describe('Deployments tests', () => {
 
     describe('with an upgradeable contract deployed', () => {
       let contract1;
-
+      let whitelist;
+      beforeAll(async () => {
+        whitelist = await getOrDeployContract(
+          'UsersWhitelist',
+          [],
+          creator,
+          false
+        );
+      });
       beforeEach(async () => {
         contract1 = await getOrDeployUpgradeableContract(
           validContractName,
-          [],
+          [whitelist.address],
           creator,
           false,
-          undefined,
+          { initializer: 'claimsInitialize' },
           true
         );
       });
