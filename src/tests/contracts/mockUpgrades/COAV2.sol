@@ -55,7 +55,8 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         address _implProject,
         address _implSuperDao,
         address _implDao,
-        address _whitelist
+        address _whitelist,
+        address _relayHub
     ) public initializer {
         Ownable.initialize(msg.sender);
         GSNRecipient.initialize();
@@ -66,6 +67,11 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         implDao = _implDao;
         whitelist = UsersWhitelist(_whitelist);
         createSuperDAO();
+        _upgradeRelayHub(_relayHub);
+    }
+
+    function setDefaultRelayHub() public onlyOwner {
+        super.setDefaultRelayHub();
     }
 
     /**
@@ -128,11 +134,12 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initDao(string,address,address,address)',
+                'initDao(string,address,address,address,address)',
                 _name,
                 _creator,
                 address(whitelist),
-                address(this)
+                address(this),
+                getHubAddr()
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
@@ -152,11 +159,12 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initSuperDao(string,address,address,address)',
+                'initSuperDao(string,address,address,address,address)',
                 'Super DAO',
                 owner(),
                 address(this),
-                address(whitelist)
+                address(whitelist),
+                getHubAddr()
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);

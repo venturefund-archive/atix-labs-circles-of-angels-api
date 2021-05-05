@@ -368,7 +368,7 @@ async function deployAll(
 
   const registry = await getOrDeployUpgradeableContract(
     'ClaimsRegistry',
-    [whiteList.address],
+    [whiteList.address, gsnConfig.relayHubAddress],
     signer,
     doUpgrade,
     { initializer: 'claimsInitialize' },

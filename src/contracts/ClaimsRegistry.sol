@@ -31,10 +31,15 @@ contract ClaimsRegistry is Initializable, Ownable, GSNRecipient {
     );
     UsersWhitelist public whitelist;
 
-    function claimsInitialize(address _whitelist) public initializer {
+    function claimsInitialize(address _whitelist, address _relayHub) public initializer {
         Ownable.initialize(msg.sender);
         GSNRecipient.initialize();
         whitelist = UsersWhitelist(_whitelist);
+        _upgradeRelayHub(_relayHub);
+    }
+
+    function setDefaultRelayHub() public onlyOwner {
+        super.setDefaultRelayHub();
     }
 
     /**

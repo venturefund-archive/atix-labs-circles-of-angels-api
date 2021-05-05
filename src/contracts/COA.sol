@@ -58,7 +58,7 @@ contract COA is Initializable, Ownable, GSNRecipient {
     ) public initializer {
         Ownable.initialize(msg.sender);
         GSNRecipient.initialize();
-        registry = ClaimsRegistry(_registryAddress, _relayHub);
+        registry = ClaimsRegistry(_registryAddress);
         proxyAdmin = _proxyAdmin;
         implProject = _implProject;
         implSuperDao = _implSuperDao;
@@ -132,11 +132,12 @@ contract COA is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initDao(string,address,address,address)',
+                'initDao(string,address,address,address,address)',
                 _name,
                 _creator,
                 address(whitelist),
-                address(this)
+                address(this),
+                getHubAddr()
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
@@ -156,11 +157,12 @@ contract COA is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initSuperDao(string,address,address,address)',
+                'initSuperDao(string,address,address,address,address)',
                 'Super DAO',
                 owner(),
+                address(whitelist),
                 address(this),
-                address(whitelist)
+                getHubAddr()
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);
