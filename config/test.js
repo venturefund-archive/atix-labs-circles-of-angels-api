@@ -12,7 +12,7 @@ module.exports = {
     maxFileSize: 5000000
   },
   buidler: {
-    defaultNetwork: 'buidlerevm'
+    defaultNetwork: 'develop'
   },
   frontendUrl: '//test',
   crypto: {
