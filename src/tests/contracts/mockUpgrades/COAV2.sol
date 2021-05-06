@@ -56,7 +56,7 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         address _implSuperDao,
         address _implDao,
         address _whitelist,
-        address _relayHub
+        address _relayHubAddr
     ) public initializer {
         Ownable.initialize(msg.sender);
         GSNRecipient.initialize();
@@ -66,8 +66,8 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         implSuperDao = _implSuperDao;
         implDao = _implDao;
         whitelist = UsersWhitelist(_whitelist);
-        createSuperDAO();
-        _upgradeRelayHub(_relayHub);
+        createSuperDAO(_relayHubAddr);
+        GSNRecipient._upgradeRelayHub(_relayHubAddr);
     }
 
     function setDefaultRelayHub() public onlyOwner {
@@ -152,7 +152,7 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
      * @dev Create a SuperDAO
      *      It's the DAO that can be used to create other DAOs.
      */
-    function createSuperDAO() internal {
+    function createSuperDAO(address _relayHubAddr) internal {
         require(
             proxyAdmin != owner(),
             'The creator can not be the admin proxy.'
@@ -164,7 +164,7 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
                 owner(),
                 address(this),
                 address(whitelist),
-                getHubAddr()
+                _relayHubAddr
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);

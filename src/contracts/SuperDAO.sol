@@ -13,9 +13,9 @@ contract SuperDAO is AbstractDAO {
         address _creator,
         address _whitelist,
         address _coaAddress,
-        address _relayHub
+        address _relayHubAddr
     ) public initializer {
-        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress, _relayHub);
+        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress, _relayHubAddr);
         coa = COA(_coaAddress);
     }
 

@@ -97,7 +97,7 @@ contract AbstractDAOV2 is Initializable, GSNRecipient {
         address _creator,
         address _whitelist,
         address _coaAddress,
-        address _relayHub
+        address _relayHubAddr
     ) public initializer {
         name = _name;
         creationTime = now;
@@ -109,7 +109,7 @@ contract AbstractDAOV2 is Initializable, GSNRecipient {
         GSNRecipient.initialize();
         whitelist = UsersWhitelist(_whitelist);
         coaAddress = address(_coaAddress);
-        _upgradeRelayHub(_relayHub);
+        GSNRecipient._upgradeRelayHub(_relayHubAddr);
     }
 
     function setDefaultRelayHub() public onlyCoa {
