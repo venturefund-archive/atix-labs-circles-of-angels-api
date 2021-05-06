@@ -162,8 +162,8 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
                 'initSuperDao(string,address,address,address,address)',
                 'Super DAO',
                 owner(),
-                address(this),
                 address(whitelist),
+                address(this),
                 _relayHubAddr
             );
         AdminUpgradeabilityProxy proxy =
