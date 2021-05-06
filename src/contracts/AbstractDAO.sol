@@ -102,10 +102,10 @@ contract AbstractDAO is Initializable, GSNRecipient {
         periodDuration = 17280;
         votingPeriodLength = 35; /// periods
         gracePeriodLength = 35;
-        processingPeriodLength = votingPeriodLength + gracePeriodLength;
-        GSNRecipient.initialize();
+        processingPeriodLength = votingPeriodLength.add(gracePeriodLength);
         whitelist = UsersWhitelist(_whitelist);
-        coaAddress = address(_coaAddress);
+        coaAddress = _coaAddress;
+        GSNRecipient.initialize();
         GSNRecipient._upgradeRelayHub(_relayHubAddr);
     }
 
