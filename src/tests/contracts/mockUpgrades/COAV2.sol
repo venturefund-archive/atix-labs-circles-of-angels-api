@@ -67,7 +67,9 @@ contract COAV2 is Initializable, Ownable, GSNRecipient {
         implDao = _implDao;
         whitelist = UsersWhitelist(_whitelist);
         createSuperDAO(_relayHubAddr);
-        GSNRecipient._upgradeRelayHub(_relayHubAddr);
+        if (_relayHubAddr != GSNRecipient.getHubAddr()) {
+            GSNRecipient._upgradeRelayHub(_relayHubAddr);
+        }
     }
 
     function setDefaultRelayHub() public onlyOwner {

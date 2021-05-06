@@ -106,7 +106,9 @@ contract AbstractDAO is Initializable, GSNRecipient {
         whitelist = UsersWhitelist(_whitelist);
         coaAddress = _coaAddress;
         GSNRecipient.initialize();
-        GSNRecipient._upgradeRelayHub(_relayHubAddr);
+        if (_relayHubAddr != GSNRecipient.getHubAddr()) {
+            GSNRecipient._upgradeRelayHub(_relayHubAddr);
+        }
     }
 
     function setDefaultRelayHub() public onlyCoa {

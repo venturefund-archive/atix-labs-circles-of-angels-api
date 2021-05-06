@@ -38,7 +38,9 @@ contract ClaimsRegistryV2 is Initializable, Ownable, GSNRecipient {
         Ownable.initialize(msg.sender);
         GSNRecipient.initialize();
         whitelist = UsersWhitelist(_whitelist);
-        GSNRecipient._upgradeRelayHub(_relayHubAddr);
+        if (_relayHubAddr != GSNRecipient.getHubAddr()) {
+            GSNRecipient._upgradeRelayHub(_relayHubAddr);
+        }
     }
 
     function setDefaultRelayHub() public onlyOwner {

@@ -19,7 +19,8 @@ module.exports = {
     key: '3c50cffcdce9a802a26f5293aa4dc689' // added to run tests
   },
   gsnConfig: {
-    isEnabled: false
+    isEnabled: false,
+    relayHubAddress: '0xD216153c06E857cD7f72665E0aF1d7D82172F494'
   },
   balancesConfig: {
     gsnAccountThreshold: '500',
