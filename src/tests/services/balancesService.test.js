@@ -48,7 +48,7 @@ const originalMocks = {
   fundRecipient: jest.fn()
 };
 
-jest.mock('@openzeppelin/gsn-helpers');
+jest.mock('../../rest/services/helpers/gsnHelper');
 jest.mock('@nomiclabs/buidler');
 
 describe('BalanceService tests', () => {
