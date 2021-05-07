@@ -1,6 +1,7 @@
 const { readArtifact } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory, Wallet, utils } = require('ethers');
 const { task, types } = require('@nomiclabs/buidler/config');
+const config = require('config');
 
 const { sha3 } = require('../../util/hash');
 const { proposalTypeEnum, voteEnum } = require('../../util/constants');
@@ -10,6 +11,13 @@ const testTeardown = require('../../../../scripts/jestGlobalTearDown');
 
 const balanceService = require('../balancesService');
 const Logger = require('../../logger');
+
+async function getDeploymentSigner(env) {
+  const { provider } = env.ethers;
+  const accounts = await provider.listAccounts();
+
+  return provider.getSigner(accounts[0]);
+}
 
 const getCOAContract = async env =>
   env.deployments.getLastDeployedContract('COA');
@@ -43,6 +51,82 @@ task('test-contracts:testTeardown', 'Runs the test teardown').setAction(
     await testTeardown();
   }
 );
+
+async function disableGSNAndDeployV0(
+  env,
+  resetStates,
+  doUpgrade,
+  resetAllContracts
+) {
+  if (resetStates || resetAllContracts) env.coa.clearContracts();
+
+  const oldGSNIsEnabled = config.gsnConfig.isEnabled;
+  config.gsnConfig.isEnabled = false;
+  const signer = await getDeploymentSigner(env);
+  await env.deployments.deployV0(
+    signer,
+    resetStates,
+    doUpgrade,
+    resetAllContracts
+  );
+  config.gsnConfig.isEnabled = oldGSNIsEnabled;
+  if (config.gsnConfig.isEnabled) await global.run('check-balances');
+}
+
+task('deploy_v0', 'Deploys COA v0 contracts')
+  .addOptionalParam(
+    'resetStates',
+    'redeploy all proxies in order to reset all contract states',
+    false,
+    types.boolean
+  )
+  .addOptionalParam(
+    'resetAllContracts',
+    'force deploy of all contracts',
+    false,
+    types.boolean
+  )
+  .setAction(async ({ resetStates, resetAllContracts }, env) => {
+    await disableGSNAndDeployV0(env, resetStates, false, resetAllContracts);
+  });
+
+task('deploy', 'Deploys COA contracts')
+  .addOptionalParam(
+    'resetStates',
+    'redeploy all proxies in order to reset all contract states',
+    false,
+    types.boolean
+  )
+  .addOptionalParam(
+    'resetAllContracts',
+    'force deploy of all contracts',
+    false,
+    types.boolean
+  )
+  .setAction(async (params, env) => {
+    await global.run('deploy_v0', params);
+    // TODO: upgrade to v1
+  });
+
+task(
+  'upgradeContracts',
+  'Deploys and Upgrades (if necessary) upgradeable COA contracts'
+)
+  .addOptionalParam(
+    'resetStates',
+    'redeploy all proxies in order to reset all contract states',
+    false,
+    types.boolean
+  )
+  .addOptionalParam(
+    'resetAllContracts',
+    'force deploy of all contracts',
+    false,
+    types.boolean
+  )
+  .setAction(async ({ resetStates, resetAllContracts }, env) => {
+    await disableGSNAndDeployV0(env, resetStates, true, resetAllContracts);
+  });
 
 task('get-signer-zero', 'Gets signer zero address').setAction(
   async (_args, env) => {

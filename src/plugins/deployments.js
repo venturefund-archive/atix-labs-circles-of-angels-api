@@ -317,12 +317,77 @@ function buildGetOrDeployUpgradeableContract(
           throw new Error(`The contract ${contractName} needs an upgrade, upgrade it with the buidler command ´upgradeContracts´`)
 
         const factory = await getContractFactoryFun(contractName, signer);
-        contract = await upgrades.upgradeProxy(contract.address, factory, options);
+        contract = await upgradeContract(contract.address, factory, options);
         if (!HIDE_LOGS) logger.info(`[deployments] :: ${contractName} upgraded`);
       }
     }
     return contract;
   }
+}
+
+function buildUpgradeContract(upgradeFunction = upgrades.upgradeProxy) {
+  return async function upgradeContract(contractAddress, newImplementationFactory, options) {
+    const upgradedContract = await upgradeFunction(contractAddress, newImplementationFactory, options);
+    await upgradedContract[options.upgradeContractFunction](...options.upgradeContractFunctionParams);
+    return upgradedContract;
+  }
+}
+
+async function deployV0(
+  signer = undefined,
+  resetStates = false,
+  doUpgrade = false,
+  resetAllContracts = false
+) {
+
+  const implProject = await getOrDeployContract(
+    'Project_v0',
+    [],
+    signer,
+    resetAllContracts
+  );
+
+  const implSuperDao = await getOrDeployContract(
+    'SuperDAO_v0',
+    [],
+    signer,
+    resetAllContracts
+  );
+
+  const implDao = await getOrDeployContract('DAO_v0', [], signer, resetAllContracts);
+
+  const resetProxies = resetStates || resetAllContracts;
+
+  const proxyAdmin = await getOrDeployContract(
+    'ProxyAdmin',
+    [],
+    signer,
+    resetProxies
+  );
+
+  const registry = await getOrDeployUpgradeableContract(
+    'ClaimsRegistry_v0',
+    [],
+    signer,
+    doUpgrade,
+    { initializer: 'initialize' },
+    resetProxies
+  );
+
+  await getOrDeployUpgradeableContract(
+    'COA_v0',
+    [
+      registry.address,
+      proxyAdmin.address,
+      implProject.address,
+      implSuperDao.address,
+      implDao.address,
+    ],
+    signer,
+    doUpgrade,
+    { initializer: 'coaInitialize' },
+    resetProxies
+  );
 }
 
 async function deployAll(
@@ -461,6 +526,7 @@ function isDeployed(state, chainId, name) {
 }
 
 const getOrDeployUpgradeableContract = buildGetOrDeployUpgradeableContract()
+const upgradeContract = buildUpgradeContract();
 
 module.exports = {
   deploy,
@@ -479,5 +545,7 @@ module.exports = {
   getOrDeployContract,
   buildGetOrDeployUpgradeableContract,
   getOrDeployUpgradeableContract,
-  deployAll
+  upgradeContract,
+  deployAll,
+  deployV0
 };
