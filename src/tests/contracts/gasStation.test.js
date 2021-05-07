@@ -1,12 +1,8 @@
 /* eslint-disable no-console */
 const { describe, it, before, beforeEach, after } = global;
 const { run, deployments, ethers, web3 } = require('@nomiclabs/buidler');
-const {
-  deployRelayHub,
-  runRelayer,
-  fundRecipient
-} = require('@openzeppelin/gsn-helpers');
-const { testConfig } = require('config');
+const { deployRelayHub, runRelayer } = require('@openzeppelin/gsn-helpers');
+const { testConfig, gsnConfig } = require('config');
 const { GSNDevProvider, utils } = require('@openzeppelin/gsn-provider');
 
 const chai = require('chai');
@@ -16,11 +12,13 @@ chai.use(solidity);
 
 const { throwsAsync } = require('./helpers/testHelpers');
 
+const { fundRecipient } = require('../../rest/services/helpers/gsnHelper');
+
 const { isRelayHubDeployedForRecipient } = utils;
 
 const PROVIDER_URL = ethers.provider.connection.url;
-const singletonRelayHub = '0xD216153c06E857cD7f72665E0aF1d7D82172F494';
 const fundValue = '1000000000000000000';
+
 async function getProjectAt(address, consultant) {
   return deployments.getContractInstance('Project', address, consultant);
 }
@@ -84,7 +82,7 @@ contract('Gas Station Network Tests', accounts => {
   });
 
   it('initially returns the singleton instance address', async () => {
-    chai.assert.equal(await coa.getHubAddr(), singletonRelayHub);
+    chai.assert.equal(await coa.getHubAddr(), gsnConfig.relayHubAddress);
     const isCoaReady = await isRelayHubDeployedForRecipient(web3, coa.address);
     chai.assert.equal(isCoaReady, true);
   });

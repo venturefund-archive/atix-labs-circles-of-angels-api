@@ -5,16 +5,17 @@ import './COA.sol';
 import './AbstractDAO.sol';
 
 /// @title This contracts is a DAO but will also process new dao creation proposals
-contract SuperDAO is AbstractDAO, Ownable {
+contract SuperDAO is AbstractDAO {
     COA coa;
 
     function initSuperDao(
         string memory _name,
         address _creator,
+        address _whitelist,
         address _coaAddress,
-        address _whitelist
+        address _relayHubAddr
     ) public initializer {
-        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress);
+        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress, _relayHubAddr);
         coa = COA(_coaAddress);
     }
 

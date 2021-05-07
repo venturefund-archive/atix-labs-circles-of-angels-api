@@ -1,7 +1,7 @@
 const { balancesConfig } = require('config');
-const { fundRecipient, balance } = require('@openzeppelin/gsn-helpers');
 const { parseEther, formatEther } = require('ethers').utils;
 const { BigNumber } = require('@ethersproject/bignumber');
+const { fundRecipient, balance } = require('./helpers/gsnHelper');
 
 const COAError = require('../errors/COAError');
 const errors = require('../errors/exporter/ErrorExporter');
@@ -22,7 +22,11 @@ async function checkGSNAccountBalance(coa) {
 
   const accountBalance = await provider.getBalance(gsnAccount);
 
-  logger.info(`[BalancesService] :: Main account balance: ${accountBalance}`);
+  logger.info(
+    `[BalancesService] :: Main account balance: ${formatEther(
+      accountBalance.toString()
+    )}`
+  );
   const gsnAccountThreshold = parseEther(balancesConfig.gsnAccountThreshold);
   if (accountBalance.lte(gsnAccountThreshold)) {
     await this.mailService.sendLowBalanceGSNAccountEmail(

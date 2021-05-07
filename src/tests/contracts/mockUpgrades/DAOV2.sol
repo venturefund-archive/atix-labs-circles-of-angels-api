@@ -6,8 +6,14 @@ import '../../../contracts/AbstractDAO.sol';
 contract DAOV2 is AbstractDAO {
     string public test;
 
-    function initialize(string memory _name, address _creator, address _whitelist, address _coaAddress) public initializer {
-        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress);
+    function initDao(
+        string memory _name,
+        address _creator,
+        address _whitelist,
+        address _coaAddress,
+        address _relayHubAddr
+    ) public initializer {
+        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress, _relayHubAddr);
     }
 
     function processNewDaoProposal(string memory _name, address applicant)

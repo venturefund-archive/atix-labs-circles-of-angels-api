@@ -66,7 +66,7 @@ task('create-member', 'Create COA member')
     const accounts = await env.ethers.getSigners();
     const tx = {
       to: address,
-      value: utils.parseEther('0.001')
+      value: utils.parseEther('0.003')
     };
     await accounts[0].sendTransaction(tx);
     const walletWithProvider = wallet.connect(env.ethers.provider);

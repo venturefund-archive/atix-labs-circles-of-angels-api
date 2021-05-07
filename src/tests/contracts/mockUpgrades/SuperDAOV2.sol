@@ -8,13 +8,14 @@ contract SuperDAOV2 is AbstractDAO {
     COA coa;
     string public test;
 
-    function initDao(
+    function initSuperDao(
         string memory _name,
         address _creator,
+        address _whitelist,
         address _coaAddress,
-        address _whitelist
+        address _relayHubAddr
     ) public initializer {
-        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress);
+        AbstractDAO.initAbstractDao(_name, _creator, _whitelist, _coaAddress, _relayHubAddr);
         coa = COA(_coaAddress);
     }
 

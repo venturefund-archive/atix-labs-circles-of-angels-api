@@ -53,7 +53,8 @@ contract COA is Initializable, Ownable, GSNRecipient {
         address _implProject,
         address _implSuperDao,
         address _implDao,
-        address _whitelist
+        address _whitelist,
+        address _relayHubAddr
     ) public initializer {
         Ownable.initialize(msg.sender);
         GSNRecipient.initialize();
@@ -63,7 +64,14 @@ contract COA is Initializable, Ownable, GSNRecipient {
         implSuperDao = _implSuperDao;
         implDao = _implDao;
         whitelist = UsersWhitelist(_whitelist);
-        createSuperDAO();
+        createSuperDAO(_relayHubAddr);
+        if (_relayHubAddr != GSNRecipient.getHubAddr()) {
+            GSNRecipient._upgradeRelayHub(_relayHubAddr);
+        }
+    }
+
+    function setDefaultRelayHub() public onlyOwner {
+        super.setDefaultRelayHub();
     }
 
     /**
@@ -126,11 +134,12 @@ contract COA is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initDao(string,address,address,address)',
+                'initDao(string,address,address,address,address)',
                 _name,
                 _creator,
                 address(whitelist),
-                address(this)
+                address(this),
+                GSNRecipient.getHubAddr()
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
@@ -143,18 +152,19 @@ contract COA is Initializable, Ownable, GSNRecipient {
      * @dev Create a SuperDAO
      *      It's the DAO that can be used to create other DAOs.
      */
-    function createSuperDAO() internal {
+    function createSuperDAO(address _relayHubAddr) internal {
         require(
             proxyAdmin != owner(),
             'The creator can not be the admin proxy.'
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initSuperDao(string,address,address,address)',
+                'initSuperDao(string,address,address,address,address)',
                 'Super DAO',
                 owner(),
+                address(whitelist),
                 address(this),
-                address(whitelist)
+                _relayHubAddr
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);

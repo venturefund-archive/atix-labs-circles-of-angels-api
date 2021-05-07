@@ -10,10 +10,13 @@
 
 const { balancesConfig } = require('config');
 const { parseEther } = require('ethers').utils;
-const { balance, fundRecipient } = require('@openzeppelin/gsn-helpers');
 const { web3 } = require('@nomiclabs/buidler');
 const { injectMocks } = require('../../rest/util/injection');
 const originalBalanceService = require('../../rest/services/balancesService');
+const {
+  balance,
+  fundRecipient
+} = require('../../rest/services/helpers/gsnHelper');
 
 let balanceService;
 let mocks;
@@ -45,7 +48,7 @@ const originalMocks = {
   fundRecipient: jest.fn()
 };
 
-jest.mock('@openzeppelin/gsn-helpers');
+jest.mock('../../rest/services/helpers/gsnHelper');
 jest.mock('@nomiclabs/buidler');
 
 describe('BalanceService tests', () => {

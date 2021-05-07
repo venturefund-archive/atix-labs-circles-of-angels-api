@@ -1,14 +1,11 @@
 const { describe, it, before, beforeEach, after } = global;
-const { run, deployments, ethers } = require('@nomiclabs/buidler');
+const { run, deployments } = require('@nomiclabs/buidler');
 const { assert } = require('chai');
-const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
 const Web3 = require('web3');
-const {
-  deployRelayHub,
-  runRelayer,
-  fundRecipient
-} = require('@openzeppelin/gsn-helpers');
+const { deployRelayHub, runRelayer } = require('@openzeppelin/gsn-helpers');
 const { testConfig } = require('config');
+
+const { fundRecipient } = require('../../rest/services/helpers/gsnHelper');
 
 const PROVIDER_URL = 'http://localhost:8545';
 
