@@ -362,6 +362,31 @@ contract(
             gsnConfig.relayHubAddress.toLowerCase()
           );
         });
+
+        it('upgrade should set coaAdress', async () => {
+          const registryCoaAddress = await newRegistryContract.coaAddress();
+          assert.equal(
+            registryCoaAddress.toLowerCase(),
+            coaAddress.toLowerCase()
+          );
+        });
+
+        it('upgrade should allow still adding claims', async () => {
+          const newApproved = false;
+          await registryContract.addClaim(
+            projectAddress,
+            mockClaim,
+            mockProof,
+            newApproved,
+            mockMilestone
+          );
+          const claim = await newRegistryContract.registry(
+            projectAddress,
+            creator,
+            mockClaim
+          );
+          assert.equal(claim.approved, newApproved);
+        });
       });
     });
   }
