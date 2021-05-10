@@ -74,7 +74,7 @@ describe('Deployments tests', () => {
       beforeEach(async () => {
         contract1 = await getOrDeployUpgradeableContract(
           validContractName,
-          [whitelist.address],
+          [whitelist.address, gsnConfig.relayHubAddress],
           creator,
           false,
           { initializer: 'claimsInitialize' },
@@ -89,7 +89,7 @@ describe('Deployments tests', () => {
       it('getOrDeployUpgradeableContract should return the deployed contract if the contract was already deployed', async () => {
         const contract2 = await getOrDeployUpgradeableContract(
           validContractName,
-          [],
+          [whitelist.address, gsnConfig.relayHubAddress],
           creator
         );
         expect(contract1.address).toEqual(contract2.address);

@@ -22,9 +22,6 @@ async function disableGSNAndDeployAll(
   doUpgrade,
   resetAllContracts
 ) {
-  // Make sure everything is compiled
-  await run('compile');
-
   if (resetStates || resetAllContracts) env.coa.clearContracts();
 
   const oldGSNIsEnabled = config.gsnConfig.isEnabled;

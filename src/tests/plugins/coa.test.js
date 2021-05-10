@@ -156,7 +156,7 @@ describe('COA plugin tests', () => {
       expect(block).toHaveProperty('timestamp', expect.any(Number));
     });
     it('should return null if the block does not exist', async () => {
-      const response = await coa.getBlock(50);
+      const response = await coa.getBlock(50000);
       expect(response).toEqual(null);
     });
   });

@@ -93,7 +93,8 @@ contract AbstractDAO is Initializable, GSNRecipient {
         string memory _name,
         address _creator,
         address _whitelist,
-        address _coaAddress
+        address _coaAddress,
+        address _relayHubAddr
     ) public initializer {
         name = _name;
         creationTime = now;
@@ -101,10 +102,17 @@ contract AbstractDAO is Initializable, GSNRecipient {
         periodDuration = 17280;
         votingPeriodLength = 35; /// periods
         gracePeriodLength = 35;
-        processingPeriodLength = votingPeriodLength + gracePeriodLength;
-        GSNRecipient.initialize();
+        processingPeriodLength = votingPeriodLength.add(gracePeriodLength);
         whitelist = UsersWhitelist(_whitelist);
-        coaAddress = address(_coaAddress);
+        coaAddress = _coaAddress;
+        GSNRecipient.initialize();
+        if (_relayHubAddr != GSNRecipient.getHubAddr()) {
+            GSNRecipient._upgradeRelayHub(_relayHubAddr);
+        }
+    }
+
+    function setDefaultRelayHub() public onlyCoa {
+        super.setDefaultRelayHub();
     }
 
     /**
