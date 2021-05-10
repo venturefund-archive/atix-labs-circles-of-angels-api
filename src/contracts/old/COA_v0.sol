@@ -56,7 +56,7 @@ contract COA_v0 is Initializable, Ownable {
      *
      * @dev the profile can be bytes32 but IPFS hashes are 34 bytes long due to multihash. We could strip the first two bytes but for now it seems unnecessary.
      */
-    function createMember(string memory _profile) public {
+    function createMember(string calldata _profile) external {
         // role: Role.Activist,
         Member memory member = Member({profile: _profile});
         members[msg.sender] = member;
@@ -67,8 +67,8 @@ contract COA_v0 is Initializable, Ownable {
      * @param _profile - string of the member's profile.
      * @param _existingAddress - address of the old member
      */
-    function migrateMember(string memory _profile, address _existingAddress)
-        public
+    function migrateMember(string calldata _profile, address _existingAddress)
+        external
         onlyOwner
     {
         // role: Role.Activist,
@@ -79,15 +79,19 @@ contract COA_v0 is Initializable, Ownable {
     /**
      * @dev Create a Project
      * @param _name - string of the Project's name.
+     * @return address - the address of the new project
      */
-    function createProject(uint256 _id, string memory _name)
-        public
-        returns (uint256)
+    function createProject(uint256 _id, string calldata _name)
+    external
+    returns (address)
     {
-        bytes memory payload = abi.encodeWithSignature("initialize(string)", _name);
-        AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implProject, owner(), payload);
+        bytes memory payload =
+            abi.encodeWithSignature('initialize(string)', _name);
+        AdminUpgradeabilityProxy proxy =
+            new AdminUpgradeabilityProxy(implProject, proxyAdmin, payload);
         projects.push(proxy);
         emit ProjectCreated(_id, address(proxy));
+        return address(proxy);
     }
 
     /**
@@ -95,12 +99,16 @@ contract COA_v0 is Initializable, Ownable {
      * @param _name - string of the DAO's name.
      * @param _creator - address of the first member of the DAO (i.e. its creator)
      */
-    function createDAO(string memory _name, address _creator) public {
+    function createDAO(string calldata _name, address _creator)
+        external
+        returns (address)
+    {
         require(proxyAdmin != _creator, "The creator can not be the proxy admin.");
         bytes memory payload = abi.encodeWithSignature("initialize(string,address)", _name, _creator);
         AdminUpgradeabilityProxy proxy = new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));
+        return address(proxy);
     }
 
     /**
@@ -122,8 +130,8 @@ contract COA_v0 is Initializable, Ownable {
      * @param _project - address of the project the agreement belongs to
      * @param _agreementHash - string of the agreement's hash.
      */
-    function addAgreement(address _project, string memory _agreementHash)
-        public
+    function addAgreement(address _project, string calldata _agreementHash)
+        external
         onlyOwner()
     {
         agreements[_project] = _agreementHash;

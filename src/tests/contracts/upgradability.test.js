@@ -373,7 +373,7 @@ contract(
 
         it('upgrade should allow still adding claims', async () => {
           const newApproved = false;
-          await registryContract.addClaim(
+          await newRegistryContract.addClaim(
             projectAddress,
             mockClaim,
             mockProof,
@@ -386,6 +386,64 @@ contract(
             mockClaim
           );
           assert.equal(claim.approved, newApproved);
+        });
+      });
+
+      describe('COA contract', () => {
+        const coaV0Name = 'COA_v0';
+        const coaV1Name = 'COA';
+        let coaV0Contract;
+        let newCoaContract;
+        let coaV1Factory;
+        let coaOptions;
+        let superDaoAddress;
+
+        // eslint-disable-next-line no-undef
+        before(async function b() {
+          coaV0Contract = await deployments.getLastDeployedContract(coaV0Name);
+          superDaoAddress = await coaV0Contract.daos(0);
+          coaV1Factory = await deployments.getContractFactory(coaV1Name);
+          coaOptions = {
+            unsafeAllowCustomTypes: true,
+            upgradeContractFunction: 'coaUpgradeToV1',
+            upgradeContractFunctionParams: [
+              whitelistAddress,
+              gsnConfig.relayHubAddress
+            ]
+          };
+          newCoaContract = await deployments.upgradeContract(
+            coaV0Contract.address,
+            coaV1Factory,
+            coaOptions
+          );
+        });
+
+        it('should be able to upgrade from v0 to v1', async () => {
+          assert.equal(newCoaContract.address, coaV0Contract.address);
+        });
+
+        it('upgrade should maintain storage', async () => {
+          const returnedSuperDaoAddress = await newCoaContract.daos(0);
+          assert.equal(returnedSuperDaoAddress, superDaoAddress);
+        });
+
+        it('upgrade should set whiteList address', async () => {
+          const returnedWhiteListAddress = await newCoaContract.whitelist();
+          assert.equal(
+            returnedWhiteListAddress.toLowerCase(),
+            whitelistAddress.toLowerCase()
+          );
+        });
+
+        // TODO: review this when finished daos changes
+        xit('upgrade should allow still creating DAOs', async () => {
+          const newDaoName = 'New DAO';
+          await newCoaContract.createDAO(newDaoName, other);
+          const newDaoAddress = await newCoaContract.daos(1);
+          const daoFactory = await deployments.getContractFactory('DAO');
+          const newDao = await daoFactory.attach(newDaoAddress);
+          const returnedDaoName = await newDao.name();
+          assert.equal(returnedDaoName, newDaoName);
         });
       });
     });
