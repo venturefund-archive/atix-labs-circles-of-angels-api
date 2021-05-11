@@ -5,22 +5,14 @@ import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol'
 import "./UpgradeableToV1.sol";
 import './UsersWhitelist.sol';
 import "./old/ClaimsRegistry_v0.sol";
+import "./CoaOwnable.sol";
 /**
  * @title This contract holds information about claims made buy COA members
  * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
  */
-contract ClaimsRegistry is ClaimsRegistry_v0, UpgradeableToV1, GSNRecipient {
+contract ClaimsRegistry is ClaimsRegistry_v0, CoaOwnable, UpgradeableToV1, GSNRecipient {
 
-    address public coaAddress;
     UsersWhitelist public whitelist;
-
-    modifier onlyCoa() {
-        require(
-            address(coaAddress) == msg.sender,
-            'Only COA can call this function'
-        );
-        _;
-    }
 
     function claimUpgradeToV1(address _whitelist, address _coaAddress, address _relayHubAddr) public upgraderToV1 {
         coaAddress = _coaAddress;

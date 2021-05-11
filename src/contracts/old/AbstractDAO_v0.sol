@@ -90,6 +90,7 @@ contract AbstractDAO_v0 is Initializable {
         gracePeriodLength = 35;
         processingPeriodLength = votingPeriodLength + gracePeriodLength;
     }
+
     /**
      * @notice Function to be invoked in order to create a new proposal.
      *
