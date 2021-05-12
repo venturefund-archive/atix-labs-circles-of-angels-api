@@ -4,8 +4,15 @@ const {
   readArtifactSync
 } = require('@nomiclabs/buidler/plugins');
 const { ContractFactory } = require('ethers');
-const { GSNProvider } = require("@openzeppelin/gsn-provider");
+const { GSNProvider } = require('@openzeppelin/gsn-provider');
 const { getImplementationAddress } = require('@openzeppelin/upgrades-core');
+const {
+  getAdminAddress,
+  getStorageLayout,
+  getUnlinkedBytecode,
+  getVersion
+} = require('@openzeppelin/upgrades-core');
+const { fetchOrDeploy, readValidations } = require('./helpers/ozHelper')
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
 const {
   ethereum,
@@ -199,17 +206,18 @@ async function saveDeployedContract(name, instance) {
   }
 
   const chainId = await getChainId();
+  const instanceAddress = instance.address;
 
   // is it already deployed?
   if (isDeployed(state, chainId, name)) {
     const [last, ...previous] = state[chainId][name];
 
-    if (last !== instance.address) {
+    if (last !== instanceAddress) {
       // place the new instance address first to the list
-      state[chainId][name] = [instance.address, last, ...previous];
+      state[chainId][name] = [instanceAddress, last, ...previous];
     }
   } else {
-    const addresses = [instance.address];
+    const addresses = [instanceAddress];
     // check if the chain is defined.
     if (state[chainId] === undefined) {
       // place the first contract with this chainId
@@ -227,19 +235,27 @@ async function saveDeployedContract(name, instance) {
 }
 
 async function deploy(contractName, params, signer) {
+  const validations = await readValidations(config);
   const factory = await getContractFactory(
     contractName,
     signer
   );
-  // factory.connect(await getSigner(signer));
 
-  const contract = await factory.deploy(...params);
-  await contract.deployed();
+  const unlinkedBytecode = getUnlinkedBytecode(validations, factory.bytecode);
+  const version = getVersion(unlinkedBytecode, factory.bytecode);
 
-  // console.log('Deployed', contractName, 'at', contract.address);
-  // await this.saveDeployedContract(contractName, contract);
+  let txHash;
+  const contractAddress = await fetchOrDeploy(version, signer.provider, async () => {
+    const { address, deployTransaction } = await factory.deploy(...params);
+    txHash = deployTransaction.hash;
+    const layout = getStorageLayout(validations, version);
+    return { address, txHash, layout };
+  }, true);
+
+  const contract = await getContractInstance(contractName, contractAddress, signer)
+
   const receipt = await ethers.provider.getTransactionReceipt(
-    contract.deployTransaction.hash
+    txHash
   );
   return [contract, receipt];
 }
@@ -358,13 +374,6 @@ async function deployV0(
 
   const resetProxies = resetStates || resetAllContracts;
 
-  const proxyAdmin = await getOrDeployContract(
-    'ProxyAdmin',
-    [],
-    signer,
-    resetProxies
-  );
-
   const registry = await getOrDeployUpgradeableContract(
     'ClaimsRegistry_v0',
     [],
@@ -374,11 +383,15 @@ async function deployV0(
     resetProxies
   );
 
+  const proxyAdminAddress = await getAdminAddress(signer.provider, registry.address);
+
+  await saveDeployedContract("ProxyAdmin", { address: proxyAdminAddress }, signer);
+
   await getOrDeployUpgradeableContract(
     'COA_v0',
     [
       registry.address,
-      proxyAdmin.address,
+      proxyAdminAddress,
       implProject.address,
       implSuperDao.address,
       implDao.address,
