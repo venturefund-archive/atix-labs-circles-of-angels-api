@@ -4,6 +4,8 @@ const { utils } = require('ethers');
 const { testConfig, gsnConfig } = require('config');
 const { sha3 } = require('../../rest/util/hash');
 
+const { before } = global;
+
 // @title UPGRADABILITY TESTS for all the contracts
 // There's a describe for each upgradable contract, each test inside the describe
 // may be dependant of the previous one to prove the stored values in the contract
@@ -24,6 +26,10 @@ contract(
     whitelistAddress,
     daoCreator
   ]) => {
+    before(function b() {
+      this.timeout(testConfig.contractTestTimeoutMilliseconds);
+    });
+
     describe('Upgradability Contracts Tests', () => {
       let claimsRegistryContract;
       let coaContract;
@@ -37,7 +43,6 @@ contract(
 
       // eslint-disable-next-line func-names, no-undef
       before(async function() {
-        this.timeout(testConfig.contractTestTimeoutMilliseconds);
         await run('deploy', { resetStates: true });
 
         claimsRegistryContract = await deployments.getLastDeployedContract(
@@ -310,11 +315,7 @@ contract(
       const daoV1Name = 'DAO';
       const superDaoV0Name = 'SuperDAO_v0';
       const superDaoV1Name = 'SuperDAO';
-
-      // eslint-disable-next-line no-undef
-      before(async function b() {
-        this.timeout(testConfig.contractTestTimeoutMilliseconds);
-      });
+      const projectV1Name = 'Project';
 
       describe('ClaimsRegistry contract', () => {
         let registryContract;
@@ -342,7 +343,7 @@ contract(
             upgradeContractFunction: claimUpgradeFunction,
             upgradeContractFunctionParams: [
               whitelistAddress,
-              coaAddress,
+              creator,
               gsnConfig.relayHubAddress
             ]
           };
@@ -382,11 +383,11 @@ contract(
           );
         });
 
-        it('upgrade should set coaAdress', async () => {
-          const registryCoaAddress = await newRegistryContract.coaAddress();
+        it('upgrade should set owner', async () => {
+          const returnedOwnerAddress = await newRegistryContract.owner();
           assert.equal(
-            registryCoaAddress.toLowerCase(),
-            coaAddress.toLowerCase()
+            returnedOwnerAddress.toLowerCase(),
+            creator.toLowerCase()
           );
         });
 
@@ -417,9 +418,20 @@ contract(
         let coaOptions;
         let superDaoAddress;
 
+        const newDaoPeriodConfig = {
+          periodDuration: 10,
+          votingPeriodLength: 20,
+          gracePeriodLength: 30
+        };
         // eslint-disable-next-line no-undef
         before(async function b() {
           await deployV0();
+          const implDao = await deployments.getOrDeployContract(
+            daoV1Name,
+            [],
+            await deployments.getSigner(creator),
+            true
+          );
           coaV0Contract = await deployments.getLastDeployedContract(coaV0Name);
           superDaoAddress = await coaV0Contract.daos(0);
           coaV1Factory = await deployments.getContractFactory(coaV1Name);
@@ -428,7 +440,9 @@ contract(
             upgradeContractFunction: coaUpgradeFunction,
             upgradeContractFunctionParams: [
               whitelistAddress,
-              gsnConfig.relayHubAddress
+              gsnConfig.relayHubAddress,
+              implDao.address,
+              ...Object.values(newDaoPeriodConfig)
             ]
           };
           newCoaContract = await deployments.upgradeContract(
@@ -456,21 +470,55 @@ contract(
         });
 
         // TODO: review this when finished daos changes
-        xit('upgrade should allow still creating DAOs', async () => {
+        it('upgrade should allow still creating DAOs with new period config', async () => {
           const newDaoName = 'New DAO';
           await newCoaContract.createDAO(newDaoName, daoCreator);
           const newDaoAddress = await newCoaContract.daos(1);
-          const daoFactory = await deployments.getContractFactory('DAO');
+          const daoFactory = await deployments.getContractFactory(daoV1Name);
           const newDao = await daoFactory.attach(newDaoAddress);
           const returnedDaoName = await newDao.name();
+          const returnedDaoPeriodDuration = await newDao.periodDuration();
+          const returnedDaoVotingPeriodLength = await newDao.votingPeriodLength();
+          const returnedDaoGracePeriodLength = await newDao.gracePeriodLength();
+          const returnedDaoProcessingPeriodLength = await newDao.processingPeriodLength();
           assert.equal(returnedDaoName, newDaoName);
+          assert.equal(
+            returnedDaoPeriodDuration,
+            newDaoPeriodConfig.periodDuration
+          );
+          assert.equal(
+            returnedDaoVotingPeriodLength,
+            newDaoPeriodConfig.votingPeriodLength
+          );
+          assert.equal(
+            returnedDaoGracePeriodLength,
+            newDaoPeriodConfig.gracePeriodLength
+          );
+          assert.equal(
+            returnedDaoProcessingPeriodLength,
+            newDaoPeriodConfig.votingPeriodLength +
+              newDaoPeriodConfig.gracePeriodLength
+          );
+        });
+
+        it('upgrade should allow still creating Projects', async () => {
+          const newProjectName = 'New Project';
+          const newProjectId = 10;
+          await newCoaContract.createProject(newProjectId, newProjectName);
+          const newProjectAddress = await newCoaContract.projects(0);
+          const projectFactory = await deployments.getContractFactory(
+            projectV1Name
+          );
+          const newProject = await projectFactory.attach(newProjectAddress);
+          const returnedProjectName = await newProject.name();
+          assert.equal(returnedProjectName, newProjectName);
         });
       });
 
       describe('SuperDAO contract', () => {
         const superDaoUpgradeFunction = 'superDaoUpgradeToV1';
 
-        const superDaoName = 'SuperDao';
+        const superDaoName = 'Super DAO';
         const newPeriodConfig = {
           periodDuration: 10,
           votingPeriodLength: 20,

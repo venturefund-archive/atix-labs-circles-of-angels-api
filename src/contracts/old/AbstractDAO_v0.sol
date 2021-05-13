@@ -25,7 +25,6 @@ contract AbstractDAO_v0 is Initializable {
 
     enum Role {Normal, Bank, Curator}
 
-    /// TODO: actually define these numbers
     uint256 public periodDuration; /// seconds
     uint256 public votingPeriodLength; /// periods
     uint256 public gracePeriodLength;

@@ -21,7 +21,7 @@ contract SuperDAO is SuperDAO_v0, CoaOwnable, UpgradeableToV1, GSNRecipient {
      * @param _votingPeriodLength Voting period quantity
      * @param _gracePeriodLength Grace period quantity
      */
-    function upgradeSuperDAOToV1(
+    function superDaoUpgradeToV1(
         address _whitelist,
         address _coaAddress,
         address _relayHubAddr,

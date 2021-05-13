@@ -18,6 +18,10 @@ contract COA is COA_v0, UpgradeableToV1, GSNRecipient {
 
     UsersWhitelist public whitelist;
 
+    uint256 public daoPeriodDuration;
+    uint256 public daoVotingPeriodLength;
+    uint256 public daoGracePeriodLength;
+
     modifier withdrawOk(uint256 _amount, address _destinationAddress) {
         require(_destinationAddress != address(0), 'Address cannot be empty');
         require(_amount > 0, 'Amount cannot be ZERO');
@@ -26,8 +30,16 @@ contract COA is COA_v0, UpgradeableToV1, GSNRecipient {
 
     function coaUpgradeToV1(
         address _whitelist,
-        address _relayHubAddr
+        address _relayHubAddr,
+        address _implDao,
+        uint256 _daoPeriodDuration,
+        uint256 _daoVotingPeriodLength,
+        uint256 _daoGracePeriodLength
     ) public upgraderToV1 {
+        implDao = _implDao;
+        daoPeriodDuration = _daoPeriodDuration;
+        daoVotingPeriodLength = _daoVotingPeriodLength;
+        daoGracePeriodLength = _daoGracePeriodLength;
         whitelist = UsersWhitelist(_whitelist);
         if (_relayHubAddr != GSNRecipient.getHubAddr()) {
             GSNRecipient._upgradeRelayHub(_relayHubAddr);
@@ -54,12 +66,15 @@ contract COA is COA_v0, UpgradeableToV1, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initDao(string,address,address,address,address)',
+                'initDao(string,address,address,address,address,uint256,uint256,uint256)',
                 _name,
                 _creator,
                 address(whitelist),
                 address(this),
-                GSNRecipient.getHubAddr()
+                GSNRecipient.getHubAddr(),
+                daoPeriodDuration,
+                daoVotingPeriodLength,
+                daoGracePeriodLength
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
