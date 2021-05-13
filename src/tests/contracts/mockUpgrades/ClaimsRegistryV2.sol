@@ -4,20 +4,19 @@ import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol'
 import '../../../contracts/UsersWhitelist.sol';
 import '../../../contracts/old/ClaimsRegistry_v0.sol';
 import '../../../contracts/UpgradeableToV1.sol';
-import '../../../contracts/CoaOwnable.sol';
 
 /**
  * @title This contract holds information about claims made buy COA members
  * @dev loosely based on ERC780 Ethereum Claims Registry https://github.com/ethereum/EIPs/issues/780 now it has been heavily changed.
  */
-contract ClaimsRegistry is ClaimsRegistry_v0, CoaOwnable, UpgradeableToV1, GSNRecipient {
+contract ClaimsRegistryV2 is ClaimsRegistry_v0, Ownable, UpgradeableToV1, GSNRecipient {
 
     UsersWhitelist public whitelist;
 
     string public test;
 
-    function claimUpgradeToV1(address _whitelist, address _coaAddress, address _relayHubAddr) public upgraderToV1 {
-        coaAddress = _coaAddress;
+    function claimUpgradeToV1(address _whitelist, address _owner, address _relayHubAddr) public upgraderToV1 {
+        Ownable._transferOwnership(_owner);
         // Initialize ClaimsRegistry
         whitelist = UsersWhitelist(_whitelist);
         if (_relayHubAddr != GSNRecipient.getHubAddr()) {
@@ -25,7 +24,7 @@ contract ClaimsRegistry is ClaimsRegistry_v0, CoaOwnable, UpgradeableToV1, GSNRe
         }
     }
 
-    function setDefaultRelayHub() public onlyCoa {
+    function setDefaultRelayHub() public onlyOwner {
         super.setDefaultRelayHub();
     }
 
@@ -56,7 +55,7 @@ contract ClaimsRegistry is ClaimsRegistry_v0, CoaOwnable, UpgradeableToV1, GSNRe
     function withdrawDeposits(
         uint256 amount,
         address payable destinationAddress
-    ) external onlyCoa {
+    ) external onlyOwner {
         require(destinationAddress != address(0), 'Address cannot be empty');
         require(amount > 0, 'Amount cannot be ZERO');
         _withdrawDeposits(amount, destinationAddress);

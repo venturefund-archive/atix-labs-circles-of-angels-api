@@ -13,7 +13,7 @@ import '../../../contracts/UsersWhitelist.sol';
 import '../../../contracts/old/COA_v0.sol';
 
 /// @title COA main contract to store projects related information
-contract COA is COA_v0, UpgradeableToV1, GSNRecipient {
+contract COAV2 is COA_v0, UpgradeableToV1, GSNRecipient {
     using ECDSA for bytes32;
 
     UsersWhitelist public whitelist;
@@ -28,8 +28,16 @@ contract COA is COA_v0, UpgradeableToV1, GSNRecipient {
 
     function coaUpgradeToV1(
         address _whitelist,
-        address _relayHubAddr
+        address _relayHubAddr,
+        address _implDao,
+        uint256 _daoPeriodDuration,
+        uint256 _daoVotingPeriodLength,
+        uint256 _daoGracePeriodLength
     ) public upgraderToV1 {
+        implDao = _implDao;
+        daoPeriodDuration = _daoPeriodDuration;
+        daoVotingPeriodLength = _daoVotingPeriodLength;
+        daoGracePeriodLength = _daoGracePeriodLength;
         whitelist = UsersWhitelist(_whitelist);
         if (_relayHubAddr != GSNRecipient.getHubAddr()) {
             GSNRecipient._upgradeRelayHub(_relayHubAddr);
@@ -47,24 +55,27 @@ contract COA is COA_v0, UpgradeableToV1, GSNRecipient {
      * @return address - the address of the new dao
      */
     function createDAO(string calldata _name, address _creator)
-        external
-        returns (address)
+    external
+    returns (address)
     {
         require(
             proxyAdmin != _creator,
             'The creator can not be the proxy admin.'
         );
         bytes memory payload =
-            abi.encodeWithSignature(
-                'initDao(string,address,address,address,address)',
-                _name,
-                _creator,
-                address(whitelist),
-                address(this),
-                GSNRecipient.getHubAddr()
-            );
+        abi.encodeWithSignature(
+            'initDao(string,address,address,address,address,uint256,uint256,uint256)',
+            _name,
+            _creator,
+            address(whitelist),
+            address(this),
+            GSNRecipient.getHubAddr(),
+            daoPeriodDuration,
+            daoVotingPeriodLength,
+            daoGracePeriodLength
+        );
         AdminUpgradeabilityProxy proxy =
-            new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
+        new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));
         return address(proxy);

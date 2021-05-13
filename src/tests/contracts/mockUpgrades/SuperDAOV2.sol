@@ -1,8 +1,11 @@
 pragma solidity ^0.5.8;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import '../../../contracts/old/SuperDAO_v0.sol';
+import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
+import '../../../contracts/UsersWhitelist.sol';
+import '../../../contracts/UpgradeableToV1.sol';
 import '../../../contracts/CoaOwnable.sol';
+import '../../../contracts/old/SuperDAO_v0.sol';
 
 /// @title This contracts is a DAO but will also process new dao creation proposals
 contract SuperDAO is SuperDAO_v0, CoaOwnable, UpgradeableToV1, GSNRecipient {
@@ -20,7 +23,7 @@ contract SuperDAO is SuperDAO_v0, CoaOwnable, UpgradeableToV1, GSNRecipient {
      * @param _votingPeriodLength Voting period quantity
      * @param _gracePeriodLength Grace period quantity
      */
-    function upgradeSuperDAOToV1(
+    function superDaoUpgradeToV1(
         address _whitelist,
         address _coaAddress,
         address _relayHubAddr,
