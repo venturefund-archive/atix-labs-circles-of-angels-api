@@ -13,6 +13,7 @@ const {
   getVersion
 } = require('@openzeppelin/upgrades-core');
 const { fetchOrDeploy, readValidations } = require('./helpers/ozHelper')
+const { getDaosAddressesForCoa } = require('./coa');
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
 const {
   ethereum,
@@ -30,7 +31,7 @@ const {
 const {
   createChainIdGetter
 } = require('@nomiclabs/buidler/internal/core/providers/provider-utils');
-const { contractAddresses, gsnConfig, server } = require('config');
+const { contractAddresses, gsnConfig, server, daoPeriodConfig } = require('config');
 const logger = require('../rest/logger')
 
 // TODO : this can be placed into the buidler's config.
@@ -288,14 +289,12 @@ async function getOrDeployContract(contractName, params, signer = undefined, res
 }
 
 function buildGetOrDeployUpgradeableContract(
-  readArtifactSyncFun = readArtifactSync,
-  getContractFactoryFun = getContractFactory
+  readArtifactSyncFun = readArtifactSync
 ) {
   return async function getOrDeployUpgradeableContract(
     contractName,
     params,
     signer = undefined,
-    doUpgrade = false,
     options = undefined,
     reset = false
   ) {
@@ -324,18 +323,8 @@ function buildGetOrDeployUpgradeableContract(
       const artifact = readArtifactSyncFun(config.paths.artifacts, contractName);
 
       const implCode = await ethers.provider.getCode(implContract.address);
-      if (implCode !== artifact.deployedBytecode) {
-        if (!HIDE_LOGS) logger.info(
-          `[deployments] :: ${contractName} need an upgrade, upgrading to new implementation`
-        );
-
-        if (!doUpgrade)
-          throw new Error(`The contract ${contractName} needs an upgrade, upgrade it with the buidler command ´upgradeContracts´`)
-
-        const factory = await getContractFactoryFun(contractName, signer);
-        contract = await upgradeContract(contract.address, factory, options);
-        if (!HIDE_LOGS) logger.info(`[deployments] :: ${contractName} upgraded`);
-      }
+      if (implCode !== artifact.deployedBytecode)
+        throw new Error(`The contract ${contractName} needs an upgrade`)
     }
     return contract;
   }
@@ -345,6 +334,7 @@ function buildUpgradeContract(upgradeFunction = upgrades.upgradeProxy) {
   return async function upgradeContract(contractAddress, newImplementationFactory, options) {
     const upgradedContract = await upgradeFunction(contractAddress, newImplementationFactory, options);
     await upgradedContract[options.upgradeContractFunction](...options.upgradeContractFunctionParams);
+    await saveDeployedContract(options.contractName, upgradedContract);
     return upgradedContract;
   }
 }
@@ -352,7 +342,6 @@ function buildUpgradeContract(upgradeFunction = upgrades.upgradeProxy) {
 async function deployV0(
   signer = undefined,
   resetStates = false,
-  doUpgrade = false,
   resetAllContracts = false
 ) {
 
@@ -378,7 +367,6 @@ async function deployV0(
     'ClaimsRegistry_v0',
     [],
     signer,
-    doUpgrade,
     { initializer: 'initialize' },
     resetProxies
   );
@@ -397,78 +385,130 @@ async function deployV0(
       implDao.address,
     ],
     signer,
-    doUpgrade,
     { initializer: 'coaInitialize' },
     resetProxies
+  );
+}
+
+async function upgradeToV1(
+  signer = undefined,
+  resetStates = false,
+  resetAllContracts = false
+) {
+  const resetProxies = resetStates || resetAllContracts;
+
+  const coaV0 = await getLastDeployedContract('COA_v0');
+  const whitelistContract = await getOrDeployUpgradeableContract(
+    'UsersWhitelist',
+    [],
+    signer,
+    { initializer: 'whitelistInitialize' },
+    resetProxies
+  );
+  const implDao = await getOrDeployContract('DAO_v0', [], signer, resetAllContracts);
+  const [superDaoV0Address, ...daosV0Addresses] = await getDaosAddressesForCoa(coaV0);
+
+  // upgrade Registry
+  const registryV1Name = 'ClaimsRegistry';
+  const registryV0 = await getLastDeployedContract('ClaimsRegistry_v0');
+  const registryV1Factory = await getContractFactory(registryV1Name, signer);
+  const registryUpgradeOptions = {
+    unsafeAllowCustomTypes: true,
+    upgradeContractFunction: 'claimUpgradeToV1',
+    contractName: registryV1Name,
+    upgradeContractFunctionParams: [
+      whitelistContract.address,
+      signer.address,
+      gsnConfig.relayHubAddress
+    ]
+  };
+
+  await upgradeContract(
+    registryV0.address,
+    registryV1Factory,
+    registryUpgradeOptions
+  );
+
+  // upgrade SuperDao
+  const superDaoV1Name = 'SuperDAO';
+  const superDaoV1Factory = await getContractFactory(superDaoV1Name);
+  const superDaoUpgradeOptions = {
+    unsafeAllowCustomTypes: true,
+    upgradeContractFunction: 'superDaoUpgradeToV1',
+    contractName: superDaoV1Name,
+    upgradeContractFunctionParams: [
+      whitelistContract.address,
+      coaV0.address,
+      gsnConfig.relayHubAddress,
+      daoPeriodConfig.periodDuration,
+      daoPeriodConfig.votingPeriodLength,
+      daoPeriodConfig.gracePeriodLength
+    ]
+  }
+
+  await upgradeContract(
+    superDaoV0Address,
+    superDaoV1Factory,
+    superDaoUpgradeOptions
+  );
+
+  // upgrade Daos
+  const daoV1Name = 'DAO';
+  const daoV1Factory = await getContractFactory(daoV1Name);
+  const daoUpgradeOptions = {
+    unsafeAllowCustomTypes: true,
+    upgradeContractFunction: 'daoUpgradeToV1',
+    contractName: daoV1Name,
+    upgradeContractFunctionParams: [
+      whitelistContract.address,
+      coaV0.address,
+      gsnConfig.relayHubAddress,
+      daoPeriodConfig.periodDuration,
+      daoPeriodConfig.votingPeriodLength,
+      daoPeriodConfig.gracePeriodLength
+    ]
+  }
+
+  daosV0Addresses.map(async daoV0Address => {
+    await upgradeContract(
+      daoV0Address,
+      daoV1Factory,
+      daoUpgradeOptions
+    );
+  });
+
+
+  // upgrade COA
+  const coaV1Name = 'COA';
+  const coaV1Factory = await getContractFactory(daoV1Name);
+  const coaUpgradeOptions = {
+    unsafeAllowCustomTypes: true,
+    upgradeContractFunction: 'coaUpgradeToV1',
+    contractName: coaV1Name,
+    upgradeContractFunctionParams: [
+      whitelistContract.address,
+      gsnConfig.relayHubAddress,
+      implDao.address,
+      daoPeriodConfig.periodDuration,
+      daoPeriodConfig.votingPeriodLength,
+      daoPeriodConfig.gracePeriodLength
+    ]
+  }
+
+  await upgradeContract(
+    coaV0.address,
+    coaV1Factory,
+    coaUpgradeOptions
   );
 }
 
 async function deployAll(
   signer = undefined,
   resetStates = false,
-  doUpgrade = false,
   resetAllContracts = false
 ) {
-
-  const implProject = await getOrDeployContract(
-    'Project',
-    [],
-    signer,
-    resetAllContracts
-  );
-
-  const implSuperDao = await getOrDeployContract(
-    'SuperDAO',
-    [],
-    signer,
-    resetAllContracts
-  );
-
-  const implDao = await getOrDeployContract('DAO', [], signer, resetAllContracts);
-
-  const resetProxies = resetStates || resetAllContracts;
-
-  const proxyAdmin = await getOrDeployContract(
-    'ProxyAdmin',
-    [],
-    signer,
-    resetProxies
-  );
-
-  const whiteList = await getOrDeployUpgradeableContract(
-    'UsersWhitelist',
-    [],
-    signer,
-    doUpgrade,
-    { initializer: 'whitelistInitialize' },
-    resetProxies
-  );
-
-  const registry = await getOrDeployUpgradeableContract(
-    'ClaimsRegistry',
-    [whiteList.address, gsnConfig.relayHubAddress],
-    signer,
-    doUpgrade,
-    { initializer: 'claimsInitialize' },
-    resetProxies
-  );
-
-  await getOrDeployUpgradeableContract(
-    'COA',
-    [
-      registry.address,
-      proxyAdmin.address,
-      implProject.address,
-      implSuperDao.address,
-      implDao.address,
-      whiteList.address,
-      gsnConfig.relayHubAddress
-    ],
-    signer,
-    doUpgrade,
-    { initializer: 'coaInitialize' },
-    resetProxies
-  );
+  await deployV0(signer, resetStates, resetAllContracts);
+  await upgradeToV1(signer, resetStates, resetAllContracts);
 }
 
 async function getContractInstance(name, address, signer) {
@@ -560,5 +600,6 @@ module.exports = {
   getOrDeployUpgradeableContract,
   upgradeContract,
   deployAll,
-  deployV0
+  deployV0,
+  upgradeToV1
 };

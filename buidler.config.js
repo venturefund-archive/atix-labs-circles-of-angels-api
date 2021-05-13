@@ -6,7 +6,7 @@ usePlugin('solidity-coverage');
 const { lazyObject } = require('@nomiclabs/buidler/plugins');
 
 const config = require('config');
-const COA = require('./src/plugins/coa');
+const { COA } = require('./src/plugins/coa');
 require('./src/rest/services/helpers/buidlerTasks');
 
 // eslint-disable prefer-destructuring

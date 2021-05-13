@@ -306,7 +306,7 @@ contract(
       });
     });
 
-    describe.only('Contract version upgrade tests', () => {
+    describe('Contract version upgrade tests', () => {
       const registryV0Name = 'ClaimsRegistry_v0';
       const registryV1Name = 'ClaimsRegistry';
       const coaV0Name = 'COA_v0';
@@ -340,6 +340,7 @@ contract(
           );
           registryOptions = {
             unsafeAllowCustomTypes: true,
+            contractName: registryV1Name,
             upgradeContractFunction: claimUpgradeFunction,
             upgradeContractFunctionParams: [
               whitelistAddress,
@@ -437,6 +438,7 @@ contract(
           coaV1Factory = await deployments.getContractFactory(coaV1Name);
           coaOptions = {
             unsafeAllowCustomTypes: true,
+            contractName: coaV1Name,
             upgradeContractFunction: coaUpgradeFunction,
             upgradeContractFunctionParams: [
               whitelistAddress,
@@ -469,7 +471,6 @@ contract(
           );
         });
 
-        // TODO: review this when finished daos changes
         it('upgrade should allow still creating DAOs with new period config', async () => {
           const newDaoName = 'New DAO';
           await newCoaContract.createDAO(newDaoName, daoCreator);
@@ -548,6 +549,7 @@ contract(
           );
           superDaoOptions = {
             unsafeAllowCustomTypes: true,
+            contractName: superDaoV1Name,
             upgradeContractFunction: superDaoUpgradeFunction,
             upgradeContractFunctionParams: [
               whitelistAddress,
@@ -638,6 +640,7 @@ contract(
           daoV1Factory = await deployments.getContractFactory(daoV1Name);
           daoOptions = {
             unsafeAllowCustomTypes: true,
+            contractName: daoV1Name,
             upgradeContractFunction: daoUpgradeFunction,
             upgradeContractFunctionParams: [
               whitelistAddress,

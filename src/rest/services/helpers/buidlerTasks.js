@@ -52,24 +52,40 @@ task('test-contracts:testTeardown', 'Runs the test teardown').setAction(
   }
 );
 
-async function disableGSNAndDeployV0(
-  env,
-  resetStates,
-  doUpgrade,
-  resetAllContracts
-) {
-  if (resetStates || resetAllContracts) env.coa.clearContracts();
-
+async function disableGSNAndDo(doFunction) {
   const oldGSNIsEnabled = config.gsnConfig.isEnabled;
   config.gsnConfig.isEnabled = false;
-  const signer = await getDeploymentSigner(env);
-  await env.deployments.deployV0(
-    signer,
-    resetStates,
-    doUpgrade,
-    resetAllContracts
-  );
+  await doFunction();
   config.gsnConfig.isEnabled = oldGSNIsEnabled;
+}
+
+async function disableGSNAndDeployV0(env, resetStates, resetAllContracts) {
+  if (resetStates || resetAllContracts) env.coa.clearContracts();
+  const signer = await getDeploymentSigner(env);
+
+  await disableGSNAndDo(async () =>
+    env.deployments.deployV0(signer, resetStates, resetAllContracts)
+  );
+  if (config.gsnConfig.isEnabled) await global.run('check-balances');
+}
+
+async function disableGSNAndUpgradeToV1(env, resetStates, resetAllContracts) {
+  if (resetStates || resetAllContracts) env.coa.clearContracts();
+  const signer = await getDeploymentSigner(env);
+
+  await disableGSNAndDo(async () =>
+    env.deployments.upgradeToV1(signer, resetStates, resetAllContracts)
+  );
+  if (config.gsnConfig.isEnabled) await global.run('check-balances');
+}
+
+async function disableGSNAndDeployAll(env, resetStates, resetAllContracts) {
+  if (resetStates || resetAllContracts) env.coa.clearContracts();
+  const signer = await getDeploymentSigner(env);
+
+  await disableGSNAndDo(async () =>
+    env.deployments.deployAll(signer, resetStates, resetAllContracts)
+  );
   if (config.gsnConfig.isEnabled) await global.run('check-balances');
 }
 
@@ -87,7 +103,7 @@ task('deploy_v0', 'Deploys COA v0 contracts')
     types.boolean
   )
   .setAction(async ({ resetStates, resetAllContracts }, env) => {
-    await disableGSNAndDeployV0(env, resetStates, false, resetAllContracts);
+    await disableGSNAndDeployV0(env, resetStates, resetAllContracts);
   });
 
 task('deploy', 'Deploys COA contracts')
@@ -103,14 +119,13 @@ task('deploy', 'Deploys COA contracts')
     false,
     types.boolean
   )
-  .setAction(async (params, env) => {
-    await global.run('deploy_v0', params);
-    // TODO: upgrade to v1
+  .setAction(async ({ resetStates, resetAllContracts }, env) => {
+    await disableGSNAndDeployAll(env, resetStates, resetAllContracts);
   });
 
 task(
-  'upgradeContracts',
-  'Deploys and Upgrades (if necessary) upgradeable COA contracts'
+  'upgradeContractsToV1',
+  'Deploys and Upgrades to v1 upgradeable COA contracts'
 )
   .addOptionalParam(
     'resetStates',
@@ -125,7 +140,7 @@ task(
     types.boolean
   )
   .setAction(async ({ resetStates, resetAllContracts }, env) => {
-    await disableGSNAndDeployV0(env, resetStates, true, resetAllContracts);
+    await disableGSNAndUpgradeToV1(env, resetStates, true, resetAllContracts);
   });
 
 task('get-signer-zero', 'Gets signer zero address').setAction(
