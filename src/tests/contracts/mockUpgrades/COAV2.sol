@@ -18,6 +18,10 @@ contract COAV2 is COA_v0, UpgradeableToV1, GSNRecipient {
 
     UsersWhitelist public whitelist;
 
+    uint256 public daoPeriodDuration;
+    uint256 public daoVotingPeriodLength;
+    uint256 public daoGracePeriodLength;
+
     string public test;
 
     modifier withdrawOk(uint256 _amount, address _destinationAddress) {
