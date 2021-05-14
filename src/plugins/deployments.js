@@ -418,7 +418,7 @@ async function upgradeToV1(
     contractName: registryV1Name,
     upgradeContractFunctionParams: [
       whitelistContract.address,
-      signer.address,
+      signer._address,
       gsnConfig.relayHubAddress
     ]
   };
@@ -480,7 +480,7 @@ async function upgradeToV1(
 
   // upgrade COA
   const coaV1Name = 'COA';
-  const coaV1Factory = await getContractFactory(daoV1Name);
+  const coaV1Factory = await getContractFactory(coaV1Name);
   const coaUpgradeOptions = {
     unsafeAllowCustomTypes: true,
     upgradeContractFunction: 'coaUpgradeToV1',
