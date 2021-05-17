@@ -15,6 +15,7 @@ const {
 const { fetchOrDeploy, readValidations } = require('./helpers/ozHelper')
 const { getDaosAddressesForCoa } = require('./coa');
 const AdminUpgradeabilityProxy = require('@openzeppelin/upgrades-core/artifacts/AdminUpgradeabilityProxy.json');
+const ProxyAdmin = require('@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json');
 const {
   ethereum,
   network,
@@ -178,7 +179,10 @@ async function* getDeployedContractsGenerator(name, chainId) {
   for (const addr of addresses) {
     const code = await ethers.provider.getCode(addr);
     const contract = factory.attach(addr);
-    if (code === artifact.deployedBytecode || code === AdminUpgradeabilityProxy.deployedBytecode) {
+    if (code === artifact.deployedBytecode ||
+      code === AdminUpgradeabilityProxy.deployedBytecode ||
+      code === ProxyAdmin.deployedBytecode
+    ) {
       yield contract;
     }
   }
@@ -405,7 +409,6 @@ async function upgradeToV1(
     { initializer: 'whitelistInitialize' },
     resetProxies
   );
-  const implDao = await getOrDeployContract('DAO_v0', [], signer, resetAllContracts);
   const [superDaoV0Address, ...daosV0Addresses] = await getDaosAddressesForCoa(coaV0);
 
   // upgrade Registry
@@ -481,6 +484,7 @@ async function upgradeToV1(
   // upgrade COA
   const coaV1Name = 'COA';
   const coaV1Factory = await getContractFactory(coaV1Name);
+  const implDao = await getOrDeployContract(daoV1Name, [], signer, resetAllContracts);
   const coaUpgradeOptions = {
     unsafeAllowCustomTypes: true,
     upgradeContractFunction: 'coaUpgradeToV1',
