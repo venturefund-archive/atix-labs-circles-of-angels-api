@@ -8,7 +8,7 @@ import '../../../contracts/CoaOwnable.sol';
 import '../../../contracts/old/SuperDAO_v0.sol';
 
 /// @title This contracts is a DAO but will also process new dao creation proposals
-contract SuperDAO is SuperDAO_v0, CoaOwnable, UpgradeableToV1, GSNRecipient {
+contract SuperDAOV2 is SuperDAO_v0, CoaOwnable, UpgradeableToV1, GSNRecipient {
     using SafeMath for uint256;
 
     UsersWhitelist public whitelist;
