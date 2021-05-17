@@ -59,34 +59,47 @@ async function disableGSNAndDo(doFunction) {
   config.gsnConfig.isEnabled = oldGSNIsEnabled;
 }
 
-async function disableGSNAndDeployV0(env, resetStates, resetAllContracts) {
+async function prepareDeployDoAndCheckBalances(
+  env,
+  resetStates,
+  resetAllContracts,
+  doFunction
+) {
   if (resetStates || resetAllContracts) env.coa.clearContracts();
   const signer = await getDeploymentSigner(env);
 
-  await disableGSNAndDo(async () =>
-    env.deployments.deployV0(signer, resetStates, resetAllContracts)
-  );
+  await disableGSNAndDo(async () => doFunction(signer));
   if (config.gsnConfig.isEnabled) await global.run('check-balances');
 }
 
-async function disableGSNAndUpgradeToV1(env, resetStates, resetAllContracts) {
-  if (resetStates || resetAllContracts) env.coa.clearContracts();
-  const signer = await getDeploymentSigner(env);
-
-  await disableGSNAndDo(async () =>
-    env.deployments.upgradeToV1(signer, resetStates, resetAllContracts)
+async function deployV0(env, resetStates, resetAllContracts) {
+  await prepareDeployDoAndCheckBalances(
+    env,
+    resetStates,
+    resetAllContracts,
+    async signer =>
+      env.deployments.deployV0(signer, resetStates, resetAllContracts)
   );
-  if (config.gsnConfig.isEnabled) await global.run('check-balances');
 }
 
-async function disableGSNAndDeployAll(env, resetStates, resetAllContracts) {
-  if (resetStates || resetAllContracts) env.coa.clearContracts();
-  const signer = await getDeploymentSigner(env);
-
-  await disableGSNAndDo(async () =>
-    env.deployments.deployAll(signer, resetStates, resetAllContracts)
+async function upgradeToV1(env, resetStates, resetAllContracts) {
+  await prepareDeployDoAndCheckBalances(
+    env,
+    resetStates,
+    resetAllContracts,
+    async signer =>
+      env.deployments.upgradeToV1(signer, resetStates, resetAllContracts)
   );
-  if (config.gsnConfig.isEnabled) await global.run('check-balances');
+}
+
+async function deployAll(env, resetStates, resetAllContracts) {
+  await prepareDeployDoAndCheckBalances(
+    env,
+    resetStates,
+    resetAllContracts,
+    async signer =>
+      env.deployments.deployAll(signer, resetStates, resetAllContracts)
+  );
 }
 
 task('deploy_v0', 'Deploys COA v0 contracts')
@@ -103,7 +116,7 @@ task('deploy_v0', 'Deploys COA v0 contracts')
     types.boolean
   )
   .setAction(async ({ resetStates, resetAllContracts }, env) => {
-    await disableGSNAndDeployV0(env, resetStates, resetAllContracts);
+    await deployV0(env, resetStates, resetAllContracts);
   });
 
 task('deploy', 'Deploys COA contracts')
@@ -120,7 +133,7 @@ task('deploy', 'Deploys COA contracts')
     types.boolean
   )
   .setAction(async ({ resetStates, resetAllContracts }, env) => {
-    await disableGSNAndDeployAll(env, resetStates, resetAllContracts);
+    await deployAll(env, resetStates, resetAllContracts);
   });
 
 task(
@@ -140,7 +153,7 @@ task(
     types.boolean
   )
   .setAction(async ({ resetStates, resetAllContracts }, env) => {
-    await disableGSNAndUpgradeToV1(env, resetStates, true, resetAllContracts);
+    await upgradeToV1(env, resetStates, true, resetAllContracts);
   });
 
 task('get-signer-zero', 'Gets signer zero address').setAction(
