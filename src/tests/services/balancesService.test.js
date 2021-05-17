@@ -10,7 +10,7 @@
 
 const { balancesConfig } = require('config');
 const { parseEther } = require('ethers').utils;
-const { web3 } = require('@nomiclabs/buidler');
+const web3 = require('@nomiclabs/buidler-web3');
 const { injectMocks } = require('../../rest/util/injection');
 const originalBalanceService = require('../../rest/services/balancesService');
 const {
@@ -49,7 +49,7 @@ const originalMocks = {
 };
 
 jest.mock('../../rest/services/helpers/gsnHelper');
-jest.mock('@nomiclabs/buidler');
+jest.mock('@nomiclabs/buidler-web3');
 
 describe('BalanceService tests', () => {
   beforeAll(restoreAll);

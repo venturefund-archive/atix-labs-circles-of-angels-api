@@ -10,7 +10,7 @@ const {
   getContractFactory
 } = require('../../plugins/deployments');
 
-describe.only('Deployments tests', () => {
+describe('Deployments tests', () => {
   let creator;
   const oldGsnConfigIsEnabled = gsnConfig.isEnabled;
 
