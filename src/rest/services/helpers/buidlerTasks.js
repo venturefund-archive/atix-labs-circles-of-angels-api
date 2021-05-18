@@ -153,7 +153,7 @@ task(
     types.boolean
   )
   .setAction(async ({ resetStates, resetAllContracts }, env) => {
-    await upgradeToV1(env, resetStates, true, resetAllContracts);
+    await upgradeToV1(env, resetStates, resetAllContracts);
   });
 
 task('get-signer-zero', 'Gets signer zero address').setAction(
