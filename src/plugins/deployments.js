@@ -335,10 +335,10 @@ function buildGetOrDeployUpgradeableContract(
 }
 
 function buildUpgradeContract(upgradeFunction = upgrades.upgradeProxy) {
-  return async function upgradeContract(contractAddress, newImplementationFactory, options) {
+  return async function upgradeContract(contractAddress, newImplementationFactory, options, saveContract = true) {
     const upgradedContract = await upgradeFunction(contractAddress, newImplementationFactory, options);
     await upgradedContract[options.upgradeContractFunction](...options.upgradeContractFunctionParams);
-    await saveDeployedContract(options.contractName, upgradedContract);
+    if (saveContract) await saveDeployedContract(options.contractName, upgradedContract);
     return upgradedContract;
   }
 }
@@ -413,47 +413,64 @@ async function upgradeToV1(
 
   // upgrade Registry
   const registryV1Name = 'ClaimsRegistry';
-  const registryV0 = await getLastDeployedContract('ClaimsRegistry_v0');
-  const registryV1Factory = await getContractFactory(registryV1Name, signer);
-  const registryUpgradeOptions = {
-    unsafeAllowCustomTypes: true,
-    upgradeContractFunction: 'claimUpgradeToV1',
-    contractName: registryV1Name,
-    upgradeContractFunctionParams: [
-      whitelistContract.address,
-      signer._address,
-      gsnConfig.relayHubAddress
-    ]
-  };
 
-  await upgradeContract(
-    registryV0.address,
-    registryV1Factory,
-    registryUpgradeOptions
-  );
+  const currentRegistryContract = await getLastDeployedContract(registryV1Name);
+  const registryVersion = await getContractVersion(currentRegistryContract);
+  if (resetProxies || registryVersion === 0) {
+    const registryV0 = await getLastDeployedContract('ClaimsRegistry_v0');
+    const registryV1Factory = await getContractFactory(registryV1Name, signer);
+    const registryUpgradeOptions = {
+      unsafeAllowCustomTypes: true,
+      upgradeContractFunction: 'claimUpgradeToV1',
+      contractName: registryV1Name,
+      upgradeContractFunctionParams: [
+        whitelistContract.address,
+        signer._address,
+        gsnConfig.relayHubAddress
+      ]
+    };
+
+    await upgradeContract(
+      registryV0.address,
+      registryV1Factory,
+      registryUpgradeOptions
+    );
+  } else {
+    if (!HIDE_LOGS) logger.info(
+      '[deployments] :: Registry contract is already on version 1'
+    );
+  }
 
   // upgrade SuperDao
   const superDaoV1Name = 'SuperDAO';
   const superDaoV1Factory = await getContractFactory(superDaoV1Name);
-  const superDaoUpgradeOptions = {
-    unsafeAllowCustomTypes: true,
-    upgradeContractFunction: 'superDaoUpgradeToV1',
-    contractName: superDaoV1Name,
-    upgradeContractFunctionParams: [
-      whitelistContract.address,
-      coaV0.address,
-      gsnConfig.relayHubAddress,
-      daoPeriodConfig.periodDuration,
-      daoPeriodConfig.votingPeriodLength,
-      daoPeriodConfig.gracePeriodLength
-    ]
-  }
+  const currentSuperDaoContract = await superDaoV1Factory.attach(superDaoV0Address);
+  const superDaoVersion = await getContractVersion(currentSuperDaoContract);
+  if (resetProxies || superDaoVersion === 0) {
+    const superDaoUpgradeOptions = {
+      unsafeAllowCustomTypes: true,
+      upgradeContractFunction: 'superDaoUpgradeToV1',
+      contractName: superDaoV1Name,
+      upgradeContractFunctionParams: [
+        whitelistContract.address,
+        coaV0.address,
+        gsnConfig.relayHubAddress,
+        daoPeriodConfig.periodDuration,
+        daoPeriodConfig.votingPeriodLength,
+        daoPeriodConfig.gracePeriodLength
+      ]
+    }
 
-  await upgradeContract(
-    superDaoV0Address,
-    superDaoV1Factory,
-    superDaoUpgradeOptions
-  );
+    await upgradeContract(
+      superDaoV0Address,
+      superDaoV1Factory,
+      superDaoUpgradeOptions
+    );
+  } else {
+    if (!HIDE_LOGS) logger.info(
+      '[deployments] :: SuperDao contract is already on version 1'
+    );
+  }
 
   // upgrade Daos
   const daoV1Name = 'DAO';
@@ -472,38 +489,56 @@ async function upgradeToV1(
     ]
   }
 
-  daosV0Addresses.map(async daoV0Address => {
-    await upgradeContract(
-      daoV0Address,
-      daoV1Factory,
-      daoUpgradeOptions
-    );
-  });
+  for (let daoV0Address of daosV0Addresses) {
+    const currentDaoContract = await daoV1Factory.attach(daoV0Address);
+    const daoVersion = await getContractVersion(currentDaoContract);
+    if (resetProxies || daoVersion === 0) {
+      await upgradeContract(
+        daoV0Address,
+        daoV1Factory,
+        daoUpgradeOptions,
+        false
+      );
+    } else {
+      if (!HIDE_LOGS) logger.info(
+        `[deployments] :: Dao at ${currentDaoContract.address} is already on version 1`
+      );
+    }
+  }
 
 
   // upgrade COA
   const coaV1Name = 'COA';
   const coaV1Factory = await getContractFactory(coaV1Name);
-  const implDao = await getOrDeployContract(daoV1Name, [], signer, resetAllContracts);
-  const coaUpgradeOptions = {
-    unsafeAllowCustomTypes: true,
-    upgradeContractFunction: 'coaUpgradeToV1',
-    contractName: coaV1Name,
-    upgradeContractFunctionParams: [
-      whitelistContract.address,
-      gsnConfig.relayHubAddress,
-      implDao.address,
-      daoPeriodConfig.periodDuration,
-      daoPeriodConfig.votingPeriodLength,
-      daoPeriodConfig.gracePeriodLength
-    ]
+  const currentCoaContract = await getLastDeployedContract(coaV1Name);
+  const coaVersion = await getContractVersion(currentCoaContract);
+  if (resetProxies || coaVersion === 0) {
+    const implDao = await getOrDeployContract(daoV1Name, [], signer, resetAllContracts);
+    const coaUpgradeOptions = {
+      unsafeAllowCustomTypes: true,
+      upgradeContractFunction: 'coaUpgradeToV1',
+      contractName: coaV1Name,
+      upgradeContractFunctionParams: [
+        whitelistContract.address,
+        gsnConfig.relayHubAddress,
+        implDao.address,
+        daoPeriodConfig.periodDuration,
+        daoPeriodConfig.votingPeriodLength,
+        daoPeriodConfig.gracePeriodLength
+      ]
+    }
+
+    await upgradeContract(
+      coaV0.address,
+      coaV1Factory,
+      coaUpgradeOptions
+    );
+  } else {
+    if (!HIDE_LOGS) logger.info(
+      '[deployments] :: COA contract is already on version 1'
+    );
   }
 
-  await upgradeContract(
-    coaV0.address,
-    coaV1Factory,
-    coaUpgradeOptions
-  );
 }
 
 async function deployAll(
@@ -513,6 +548,16 @@ async function deployAll(
 ) {
   await deployV0(signer, resetStates, resetAllContracts);
   await upgradeToV1(signer, resetStates, resetAllContracts);
+}
+
+async function getContractVersion(contract) {
+  let version;
+  try {
+    version = await contract.version();
+  } catch (e) {
+    version = 0;
+  }
+  return version;
 }
 
 async function getContractInstance(name, address, signer) {

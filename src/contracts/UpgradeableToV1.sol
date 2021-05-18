@@ -42,6 +42,9 @@ contract UpgradeableToV1 {
         }
     }
 
+    function version() public pure returns (uint16) {
+        return 1;
+    }
 
     // Reserved storage space to allow for layout changes in the future.
     uint256[50] private ______gap;
