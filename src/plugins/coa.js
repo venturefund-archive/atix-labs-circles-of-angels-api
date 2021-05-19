@@ -5,7 +5,18 @@ const {
 const logger = require('../rest/logger');
 const COAError = require('../rest/errors/COAError');
 
-module.exports = class COA {
+async function getDaosAddressesForCoa(coa) {
+  const daos = [];
+  if (!coa) return daos;
+  const daosLength = await coa.getDaosLength();
+  for (let i = 0; i < daosLength; i++) {
+    const daoAddress = coa.daos(i);
+    daos.push(daoAddress);
+  }
+  return Promise.all(daos);
+}
+
+class COA {
   constructor(env) {
     this.env = env;
     this.chainIdGetter = createChainIdGetter(env.ethereum);
@@ -259,17 +270,11 @@ module.exports = class COA {
   }
 
   async getDaos() {
-    const daos = [];
     const coa = await this.getCOA();
-    if (!coa) return daos;
-    const daosLength = await coa.getDaosLength();
-    for (let i = 0; i < daosLength; i++) {
-      // eslint-disable-next-line no-await-in-loop
-      const daoAddress = await coa.daos(i);
-      const dao = this.getDaoContract(daoAddress);
-      daos.push(dao);
-    }
-    return Promise.all(daos);
+    const daoAddresses = await getDaosAddressesForCoa(coa);
+    return Promise.all(
+      daoAddresses.map(daoAddress => this.getDaoContract(daoAddress))
+    );
   }
 
   async getDaosLength() {
@@ -468,4 +473,9 @@ module.exports = class COA {
       daos
     };
   }
+}
+
+module.exports = {
+  COA,
+  getDaosAddressesForCoa
 };

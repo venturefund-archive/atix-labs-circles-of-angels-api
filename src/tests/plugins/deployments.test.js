@@ -1,5 +1,5 @@
 const { describe, it, beforeAll, beforeEach, expect } = global;
-const { config, ethereum } = require('@nomiclabs/buidler');
+const { config } = require('@nomiclabs/buidler');
 const { readArtifactSync } = require('@nomiclabs/buidler/plugins');
 const { gsnConfig } = require('config');
 const {
@@ -23,7 +23,7 @@ describe('Deployments tests', () => {
     gsnConfig.isEnabled = oldGsnConfigIsEnabled;
   });
 
-  const validContractName = 'ClaimsRegistry';
+  const validContractName = 'ClaimsRegistry_v0';
   const invalidContractName = 'NotContractName';
 
   describe('Static functions', () => {
@@ -62,22 +62,13 @@ describe('Deployments tests', () => {
 
     describe('with an upgradeable contract deployed', () => {
       let contract1;
-      let whitelist;
-      beforeAll(async () => {
-        whitelist = await getOrDeployContract(
-          'UsersWhitelist',
-          [],
-          creator,
-          false
-        );
-      });
+
       beforeEach(async () => {
         contract1 = await getOrDeployUpgradeableContract(
           validContractName,
-          [whitelist.address, gsnConfig.relayHubAddress],
+          [],
           creator,
-          false,
-          { initializer: 'claimsInitialize' },
+          { initializer: 'initialize' },
           true
         );
       });
@@ -89,7 +80,7 @@ describe('Deployments tests', () => {
       it('getOrDeployUpgradeableContract should return the deployed contract if the contract was already deployed', async () => {
         const contract2 = await getOrDeployUpgradeableContract(
           validContractName,
-          [whitelist.address, gsnConfig.relayHubAddress],
+          [],
           creator
         );
         expect(contract1.address).toEqual(contract2.address);
@@ -101,35 +92,13 @@ describe('Deployments tests', () => {
             invalidContractName,
             [],
             creator,
-            false,
             undefined,
             true
           )
         ).rejects.toThrow();
       });
 
-      it('getOrDeployUpgradeableContract should upgrade the implementation if there is a new implementation', async () => {
-        // Mocking readArtifactSync
-        const mockedClaimsRegistryArtifactFun = () =>
-          readArtifactSync(config.paths.artifacts, 'ClaimsRegistryV2');
-
-        // Mocking getContractFactory
-        const mockedClaimsRegistryFactFun = () =>
-          getContractFactory('ClaimsRegistryV2', creator);
-
-        const contract2 = await buildGetOrDeployUpgradeableContract(
-          mockedClaimsRegistryArtifactFun,
-          mockedClaimsRegistryFactFun
-        )(validContractName, [], creator, true, {
-          unsafeAllowCustomTypes: true
-        });
-
-        const testingWord = 'Testing';
-        await contract2.setTest(testingWord);
-        expect(await contract2.test()).toEqual(testingWord);
-      });
-
-      it('getOrDeployUpgradeableContract should throw an error if the doUpgrade param is not passed or false', async () => {
+      it('getOrDeployUpgradeableContract should throw an error if there is a new implementation', async () => {
         // Mocking readArtifactSync
         const mockedClaimsRegistryArtifactFun = () =>
           readArtifactSync(config.paths.artifacts, 'ClaimsRegistryV2');
