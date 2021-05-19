@@ -133,6 +133,11 @@ module.exports = {
       balanceThreshold: '0.0025'
     }
   },
+  daoPeriodConfig: {
+    periodDuration: 17280,
+    votingPeriodLength: 35,
+    gracePeriodLength: 35
+  },
 
   defaultProjectTimes: {
     minimumUnit: 'days',

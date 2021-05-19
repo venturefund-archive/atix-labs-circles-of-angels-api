@@ -7,39 +7,20 @@ import '@openzeppelin/upgrades/contracts/upgradeability/InitializableUpgradeabil
 import '@openzeppelin/upgrades/contracts/upgradeability/ProxyAdmin.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/GSN/GSNRecipient.sol';
 import '@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol';
-import './Project.sol';
-import './ClaimsRegistry.sol';
+import './UpgradeableToV1.sol';
 import './AbstractDAO.sol';
 import './UsersWhitelist.sol';
+import './old/COA_v0.sol';
 
 /// @title COA main contract to store projects related information
-contract COA is Initializable, Ownable, GSNRecipient {
+contract COA is COA_v0, UpgradeableToV1, GSNRecipient {
     using ECDSA for bytes32;
-    struct Member {
-        string profile;
-    }
-    /// Projects list
-    //Project[] public projects;
-    AdminUpgradeabilityProxy[] public projects;
-    /// COA members
-    mapping(address => Member) public members;
-    /// COA owned daos
-    AdminUpgradeabilityProxy[] public daos;
-    /// FIXME: Where is this used
-    ClaimsRegistry public registry;
-    // Agreements by project address => agreementHash
-    mapping(address => string) public agreements;
 
-    /// Emitted when a new DAO is created
-    event DAOCreated(address addr);
-    /// Emitted when a new Project is created
-    event ProjectCreated(uint256 id, address addr);
-
-    address internal proxyAdmin;
-    address internal implProject;
-    address internal implSuperDao;
-    address internal implDao;
     UsersWhitelist public whitelist;
+
+    uint256 public daoPeriodDuration;
+    uint256 public daoVotingPeriodLength;
+    uint256 public daoGracePeriodLength;
 
     modifier withdrawOk(uint256 _amount, address _destinationAddress) {
         require(_destinationAddress != address(0), 'Address cannot be empty');
@@ -47,24 +28,19 @@ contract COA is Initializable, Ownable, GSNRecipient {
         _;
     }
 
-    function coaInitialize(
-        address _registryAddress,
-        address _proxyAdmin,
-        address _implProject,
-        address _implSuperDao,
-        address _implDao,
+    function coaUpgradeToV1(
         address _whitelist,
-        address _relayHubAddr
-    ) public initializer {
-        Ownable.initialize(msg.sender);
-        GSNRecipient.initialize();
-        registry = ClaimsRegistry(_registryAddress);
-        proxyAdmin = _proxyAdmin;
-        implProject = _implProject;
-        implSuperDao = _implSuperDao;
+        address _relayHubAddr,
+        address _implDao,
+        uint256 _daoPeriodDuration,
+        uint256 _daoVotingPeriodLength,
+        uint256 _daoGracePeriodLength
+    ) public upgraderToV1 {
         implDao = _implDao;
+        daoPeriodDuration = _daoPeriodDuration;
+        daoVotingPeriodLength = _daoVotingPeriodLength;
+        daoGracePeriodLength = _daoGracePeriodLength;
         whitelist = UsersWhitelist(_whitelist);
-        createSuperDAO(_relayHubAddr);
         if (_relayHubAddr != GSNRecipient.getHubAddr()) {
             GSNRecipient._upgradeRelayHub(_relayHubAddr);
         }
@@ -72,50 +48,6 @@ contract COA is Initializable, Ownable, GSNRecipient {
 
     function setDefaultRelayHub() public onlyOwner {
         super.setDefaultRelayHub();
-    }
-
-    /**
-     * @notice Adds a new member in COA.
-     * @param _profile - string of the member's profile.
-     *
-     * @dev the profile can be bytes32 but IPFS hashes are 34 bytes long due to multihash. We could strip the first two bytes but for now it seems unnecessary.
-     */
-    function createMember(string calldata _profile) external {
-        // role: Role.Activist,
-        Member memory member = Member({profile: _profile});
-        members[msg.sender] = member;
-    }
-
-    /**
-     * @dev Migrates an old member in COA.
-     * @param _profile - string of the member's profile.
-     * @param _existingAddress - address of the old member
-     */
-    function migrateMember(string calldata _profile, address _existingAddress)
-        external
-        onlyOwner
-    {
-        // role: Role.Activist,
-        Member memory member = Member({profile: _profile});
-        members[_existingAddress] = member;
-    }
-
-    /**
-     * @dev Create a Project
-     * @param _name - string of the Project's name.
-     * @return address - the address of the new project
-     */
-    function createProject(uint256 _id, string calldata _name)
-        external
-        returns (address)
-    {
-        bytes memory payload =
-            abi.encodeWithSignature('initialize(string)', _name);
-        AdminUpgradeabilityProxy proxy =
-            new AdminUpgradeabilityProxy(implProject, proxyAdmin, payload);
-        projects.push(proxy);
-        emit ProjectCreated(_id, address(proxy));
-        return address(proxy);
     }
 
     /**
@@ -134,64 +66,21 @@ contract COA is Initializable, Ownable, GSNRecipient {
         );
         bytes memory payload =
             abi.encodeWithSignature(
-                'initDao(string,address,address,address,address)',
+                'initDao(string,address,address,address,address,uint256,uint256,uint256)',
                 _name,
                 _creator,
                 address(whitelist),
                 address(this),
-                GSNRecipient.getHubAddr()
+                GSNRecipient.getHubAddr(),
+                daoPeriodDuration,
+                daoVotingPeriodLength,
+                daoGracePeriodLength
             );
         AdminUpgradeabilityProxy proxy =
             new AdminUpgradeabilityProxy(implDao, proxyAdmin, payload);
         daos.push(proxy);
         emit DAOCreated(address(proxy));
         return address(proxy);
-    }
-
-    /**
-     * @dev Create a SuperDAO
-     *      It's the DAO that can be used to create other DAOs.
-     */
-    function createSuperDAO(address _relayHubAddr) internal {
-        require(
-            proxyAdmin != owner(),
-            'The creator can not be the admin proxy.'
-        );
-        bytes memory payload =
-            abi.encodeWithSignature(
-                'initSuperDao(string,address,address,address,address)',
-                'Super DAO',
-                owner(),
-                address(whitelist),
-                address(this),
-                _relayHubAddr
-            );
-        AdminUpgradeabilityProxy proxy =
-            new AdminUpgradeabilityProxy(implSuperDao, proxyAdmin, payload);
-        daos.push(proxy);
-        emit DAOCreated(address(proxy));
-    }
-
-    // the agreement hash can be bytes32 but IPFS hashes are 34 bytes long due to multihash.
-    // we could strip the first two bytes but for now it seems unnecessary
-    /**
-     * @dev Adds an agreement hash to the agreements map. This can only be run by the admin
-     * @param _project - address of the project the agreement belongs to
-     * @param _agreementHash - string of the agreement's hash.
-     */
-    function addAgreement(address _project, string calldata _agreementHash)
-        external
-        onlyOwner
-    {
-        agreements[_project] = _agreementHash;
-    }
-
-    function getDaosLength() public view returns (uint256) {
-        return daos.length;
-    }
-
-    function getProjectsLength() public view returns (uint256) {
-        return projects.length;
     }
 
     function setWhitelist(address _whitelist) external onlyOwner {
@@ -243,5 +132,5 @@ contract COA is Initializable, Ownable, GSNRecipient {
         _withdrawDeposits(amount, destinationAddress);
     }
 
-    uint256[49] private _gap;
+    uint256[50] private _gap;
 }
