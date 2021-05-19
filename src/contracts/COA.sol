@@ -132,5 +132,5 @@ contract COA is COA_v0, UpgradeableToV1, GSNRecipient {
         _withdrawDeposits(amount, destinationAddress);
     }
 
-    uint256[49] private _gap;
+    uint256[50] private _gap;
 }
