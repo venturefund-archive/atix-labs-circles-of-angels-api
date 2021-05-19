@@ -21,7 +21,8 @@ const {
   network,
   config,
   ethers,
-  upgrades
+  upgrades,
+  web3
 } = require('@nomiclabs/buidler');
 const {
   ensureFileSync,
@@ -608,10 +609,9 @@ async function getProvider() {
 
 
 async function getGSNProvider() {
-  const providerUrl = ethers.provider.connection.url;
   const ownerAddress = (await getAccounts())[0];
 
-  const gsnProvider = new GSNProvider(providerUrl, {
+  const gsnProvider = new GSNProvider(web3, {
     ownerAddress,
     useGSN: true
   });
