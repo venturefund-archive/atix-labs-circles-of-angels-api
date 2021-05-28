@@ -20,6 +20,12 @@ module.exports = {
       disabled: false,
       runOnInit: false,
       timezone: undefined
+    },
+    checkContractBalancesJob: {
+      cronTime: cronExpressions.EVERY_HOUR,
+      disabled: false,
+      runOnInit: false,
+      timezone: undefined
     }
   },
   defaultProjectTimes: {

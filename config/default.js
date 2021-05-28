@@ -107,7 +107,7 @@ module.exports = {
       timezone: undefined
     },
     checkContractBalancesJob: {
-      cronTime: cronExpressions.EVERYDAY_AT_MIDNIGHT,
+      cronTime: cronExpressions.EVERY_HOUR,
       disabled: true,
       runOnInit: false,
       timezone: undefined
