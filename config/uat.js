@@ -36,6 +36,10 @@ module.exports = {
   buidler: {
     defaultNetwork: 'testnet'
   },
+  gsnConfig: {
+    isEnabled: true,
+    relayHubAddress: '0x73c02c2a07fe2929b4da5aa5f299b5c6ea94e979'
+  },
   contractAddresses: {
     Project: ['0x420476619173B4a3fBf68D595E4463084Cf68fa3'],
     SuperDAO: ['0xd9FEC1D3235c455CEA7925C233E068B77805Bf5B'],
