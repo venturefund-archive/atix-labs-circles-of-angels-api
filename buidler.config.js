@@ -31,12 +31,12 @@ module.exports = {
     testnet: {
       url: config.buidler.testnet_url,
       accounts: [config.buidler.testnet_account],
-      timeout: 4 * 60 * 1000
+      timeout: 8 * 60 * 1000
     },
     mainnet: {
       url: config.buidler.mainnet_url,
       accounts: [config.buidler.mainnet_account],
-      timeout: 4 * 60 * 1000
+      timeout: 8 * 60 * 1000
     },
     coverage: {
       url: 'http://localhost:8555'
